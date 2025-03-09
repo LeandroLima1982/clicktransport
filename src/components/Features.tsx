@@ -10,7 +10,7 @@ const features = [
   },
   {
     title: 'Real-Time Tracking',
-    description: 'Track your driver's location and status updates in real-time for peace of mind.',
+    description: "Track your driver's location and status updates in real-time for peace of mind.",
     icon: MapPin,
   },
   {
