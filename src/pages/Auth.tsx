@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import TransitionEffect from '@/components/TransitionEffect';
 import { Car } from 'lucide-react';
+import { supabase } from '../main';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -48,7 +49,6 @@ const Auth = () => {
       
       toast.success('Login realizado com sucesso');
       
-      // Redirect based on account type from profile data
       const { data: profileData } = await supabase
         .from('profiles')
         .select('role')
@@ -62,7 +62,6 @@ const Auth = () => {
       } else if (profileData?.role === 'admin') {
         navigate('/admin/dashboard');
       } else {
-        // Fallback to accountType if role not found
         if (accountType === 'company') {
           navigate('/company/dashboard');
         } else if (accountType === 'driver') {
@@ -102,7 +101,6 @@ const Auth = () => {
     }
     
     try {
-      // Register user with Supabase
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -117,7 +115,6 @@ const Auth = () => {
       
       if (error) throw error;
       
-      // Create profile entry
       if (data.user) {
         const { error: profileError } = await supabase
           .from('profiles')
@@ -131,7 +128,6 @@ const Auth = () => {
         
         if (profileError) throw profileError;
         
-        // If company, also create company entry
         if (accountType === 'company') {
           const companyName = (form.elements.namedItem('company-name') as HTMLInputElement)?.value;
           
@@ -140,7 +136,7 @@ const Auth = () => {
               .from('companies')
               .insert({
                 name: companyName,
-                cnpj: '', // Temporary placeholder
+                cnpj: '',
                 user_id: data.user.id,
                 status: 'pending'
               });
@@ -149,7 +145,6 @@ const Auth = () => {
           }
         }
         
-        // If driver, also create driver entry
         if (accountType === 'driver') {
           const { error: driverError } = await supabase
             .from('drivers')
@@ -168,7 +163,6 @@ const Auth = () => {
         description: 'Por favor, verifique seu e-mail para confirmar sua conta.',
       });
       
-      // Redirect to login
       setActiveTab('login');
     } catch (err: any) {
       console.error('Erro ao fazer cadastro:', err);

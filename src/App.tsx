@@ -1,7 +1,7 @@
 
 // Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './hooks/useAuth';
+import { AuthProvider, useAuth } from './hooks/useAuth';
 import { Toaster } from 'sonner';
 
 // Import pages and components
