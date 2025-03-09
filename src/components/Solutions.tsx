@@ -1,59 +1,94 @@
 
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { CheckCircle2, ArrowRight, User, Building2, Users, Plane, CarFront, Clock } from 'lucide-react';
 
 const solutions = [
   {
-    title: 'Rapidez & qualidade',
-    description: 'Motoristas prontos para atender com veículos confortáveis e seguros'
+    icon: <User className="h-10 w-10 text-primary" />,
+    title: 'Transfer Executivo',
+    description: 'Serviço premium com carros executivos e motoristas altamente treinados para levar executivos e clientes VIP com o máximo conforto e pontualdiade.',
+    features: ['Motoristas bilíngues', 'Carros luxuosos', 'Acompanhamento em tempo real']
   },
   {
-    title: 'Profissionais treinados',
-    description: 'Motoristas experientes com excelente conhecimento das rotas'
+    icon: <Building2 className="h-10 w-10 text-primary" />,
+    title: 'Transfer Corporativo',
+    description: 'Soluções completas de transfer para empresas que precisam transportar colaboradores com segurança e confiabilidade, otimizando tempo e recursos.',
+    features: ['Gestão centralizada', 'Faturamento corporativo', 'Relatórios detalhados']
   },
   {
-    title: 'Transfer personalizado',
-    description: 'Opções de veículos e horários flexíveis para sua necessidade'
+    icon: <Users className="h-10 w-10 text-primary" />,
+    title: 'Transfer para Grupos',
+    description: 'Transporte de grupos para eventos corporativos, congressos e feiras, com vans e ônibus modernos e confortáveis, garantindo a melhor experiência.',
+    features: ['Vans e ônibus modernos', 'Coordenação de logística', 'Acompanhamento especializado']
   },
   {
-    title: 'Segurança garantida',
-    description: 'Monitoramento em tempo real e protocolos de segurança rigorosos'
+    icon: <Plane className="h-10 w-10 text-primary" />,
+    title: 'Transfer Aeroporto',
+    description: 'Recepção e transporte de passageiros do aeroporto para o hotel ou destino desejado, com monitoramento de voos e flexibilidade para atrasos.',
+    features: ['Monitoramento de voos', 'Recepção personalizada', 'Assistência com bagagens']
+  },
+  {
+    icon: <CarFront className="h-10 w-10 text-primary" />,
+    title: 'Transfer Offshore',
+    description: 'Transporte especializado para colaboradores da indústria de óleo e gás, com veículos adequados e motoristas treinados para as necessidades específicas.',
+    features: ['Veículos adequados', 'Motoristas certificados', 'Disponibilidade 24h']
+  },
+  {
+    icon: <Clock className="h-10 w-10 text-primary" />,
+    title: 'Transfer Turístico',
+    description: 'Conheça os melhores pontos turísticos com conforto e segurança, com motoristas que conhecem as melhores rotas e pontos turísticos.',
+    features: ['Roteiros personalizados', 'Guias especializados', 'Experiência local']
   }
 ];
 
 const Solutions: React.FC = () => {
   return (
-    <section className="py-16 bg-white">
+    <section className="py-20 bg-white relative overflow-hidden">
+      <div className="absolute top-0 inset-0 bg-gradient-to-b from-white via-gray-50 to-white opacity-50 -z-10"></div>
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
-          <span className="inline-block text-sm font-semibold text-primary mb-2">NOSSOS SERVIÇOS</span>
-          <h2 className="section-title mb-6">Soluções Inteligentes em Transporte Executivo</h2>
+          <span className="inline-block text-sm font-semibold text-primary mb-2">NOSSAS SOLUÇÕES</span>
+          <h2 className="section-title mb-6">Soluções de Transporte Personalizado</h2>
           <p className="text-foreground/70 max-w-2xl mx-auto">
-            Oferecemos soluções completas para transporte corporativo, offshore e executivo, 
-            com atendimento personalizado e qualidade superior.
+            Oferecemos uma variedade de serviços de transfer personalizados para atender às necessidades específicas 
+            de cada cliente, garantindo conforto, segurança e pontualidade.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {solutions.map((solution, index) => (
-            <div 
-              key={index} 
-              className="p-6 rounded-lg text-center flex flex-col items-center"
-            >
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <span className="text-primary text-xl">✓</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">{solution.title}</h3>
-              <p className="text-foreground/70">{solution.description}</p>
-            </div>
+            <Card key={index} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group relative">
+              <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <CardHeader>
+                <div className="mb-4">{solution.icon}</div>
+                <CardTitle className="text-xl">{solution.title}</CardTitle>
+                <CardDescription className="text-foreground/70">{solution.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {solution.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start">
+                      <CheckCircle2 className="h-5 w-5 text-primary mr-2 shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-white transition-colors">
+                  Saiba mais <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </CardFooter>
+            </Card>
           ))}
         </div>
-
-        <div className="text-center mt-10">
+        
+        <div className="text-center mt-12">
           <a href="#request-service">
-            <Button variant="outline" className="rounded-md border-primary text-secondary hover:bg-primary hover:text-secondary">
-              Saiba Mais
+            <Button size="lg" className="rounded-md px-8 py-6 text-base font-bold">
+              Solicitar Orçamento <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </a>
         </div>
