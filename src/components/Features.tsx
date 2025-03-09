@@ -4,23 +4,23 @@ import { Car, Calendar, MapPin, Shield } from 'lucide-react';
 
 const features = [
   {
-    title: 'Premium Fleet',
-    description: 'Access to a wide range of luxury and specialized vehicles for any type of transfer.',
+    title: 'Frota Premium',
+    description: 'Acesso a uma ampla variedade de veículos de luxo e especializados para qualquer tipo de transfer.',
     icon: Car,
   },
   {
-    title: 'Real-Time Tracking',
-    description: "Track your driver's location and status updates in real-time for peace of mind.",
+    title: 'Rastreamento em Tempo Real',
+    description: "Acompanhe a localização do seu motorista e atualizações de status em tempo real para sua tranquilidade.",
     icon: MapPin,
   },
   {
-    title: 'Easy Scheduling',
-    description: 'Book in advance or on-demand with our intuitive scheduling system.',
+    title: 'Agendamento Fácil',
+    description: 'Reserve com antecedência ou sob demanda com nosso sistema intuitivo de agendamento.',
     icon: Calendar,
   },
   {
-    title: 'Secure Payments',
-    description: 'Safe and transparent payment processing for all your transportation needs.',
+    title: 'Pagamentos Seguros',
+    description: 'Processamento de pagamento seguro e transparente para todas as suas necessidades de transporte.',
     icon: Shield,
   },
 ];
@@ -30,9 +30,9 @@ const Features: React.FC = () => {
     <section className="py-24 bg-white">
       <div className="container mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Experience Premium Transportation Services</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Experimente Serviços de Transporte Premium</h2>
           <p className="text-lg text-foreground/70">
-            ClickTransfer connects you with verified transportation providers for seamless corporate and tourist transfer experiences.
+            ClickTransfer conecta você com fornecedores de transporte verificados para experiências de transfer corporativo e turístico sem complicações.
           </p>
         </div>
 

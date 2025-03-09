@@ -45,36 +45,36 @@ const Navbar: React.FC = () => {
               to="/"
               className="text-foreground/80 hover:text-foreground transition-colors duration-200"
             >
-              Home
+              Início
             </Link>
-            <Link
-              to="/services"
+            <a
+              href="#request-service"
               className="text-foreground/80 hover:text-foreground transition-colors duration-200"
             >
-              Services
-            </Link>
+              Solicitar Serviço
+            </a>
             <Link
               to="/about"
               className="text-foreground/80 hover:text-foreground transition-colors duration-200"
             >
-              About
+              Sobre
             </Link>
             <Link
               to="/contact"
               className="text-foreground/80 hover:text-foreground transition-colors duration-200"
             >
-              Contact
+              Contato
             </Link>
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
             <Link to="/auth">
               <Button variant="outline" className="rounded-full px-6">
-                Login
+                Entrar
               </Button>
             </Link>
             <Link to="/auth?register=true">
-              <Button className="rounded-full px-6">Register</Button>
+              <Button className="rounded-full px-6">Cadastrar</Button>
             </Link>
           </div>
 
@@ -105,37 +105,37 @@ const Navbar: React.FC = () => {
               className="text-foreground/80 hover:text-foreground transition-colors duration-200 py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Home
+              Início
             </Link>
-            <Link
-              to="/services"
+            <a
+              href="#request-service"
               className="text-foreground/80 hover:text-foreground transition-colors duration-200 py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Services
-            </Link>
+              Solicitar Serviço
+            </a>
             <Link
               to="/about"
               className="text-foreground/80 hover:text-foreground transition-colors duration-200 py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              About
+              Sobre
             </Link>
             <Link
               to="/contact"
               className="text-foreground/80 hover:text-foreground transition-colors duration-200 py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Contact
+              Contato
             </Link>
             <div className="flex flex-col space-y-2 pt-2">
               <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="outline" className="w-full rounded-full">
-                  Login
+                  Entrar
                 </Button>
               </Link>
               <Link to="/auth?register=true" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full rounded-full">Register</Button>
+                <Button className="w-full rounded-full">Cadastrar</Button>
               </Link>
             </div>
           </nav>

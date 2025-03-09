@@ -1,4 +1,3 @@
-
 import { supabase } from '../main';
 
 export const createTables = async () => {
@@ -93,6 +92,27 @@ export const createTables = async () => {
       `
     });
 
+    // Tabela para solicitações de serviço (service_requests)
+    await supabase.rpc('execute_sql', {
+      sql_query: `
+        CREATE TABLE IF NOT EXISTS public.service_requests (
+          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          name TEXT NOT NULL,
+          email TEXT NOT NULL,
+          phone TEXT NOT NULL,
+          service_type TEXT NOT NULL,
+          origin TEXT NOT NULL,
+          destination TEXT NOT NULL,
+          passengers TEXT NOT NULL,
+          request_date TEXT,
+          additional_info TEXT,
+          status TEXT CHECK (status IN ('pending', 'assigned', 'completed', 'cancelled')) DEFAULT 'pending',
+          company_id UUID REFERENCES public.companies(id),
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+        );
+      `
+    });
+
     console.log('Todas as tabelas foram criadas com sucesso!');
     return { success: true, message: 'Tabelas criadas com sucesso!' };
   } catch (error) {
@@ -147,5 +167,14 @@ export const supabaseServices = {
     create: (data: any) => supabase.from('service_orders').insert(data),
     update: (id: string, data: any) => supabase.from('service_orders').update(data).eq('id', id),
     delete: (id: string) => supabase.from('service_orders').delete().eq('id', id),
+  },
+  
+  // Solicitações de Serviço
+  serviceRequests: {
+    getAll: () => supabase.from('service_requests').select('*'),
+    getById: (id: string) => supabase.from('service_requests').select('*').eq('id', id).single(),
+    create: (data: any) => supabase.from('service_requests').insert(data),
+    update: (id: string, data: any) => supabase.from('service_requests').update(data).eq('id', id),
+    delete: (id: string) => supabase.from('service_requests').delete().eq('id', id),
   }
 };

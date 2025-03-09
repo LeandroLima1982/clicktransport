@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { CalendarIcon, Clock } from 'lucide-react';
-import { toast } from 'sonner';
+import { CalendarIcon } from 'lucide-react';
+import { useServiceRequests } from '@/hooks/useServiceRequests';
 
 const ServiceForm: React.FC = () => {
   const [date, setDate] = useState<Date>();
@@ -21,38 +22,44 @@ const ServiceForm: React.FC = () => {
     passengers: '',
     additionalInfo: '',
   });
+  
+  const { submitServiceRequest, isSubmitting } = useServiceRequests();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // In a real app, this would send data to the backend
-    console.log({ ...formData, date });
+    // Prepare data for submission
+    const requestData = {
+      ...formData,
+      requestDate: date ? format(date, 'yyyy-MM-dd') : '',
+    };
     
-    toast.success('Service request submitted successfully!', {
-      description: 'A transportation company will contact you soon.',
-    });
+    // Submit to Supabase
+    const success = await submitServiceRequest(requestData);
     
-    // Reset form
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      serviceType: '',
-      origin: '',
-      destination: '',
-      passengers: '',
-      additionalInfo: '',
-    });
-    setDate(undefined);
+    // Reset form if submission was successful
+    if (success) {
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        serviceType: '',
+        origin: '',
+        destination: '',
+        passengers: '',
+        additionalInfo: '',
+      });
+      setDate(undefined);
+    }
   };
 
   return (
-    <section className="py-24 bg-gray-50">
+    <section className="py-24 bg-gray-50" id="request-service">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
@@ -97,20 +104,20 @@ const ServiceForm: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label htmlFor="name" className="text-sm font-medium">
-                    Full Name
+                    Nome Completo
                   </label>
                   <Input
                     id="name"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="Enter your full name"
+                    placeholder="Digite seu nome completo"
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="email" className="text-sm font-medium">
-                    Email Address
+                    Email
                   </label>
                   <Input
                     id="email"
@@ -118,7 +125,7 @@ const ServiceForm: React.FC = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="Enter your email"
+                    placeholder="Digite seu email"
                     required
                   />
                 </div>
@@ -127,32 +134,32 @@ const ServiceForm: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label htmlFor="phone" className="text-sm font-medium">
-                    Phone Number
+                    Telefone
                   </label>
                   <Input
                     id="phone"
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    placeholder="Enter your phone number"
+                    placeholder="Digite seu telefone"
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="serviceType" className="text-sm font-medium">
-                    Service Type
+                    Tipo de Serviço
                   </label>
                   <Select
                     onValueChange={(value) => setFormData(prev => ({ ...prev, serviceType: value }))}
                     value={formData.serviceType}
                   >
                     <SelectTrigger id="serviceType">
-                      <SelectValue placeholder="Select service type" />
+                      <SelectValue placeholder="Selecione o tipo de serviço" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="corporate">Corporate Transfer</SelectItem>
-                      <SelectItem value="tourist">Tourist Transfer</SelectItem>
-                      <SelectItem value="offshore">Offshore Transfer</SelectItem>
+                      <SelectItem value="corporate">Transfer Corporativo</SelectItem>
+                      <SelectItem value="tourist">Transfer Turístico</SelectItem>
+                      <SelectItem value="offshore">Transfer Offshore</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -161,27 +168,27 @@ const ServiceForm: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label htmlFor="origin" className="text-sm font-medium">
-                    Pick-up Location
+                    Local de Embarque
                   </label>
                   <Input
                     id="origin"
                     name="origin"
                     value={formData.origin}
                     onChange={handleChange}
-                    placeholder="Enter pick-up address"
+                    placeholder="Digite o endereço de embarque"
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="destination" className="text-sm font-medium">
-                    Destination
+                    Destino
                   </label>
                   <Input
                     id="destination"
                     name="destination"
                     value={formData.destination}
                     onChange={handleChange}
-                    placeholder="Enter destination address"
+                    placeholder="Digite o endereço de destino"
                     required
                   />
                 </div>
@@ -189,7 +196,7 @@ const ServiceForm: React.FC = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Date</label>
+                  <label className="text-sm font-medium">Data</label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -197,7 +204,7 @@ const ServiceForm: React.FC = () => {
                         className="w-full justify-start text-left font-normal"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date ? format(date, "PPP") : <span>Select date</span>}
+                        {date ? format(date, "dd/MM/yyyy") : <span>Selecione a data</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
@@ -212,7 +219,7 @@ const ServiceForm: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="passengers" className="text-sm font-medium">
-                    Number of Passengers
+                    Número de Passageiros
                   </label>
                   <Input
                     id="passengers"
@@ -221,7 +228,7 @@ const ServiceForm: React.FC = () => {
                     min="1"
                     value={formData.passengers}
                     onChange={handleChange}
-                    placeholder="Enter number of passengers"
+                    placeholder="Digite o número de passageiros"
                     required
                   />
                 </div>
@@ -229,20 +236,24 @@ const ServiceForm: React.FC = () => {
               
               <div className="space-y-2">
                 <label htmlFor="additionalInfo" className="text-sm font-medium">
-                  Additional Information
+                  Informações Adicionais
                 </label>
                 <Textarea
                   id="additionalInfo"
                   name="additionalInfo"
                   value={formData.additionalInfo}
                   onChange={handleChange}
-                  placeholder="Enter any special requests or additional information"
+                  placeholder="Digite quaisquer pedidos especiais ou informações adicionais"
                   rows={4}
                 />
               </div>
               
-              <Button type="submit" className="w-full rounded-full py-6">
-                Submit Request
+              <Button 
+                type="submit" 
+                className="w-full rounded-full py-6"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Enviando...' : 'Enviar Solicitação'}
               </Button>
             </form>
           </div>
