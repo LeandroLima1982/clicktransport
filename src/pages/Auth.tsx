@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import TransitionEffect from '@/components/TransitionEffect';
 import { Car } from 'lucide-react';
-import { supabase } from '../main';
+import { useAuth } from '../hooks/useAuth';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -18,7 +18,13 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { signIn, signUp, user } = useAuth();
+
   useEffect(() => {
+    if (user) {
+      redirectToDashboard();
+    }
+    
     const searchParams = new URLSearchParams(location.search);
     if (searchParams.get('register') === 'true') {
       setActiveTab('register');
@@ -28,7 +34,17 @@ const Auth = () => {
     if (type && ['company', 'driver', 'admin'].includes(type)) {
       setAccountType(type);
     }
-  }, [location]);
+  }, [location, user]);
+
+  const redirectToDashboard = () => {
+    if (accountType === 'company') {
+      navigate('/company/dashboard');
+    } else if (accountType === 'driver') {
+      navigate('/driver/dashboard');
+    } else if (accountType === 'admin') {
+      navigate('/admin/dashboard');
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,36 +56,12 @@ const Auth = () => {
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      const { error } = await signIn(email, password);
       
       if (error) throw error;
       
       toast.success('Login realizado com sucesso');
-      
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
-      
-      if (profileData?.role === 'company') {
-        navigate('/company/dashboard');
-      } else if (profileData?.role === 'driver') {
-        navigate('/driver/dashboard');
-      } else if (profileData?.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        if (accountType === 'company') {
-          navigate('/company/dashboard');
-        } else if (accountType === 'driver') {
-          navigate('/driver/dashboard');
-        } else if (accountType === 'admin') {
-          navigate('/admin/dashboard');
-        }
-      }
+      redirectToDashboard();
     } catch (err: any) {
       console.error('Erro ao fazer login:', err);
       setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
@@ -97,67 +89,14 @@ const Auth = () => {
     if (password !== confirmPassword) {
       setError('As senhas não conferem');
       setLoading(false);
+      toast.error('As senhas não conferem');
       return;
     }
     
     try {
-      const { data, error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          data: {
-            full_name: `${firstName} ${lastName}`,
-            phone: phone,
-            role: accountType
-          }
-        }
-      });
+      const { error } = await signUp(email, password);
       
       if (error) throw error;
-      
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            full_name: `${firstName} ${lastName}`,
-            email: email,
-            phone: phone,
-            role: accountType
-          });
-        
-        if (profileError) throw profileError;
-        
-        if (accountType === 'company') {
-          const companyName = (form.elements.namedItem('company-name') as HTMLInputElement)?.value;
-          
-          if (companyName) {
-            const { error: companyError } = await supabase
-              .from('companies')
-              .insert({
-                name: companyName,
-                cnpj: '',
-                user_id: data.user.id,
-                status: 'pending'
-              });
-            
-            if (companyError) throw companyError;
-          }
-        }
-        
-        if (accountType === 'driver') {
-          const { error: driverError } = await supabase
-            .from('drivers')
-            .insert({
-              name: `${firstName} ${lastName}`,
-              phone: phone,
-              user_id: data.user.id,
-              status: 'active'
-            });
-          
-          if (driverError) throw driverError;
-        }
-      }
       
       toast.success('Cadastro realizado com sucesso', {
         description: 'Por favor, verifique seu e-mail para confirmar sua conta.',

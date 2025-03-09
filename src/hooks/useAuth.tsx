@@ -7,6 +7,7 @@ import {
   AuthChangeEvent 
 } from '@supabase/supabase-js';
 import { supabase } from '../main';
+import { toast } from 'sonner';
 
 type AuthContextType = {
   session: Session | null;
@@ -31,6 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -68,6 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Function to fetch user role from profiles table
   const fetchUserRole = async (userId: string) => {
     try {
+      console.log('Fetching user role for ID:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
@@ -76,10 +79,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) {
         console.error('Erro ao buscar papel do usuário:', error);
+        // Check if profile doesn't exist and try to create it
+        if (error.code === 'PGRST116') {
+          await createUserProfile(userId);
+        }
         return;
       }
       
       if (data?.role) {
+        console.log('User role found:', data.role);
         setUserRole(data.role as 'admin' | 'company' | 'driver');
       }
     } catch (err) {
@@ -87,9 +95,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Create a profile if one doesn't exist
+  const createUserProfile = async (userId: string) => {
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !userData.user) {
+        console.error('Unable to get user data:', userError);
+        return;
+      }
+      
+      // Get user metadata if available
+      const metadata = userData.user.user_metadata || {};
+      const email = userData.user.email || '';
+      
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          email: email,
+          full_name: metadata.full_name || '',
+          role: metadata.role || 'driver', // Default role
+        });
+      
+      if (insertError) {
+        console.error('Error creating user profile:', insertError);
+        return;
+      }
+      
+      console.log('Created new user profile');
+      
+      // Try to fetch the role again
+      fetchUserRole(userId);
+    } catch (err) {
+      console.error('Error in createUserProfile:', err);
+    }
+  };
+
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('Signing in user:', email);
       const result = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -128,15 +174,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Sign up with email and password
   const signUp = async (email: string, password: string) => {
     try {
+      console.log('Signing up user:', email);
       const result = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
+          data: {
+            email: email
+          }
+        }
       });
       
-      return { error: result.error };
+      if (result.error) {
+        throw result.error;
+      }
+      
+      console.log('Sign up result:', result);
+      
+      return { error: null };
     } catch (err) {
       console.error('Erro ao criar conta:', err);
       return { error: err as AuthError };
