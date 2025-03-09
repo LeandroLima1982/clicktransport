@@ -19,7 +19,7 @@ const Navbar: React.FC = () => {
   }, [scrolled]);
   return <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-md shadow-sm' : 'bg-transparent'}`}>
       <div className="container mx-auto bg-zinc-50 px-0 py-[15px]">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-[40px]">
           <Link to="/" className="flex items-center space-x-2">
             <Car className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold tracking-tight">
