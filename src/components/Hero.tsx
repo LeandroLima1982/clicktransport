@@ -9,22 +9,20 @@ const Hero: React.FC = () => {
       backgroundPosition: 'center 33%'
     }} />
       
-      <div className="container mx-auto px-6 py-16">
+      <div className="container mx-auto px-[17px] py-[150px]">
         <div className="max-w-3xl mx-auto text-center text-white mb-12">
           <span className="inline-block text-primary font-bold px-4 py-1 rounded-full bg-primary/10 mb-4 animate-fade-in">
             TRASLADOS EXECUTIVOS | TRANSFER OFFSHORE
           </span>
           
           <h1 className="text-4xl md:text-5xl font-bold mb-6 animate-slide-in">
-            <span className="block mb-2">Transfer para empresas e</span>
-            <span className="text-primary">motoristas executivos</span>
+            <span className="block mb-2">Transfers para empresas </span>
+            <span className="text-primary">com rapidez e pontualidade</span>
           </h1>
           
           <p className="text-lg md:text-xl mb-8 text-gray-300 animate-fade-in" style={{
           animationDelay: '0.2s'
-        }}>
-            Transfer para colaboradores offshore com conforto, rapidez e pontualidade
-          </p>
+        }}>Transfer para colaboradores da sua empresa com conforto e pontualidade</p>
         </div>
         
         <div className="max-w-4xl mx-auto">
