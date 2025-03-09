@@ -15,7 +15,7 @@ type AuthContextType = {
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signInWithGoogle: () => Promise<{ error: AuthError | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string, userData?: any) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   userRole: 'admin' | 'company' | 'driver' | null;
@@ -78,11 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .single();
       
       if (error) {
-        console.error('Erro ao buscar papel do usuário:', error);
-        // Check if profile doesn't exist and try to create it
-        if (error.code === 'PGRST116') {
-          await createUserProfile(userId);
-        }
+        console.error('Error fetching user role:', error);
         return;
       }
       
@@ -91,44 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUserRole(data.role as 'admin' | 'company' | 'driver');
       }
     } catch (err) {
-      console.error('Erro ao buscar papel do usuário:', err);
-    }
-  };
-
-  // Create a profile if one doesn't exist
-  const createUserProfile = async (userId: string) => {
-    try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !userData.user) {
-        console.error('Unable to get user data:', userError);
-        return;
-      }
-      
-      // Get user metadata if available
-      const metadata = userData.user.user_metadata || {};
-      const email = userData.user.email || '';
-      
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          id: userId,
-          email: email,
-          full_name: metadata.full_name || '',
-          role: metadata.role || 'driver', // Default role
-        });
-      
-      if (insertError) {
-        console.error('Error creating user profile:', insertError);
-        return;
-      }
-      
-      console.log('Created new user profile');
-      
-      // Try to fetch the role again
-      fetchUserRole(userId);
-    } catch (err) {
-      console.error('Error in createUserProfile:', err);
+      console.error('Error fetching user role:', err);
     }
   };
 
@@ -142,14 +101,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       if (result.error) {
-        console.error('Erro ao fazer login:', result.error);
+        console.error('Error signing in:', result.error);
+        toast.error('Error signing in', {
+          description: result.error.message
+        });
       } else {
-        console.log('Login bem-sucedido');
+        console.log('Sign in successful');
+        toast.success('Welcome back!');
       }
       
       return { error: result.error };
     } catch (err) {
-      console.error('Erro ao fazer login:', err);
+      console.error('Error signing in:', err);
       return { error: err as AuthError };
     }
   };
@@ -166,13 +129,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       return { error: result.error };
     } catch (err) {
-      console.error('Erro ao fazer login com Google:', err);
+      console.error('Error signing in with Google:', err);
       return { error: err as AuthError };
     }
   };
 
   // Sign up with email and password
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, userData?: any) => {
     try {
       console.log('Signing up user:', email);
       const result = await supabase.auth.signUp({
@@ -181,20 +144,60 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
-            email: email
+            email: email,
+            role: userData?.accountType || 'driver',
+            full_name: userData?.firstName && userData?.lastName 
+              ? `${userData.firstName} ${userData.lastName}` 
+              : ''
           }
         }
       });
       
       if (result.error) {
-        throw result.error;
+        toast.error('Error creating account', {
+          description: result.error.message
+        });
+        return { error: result.error };
       }
       
       console.log('Sign up result:', result);
       
+      // Create company record if user is signing up as company
+      if (userData?.accountType === 'company' && result.data.user) {
+        const { error: companyError } = await supabase
+          .from('companies')
+          .insert({
+            user_id: result.data.user.id,
+            name: userData.companyName || '',
+          });
+          
+        if (companyError) {
+          console.error('Error creating company record:', companyError);
+        }
+      }
+      
+      // Create driver record if user is signing up as driver
+      if (userData?.accountType === 'driver' && result.data.user) {
+        const { error: driverError } = await supabase
+          .from('drivers')
+          .insert({
+            user_id: result.data.user.id,
+            name: `${userData.firstName} ${userData.lastName}`,
+            phone: userData.phone || '',
+          });
+          
+        if (driverError) {
+          console.error('Error creating driver record:', driverError);
+        }
+      }
+      
+      toast.success('Account created successfully', {
+        description: 'Please check your email to verify your account.'
+      });
+      
       return { error: null };
     } catch (err) {
-      console.error('Erro ao criar conta:', err);
+      console.error('Error creating account:', err);
       return { error: err as AuthError };
     }
   };
@@ -203,9 +206,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       const result = await supabase.auth.signOut();
+      if (!result.error) {
+        toast.success('You have been signed out');
+      }
       return { error: result.error };
     } catch (err) {
-      console.error('Erro ao sair:', err);
+      console.error('Error signing out:', err);
       return { error: err as AuthError };
     }
   };
@@ -216,9 +222,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const result = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
+      
+      if (!result.error) {
+        toast.success('Password reset email sent', {
+          description: 'Please check your email to reset your password.'
+        });
+      }
+      
       return { error: result.error };
     } catch (err) {
-      console.error('Erro ao redefinir senha:', err);
+      console.error('Error resetting password:', err);
       return { error: err as AuthError };
     }
   };
@@ -241,7 +254,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };

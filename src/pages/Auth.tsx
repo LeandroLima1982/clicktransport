@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import TransitionEffect from '@/components/TransitionEffect';
-import { Car } from 'lucide-react';
+import { Car, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 const Auth = () => {
@@ -60,14 +61,10 @@ const Auth = () => {
       
       if (error) throw error;
       
-      toast.success('Login realizado com sucesso');
-      redirectToDashboard();
+      // Redirect will happen via the useEffect hook when user state updates
     } catch (err: any) {
-      console.error('Erro ao fazer login:', err);
-      setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
-      toast.error('Erro ao fazer login', {
-        description: err.message,
-      });
+      console.error('Error signing in:', err);
+      setError(err.message || 'Error signing in. Check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -85,30 +82,33 @@ const Auth = () => {
     const firstName = (form.elements.namedItem('first-name') as HTMLInputElement).value;
     const lastName = (form.elements.namedItem('last-name') as HTMLInputElement).value;
     const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
+    const companyName = accountType === 'company' 
+      ? (form.elements.namedItem('company-name') as HTMLInputElement).value 
+      : '';
     
     if (password !== confirmPassword) {
-      setError('As senhas não conferem');
+      setError('Passwords do not match');
       setLoading(false);
-      toast.error('As senhas não conferem');
       return;
     }
     
     try {
-      const { error } = await signUp(email, password);
+      const userData = {
+        accountType,
+        firstName,
+        lastName,
+        phone,
+        companyName
+      };
+      
+      const { error } = await signUp(email, password, userData);
       
       if (error) throw error;
       
-      toast.success('Cadastro realizado com sucesso', {
-        description: 'Por favor, verifique seu e-mail para confirmar sua conta.',
-      });
-      
       setActiveTab('login');
     } catch (err: any) {
-      console.error('Erro ao fazer cadastro:', err);
-      setError(err.message || 'Erro ao criar conta. Tente novamente.');
-      toast.error('Erro ao fazer cadastro', {
-        description: err.message,
-      });
+      console.error('Error registering:', err);
+      setError(err.message || 'Error creating account. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -130,19 +130,25 @@ const Auth = () => {
           <Card className="w-full max-w-md shadow-lg animate-fade-in">
             <CardHeader className="space-y-1 text-center">
               <CardTitle className="text-2xl font-bold">
-                {activeTab === 'login' ? 'Bem-vindo de volta' : 'Criar uma conta'}
+                {activeTab === 'login' ? 'Welcome back' : 'Create an account'}
               </CardTitle>
               <CardDescription>
                 {activeTab === 'login' 
-                  ? 'Digite suas credenciais para acessar sua conta' 
-                  : 'Preencha o formulário abaixo para criar sua conta'}
+                  ? 'Enter your credentials to access your account' 
+                  : 'Fill out the form below to create your account'}
               </CardDescription>
             </CardHeader>
+            
+            {error && (
+              <div className="mx-6 mb-4 px-4 py-3 rounded-md bg-red-50 text-red-600 text-sm">
+                {error}
+              </div>
+            )}
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-2 w-full">
                 <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Cadastro</TabsTrigger>
+                <TabsTrigger value="register">Register</TabsTrigger>
               </TabsList>
               
               <TabsContent value="login">
@@ -150,19 +156,19 @@ const Auth = () => {
                   <CardContent className="space-y-4 pt-6">
                     <div className="space-y-2">
                       <label htmlFor="account-type" className="text-sm font-medium">
-                        Tipo de Conta
+                        Account Type
                       </label>
                       <Select
                         value={accountType}
                         onValueChange={setAccountType}
                       >
                         <SelectTrigger id="account-type">
-                          <SelectValue placeholder="Selecione o tipo de conta" />
+                          <SelectValue placeholder="Select account type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="company">Empresa de Transporte</SelectItem>
-                          <SelectItem value="driver">Motorista</SelectItem>
-                          <SelectItem value="admin">Administrador</SelectItem>
+                          <SelectItem value="company">Transport Company</SelectItem>
+                          <SelectItem value="driver">Driver</SelectItem>
+                          <SelectItem value="admin">Administrator</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -171,16 +177,16 @@ const Auth = () => {
                       <label htmlFor="email" className="text-sm font-medium">
                         Email
                       </label>
-                      <Input id="email" type="email" placeholder="nome@exemplo.com" required />
+                      <Input id="email" type="email" placeholder="name@example.com" required />
                     </div>
                     
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label htmlFor="password" className="text-sm font-medium">
-                          Senha
+                          Password
                         </label>
                         <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                          Esqueceu a senha?
+                          Forgot password?
                         </Link>
                       </div>
                       <Input id="password" type="password" required />
@@ -188,18 +194,25 @@ const Auth = () => {
                   </CardContent>
                   
                   <CardFooter className="flex flex-col space-y-4">
-                    <Button type="submit" className="w-full rounded-full">
-                      Entrar
+                    <Button type="submit" className="w-full rounded-full" disabled={loading}>
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Signing in...
+                        </>
+                      ) : (
+                        'Sign In'
+                      )}
                     </Button>
                     
                     <div className="text-sm text-center text-foreground/70">
-                      Não tem uma conta?{' '}
+                      Don't have an account?{' '}
                       <button
                         type="button"
                         onClick={() => setActiveTab('register')}
                         className="text-primary hover:underline"
                       >
-                        Cadastre-se
+                        Register
                       </button>
                     </div>
                   </CardFooter>
@@ -211,18 +224,18 @@ const Auth = () => {
                   <CardContent className="space-y-4 pt-6">
                     <div className="space-y-2">
                       <label htmlFor="reg-account-type" className="text-sm font-medium">
-                        Tipo de Conta
+                        Account Type
                       </label>
                       <Select
                         value={accountType}
                         onValueChange={setAccountType}
                       >
                         <SelectTrigger id="reg-account-type">
-                          <SelectValue placeholder="Selecione o tipo de conta" />
+                          <SelectValue placeholder="Select account type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="company">Empresa de Transporte</SelectItem>
-                          <SelectItem value="driver">Motorista</SelectItem>
+                          <SelectItem value="company">Transport Company</SelectItem>
+                          <SelectItem value="driver">Driver</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -230,25 +243,25 @@ const Auth = () => {
                     {accountType === 'company' && (
                       <div className="space-y-2">
                         <label htmlFor="company-name" className="text-sm font-medium">
-                          Nome da Empresa
+                          Company Name
                         </label>
-                        <Input id="company-name" placeholder="Nome da sua empresa" required />
+                        <Input id="company-name" placeholder="Your company name" required />
                       </div>
                     )}
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label htmlFor="first-name" className="text-sm font-medium">
-                          Nome
+                          First Name
                         </label>
-                        <Input id="first-name" placeholder="Seu nome" required />
+                        <Input id="first-name" placeholder="Your first name" required />
                       </div>
                       
                       <div className="space-y-2">
                         <label htmlFor="last-name" className="text-sm font-medium">
-                          Sobrenome
+                          Last Name
                         </label>
-                        <Input id="last-name" placeholder="Seu sobrenome" required />
+                        <Input id="last-name" placeholder="Your last name" required />
                       </div>
                     </div>
                     
@@ -256,44 +269,51 @@ const Auth = () => {
                       <label htmlFor="reg-email" className="text-sm font-medium">
                         Email
                       </label>
-                      <Input id="reg-email" type="email" placeholder="nome@exemplo.com" required />
+                      <Input id="reg-email" type="email" placeholder="name@example.com" required />
                     </div>
                     
                     <div className="space-y-2">
                       <label htmlFor="phone" className="text-sm font-medium">
-                        Telefone
+                        Phone
                       </label>
-                      <Input id="phone" placeholder="Seu número de telefone" required />
+                      <Input id="phone" placeholder="Your phone number" required />
                     </div>
                     
                     <div className="space-y-2">
                       <label htmlFor="reg-password" className="text-sm font-medium">
-                        Senha
+                        Password
                       </label>
                       <Input id="reg-password" type="password" required />
                     </div>
                     
                     <div className="space-y-2">
                       <label htmlFor="confirm-password" className="text-sm font-medium">
-                        Confirmar Senha
+                        Confirm Password
                       </label>
                       <Input id="confirm-password" type="password" required />
                     </div>
                   </CardContent>
                   
                   <CardFooter className="flex flex-col space-y-4">
-                    <Button type="submit" className="w-full rounded-full">
-                      Criar Conta
+                    <Button type="submit" className="w-full rounded-full" disabled={loading}>
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating account...
+                        </>
+                      ) : (
+                        'Create Account'
+                      )}
                     </Button>
                     
                     <div className="text-sm text-center text-foreground/70">
-                      Já tem uma conta?{' '}
+                      Already have an account?{' '}
                       <button
                         type="button"
                         onClick={() => setActiveTab('login')}
                         className="text-primary hover:underline"
                       >
-                        Entrar
+                        Sign In
                       </button>
                     </div>
                   </CardFooter>
