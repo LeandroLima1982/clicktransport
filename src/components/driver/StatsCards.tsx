@@ -7,31 +7,31 @@ const StatsCards: React.FC = () => {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Today's Assignments</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Atribuições de Hoje</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">3</div>
-          <p className="text-xs text-muted-foreground mt-1">1 completed, 2 pending</p>
+          <p className="text-xs text-muted-foreground mt-1">1 concluída, 2 pendentes</p>
         </CardContent>
       </Card>
       
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Total Trips</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Total de Viagens</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">128</div>
-          <p className="text-xs text-muted-foreground mt-1">12 this week</p>
+          <p className="text-xs text-muted-foreground mt-1">12 nesta semana</p>
         </CardContent>
       </Card>
       
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Rating</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Avaliação</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">4.8/5</div>
-          <p className="text-xs text-muted-foreground mt-1">Based on 56 reviews</p>
+          <p className="text-xs text-muted-foreground mt-1">Baseado em 56 avaliações</p>
         </CardContent>
       </Card>
     </div>

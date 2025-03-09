@@ -28,7 +28,7 @@ const DriverSidebar: React.FC = () => {
       
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -44,7 +44,7 @@ const DriverSidebar: React.FC = () => {
                 <SidebarMenuButton asChild>
                   <Link to="/driver/assignments">
                     <Clock className="h-5 w-5" />
-                    <span>Assignments</span>
+                    <span>Atribuições</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -53,7 +53,7 @@ const DriverSidebar: React.FC = () => {
                 <SidebarMenuButton asChild>
                   <Link to="/driver/schedule">
                     <Calendar className="h-5 w-5" />
-                    <span>Schedule</span>
+                    <span>Agenda</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -62,7 +62,7 @@ const DriverSidebar: React.FC = () => {
                 <SidebarMenuButton asChild>
                   <Link to="/driver/navigation">
                     <MapPin className="h-5 w-5" />
-                    <span>Navigation</span>
+                    <span>Navegação</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -71,14 +71,14 @@ const DriverSidebar: React.FC = () => {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
+          <SidebarGroupLabel>Conta</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link to="/driver/profile">
                     <User className="h-5 w-5" />
-                    <span>Profile</span>
+                    <span>Perfil</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -87,7 +87,7 @@ const DriverSidebar: React.FC = () => {
                 <SidebarMenuButton asChild>
                   <Link to="/driver/settings">
                     <Settings className="h-5 w-5" />
-                    <span>Settings</span>
+                    <span>Configurações</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -100,7 +100,7 @@ const DriverSidebar: React.FC = () => {
         <Link to="/" className="w-full">
           <Button variant="outline" className="w-full justify-start">
             <LogOut className="h-5 w-5 mr-2" />
-            <span>Logout</span>
+            <span>Sair</span>
           </Button>
         </Link>
       </SidebarFooter>

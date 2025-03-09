@@ -8,7 +8,7 @@ const CurrentAssignment: React.FC = () => {
   return (
     <div className="mb-8">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Current Assignment</h2>
+        <h2 className="text-xl font-semibold">Atribuição Atual</h2>
       </div>
       
       <Card className="overflow-hidden">
@@ -17,23 +17,23 @@ const CurrentAssignment: React.FC = () => {
             <div>
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Service ID</p>
+                  <p className="text-sm text-muted-foreground">ID do Serviço</p>
                   <p className="font-medium">#CT-1042</p>
                 </div>
                 
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Client</p>
+                  <p className="text-sm text-muted-foreground">Cliente</p>
                   <p className="font-medium">Sarah Johnson</p>
                 </div>
                 
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Service Type</p>
-                  <p className="font-medium">Corporate Transfer</p>
+                  <p className="text-sm text-muted-foreground">Tipo de Serviço</p>
+                  <p className="font-medium">Transfer Corporativo</p>
                 </div>
                 
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Date & Time</p>
-                  <p className="font-medium">May 15, 2023 • 09:30 AM</p>
+                  <p className="text-sm text-muted-foreground">Data e Hora</p>
+                  <p className="font-medium">15 de Maio, 2023 • 09:30</p>
                 </div>
               </div>
               
@@ -43,8 +43,8 @@ const CurrentAssignment: React.FC = () => {
                     <MapPin className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Pick-up Location</p>
-                    <p className="font-medium">123 Main Street, New York, NY</p>
+                    <p className="text-sm text-muted-foreground">Local de Embarque</p>
+                    <p className="font-medium">Rua Principal, 123, Rio de Janeiro</p>
                   </div>
                 </div>
                 
@@ -53,8 +53,8 @@ const CurrentAssignment: React.FC = () => {
                     <MapPin className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Destination</p>
-                    <p className="font-medium">JFK International Airport, Terminal 4</p>
+                    <p className="text-sm text-muted-foreground">Destino</p>
+                    <p className="font-medium">Aeroporto Internacional do Galeão, Terminal 2</p>
                   </div>
                 </div>
               </div>
@@ -62,39 +62,39 @@ const CurrentAssignment: React.FC = () => {
             
             <div className="space-y-6">
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                <h3 className="font-medium mb-2">Notes</h3>
-                <p className="text-sm">Client prefers minimal conversation and has two large suitcases. Please arrive 10 minutes early.</p>
+                <h3 className="font-medium mb-2">Observações</h3>
+                <p className="text-sm">Cliente prefere conversação mínima e tem duas malas grandes. Por favor, chegue 10 minutos antes.</p>
               </div>
               
               <div className="space-y-4">
-                <h3 className="font-medium">Update Status</h3>
+                <h3 className="font-medium">Atualizar Status</h3>
                 
                 <div className="grid grid-cols-2 gap-3">
                   <Button variant="outline" className="space-x-2">
                     <Clock className="h-4 w-4" />
-                    <span>Arrived at Pickup</span>
+                    <span>Chegou ao Local</span>
                   </Button>
                   <Button variant="outline" className="space-x-2">
                     <Car className="h-4 w-4" />
-                    <span>Started Trip</span>
+                    <span>Iniciou Viagem</span>
                   </Button>
                   <Button className="space-x-2 bg-green-600 hover:bg-green-700">
                     <CheckCircle className="h-4 w-4" />
-                    <span>Complete Trip</span>
+                    <span>Concluir Viagem</span>
                   </Button>
                   <Button variant="destructive" className="space-x-2">
                     <XCircle className="h-4 w-4" />
-                    <span>Issue/Cancel</span>
+                    <span>Problema/Cancelar</span>
                   </Button>
                 </div>
               </div>
               
               <div className="rounded-lg border p-4">
-                <h3 className="font-medium mb-2">Contact</h3>
+                <h3 className="font-medium mb-2">Contato</h3>
                 <div className="flex space-x-3">
-                  <Button variant="outline" size="sm">Call Client</Button>
-                  <Button variant="outline" size="sm">Message</Button>
-                  <Button variant="outline" size="sm">Support</Button>
+                  <Button variant="outline" size="sm">Ligar para Cliente</Button>
+                  <Button variant="outline" size="sm">Mensagem</Button>
+                  <Button variant="outline" size="sm">Suporte</Button>
                 </div>
               </div>
             </div>

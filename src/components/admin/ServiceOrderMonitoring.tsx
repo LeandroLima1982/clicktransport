@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/main';
 import { toast } from 'sonner';
 import { FileText, Search } from 'lucide-react';
@@ -108,7 +109,7 @@ const ServiceOrderMonitoring: React.FC = () => {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Não definido';
     try {
-      return format(new Date(dateString), 'dd/MM/yyyy HH:mm');
+      return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: ptBR });
     } catch (e) {
       return dateString;
     }

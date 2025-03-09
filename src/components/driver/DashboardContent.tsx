@@ -8,8 +8,8 @@ const DashboardContent: React.FC = () => {
   return (
     <main className="flex-1 p-6 bg-gray-50 overflow-auto">
       <div className="mb-8 space-y-2">
-        <h1 className="text-2xl font-bold">Welcome, John Driver</h1>
-        <p className="text-muted-foreground">Manage your schedule and service assignments</p>
+        <h1 className="text-2xl font-bold">Bem-vindo, João Motorista</h1>
+        <p className="text-muted-foreground">Gerencie sua agenda e atribuições de serviço</p>
       </div>
       
       <StatsCards />

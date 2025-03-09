@@ -18,10 +18,10 @@ const AdminDashboard: React.FC = () => {
   if (!user || userRole !== 'admin') {
     return (
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Access Denied</h1>
-        <p>You do not have permission to access this page.</p>
+        <h1 className="text-3xl font-bold mb-8">Acesso Negado</h1>
+        <p>Você não tem permissão para acessar esta página.</p>
         <Button asChild className="mt-4">
-          <Link to="/">Return to Home</Link>
+          <Link to="/">Retornar à Página Inicial</Link>
         </Button>
       </div>
     );
