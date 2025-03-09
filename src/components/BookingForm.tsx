@@ -127,7 +127,7 @@ const BookingForm: React.FC = () => {
                   onSelect={setReturnDate}
                   initialFocus
                   className={cn("p-3 pointer-events-auto")}
-                  disabled={(date) => date < (this.date || new Date())}
+                  disabled={(currentDate) => currentDate < (date || new Date())}
                 />
               </PopoverContent>
             </Popover>
