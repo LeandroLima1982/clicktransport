@@ -3,8 +3,13 @@ import React from 'react';
 import TransitionEffect from '@/components/TransitionEffect';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
-import Features from '@/components/Features';
+import Solutions from '@/components/Solutions';
+import TransportTypes from '@/components/TransportTypes';
+import ProcessSteps from '@/components/ProcessSteps';
+import Testimonials from '@/components/Testimonials';
+import FAQ from '@/components/FAQ';
 import ServiceForm from '@/components/ServiceForm';
+import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 
 const Index = () => {
@@ -13,8 +18,13 @@ const Index = () => {
       <Navbar />
       <div className="flex flex-col min-h-screen">
         <Hero />
-        <Features />
+        <Solutions />
+        <TransportTypes />
+        <ProcessSteps />
         <ServiceForm />
+        <Testimonials />
+        <FAQ />
+        <CTA />
         <Footer />
       </div>
     </TransitionEffect>

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Clock, MapPin, Users } from 'lucide-react';
 import { useServiceRequests } from '@/hooks/useServiceRequests';
 
 const ServiceForm: React.FC = () => {
@@ -59,52 +59,24 @@ const ServiceForm: React.FC = () => {
   };
 
   return (
-    <section className="py-24 bg-gray-50" id="request-service">
+    <section className="py-16 bg-white" id="request-service">
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <p className="inline-block px-3 py-1 text-sm font-medium text-primary bg-primary/10 rounded-full mb-4">
-              Book Your Transfer
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-8 text-center">
+            <span className="inline-block text-sm font-semibold text-primary mb-2">AGENDE AGORA</span>
+            <h2 className="section-title mb-6">Solicite Seu Transfer</h2>
+            <p className="text-foreground/70 max-w-2xl mx-auto">
+              Preencha o formulário abaixo para solicitar seu transfer. Uma de nossas empresas parceiras 
+              entrará em contato rapidamente com um orçamento.
             </p>
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Request a Service</h2>
-            <p className="text-lg text-foreground/70 mb-6">
-              Fill out the form below to request a transfer service. One of our verified transportation companies will contact you shortly with a quote.
-            </p>
-            
-            <div className="space-y-6">
-              <div className="flex items-center space-x-4">
-                <div className="bg-primary/10 rounded-full p-2 text-primary">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p>Verified transportation companies</p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="bg-primary/10 rounded-full p-2 text-primary">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p>Corporate and tourist services</p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="bg-primary/10 rounded-full p-2 text-primary">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p>Secure booking and payments</p>
-              </div>
-            </div>
           </div>
-          
-          <div className="glass-morphism rounded-2xl p-8">
+
+          <div className="bg-white rounded-lg p-6 shadow-md">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label htmlFor="name" className="text-sm font-medium">
-                    Nome Completo
+                  <label htmlFor="name" className="text-sm font-medium flex items-center">
+                    Nome Completo <span className="text-red-500 ml-1">*</span>
                   </label>
                   <Input
                     id="name"
@@ -112,12 +84,13 @@ const ServiceForm: React.FC = () => {
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="Digite seu nome completo"
+                    className="border-gray-300 focus:border-primary focus:ring-primary"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium">
-                    Email
+                  <label htmlFor="email" className="text-sm font-medium flex items-center">
+                    Email <span className="text-red-500 ml-1">*</span>
                   </label>
                   <Input
                     id="email"
@@ -126,6 +99,7 @@ const ServiceForm: React.FC = () => {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="Digite seu email"
+                    className="border-gray-300 focus:border-primary focus:ring-primary"
                     required
                   />
                 </div>
@@ -133,8 +107,8 @@ const ServiceForm: React.FC = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label htmlFor="phone" className="text-sm font-medium">
-                    Telefone
+                  <label htmlFor="phone" className="text-sm font-medium flex items-center">
+                    Telefone <span className="text-red-500 ml-1">*</span>
                   </label>
                   <Input
                     id="phone"
@@ -142,24 +116,27 @@ const ServiceForm: React.FC = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     placeholder="Digite seu telefone"
+                    className="border-gray-300 focus:border-primary focus:ring-primary"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="serviceType" className="text-sm font-medium">
-                    Tipo de Serviço
+                  <label htmlFor="serviceType" className="text-sm font-medium flex items-center">
+                    Tipo de Serviço <span className="text-red-500 ml-1">*</span>
                   </label>
                   <Select
                     onValueChange={(value) => setFormData(prev => ({ ...prev, serviceType: value }))}
                     value={formData.serviceType}
                   >
-                    <SelectTrigger id="serviceType">
+                    <SelectTrigger id="serviceType" className="border-gray-300 focus:border-primary focus:ring-primary">
                       <SelectValue placeholder="Selecione o tipo de serviço" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="corporate">Transfer Corporativo</SelectItem>
                       <SelectItem value="tourist">Transfer Turístico</SelectItem>
                       <SelectItem value="offshore">Transfer Offshore</SelectItem>
+                      <SelectItem value="airport">Transfer Aeroporto</SelectItem>
+                      <SelectItem value="executive">Transfer Executivo</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -167,8 +144,8 @@ const ServiceForm: React.FC = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label htmlFor="origin" className="text-sm font-medium">
-                    Local de Embarque
+                  <label htmlFor="origin" className="text-sm font-medium flex items-center">
+                    <MapPin className="w-4 h-4 mr-1" /> Local de Embarque <span className="text-red-500 ml-1">*</span>
                   </label>
                   <Input
                     id="origin"
@@ -176,12 +153,13 @@ const ServiceForm: React.FC = () => {
                     value={formData.origin}
                     onChange={handleChange}
                     placeholder="Digite o endereço de embarque"
+                    className="border-gray-300 focus:border-primary focus:ring-primary"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="destination" className="text-sm font-medium">
-                    Destino
+                  <label htmlFor="destination" className="text-sm font-medium flex items-center">
+                    <MapPin className="w-4 h-4 mr-1" /> Destino <span className="text-red-500 ml-1">*</span>
                   </label>
                   <Input
                     id="destination"
@@ -189,6 +167,7 @@ const ServiceForm: React.FC = () => {
                     value={formData.destination}
                     onChange={handleChange}
                     placeholder="Digite o endereço de destino"
+                    className="border-gray-300 focus:border-primary focus:ring-primary"
                     required
                   />
                 </div>
@@ -196,12 +175,14 @@ const ServiceForm: React.FC = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Data</label>
+                  <label className="text-sm font-medium flex items-center">
+                    <CalendarIcon className="w-4 h-4 mr-1" /> Data <span className="text-red-500 ml-1">*</span>
+                  </label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-full justify-start text-left font-normal"
+                        className="w-full justify-start text-left font-normal border-gray-300"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {date ? format(date, "dd/MM/yyyy") : <span>Selecione a data</span>}
@@ -218,8 +199,8 @@ const ServiceForm: React.FC = () => {
                   </Popover>
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="passengers" className="text-sm font-medium">
-                    Número de Passageiros
+                  <label htmlFor="passengers" className="text-sm font-medium flex items-center">
+                    <Users className="w-4 h-4 mr-1" /> Número de Passageiros <span className="text-red-500 ml-1">*</span>
                   </label>
                   <Input
                     id="passengers"
@@ -229,6 +210,7 @@ const ServiceForm: React.FC = () => {
                     value={formData.passengers}
                     onChange={handleChange}
                     placeholder="Digite o número de passageiros"
+                    className="border-gray-300 focus:border-primary focus:ring-primary"
                     required
                   />
                 </div>
@@ -245,16 +227,21 @@ const ServiceForm: React.FC = () => {
                   onChange={handleChange}
                   placeholder="Digite quaisquer pedidos especiais ou informações adicionais"
                   rows={4}
+                  className="border-gray-300 focus:border-primary focus:ring-primary"
                 />
               </div>
               
               <Button 
                 type="submit" 
-                className="w-full rounded-full py-6"
+                className="w-full rounded-md py-6 font-bold"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Enviando...' : 'Enviar Solicitação'}
               </Button>
+              
+              <p className="text-xs text-center text-foreground/60 mt-4">
+                * Ao enviar este formulário, você concorda com nossos termos e políticas de privacidade.
+              </p>
             </form>
           </div>
         </div>
