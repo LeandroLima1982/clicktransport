@@ -1,67 +1,119 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/main';
-import { toast } from 'sonner';
 
 export interface ServiceOrder {
   id: string;
+  company_id: string;
+  driver_id: string | null;
+  vehicle_id: string | null;
   origin: string;
   destination: string;
   pickup_date: string;
-  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+  delivery_date: string | null;
+  status: string;
   notes: string | null;
-  company_id: string;
+  created_at: string;
+  updated_at: string;
   company_name?: string;
-  driver_id: string | null;
 }
 
 export const useServiceOrders = (driverId: string | null) => {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch orders when component mounts or driverId changes
+  useEffect(() => {
+    if (driverId) {
+      fetchOrders();
+    } else {
+      // If we don't have a driverId yet, just fetch available orders
+      fetchAvailableOrders();
+    }
+  }, [driverId]);
+
   const fetchOrders = async () => {
-    if (!driverId) return;
-    
     setIsLoading(true);
     try {
-      const { data: assignedOrders, error: assignedError } = await supabase
+      // Fetch assigned orders (where driver_id is the current driver)
+      const { data: assignedData, error: assignedError } = await supabase
         .from('service_orders')
-        .select('*, companies(name)')
-        .eq('driver_id', driverId)
-        .in('status', ['assigned', 'in_progress'])
-        .order('pickup_date', { ascending: true });
+        .select(`
+          *,
+          companies (name)
+        `)
+        .eq('driver_id', driverId);
 
       if (assignedError) throw assignedError;
 
-      const { data: availableOrders, error: availableError } = await supabase
+      // Fetch available orders (where status is pending and driver_id is null)
+      const { data: availableData, error: availableError } = await supabase
         .from('service_orders')
-        .select('*, companies(name)')
-        .eq('status', 'pending')
+        .select(`
+          *,
+          companies (name)
+        `)
         .is('driver_id', null)
-        .order('pickup_date', { ascending: true });
+        .eq('status', 'pending');
 
       if (availableError) throw availableError;
 
-      const formattedAssigned = assignedOrders?.map((order: any) => ({
+      // Transform the data to match the format we need
+      const processedAssigned = assignedData ? assignedData.map(order => ({
         ...order,
-        company_name: order.companies?.name
-      })) || [];
+        company_name: order.companies ? order.companies.name : 'Desconhecida'
+      })) : [];
 
-      const formattedAvailable = availableOrders?.map((order: any) => ({
+      const processedAvailable = availableData ? availableData.map(order => ({
         ...order,
-        company_name: order.companies?.name
-      })) || [];
+        company_name: order.companies ? order.companies.name : 'Desconhecida'
+      })) : [];
 
-      setOrders([...formattedAssigned, ...formattedAvailable]);
+      // Combine both sets of orders
+      setOrders([...processedAssigned, ...processedAvailable]);
+
     } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast.error('Erro ao carregar ordens de serviço');
+      console.error('Erro ao buscar ordens de serviço:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const fetchAvailableOrders = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('service_orders')
+        .select(`
+          *,
+          companies (name)
+        `)
+        .is('driver_id', null)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+
+      // Transform the data
+      const processedData = data ? data.map(order => ({
+        ...order,
+        company_name: order.companies ? order.companies.name : 'Desconhecida'
+      })) : [];
+
+      setOrders(processedData);
+
+    } catch (error) {
+      console.error('Erro ao buscar ordens disponíveis:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Function to accept an order
   const handleAcceptOrder = async (orderId: string) => {
+    if (!driverId) {
+      console.error('ID do motorista não disponível');
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('service_orders')
@@ -73,24 +125,21 @@ export const useServiceOrders = (driverId: string | null) => {
 
       if (error) throw error;
 
-      toast.success('Ordem de serviço aceita com sucesso');
+      // Refresh orders
       fetchOrders();
     } catch (error) {
-      console.error('Error accepting order:', error);
-      toast.error('Erro ao aceitar ordem de serviço');
+      console.error('Erro ao aceitar ordem de serviço:', error);
     }
   };
 
+  // Function to reject an order
   const handleRejectOrder = async (orderId: string) => {
-    try {
-      toast.info('Ordem de serviço rejeitada');
-      fetchOrders();
-    } catch (error) {
-      console.error('Error rejecting order:', error);
-      toast.error('Erro ao rejeitar ordem de serviço');
-    }
+    // For now we'll just leave this as a placeholder
+    // In a real application, maybe we would mark it as rejected by this driver
+    console.log(`Ordem ${orderId} rejeitada`);
   };
 
+  // Function to update order status
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
       const { error } = await supabase
@@ -100,26 +149,18 @@ export const useServiceOrders = (driverId: string | null) => {
 
       if (error) throw error;
 
-      toast.success('Status atualizado com sucesso');
+      // Refresh orders
       fetchOrders();
     } catch (error) {
-      console.error('Error updating status:', error);
-      toast.error('Erro ao atualizar status');
+      console.error('Erro ao atualizar status da ordem:', error);
     }
   };
 
-  useEffect(() => {
-    if (driverId) {
-      fetchOrders();
-    }
-  }, [driverId]);
-
-  return { 
-    orders, 
-    isLoading, 
-    handleAcceptOrder, 
-    handleRejectOrder, 
-    handleUpdateStatus, 
-    fetchOrders 
+  return {
+    orders,
+    isLoading,
+    handleAcceptOrder,
+    handleRejectOrder,
+    handleUpdateStatus
   };
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,8 @@ const Auth = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('login');
   const [accountType, setAccountType] = useState('company');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -28,32 +29,156 @@ const Auth = () => {
     }
   }, [location]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
     
-    // This would normally authenticate with the backend
-    toast.success('Login realizado com sucesso');
+    const form = e.target as HTMLFormElement;
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     
-    // Redirect based on account type
-    if (accountType === 'company') {
-      navigate('/company/dashboard');
-    } else if (accountType === 'driver') {
-      navigate('/driver/dashboard');
-    } else if (accountType === 'admin') {
-      navigate('/admin/dashboard');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Login realizado com sucesso');
+      
+      // Redirect based on account type from profile data
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+      
+      if (profileData?.role === 'company') {
+        navigate('/company/dashboard');
+      } else if (profileData?.role === 'driver') {
+        navigate('/driver/dashboard');
+      } else if (profileData?.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        // Fallback to accountType if role not found
+        if (accountType === 'company') {
+          navigate('/company/dashboard');
+        } else if (accountType === 'driver') {
+          navigate('/driver/dashboard');
+        } else if (accountType === 'admin') {
+          navigate('/admin/dashboard');
+        }
+      }
+    } catch (err: any) {
+      console.error('Erro ao fazer login:', err);
+      setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
+      toast.error('Erro ao fazer login', {
+        description: err.message,
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
     
-    // This would normally register with the backend
-    toast.success('Cadastro realizado com sucesso', {
-      description: 'Por favor, verifique seu e-mail para confirmar sua conta.',
-    });
+    const form = e.target as HTMLFormElement;
+    const email = (form.elements.namedItem('reg-email') as HTMLInputElement).value;
+    const password = (form.elements.namedItem('reg-password') as HTMLInputElement).value;
+    const confirmPassword = (form.elements.namedItem('confirm-password') as HTMLInputElement).value;
+    const firstName = (form.elements.namedItem('first-name') as HTMLInputElement).value;
+    const lastName = (form.elements.namedItem('last-name') as HTMLInputElement).value;
+    const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
     
-    // Redirect to login
-    setActiveTab('login');
+    if (password !== confirmPassword) {
+      setError('As senhas não conferem');
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      // Register user with Supabase
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            full_name: `${firstName} ${lastName}`,
+            phone: phone,
+            role: accountType
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Create profile entry
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            full_name: `${firstName} ${lastName}`,
+            email: email,
+            phone: phone,
+            role: accountType
+          });
+        
+        if (profileError) throw profileError;
+        
+        // If company, also create company entry
+        if (accountType === 'company') {
+          const companyName = (form.elements.namedItem('company-name') as HTMLInputElement)?.value;
+          
+          if (companyName) {
+            const { error: companyError } = await supabase
+              .from('companies')
+              .insert({
+                name: companyName,
+                cnpj: '', // Temporary placeholder
+                user_id: data.user.id,
+                status: 'pending'
+              });
+            
+            if (companyError) throw companyError;
+          }
+        }
+        
+        // If driver, also create driver entry
+        if (accountType === 'driver') {
+          const { error: driverError } = await supabase
+            .from('drivers')
+            .insert({
+              name: `${firstName} ${lastName}`,
+              phone: phone,
+              user_id: data.user.id,
+              status: 'active'
+            });
+          
+          if (driverError) throw driverError;
+        }
+      }
+      
+      toast.success('Cadastro realizado com sucesso', {
+        description: 'Por favor, verifique seu e-mail para confirmar sua conta.',
+      });
+      
+      // Redirect to login
+      setActiveTab('login');
+    } catch (err: any) {
+      console.error('Erro ao fazer cadastro:', err);
+      setError(err.message || 'Erro ao criar conta. Tente novamente.');
+      toast.error('Erro ao fazer cadastro', {
+        description: err.message,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

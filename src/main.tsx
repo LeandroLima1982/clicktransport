@@ -4,16 +4,12 @@ import { createClient } from '@supabase/supabase-js';
 import App from './App.tsx';
 import './index.css';
 
-// Initialize Supabase client with fallback values for development
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
+// Initialize Supabase client with environment variables
+const supabaseUrl = 'https://ofctyafulvkwaldondsj.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mY3R5YWZ1bHZrd2FsZG9uZHNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE1NTc1NDksImV4cCI6MjA1NzEzMzU0OX0.tu9XJ07Y2HLDX5LKQDDL_Tjr_lPLcwypE0c0Zzrhggw';
 
 // Create the Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Log warning only if in development mode
-if (import.meta.env.DEV && (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY)) {
-  console.warn('Supabase credentials missing. Using placeholder values for development. Authentication and database features will not work properly until proper credentials are provided.');
-}
-
+// Initialize the application
 createRoot(document.getElementById("root")!).render(<App />);

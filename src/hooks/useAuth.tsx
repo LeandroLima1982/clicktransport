@@ -45,6 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, currentSession: Session | null) => {
+        console.log('Auth state changed:', event);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -66,66 +67,104 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Function to fetch user role from profiles table
   const fetchUserRole = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
-      .single();
-    
-    if (error) {
-      console.error('Error fetching user role:', error);
-      return;
-    }
-    
-    if (data?.role) {
-      setUserRole(data.role as 'admin' | 'company' | 'driver');
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Erro ao buscar papel do usuário:', error);
+        return;
+      }
+      
+      if (data?.role) {
+        setUserRole(data.role as 'admin' | 'company' | 'driver');
+      }
+    } catch (err) {
+      console.error('Erro ao buscar papel do usuário:', err);
     }
   };
 
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
-    const result = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: result.error };
+    try {
+      const result = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (result.error) {
+        console.error('Erro ao fazer login:', result.error);
+      } else {
+        console.log('Login bem-sucedido');
+      }
+      
+      return { error: result.error };
+    } catch (err) {
+      console.error('Erro ao fazer login:', err);
+      return { error: err as AuthError };
+    }
   };
 
   // Sign in with Google OAuth
   const signInWithGoogle = async () => {
-    const result = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    return { error: result.error };
+    try {
+      const result = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      
+      return { error: result.error };
+    } catch (err) {
+      console.error('Erro ao fazer login com Google:', err);
+      return { error: err as AuthError };
+    }
   };
 
   // Sign up with email and password
   const signUp = async (email: string, password: string) => {
-    const result = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    return { error: result.error };
+    try {
+      const result = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      
+      return { error: result.error };
+    } catch (err) {
+      console.error('Erro ao criar conta:', err);
+      return { error: err as AuthError };
+    }
   };
 
   // Sign out
   const signOut = async () => {
-    const result = await supabase.auth.signOut();
-    return { error: result.error };
+    try {
+      const result = await supabase.auth.signOut();
+      return { error: result.error };
+    } catch (err) {
+      console.error('Erro ao sair:', err);
+      return { error: err as AuthError };
+    }
   };
 
   // Reset password
   const resetPassword = async (email: string) => {
-    const result = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    });
-    return { error: result.error };
+    try {
+      const result = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      return { error: result.error };
+    } catch (err) {
+      console.error('Erro ao redefinir senha:', err);
+      return { error: err as AuthError };
+    }
   };
 
   const value = {
@@ -146,7 +185,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   return context;
 };
