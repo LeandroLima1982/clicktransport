@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +28,7 @@ interface ServiceOrder {
   notes: string | null;
   company_id: string;
   company_name?: string;
+  driver_id: string | null;
 }
 
 const ServiceOrderList: React.FC = () => {
@@ -69,7 +69,6 @@ const ServiceOrderList: React.FC = () => {
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      // Fetch orders assigned to this driver
       const { data: assignedOrders, error: assignedError } = await supabase
         .from('service_orders')
         .select('*, companies(name)')
@@ -79,8 +78,6 @@ const ServiceOrderList: React.FC = () => {
 
       if (assignedError) throw assignedError;
 
-      // Fetch pending orders that could be assigned to a driver
-      // In a real app, you might want to limit this to orders from companies the driver works with
       const { data: availableOrders, error: availableError } = await supabase
         .from('service_orders')
         .select('*, companies(name)')
@@ -90,7 +87,6 @@ const ServiceOrderList: React.FC = () => {
 
       if (availableError) throw availableError;
 
-      // Format the data to include company name
       const formattedAssigned = assignedOrders?.map((order: any) => ({
         ...order,
         company_name: order.companies?.name
@@ -101,7 +97,6 @@ const ServiceOrderList: React.FC = () => {
         company_name: order.companies?.name
       })) || [];
 
-      // Combine both sets of orders
       setOrders([...formattedAssigned, ...formattedAvailable]);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -133,11 +128,7 @@ const ServiceOrderList: React.FC = () => {
 
   const handleRejectOrder = async (orderId: string) => {
     try {
-      // In this implementation, rejecting just means we won't assign it to ourselves
-      // The order remains available for other drivers
       toast.info('Ordem de serviço rejeitada');
-      // We could also update the order status or log the rejection
-      // For now, just refresh the orders
       fetchOrders();
     } catch (error) {
       console.error('Error rejecting order:', error);
