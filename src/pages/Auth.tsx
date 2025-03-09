@@ -39,6 +39,7 @@ const Auth = () => {
 
     if (searchParams.get('client') === 'true') {
       setIsBusinessUser(false);
+      setAccountType('client');
     }
   }, [location, user]);
 
@@ -109,6 +110,8 @@ const Auth = () => {
     
     try {
       const finalAccountType = isBusinessUser ? accountType : 'client';
+      
+      console.log('Registering user with account type:', finalAccountType);
       
       const userData = {
         accountType: finalAccountType,
@@ -348,7 +351,7 @@ const Auth = () => {
                           Creating account...
                         </>
                       ) : (
-                        'Create Account'
+                        isBusinessUser ? 'Create Business Account' : 'Create Client Account'
                       )}
                     </Button>
                     

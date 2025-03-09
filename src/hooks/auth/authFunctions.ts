@@ -50,7 +50,10 @@ export const signInWithGoogle = async () => {
 export const signUp = async (email: string, password: string, userData?: any) => {
   try {
     console.log('Signing up user:', email);
-    const userRole = userData?.accountType || 'client'; // Default to client role
+    // Always default to client role if not specified - this prevents accidental registration as company/driver
+    const userRole = userData?.accountType || 'client'; 
+    
+    console.log('User role for registration:', userRole);
     
     const result = await supabase.auth.signUp({
       email,

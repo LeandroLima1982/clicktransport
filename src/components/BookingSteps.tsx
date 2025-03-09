@@ -75,12 +75,12 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginIsLoading, setLoginIsLoading] = useState(false);
-  const [accountType, setAccountType] = useState('client');
+  
+  // Always use client account type for booking registration
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [companyName, setCompanyName] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [registerIsLoading, setRegisterIsLoading] = useState(false);
@@ -186,12 +186,15 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     }
     
     try {
+      // Always register as client when from booking flow
       const userData = {
-        accountType: 'client',
+        accountType: 'client', // Force client role
         firstName,
         lastName,
         phone
       };
+      
+      console.log('Registering client account with data:', userData);
       
       const { error } = await signUp(registerEmail, registerPassword, userData);
       
@@ -245,12 +248,10 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setShowRegisterForm(false);
     setLoginEmail('');
     setLoginPassword('');
-    setAccountType('client');
     setFirstName('');
     setLastName('');
     setRegisterEmail('');
     setPhone('');
-    setCompanyName('');
     setRegisterPassword('');
     setConfirmPassword('');
     setRegisterError(null);
@@ -338,9 +339,9 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
           <UserPlus className="w-8 h-8" />
         </div>
-        <h3 className="text-xl font-bold">Crie sua conta</h3>
+        <h3 className="text-xl font-bold">Crie sua conta de cliente</h3>
         <p className="text-gray-500 mt-2">
-          Registre-se para finalizar sua reserva
+          Registre-se como cliente para finalizar sua reserva
         </p>
       </div>
       
@@ -429,7 +430,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
               Criando conta...
             </>
           ) : (
-            'Criar Conta'
+            'Criar Conta de Cliente'
           )}
         </Button>
         
