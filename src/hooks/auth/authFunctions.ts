@@ -50,6 +50,8 @@ export const signInWithGoogle = async () => {
 export const signUp = async (email: string, password: string, userData?: any) => {
   try {
     console.log('Signing up user:', email);
+    const userRole = userData?.accountType || 'client'; // Default to client role
+    
     const result = await supabase.auth.signUp({
       email,
       password,
@@ -57,7 +59,7 @@ export const signUp = async (email: string, password: string, userData?: any) =>
         emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           email: email,
-          role: userData?.accountType || 'driver',
+          role: userRole,
           full_name: userData?.firstName && userData?.lastName 
             ? `${userData.firstName} ${userData.lastName}` 
             : ''
@@ -75,7 +77,7 @@ export const signUp = async (email: string, password: string, userData?: any) =>
     console.log('Sign up result:', result);
     
     // Create company record if user is signing up as company
-    if (userData?.accountType === 'company' && result.data.user) {
+    if (userRole === 'company' && result.data.user) {
       const { error: companyError } = await supabase
         .from('companies')
         .insert({
@@ -89,7 +91,7 @@ export const signUp = async (email: string, password: string, userData?: any) =>
     }
     
     // Create driver record if user is signing up as driver
-    if (userData?.accountType === 'driver' && result.data.user) {
+    if (userRole === 'driver' && result.data.user) {
       const { error: driverError } = await supabase
         .from('drivers')
         .insert({
@@ -102,6 +104,8 @@ export const signUp = async (email: string, password: string, userData?: any) =>
         console.error('Error creating driver record:', driverError);
       }
     }
+    
+    // For client users, we don't need to create additional records
     
     toast.success('Account created successfully', {
       description: 'Please check your email to verify your account.'

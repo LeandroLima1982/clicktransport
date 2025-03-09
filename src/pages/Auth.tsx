@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,7 @@ const Auth = () => {
   const [accountType, setAccountType] = useState('company');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isBusinessUser, setIsBusinessUser] = useState(true);
 
   const { signIn, signUp, user } = useAuth();
 
@@ -32,18 +32,33 @@ const Auth = () => {
     }
     
     const type = searchParams.get('type');
-    if (type && ['company', 'driver', 'admin'].includes(type)) {
+    if (type && ['company', 'driver', 'admin', 'client'].includes(type)) {
       setAccountType(type);
+      setIsBusinessUser(type !== 'client');
+    }
+
+    if (searchParams.get('client') === 'true') {
+      setIsBusinessUser(false);
     }
   }, [location, user]);
 
   const redirectToDashboard = () => {
+    const searchParams = new URLSearchParams(location.search);
+    const returnTo = searchParams.get('return_to');
+    
+    if (returnTo) {
+      navigate(returnTo);
+      return;
+    }
+    
     if (accountType === 'company') {
       navigate('/company/dashboard');
     } else if (accountType === 'driver') {
       navigate('/driver/dashboard');
     } else if (accountType === 'admin') {
       navigate('/admin/dashboard');
+    } else {
+      navigate('/');
     }
   };
 
@@ -61,7 +76,6 @@ const Auth = () => {
       
       if (error) throw error;
       
-      // Redirect will happen via the useEffect hook when user state updates
     } catch (err: any) {
       console.error('Error signing in:', err);
       setError(err.message || 'Error signing in. Check your credentials.');
@@ -82,7 +96,8 @@ const Auth = () => {
     const firstName = (form.elements.namedItem('first-name') as HTMLInputElement).value;
     const lastName = (form.elements.namedItem('last-name') as HTMLInputElement).value;
     const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
-    const companyName = accountType === 'company' 
+    
+    const companyName = isBusinessUser && accountType === 'company'
       ? (form.elements.namedItem('company-name') as HTMLInputElement).value 
       : '';
     
@@ -93,8 +108,10 @@ const Auth = () => {
     }
     
     try {
+      const finalAccountType = isBusinessUser ? accountType : 'client';
+      
       const userData = {
-        accountType,
+        accountType: finalAccountType,
         firstName,
         lastName,
         phone,
@@ -114,6 +131,35 @@ const Auth = () => {
     }
   };
 
+  const toggleUserType = () => {
+    setIsBusinessUser(!isBusinessUser);
+    setAccountType(isBusinessUser ? 'client' : 'company');
+  };
+
+  const getTitle = () => {
+    if (activeTab === 'login') {
+      return 'Welcome back';
+    }
+    
+    if (isBusinessUser) {
+      return 'Create a Business Account';
+    }
+    
+    return 'Create a Client Account';
+  };
+
+  const getDescription = () => {
+    if (activeTab === 'login') {
+      return 'Enter your credentials to access your account';
+    }
+    
+    if (isBusinessUser) {
+      return 'Fill out the form below to create your business account';
+    }
+    
+    return 'Fill out the form below to create your client account';
+  };
+
   return (
     <TransitionEffect>
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -130,12 +176,10 @@ const Auth = () => {
           <Card className="w-full max-w-md shadow-lg animate-fade-in">
             <CardHeader className="space-y-1 text-center">
               <CardTitle className="text-2xl font-bold">
-                {activeTab === 'login' ? 'Welcome back' : 'Create an account'}
+                {getTitle()}
               </CardTitle>
               <CardDescription>
-                {activeTab === 'login' 
-                  ? 'Enter your credentials to access your account' 
-                  : 'Fill out the form below to create your account'}
+                {getDescription()}
               </CardDescription>
             </CardHeader>
             
@@ -154,25 +198,6 @@ const Auth = () => {
               <TabsContent value="login">
                 <form onSubmit={handleLogin}>
                   <CardContent className="space-y-4 pt-6">
-                    <div className="space-y-2">
-                      <label htmlFor="account-type" className="text-sm font-medium">
-                        Account Type
-                      </label>
-                      <Select
-                        value={accountType}
-                        onValueChange={setAccountType}
-                      >
-                        <SelectTrigger id="account-type">
-                          <SelectValue placeholder="Select account type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="company">Transport Company</SelectItem>
-                          <SelectItem value="driver">Driver</SelectItem>
-                          <SelectItem value="admin">Administrator</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
                     <div className="space-y-2">
                       <label htmlFor="email" className="text-sm font-medium">
                         Email
@@ -222,25 +247,46 @@ const Auth = () => {
               <TabsContent value="register">
                 <form onSubmit={handleRegister}>
                   <CardContent className="space-y-4 pt-6">
-                    <div className="space-y-2">
-                      <label htmlFor="reg-account-type" className="text-sm font-medium">
-                        Account Type
-                      </label>
-                      <Select
-                        value={accountType}
-                        onValueChange={setAccountType}
+                    <div className="flex justify-center mb-4">
+                      <Button 
+                        type="button" 
+                        variant={isBusinessUser ? "default" : "outline"}
+                        className="rounded-l-full"
+                        onClick={() => !isBusinessUser && toggleUserType()}
                       >
-                        <SelectTrigger id="reg-account-type">
-                          <SelectValue placeholder="Select account type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="company">Transport Company</SelectItem>
-                          <SelectItem value="driver">Driver</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        Business
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant={!isBusinessUser ? "default" : "outline"}
+                        className="rounded-r-full"
+                        onClick={() => isBusinessUser && toggleUserType()}
+                      >
+                        Client
+                      </Button>
                     </div>
                     
-                    {accountType === 'company' && (
+                    {isBusinessUser && (
+                      <div className="space-y-2">
+                        <label htmlFor="reg-account-type" className="text-sm font-medium">
+                          Account Type
+                        </label>
+                        <Select
+                          value={accountType}
+                          onValueChange={setAccountType}
+                        >
+                          <SelectTrigger id="reg-account-type">
+                            <SelectValue placeholder="Select account type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="company">Transport Company</SelectItem>
+                            <SelectItem value="driver">Driver</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    
+                    {isBusinessUser && accountType === 'company' && (
                       <div className="space-y-2">
                         <label htmlFor="company-name" className="text-sm font-medium">
                           Company Name

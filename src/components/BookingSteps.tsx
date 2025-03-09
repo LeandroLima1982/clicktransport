@@ -75,7 +75,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginIsLoading, setLoginIsLoading] = useState(false);
-  const [accountType, setAccountType] = useState('company');
+  const [accountType, setAccountType] = useState('client');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
@@ -185,19 +185,12 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       return;
     }
     
-    if (accountType === 'company' && !companyName) {
-      setRegisterError('Nome da empresa é obrigatório para conta empresarial');
-      setRegisterIsLoading(false);
-      return;
-    }
-    
     try {
       const userData = {
-        accountType,
+        accountType: 'client',
         firstName,
         lastName,
-        phone,
-        companyName
+        phone
       };
       
       const { error } = await signUp(registerEmail, registerPassword, userData);
@@ -252,7 +245,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setShowRegisterForm(false);
     setLoginEmail('');
     setLoginPassword('');
-    setAccountType('company');
+    setAccountType('client');
     setFirstName('');
     setLastName('');
     setRegisterEmail('');
@@ -358,35 +351,6 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       )}
       
       <form onSubmit={handleRegister} className="space-y-4 max-h-[55vh] overflow-y-auto pr-2">
-        <div className="space-y-2">
-          <Label htmlFor="account-type">Tipo de Conta</Label>
-          <Select
-            value={accountType}
-            onValueChange={setAccountType}
-          >
-            <SelectTrigger id="account-type">
-              <SelectValue placeholder="Selecione o tipo de conta" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="company">Empresa</SelectItem>
-              <SelectItem value="driver">Motorista</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {accountType === 'company' && (
-          <div className="space-y-2">
-            <Label htmlFor="company-name">Nome da Empresa</Label>
-            <Input
-              id="company-name"
-              placeholder="Nome da sua empresa"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              required
-            />
-          </div>
-        )}
-        
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="first-name">Nome</Label>
@@ -892,4 +856,3 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
 };
 
 export default BookingSteps;
-

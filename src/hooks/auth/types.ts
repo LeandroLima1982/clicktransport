@@ -5,7 +5,7 @@ import {
   AuthError
 } from '@supabase/supabase-js';
 
-export type UserRole = 'admin' | 'company' | 'driver' | null;
+export type UserRole = 'admin' | 'company' | 'driver' | 'client' | null;
 
 export type AuthContextType = {
   session: Session | null;
