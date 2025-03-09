@@ -4,10 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, ArrowRight, ArrowLeft, Car, Clock, MapPin, CreditCard, Users, Calendar, CheckCheck } from 'lucide-react';
+import { Input } from '@/components/ui/input'; 
+import { Label } from '@/components/ui/label';
+import { CheckCircle, ArrowRight, ArrowLeft, Car, Clock, MapPin, CreditCard, Users, Calendar, CheckCheck, LogIn } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 // Vehicle options for selection
 const vehicleOptions = [
@@ -68,6 +71,12 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingComplete, setBookingComplete] = useState(false);
   const [bookingReference, setBookingReference] = useState<string>('');
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginIsLoading, setLoginIsLoading] = useState(false);
+  
+  const { user, signIn } = useAuth();
   
   // Calculate estimated distance (for demo purposes)
   const estimatedDistance = 120; // km
@@ -109,13 +118,47 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
     } else {
-      handleSubmitBooking();
+      // If user is not authenticated, show login form
+      if (!user) {
+        setShowLoginForm(true);
+      } else {
+        handleSubmitBooking();
+      }
     }
   };
   
   const handlePrevious = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+    }
+  };
+  
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!loginEmail || !loginPassword) {
+      toast.error('Por favor, preencha todos os campos');
+      return;
+    }
+    
+    setLoginIsLoading(true);
+    
+    try {
+      const { error } = await signIn(loginEmail, loginPassword);
+      
+      if (error) {
+        toast.error('Erro ao fazer login: ' + error.message);
+      } else {
+        toast.success('Login realizado com sucesso!');
+        setShowLoginForm(false);
+        // Proceed with booking submission
+        handleSubmitBooking();
+      }
+    } catch (error) {
+      toast.error('Ocorreu um erro durante o login');
+      console.error('Login error:', error);
+    } finally {
+      setLoginIsLoading(false);
     }
   };
   
@@ -147,6 +190,9 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setSelectedPaymentMethod(null);
     setBookingComplete(false);
     setBookingReference('');
+    setShowLoginForm(false);
+    setLoginEmail('');
+    setLoginPassword('');
     onClose();
   };
 
@@ -161,10 +207,65 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   // Get selected vehicle details
   const selectedVehicleDetails = vehicleOptions.find(v => v.id === selectedVehicle);
   
+  // Login form component
+  const LoginForm = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-6">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
+          <LogIn className="w-8 h-8" />
+        </div>
+        <h3 className="text-xl font-bold">Faça login para continuar</h3>
+        <p className="text-gray-500 mt-2">
+          Para finalizar sua reserva, é necessário fazer login
+        </p>
+      </div>
+      
+      <form onSubmit={handleLogin} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="seu@email.com"
+            value={loginEmail}
+            onChange={(e) => setLoginEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Senha</Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="********"
+            value={loginPassword}
+            onChange={(e) => setLoginPassword(e.target.value)}
+            required
+          />
+        </div>
+        
+        <Button type="submit" className="w-full" disabled={loginIsLoading}>
+          {loginIsLoading ? 'Entrando...' : 'Entrar'}
+        </Button>
+        
+        <div className="text-center text-sm text-gray-500 mt-4">
+          <p>
+            Não tem uma conta?{' '}
+            <a href="/auth" className="text-primary hover:underline">
+              Registre-se
+            </a>
+          </p>
+        </div>
+      </form>
+    </div>
+  );
+  
   return (
     <Dialog open={isOpen} onOpenChange={handleCloseAndReset}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        {!bookingComplete ? (
+        {showLoginForm ? (
+          <LoginForm />
+        ) : !bookingComplete ? (
           <>
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold">Finalize sua reserva</DialogTitle>
