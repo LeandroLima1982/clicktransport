@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import DatabaseSetup from "./pages/admin/DatabaseSetup";
 import CompanyDashboard from "./pages/company/Dashboard";
 import DriverDashboard from "./pages/driver/Dashboard";
+import DriverPanel from "./pages/driver/Panel";
 import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/admin/database-setup" element={<DatabaseSetup />} />
             <Route path="/company/dashboard" element={<CompanyDashboard />} />
             <Route path="/driver/dashboard" element={<DriverDashboard />} />
+            <Route path="/driver/panel" element={<DriverPanel />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
