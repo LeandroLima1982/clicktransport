@@ -11,6 +11,7 @@ import { ptBR } from 'date-fns/locale';
 import { CalendarIcon, ArrowRight, MapPin, Calendar as CalendarIcon2, Clock, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import BookingSteps from './BookingSteps';
 
 const BookingForm: React.FC = () => {
   const [originValue, setOriginValue] = useState('');
@@ -19,18 +20,31 @@ const BookingForm: React.FC = () => {
   const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
   const [tripType, setTripType] = useState<'oneway' | 'roundtrip'>('oneway');
   const [passengers, setPassengers] = useState('1');
+  const [showBookingSteps, setShowBookingSteps] = useState(false);
   
   const handleBooking = () => {
-    console.log('Booking:', {
-      origin: originValue,
-      destination: destinationValue,
-      date,
-      returnDate,
-      tripType,
-      passengers
-    });
-    // In a real application, this would send the data to a backend service
-    alert('Sua solicitação foi recebida! Em breve entraremos em contato.');
+    if (!originValue) {
+      alert('Por favor, informe o local de origem.');
+      return;
+    }
+    
+    if (!destinationValue) {
+      alert('Por favor, informe o local de destino.');
+      return;
+    }
+    
+    if (!date) {
+      alert('Por favor, selecione a data da viagem.');
+      return;
+    }
+    
+    if (tripType === 'roundtrip' && !returnDate) {
+      alert('Por favor, selecione a data de retorno.');
+      return;
+    }
+    
+    // All validations passed, open booking steps
+    setShowBookingSteps(true);
   };
 
   return (
@@ -162,6 +176,19 @@ const BookingForm: React.FC = () => {
         </span>
         <span className="absolute inset-0 bg-primary scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></span>
       </Button>
+
+      <BookingSteps
+        bookingData={{
+          origin: originValue,
+          destination: destinationValue,
+          date,
+          returnDate,
+          tripType,
+          passengers
+        }}
+        isOpen={showBookingSteps}
+        onClose={() => setShowBookingSteps(false)}
+      />
     </div>
   );
 };
