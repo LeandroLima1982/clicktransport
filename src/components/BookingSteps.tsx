@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,13 +5,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input'; 
 import { Label } from '@/components/ui/label';
-import { CheckCircle, ArrowRight, ArrowLeft, Car, Clock, MapPin, CreditCard, Users, Calendar, CheckCheck, LogIn } from 'lucide-react';
+import { CheckCircle, ArrowRight, ArrowLeft, Car, Clock, MapPin, CreditCard, Users, Calendar, CheckCheck, LogIn, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 
-// Vehicle options for selection
 const vehicleOptions = [
   {
     id: 1,
@@ -43,7 +43,6 @@ const vehicleOptions = [
   },
 ];
 
-// Payment method options
 const paymentMethods = [
   { id: 'credit', name: 'Cartão de Crédito', icon: 'credit-card' },
   { id: 'pix', name: 'PIX', icon: 'qr-code' },
@@ -72,17 +71,26 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [bookingComplete, setBookingComplete] = useState(false);
   const [bookingReference, setBookingReference] = useState<string>('');
   const [showLoginForm, setShowLoginForm] = useState(false);
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginIsLoading, setLoginIsLoading] = useState(false);
-  
-  const { user, signIn } = useAuth();
-  
-  // Calculate estimated distance (for demo purposes)
-  const estimatedDistance = 120; // km
-  const estimatedTime = 95; // minutes
-  
-  // Calculate price based on selected vehicle and distance
+  const [accountType, setAccountType] = useState('company');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [registerIsLoading, setRegisterIsLoading] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
+
+  const { user, signIn, signUp } = useAuth();
+
+  const estimatedDistance = 120;
+  const estimatedTime = 95;
+
   const calculatePrice = () => {
     if (!selectedVehicle) return 0;
     const vehicle = vehicleOptions.find(v => v.id === selectedVehicle);
@@ -93,17 +101,17 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     
     return bookingData.tripType === 'roundtrip' ? totalPrice * 2 : totalPrice;
   };
-  
+
   const totalPrice = calculatePrice();
-  
+
   const handleVehicleSelect = (vehicleId: number) => {
     setSelectedVehicle(vehicleId);
   };
-  
+
   const handlePaymentMethodSelect = (methodId: string) => {
     setSelectedPaymentMethod(methodId);
   };
-  
+
   const handleNext = () => {
     if (currentStep === 1 && !selectedVehicle) {
       toast.error('Selecione um veículo para continuar');
@@ -118,7 +126,6 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
     } else {
-      // If user is not authenticated, show login form
       if (!user) {
         setShowLoginForm(true);
       } else {
@@ -126,13 +133,13 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       }
     }
   };
-  
+
   const handlePrevious = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
   };
-  
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -151,7 +158,6 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       } else {
         toast.success('Login realizado com sucesso!');
         setShowLoginForm(false);
-        // Proceed with booking submission
         handleSubmitBooking();
       }
     } catch (error) {
@@ -161,16 +167,68 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       setLoginIsLoading(false);
     }
   };
-  
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegisterIsLoading(true);
+    setRegisterError(null);
+    
+    if (!registerEmail || !registerPassword || !firstName || !lastName) {
+      setRegisterError('Por favor, preencha todos os campos obrigatórios');
+      setRegisterIsLoading(false);
+      return;
+    }
+    
+    if (registerPassword !== confirmPassword) {
+      setRegisterError('As senhas não coincidem');
+      setRegisterIsLoading(false);
+      return;
+    }
+    
+    if (accountType === 'company' && !companyName) {
+      setRegisterError('Nome da empresa é obrigatório para conta empresarial');
+      setRegisterIsLoading(false);
+      return;
+    }
+    
+    try {
+      const userData = {
+        accountType,
+        firstName,
+        lastName,
+        phone,
+        companyName
+      };
+      
+      const { error } = await signUp(registerEmail, registerPassword, userData);
+      
+      if (error) {
+        setRegisterError(error.message);
+      } else {
+        toast.success('Cadastro realizado com sucesso!');
+        const { error: loginError } = await signIn(registerEmail, registerPassword);
+        
+        if (!loginError) {
+          setShowRegisterForm(false);
+          setShowLoginForm(false);
+          handleSubmitBooking();
+        } else {
+          toast.info('Por favor, faça login com suas credenciais');
+        }
+      }
+    } catch (error: any) {
+      setRegisterError(error.message || 'Erro ao criar conta');
+    } finally {
+      setRegisterIsLoading(false);
+    }
+  };
+
   const handleSubmitBooking = async () => {
     setIsSubmitting(true);
     
     try {
-      // In a real app, this would send data to a backend
-      // Simulate API call with setTimeout
       await new Promise((resolve) => setTimeout(resolve, 1500));
       
-      // Generate a random booking reference
       const reference = 'TRF-' + Math.floor(100000 + Math.random() * 900000);
       setBookingReference(reference);
       setBookingComplete(true);
@@ -183,7 +241,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       setIsSubmitting(false);
     }
   };
-  
+
   const handleCloseAndReset = () => {
     setCurrentStep(1);
     setSelectedVehicle(null);
@@ -191,23 +249,30 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setBookingComplete(false);
     setBookingReference('');
     setShowLoginForm(false);
+    setShowRegisterForm(false);
     setLoginEmail('');
     setLoginPassword('');
+    setAccountType('company');
+    setFirstName('');
+    setLastName('');
+    setRegisterEmail('');
+    setPhone('');
+    setCompanyName('');
+    setRegisterPassword('');
+    setConfirmPassword('');
+    setRegisterError(null);
     onClose();
   };
 
-  // Function to format currency to BRL
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
   };
-  
-  // Get selected vehicle details
+
   const selectedVehicleDetails = vehicleOptions.find(v => v.id === selectedVehicle);
-  
-  // Login form component
+
   const LoginForm = () => (
     <div className="space-y-6">
       <div className="text-center mb-6">
@@ -245,26 +310,191 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
         </div>
         
         <Button type="submit" className="w-full" disabled={loginIsLoading}>
-          {loginIsLoading ? 'Entrando...' : 'Entrar'}
+          {loginIsLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Entrando...
+            </>
+          ) : (
+            'Entrar'
+          )}
         </Button>
         
         <div className="text-center text-sm text-gray-500 mt-4">
           <p>
             Não tem uma conta?{' '}
-            <a href="/auth" className="text-primary hover:underline">
+            <button
+              type="button"
+              onClick={() => {
+                setShowLoginForm(false);
+                setShowRegisterForm(true);
+              }}
+              className="text-primary hover:underline"
+            >
               Registre-se
-            </a>
+            </button>
           </p>
         </div>
       </form>
     </div>
   );
-  
+
+  const RegisterForm = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-6">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
+          <UserPlus className="w-8 h-8" />
+        </div>
+        <h3 className="text-xl font-bold">Crie sua conta</h3>
+        <p className="text-gray-500 mt-2">
+          Registre-se para finalizar sua reserva
+        </p>
+      </div>
+      
+      {registerError && (
+        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+          {registerError}
+        </div>
+      )}
+      
+      <form onSubmit={handleRegister} className="space-y-4 max-h-[55vh] overflow-y-auto pr-2">
+        <div className="space-y-2">
+          <Label htmlFor="account-type">Tipo de Conta</Label>
+          <Select
+            value={accountType}
+            onValueChange={setAccountType}
+          >
+            <SelectTrigger id="account-type">
+              <SelectValue placeholder="Selecione o tipo de conta" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="company">Empresa</SelectItem>
+              <SelectItem value="driver">Motorista</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {accountType === 'company' && (
+          <div className="space-y-2">
+            <Label htmlFor="company-name">Nome da Empresa</Label>
+            <Input
+              id="company-name"
+              placeholder="Nome da sua empresa"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              required
+            />
+          </div>
+        )}
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="first-name">Nome</Label>
+            <Input
+              id="first-name"
+              placeholder="Seu nome"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="last-name">Sobrenome</Label>
+            <Input
+              id="last-name"
+              placeholder="Seu sobrenome"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="register-email">Email</Label>
+          <Input
+            id="register-email"
+            type="email"
+            placeholder="seu@email.com"
+            value={registerEmail}
+            onChange={(e) => setRegisterEmail(e.target.value)}
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="phone">Telefone</Label>
+          <Input
+            id="phone"
+            placeholder="Seu telefone"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="register-password">Senha</Label>
+          <Input
+            id="register-password"
+            type="password"
+            placeholder="********"
+            value={registerPassword}
+            onChange={(e) => setRegisterPassword(e.target.value)}
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="confirm-password">Confirmar Senha</Label>
+          <Input
+            id="confirm-password"
+            type="password"
+            placeholder="********"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+          />
+        </div>
+        
+        <Button type="submit" className="w-full" disabled={registerIsLoading}>
+          {registerIsLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Criando conta...
+            </>
+          ) : (
+            'Criar Conta'
+          )}
+        </Button>
+        
+        <div className="text-center text-sm text-gray-500 mt-4">
+          <p>
+            Já tem uma conta?{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setShowRegisterForm(false);
+                setShowLoginForm(true);
+              }}
+              className="text-primary hover:underline"
+            >
+              Faça login
+            </button>
+          </p>
+        </div>
+      </form>
+    </div>
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={handleCloseAndReset}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         {showLoginForm ? (
           <LoginForm />
+        ) : showRegisterForm ? (
+          <RegisterForm />
         ) : !bookingComplete ? (
           <>
             <DialogHeader>
@@ -276,7 +506,6 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
             </DialogHeader>
             
             <div className="mt-4">
-              {/* Step indicators */}
               <div className="flex justify-between mb-8">
                 {['Veículo', 'Detalhes', 'Pagamento', 'Confirmação'].map((step, index) => (
                   <div 
@@ -295,7 +524,6 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
                 ))}
               </div>
               
-              {/* Step content */}
               <div className="mb-8">
                 {currentStep === 1 && (
                   <div className="space-y-6">
@@ -579,7 +807,6 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
                 )}
               </div>
               
-              {/* Navigation buttons */}
               <div className="flex justify-between pt-4">
                 <Button
                   variant="outline"
@@ -665,3 +892,4 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
 };
 
 export default BookingSteps;
+
