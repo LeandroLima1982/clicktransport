@@ -4,6 +4,8 @@ import { Bell, User, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +17,13 @@ import { Link } from 'react-router-dom';
 const DriverHeader: React.FC = () => {
   const isMobile = useIsMobile();
   const [notifications, setNotifications] = useState(3);
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
   
   return (
     <header className="h-16 border-b bg-white flex items-center justify-between px-4 md:px-6 sticky top-0 z-10 shadow-sm transition-all duration-300 hover-card">
@@ -44,8 +53,8 @@ const DriverHeader: React.FC = () => {
             <DropdownMenuItem asChild>
               <Link to="/driver/settings" className="w-full">Configurações</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/" className="w-full">Sair</Link>
+            <DropdownMenuItem onClick={handleSignOut}>
+              Sair
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

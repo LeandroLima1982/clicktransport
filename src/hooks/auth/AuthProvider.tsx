@@ -5,6 +5,7 @@ import { supabase } from '../../main';
 import { AuthContextType, UserRole } from './types';
 import { signIn, signInWithGoogle, signUp, signOut, resetPassword } from './authFunctions';
 import { fetchUserRole } from './userProfile';
+import { toast } from 'sonner';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -23,7 +24,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Fetch user role from profiles table if user exists
       if (session?.user) {
-        fetchUserRole(session.user.id).then(role => setUserRole(role));
+        fetchUserRole(session.user.id).then(role => {
+          console.log('User role fetched:', role);
+          setUserRole(role);
+        });
       }
       
       setIsLoading(false);
@@ -39,9 +43,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Update user role when auth state changes
         if (currentSession?.user) {
           const role = await fetchUserRole(currentSession.user.id);
+          console.log('User role updated on auth change:', role);
           setUserRole(role);
+          
+          if (event === 'SIGNED_IN') {
+            toast.success('Login realizado com sucesso!');
+          }
         } else {
           setUserRole(null);
+          
+          if (event === 'SIGNED_OUT') {
+            toast.success('Logout realizado com sucesso!');
+          }
         }
         
         setIsLoading(false);
@@ -53,6 +66,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
+  // Enhanced signOut function that clears user state
+  const handleSignOut = async () => {
+    const result = await signOut();
+    
+    if (!result.error) {
+      // Clear local state
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+    }
+    
+    return result;
+  };
+
   const value = {
     session,
     user,
@@ -60,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signIn,
     signInWithGoogle,
     signUp,
-    signOut,
+    signOut: handleSignOut,
     resetPassword,
     userRole,
   };

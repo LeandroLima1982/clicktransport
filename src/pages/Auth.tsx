@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ const Auth = () => {
   const [error, setError] = useState<string | null>(null);
   const [isBusinessUser, setIsBusinessUser] = useState(true);
 
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, userRole } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -41,24 +42,30 @@ const Auth = () => {
       setIsBusinessUser(false);
       setAccountType('client');
     }
-  }, [location, user]);
+  }, [location, user, userRole]);
 
   const redirectToDashboard = () => {
     const searchParams = new URLSearchParams(location.search);
     const returnTo = searchParams.get('return_to');
+    
+    console.log('Redirecting user with role:', userRole);
     
     if (returnTo) {
       navigate(returnTo);
       return;
     }
     
-    if (accountType === 'company') {
+    // Redirect based on user role
+    if (userRole === 'company') {
       navigate('/company/dashboard');
-    } else if (accountType === 'driver') {
+    } else if (userRole === 'driver') {
       navigate('/driver/dashboard');
-    } else if (accountType === 'admin') {
+    } else if (userRole === 'admin') {
       navigate('/admin/dashboard');
+    } else if (userRole === 'client') {
+      navigate('/'); // Clients are redirected to homepage for now
     } else {
+      // Default fallback if role is not recognized
       navigate('/');
     }
   };
@@ -125,6 +132,7 @@ const Auth = () => {
       
       if (error) throw error;
       
+      toast.success('Conta criada com sucesso! Verifique seu email para ativar sua conta.');
       setActiveTab('login');
     } catch (err: any) {
       console.error('Error registering:', err);

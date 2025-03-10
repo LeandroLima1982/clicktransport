@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Car, Menu, X, ChevronDown } from 'lucide-react';
+import { Car, Menu, X, ChevronDown, LogOut, User } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/hooks/useAuth';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,13 @@ const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { user, userRole, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,6 +37,55 @@ const Navbar: React.FC = () => {
       document.removeEventListener('scroll', handleScroll);
     };
   }, [scrolled]);
+
+  const renderAuthButtons = () => {
+    if (user) {
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="rounded-full px-4 btn-hover-slide flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <span className="hidden md:inline">{user.email?.split('@')[0]}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {userRole === 'client' && (
+              <DropdownMenuItem asChild>
+                <Link to="/bookings" className="w-full">Minhas Reservas</Link>
+              </DropdownMenuItem>
+            )}
+            {userRole === 'company' && (
+              <DropdownMenuItem asChild>
+                <Link to="/company/dashboard" className="w-full">Painel da Empresa</Link>
+              </DropdownMenuItem>
+            )}
+            {userRole === 'driver' && (
+              <DropdownMenuItem asChild>
+                <Link to="/driver/dashboard" className="w-full">Painel do Motorista</Link>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    }
+
+    return (
+      <>
+        <Link to="/auth">
+          <Button variant="outline" className="rounded-full px-6 btn-hover-slide">
+            Entrar
+          </Button>
+        </Link>
+        <Link to="/auth?register=true">
+          <Button className="rounded-full px-6 btn-hover-slide">Cadastrar</Button>
+        </Link>
+      </>
+    );
+  };
 
   return (
     <header 
@@ -71,14 +128,7 @@ const Navbar: React.FC = () => {
           </nav>
 
           <div className="hidden md:flex items-center space-x-4 animate-fade-in" style={{animationDelay: '0.2s'}}>
-            <Link to="/auth">
-              <Button variant="outline" className="rounded-full px-6 btn-hover-slide">
-                Entrar
-              </Button>
-            </Link>
-            <Link to="/auth?register=true">
-              <Button className="rounded-full px-6 btn-hover-slide">Cadastrar</Button>
-            </Link>
+            {renderAuthButtons()}
           </div>
 
           {/* Mobile menu button */}
@@ -128,14 +178,55 @@ const Navbar: React.FC = () => {
               Contato
             </Link>
             <div className="flex flex-col space-y-2 pt-2">
-              <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="outline" className="w-full rounded-full">
-                  Entrar
-                </Button>
-              </Link>
-              <Link to="/auth?register=true" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full rounded-full">Cadastrar</Button>
-              </Link>
+              {user ? (
+                <>
+                  {userRole === 'client' && (
+                    <Link to="/bookings" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full text-left justify-start rounded-full">
+                        <User className="h-4 w-4 mr-2" />
+                        Minhas Reservas
+                      </Button>
+                    </Link>
+                  )}
+                  {userRole === 'company' && (
+                    <Link to="/company/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full text-left justify-start rounded-full">
+                        <User className="h-4 w-4 mr-2" />
+                        Painel da Empresa
+                      </Button>
+                    </Link>
+                  )}
+                  {userRole === 'driver' && (
+                    <Link to="/driver/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full text-left justify-start rounded-full">
+                        <User className="h-4 w-4 mr-2" />
+                        Painel do Motorista
+                      </Button>
+                    </Link>
+                  )}
+                  <Button 
+                    onClick={() => {
+                      handleSignOut();
+                      setMobileMenuOpen(false);
+                    }} 
+                    className="w-full rounded-full"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sair
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full rounded-full">
+                      Entrar
+                    </Button>
+                  </Link>
+                  <Link to="/auth?register=true" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="w-full rounded-full">Cadastrar</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
         </div>

@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Car, Calendar, Clock, MapPin, Settings, LogOut, User, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +18,14 @@ import {
 } from '@/components/ui/sidebar';
 
 const DriverSidebar: React.FC = () => {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+  
   return (
     <Sidebar>
       <SidebarHeader>
@@ -97,12 +106,10 @@ const DriverSidebar: React.FC = () => {
       </SidebarContent>
       
       <SidebarFooter>
-        <Link to="/" className="w-full">
-          <Button variant="outline" className="w-full justify-start">
-            <LogOut className="h-5 w-5 mr-2" />
-            <span>Sair</span>
-          </Button>
-        </Link>
+        <Button variant="outline" className="w-full justify-start" onClick={handleSignOut}>
+          <LogOut className="h-5 w-5 mr-2" />
+          <span>Sair</span>
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );
