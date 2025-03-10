@@ -1,11 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TabsContent } from '@/components/ui/tabs';
 import { CardContent, CardFooter } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface LoginFormProps {
   handleLogin: (e: React.FormEvent) => Promise<void>;
@@ -18,15 +20,52 @@ const LoginForm: React.FC<LoginFormProps> = ({
   loading, 
   setActiveTab 
 }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { signIn } = useAuth();
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      // Use the parent handleLogin if provided, otherwise use local logic
+      if (handleLogin) {
+        await handleLogin(e);
+      } else {
+        if (!email || !password) {
+          toast.error('Please enter both email and password');
+          return;
+        }
+        
+        const { error } = await signIn(email, password);
+        if (error) {
+          toast.error('Login failed', { description: error.message });
+        } else {
+          toast.success('Login successful!');
+        }
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('An unexpected error occurred');
+    }
+  };
+  
   return (
     <TabsContent value="login">
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4 pt-6">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
               Email
             </label>
-            <Input id="email" type="email" placeholder="name@example.com" required />
+            <Input 
+              id="email" 
+              type="email" 
+              placeholder="name@example.com" 
+              required 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           
           <div className="space-y-2">
@@ -38,7 +77,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 Forgot password?
               </Link>
             </div>
-            <Input id="password" type="password" required />
+            <Input 
+              id="password" 
+              type="password" 
+              required 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
         </CardContent>
         
