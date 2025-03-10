@@ -30,7 +30,7 @@ const Index = () => {
   return (
     <TransitionEffect>
       <Navbar />
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen w-full max-w-none">
         <Hero />
         <Solutions />
         <TransportTypes />

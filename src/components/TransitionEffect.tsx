@@ -59,7 +59,7 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
 
   return (
     <div
-      className={`transition-all ease-out ${getTransitionStyles()} ${getMobileClass()}`}
+      className={`transition-all ease-out w-full max-w-none ${getTransitionStyles()} ${getMobileClass()}`}
       style={{ 
         transitionDuration: `${duration}ms`, 
         transitionDelay: `${delay}ms` 
