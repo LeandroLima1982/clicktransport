@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -342,7 +341,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
               </div>
               
               <div className="space-y-1">
-                <Label htmlFor="pickup_date">Data de Coleta *</Label>
+                <Label htmlFor="pickup_date">Data/Hora Saída *</Label>
                 <Input
                   id="pickup_date"
                   name="pickup_date"
@@ -354,7 +353,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
               </div>
               
               <div className="space-y-1">
-                <Label htmlFor="delivery_date">Data de Entrega (Estimada)</Label>
+                <Label htmlFor="delivery_date">Data/Hora (Estimativa)</Label>
                 <Input
                   id="delivery_date"
                   name="delivery_date"
@@ -458,7 +457,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Origem/Destino</TableHead>
-                    <TableHead>Data de Coleta</TableHead>
+                    <TableHead>Data de Saída</TableHead>
                     <TableHead>Motorista</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Ações</TableHead>
