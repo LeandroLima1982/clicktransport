@@ -6,6 +6,7 @@ import { MapPin, CheckCircle, XCircle, Car } from 'lucide-react';
 import { formatDate, getStatusBadge } from './utils/formatters';
 import OrderDetailSheet from './OrderDetailSheet';
 import { ServiceOrder } from './hooks/useServiceOrders';
+import { toast } from 'sonner';
 
 interface OrderCardProps {
   order: ServiceOrder;
@@ -27,6 +28,45 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const isPending = order.status === 'pending' && !order.driver_id;
   const isAssigned = order.status === 'assigned' && order.driver_id === driverId;
   const isInProgress = order.status === 'in_progress' && order.driver_id === driverId;
+
+  const onAcceptOrder = async () => {
+    if (handleAcceptOrder) {
+      try {
+        await handleAcceptOrder(order.id);
+        toast.success('Você aceitou esta corrida!');
+      } catch (error) {
+        console.error('Erro ao aceitar corrida:', error);
+        toast.error('Não foi possível aceitar esta corrida');
+      }
+    }
+  };
+
+  const onRejectOrder = async () => {
+    if (handleRejectOrder) {
+      try {
+        await handleRejectOrder(order.id);
+        toast.success('Corrida rejeitada');
+      } catch (error) {
+        console.error('Erro ao rejeitar corrida:', error);
+        toast.error('Não foi possível rejeitar esta corrida');
+      }
+    }
+  };
+
+  const onUpdateStatus = async (newStatus: string) => {
+    try {
+      await handleUpdateStatus(order.id, newStatus);
+      const statusMessages = {
+        'in_progress': 'Corrida iniciada!',
+        'completed': 'Corrida finalizada com sucesso!',
+        'cancelled': 'Corrida cancelada'
+      };
+      toast.success(statusMessages[newStatus as keyof typeof statusMessages] || 'Status atualizado');
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      toast.error('Não foi possível atualizar o status');
+    }
+  };
 
   return (
     <Card key={order.id} className="overflow-hidden">
@@ -68,7 +108,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   <>
                     <Button 
                       className="w-full" 
-                      onClick={() => handleAcceptOrder(order.id)}
+                      onClick={onAcceptOrder}
                     >
                       <CheckCircle className="mr-2 h-4 w-4" />
                       Aceitar Corrida
@@ -77,7 +117,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     <Button 
                       variant="outline" 
                       className="w-full"
-                      onClick={() => handleRejectOrder(order.id)}
+                      onClick={onRejectOrder}
                     >
                       <XCircle className="mr-2 h-4 w-4" />
                       Rejeitar
@@ -88,7 +128,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 {isAssigned && (
                   <Button 
                     className="w-full" 
-                    onClick={() => handleUpdateStatus(order.id, 'in_progress')}
+                    onClick={() => onUpdateStatus('in_progress')}
                   >
                     <Car className="mr-2 h-4 w-4" />
                     Iniciar Corrida
@@ -99,7 +139,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   <Button 
                     className="w-full" 
                     variant="default" 
-                    onClick={() => handleUpdateStatus(order.id, 'completed')}
+                    onClick={() => onUpdateStatus('completed')}
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Finalizar Corrida

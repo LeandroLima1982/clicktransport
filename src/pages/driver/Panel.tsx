@@ -1,14 +1,9 @@
 
 import React from 'react';
-import DriverPanel from '@/components/driver/DriverPanel';
-import TransitionEffect from '@/components/TransitionEffect';
+import DriverDashboard from './Dashboard';
 
 const DriverPanelPage: React.FC = () => {
-  return (
-    <TransitionEffect>
-      <DriverPanel />
-    </TransitionEffect>
-  );
+  return <DriverDashboard />;
 };
 
 export default DriverPanelPage;

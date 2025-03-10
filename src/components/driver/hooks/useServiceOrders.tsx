@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/main';
+import { toast } from 'sonner';
 
 export interface ServiceOrder {
   id: string;
@@ -20,6 +22,34 @@ export interface ServiceOrder {
 export const useServiceOrders = (driverId: string | null) => {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Set up realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('service_orders_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'service_orders'
+        },
+        (_) => {
+          // Refresh data when changes occur
+          if (driverId) {
+            fetchOrders();
+          } else {
+            fetchAvailableOrders();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [driverId]);
 
   // Fetch orders when component mounts or driverId changes
   useEffect(() => {
@@ -33,6 +63,7 @@ export const useServiceOrders = (driverId: string | null) => {
 
   const fetchOrders = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       // Fetch assigned orders (where driver_id is the current driver)
       const { data: assignedData, error: assignedError } = await supabase
@@ -71,8 +102,9 @@ export const useServiceOrders = (driverId: string | null) => {
       // Combine both sets of orders
       setOrders([...processedAssigned, ...processedAvailable]);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao buscar ordens de serviço:', error);
+      setError(error.message || 'Erro ao buscar ordens de serviço');
     } finally {
       setIsLoading(false);
     }
@@ -80,6 +112,7 @@ export const useServiceOrders = (driverId: string | null) => {
 
   const fetchAvailableOrders = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase
         .from('service_orders')
@@ -100,8 +133,9 @@ export const useServiceOrders = (driverId: string | null) => {
 
       setOrders(processedData);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao buscar ordens disponíveis:', error);
+      setError(error.message || 'Erro ao buscar ordens disponíveis');
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +144,9 @@ export const useServiceOrders = (driverId: string | null) => {
   // Function to accept an order
   const handleAcceptOrder = async (orderId: string) => {
     if (!driverId) {
-      console.error('ID do motorista não disponível');
+      const errorMsg = 'ID do motorista não disponível';
+      console.error(errorMsg);
+      toast.error(errorMsg);
       return;
     }
 
@@ -127,40 +163,73 @@ export const useServiceOrders = (driverId: string | null) => {
 
       // Refresh orders
       fetchOrders();
-    } catch (error) {
+      toast.success('Corrida aceita com sucesso!');
+    } catch (error: any) {
       console.error('Erro ao aceitar ordem de serviço:', error);
+      toast.error(error.message || 'Erro ao aceitar corrida');
+      throw error;
     }
   };
 
   // Function to reject an order
   const handleRejectOrder = async (orderId: string) => {
-    // For now we'll just leave this as a placeholder
-    // In a real application, maybe we would mark it as rejected by this driver
-    console.log(`Ordem ${orderId} rejeitada`);
+    // In a real app, we might want to track rejected orders
+    // For now, we'll just log it and not modify the database
+    try {
+      // You could implement a proper rejection system here
+      console.log(`Ordem ${orderId} rejeitada`);
+      // This is just a placeholder since we don't actually have a rejection status
+      // In a real app, you might want to store this in a separate table
+      toast.success('Corrida rejeitada');
+    } catch (error: any) {
+      console.error('Erro ao rejeitar ordem:', error);
+      toast.error(error.message || 'Erro ao rejeitar corrida');
+      throw error;
+    }
   };
 
   // Function to update order status
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
+      // For completed orders, add a delivery date
+      const updates: any = { status: newStatus };
+      
+      if (newStatus === 'completed') {
+        updates.delivery_date = new Date().toISOString();
+      }
+      
       const { error } = await supabase
         .from('service_orders')
-        .update({ status: newStatus })
+        .update(updates)
         .eq('id', orderId);
 
       if (error) throw error;
 
       // Refresh orders
       fetchOrders();
-    } catch (error) {
+      
+      const statusMessages: {[key: string]: string} = {
+        'assigned': 'Corrida atribuída com sucesso',
+        'in_progress': 'Corrida iniciada com sucesso',
+        'completed': 'Corrida finalizada com sucesso',
+        'cancelled': 'Corrida cancelada'
+      };
+      
+      toast.success(statusMessages[newStatus] || 'Status atualizado');
+    } catch (error: any) {
       console.error('Erro ao atualizar status da ordem:', error);
+      toast.error(error.message || 'Erro ao atualizar status');
+      throw error;
     }
   };
 
   return {
     orders,
     isLoading,
+    error,
     handleAcceptOrder,
     handleRejectOrder,
-    handleUpdateStatus
+    handleUpdateStatus,
+    refreshOrders: fetchOrders
   };
 };
