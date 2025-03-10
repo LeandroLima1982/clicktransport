@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { MAPBOX_TOKEN, isValidMapboxToken } from '@/utils/mapbox';
 import mapboxgl from 'mapbox-gl';
@@ -160,7 +161,7 @@ export const isWebGLSupported = (): boolean => {
 // Type declaration for Navigator with deviceMemory
 interface NavigatorWithMemory extends Navigator {
   deviceMemory?: number;
-  hardwareConcurrency?: number;
+  // Don't redefine hardwareConcurrency as optional since it's required in Navigator
 }
 
 // Check if the device has enough performance for interactive maps
@@ -176,8 +177,8 @@ export const hasAdequatePerformance = (): boolean => {
   // Check for memory constraints (only if the property exists)
   const lowMemory = typeof nav.deviceMemory !== 'undefined' && nav.deviceMemory < 4;
   
-  // Check processor cores if available
-  const lowCPU = typeof nav.hardwareConcurrency !== 'undefined' && nav.hardwareConcurrency < 4;
+  // Check processor cores if available - hardwareConcurrency is standard in Navigator
+  const lowCPU = navigator.hardwareConcurrency < 4;
   
   // For low-end devices, use static maps
   if (isMobile && (lowMemory || lowCPU)) {
