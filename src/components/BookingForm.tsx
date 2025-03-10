@@ -85,11 +85,13 @@ const BookingForm: React.FC = () => {
         </span>
       </Button>
 
-      <BookingSteps
-        bookingData={bookingData}
-        isOpen={showBookingSteps}
-        onClose={() => setShowBookingSteps(false)}
-      />
+      {bookingData && (
+        <BookingSteps
+          bookingData={bookingData}
+          isOpen={showBookingSteps}
+          onClose={() => setShowBookingSteps(false)}
+        />
+      )}
     </div>
   );
 };
