@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -183,11 +182,6 @@ const TripDetails: React.FC<TripDetailsProps> = ({
                 <div className="text-xs text-gray-500">
                   {bookingData.tripType === 'roundtrip' ? '(Inclui ida e volta)' : ''}
                 </div>
-                {!isCalculatingRoute && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    Taxa de R$ 2,49/km + taxa base do veículo
-                  </div>
-                )}
               </div>
             </div>
           </CardContent>

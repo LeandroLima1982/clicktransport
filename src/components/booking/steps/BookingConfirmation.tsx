@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -101,9 +100,6 @@ const BookingConfirmation: React.FC<BookingConfirmationProps> = ({
                 <div className="text-2xl font-bold text-primary">{formatCurrency(totalPrice)}</div>
                 <div className="text-sm text-gray-500">
                   {bookingData.tripType === 'roundtrip' ? 'Inclui ida e volta' : 'Somente ida'}
-                </div>
-                <div className="text-sm text-gray-500">
-                  Taxa de R$ 2,49/km + taxa base do veículo
                 </div>
               </div>
             </div>
