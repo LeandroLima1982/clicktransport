@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -49,6 +50,7 @@ const Auth = () => {
       return;
     }
     
+    // Always redirect company users to their dashboard, no matter what
     if (userRole === 'company') {
       navigate('/company/dashboard');
     } else if (userRole === 'driver') {

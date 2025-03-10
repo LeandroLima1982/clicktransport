@@ -1,4 +1,3 @@
-
 // Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
@@ -75,7 +74,7 @@ const ProtectedRoute = ({
   return <>{children}</>;
 };
 
-// Component to redirect based on user role
+// Component to redirect based on user role, with special handling for company users
 const RoleBasedRedirect = () => {
   const { user, userRole, isLoading } = useAuth();
   
@@ -101,13 +100,30 @@ const RoleBasedRedirect = () => {
   return <Navigate to="/" replace />;
 };
 
+// Special component to handle root path for company users
+const HomeRedirect = () => {
+  const { user, userRole, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+  }
+  
+  // If user is logged in and is a company, redirect to company dashboard
+  if (user && userRole === 'company') {
+    return <Navigate to="/company/dashboard" replace />;
+  }
+  
+  // Otherwise show the normal index page
+  return <Index />;
+};
+
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Index />} />
+          {/* Public routes with special handling for company users */}
+          <Route path="/" element={<HomeRedirect />} />
           <Route path="/auth" element={<Auth />} />
           
           {/* Dashboard redirect based on role */}

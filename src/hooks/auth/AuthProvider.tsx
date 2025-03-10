@@ -66,6 +66,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             console.log('Initial user role fetched:', role);
             setUserRole(role);
+            
+            // Redirect company users based on path
+            if (role === 'company' && window.location.pathname === '/') {
+              window.location.href = '/company/dashboard';
+            }
+            
           } catch (roleError) {
             console.error('Error fetching initial user role:', roleError);
             // Don't block the app on role fetch failures
@@ -132,6 +138,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.log('User role updated on auth change:', role);
             setUserRole(role);
             toast.success('Login realizado com sucesso!');
+            
+            // Redirect company users to dashboard after login
+            if (role === 'company' && window.location.pathname === '/') {
+              window.location.href = '/company/dashboard';
+            }
+            
           } catch (roleError) {
             console.error('Error fetching user role on auth change:', roleError);
             if (!mounted) return;
