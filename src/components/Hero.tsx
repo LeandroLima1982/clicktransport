@@ -6,7 +6,7 @@ import BookingForm from './BookingForm';
 
 const Hero: React.FC = () => {
   return (
-    <section className="relative min-h-screen flex items-center w-full">
+    <section className="relative min-h-[calc(100vh-80px)] flex items-center w-full">
       <div className="absolute inset-0 bg-[#F8D748] -z-10" />
       
       <div className="w-full py-[50px] md:py-[100px]">
@@ -32,7 +32,7 @@ const Hero: React.FC = () => {
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 h-[80px] bg-[#1F1F1F] -z-5"></div>
+      <div className="absolute bottom-0 left-0 right-0 h-[60px] bg-white -z-5"></div>
     </section>
   );
 };

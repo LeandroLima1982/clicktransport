@@ -21,18 +21,18 @@ const Index = () => {
   // Show a brief loading indicator only during initial authentication check
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#1F1F1F] text-white">
+      <div className="flex items-center justify-center h-screen text-primary">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F8D748]"></div>
         <div className="ml-3 text-lg font-medium">Carregando...</div>
       </div>
     );
   }
 
-  // App-like mobile container
+  // Responsive mobile view
   if (isMobile) {
     return (
       <TransitionEffect>
-        <div className="flex flex-col min-h-screen overflow-hidden bg-[#1F1F1F] text-white">
+        <div className="flex flex-col min-h-screen overflow-hidden">
           {/* Mobile app-like header with logo and menu */}
           <div className="app-header">
             <div className="app-logo">
@@ -60,32 +60,32 @@ const Index = () => {
             </div>
           </div>
           
-          {/* Unified scrollable content area with app-like styling */}
+          {/* Unified scrollable content area with flexible styling */}
           <div className="flex-1 overflow-auto pb-16">
             <Hero />
             
             <div className="container mx-auto px-4 py-6">
-              <h2 className="text-xl font-bold mb-4 text-white">Serviços</h2>
+              <h2 className="text-xl font-bold mb-4">Serviços</h2>
               <Solutions />
             </div>
 
             <div className="container mx-auto px-4 py-6">
-              <h2 className="text-xl font-bold mb-4 text-white">Nossos Veículos</h2>
+              <h2 className="text-xl font-bold mb-4">Nossos Veículos</h2>
               <TransportTypes />
             </div>
             
             <div className="container mx-auto px-4 py-6">
-              <h2 className="text-xl font-bold mb-4 text-white">Como Funciona</h2>
+              <h2 className="text-xl font-bold mb-4">Como Funciona</h2>
               <ProcessSteps />
             </div>
             
             <div className="container mx-auto px-4 py-6">
-              <h2 className="text-xl font-bold mb-4 text-white">Avaliações</h2>
+              <h2 className="text-xl font-bold mb-4">Avaliações</h2>
               <Testimonials />
             </div>
             
             <div className="container mx-auto px-4 py-6">
-              <h2 className="text-xl font-bold mb-4 text-white">Perguntas Frequentes</h2>
+              <h2 className="text-xl font-bold mb-4">Perguntas Frequentes</h2>
               <FAQ />
             </div>
             
@@ -129,11 +129,11 @@ const Index = () => {
     );
   }
 
-  // Desktop version
+  // Desktop version - without the black box constraints
   return (
     <TransitionEffect>
       <Navbar />
-      <div className="flex flex-col min-h-screen w-full max-w-none">
+      <div className="flex flex-col min-h-screen w-full">
         <Hero />
         <Solutions />
         <TransportTypes />
