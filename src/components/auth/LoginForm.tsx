@@ -40,8 +40,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const accountType = searchParams.get('type') || 'client';
   
   useEffect(() => {
-    // Only fetch companies when in driver login mode
-    if (accountType === 'driver') {
+    // Fetch companies when in driver login mode or company login mode
+    if (accountType === 'driver' || accountType === 'company') {
       loadCompanies();
     }
   }, [accountType]);
@@ -71,8 +71,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
         return;
       }
       
-      // If it's a driver login, require company selection
-      if (accountType === 'driver' && !selectedCompanyId) {
+      // If it's a driver login or company login, require company selection
+      if ((accountType === 'driver' || accountType === 'company') && !selectedCompanyId) {
         toast.error('Por favor, selecione uma empresa');
         return;
       }
@@ -81,14 +81,18 @@ const LoginForm: React.FC<LoginFormProps> = ({
       if (handleLogin) {
         await handleLogin(e);
       } else {
-        // For driver logins, pass the company ID for verification
-        const companyIdToUse = accountType === 'driver' ? selectedCompanyId : undefined;
+        // For driver logins or company logins, pass the company ID for verification
+        const companyIdToUse = (accountType === 'driver' || accountType === 'company') ? selectedCompanyId : undefined;
         
         const { error } = await signIn(email, password, companyIdToUse);
         if (error) {
           if (error.message === 'You are not registered as a driver for this company') {
             toast.error('Acesso negado', { 
               description: 'Você não está registrado como motorista para esta empresa'
+            });
+          } else if (error.message === 'You are not registered as a company admin') {
+            toast.error('Acesso negado', { 
+              description: 'Você não está registrado como administrador desta empresa'
             });
           } else {
             toast.error('Falha no login', { description: error.message });
@@ -107,8 +111,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
     <TabsContent value="login">
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4 pt-6">
-          {/* Show company selection only for driver logins */}
-          {accountType === 'driver' && (
+          {/* Show company selection for driver and company logins */}
+          {(accountType === 'driver' || accountType === 'company') && (
             <div className="space-y-2">
               <label htmlFor="company-select" className="text-sm font-medium flex items-center">
                 <Building2 className="h-4 w-4 mr-1" />
@@ -173,7 +177,11 @@ const LoginForm: React.FC<LoginFormProps> = ({
         </CardContent>
         
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full rounded-full" disabled={loading || (accountType === 'driver' && !selectedCompanyId)}>
+          <Button 
+            type="submit" 
+            className="w-full rounded-full" 
+            disabled={loading || ((accountType === 'driver' || accountType === 'company') && !selectedCompanyId)}
+          >
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
