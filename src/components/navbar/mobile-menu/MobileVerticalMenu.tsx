@@ -12,148 +12,27 @@ import {
   Book,
   Home,
   Settings,
-  Users,
-  MapPin,
-  Calendar
+  Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/hooks/auth/types';
 import { Separator } from '@/components/ui/separator';
-import { useIsMobile } from '@/hooks/use-mobile';
 
-interface MobileMenuProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface MobileVerticalMenuProps {
   user: any;
   userRole: UserRole;
   handleSignOut: () => Promise<void>;
   isAuthenticating: boolean;
+  onClose: () => void;
 }
 
-const MobileMenu: React.FC<MobileMenuProps> = ({
-  isOpen,
-  onClose,
+const MobileVerticalMenu: React.FC<MobileVerticalMenuProps> = ({
   user,
   userRole,
   handleSignOut,
-  isAuthenticating
+  isAuthenticating,
+  onClose
 }) => {
-  const isMobile = useIsMobile();
-  
-  if (!isOpen) return null;
-
-  // If on mobile, use bottom tab bar style nav
-  if (isMobile) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 animate-slide-up">
-        {user ? (
-          // Logged in experience - Role-specific tab bar
-          <div className="tab-bar">
-            {userRole === 'client' && (
-              <>
-                <Link to="/" className="tab-item" onClick={onClose}>
-                  <Home className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Início</span>
-                </Link>
-                <Link to="/bookings" className="tab-item" onClick={onClose}>
-                  <Book className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Reservas</span>
-                </Link>
-                <Link to="/#request-service" className="tab-item" onClick={onClose}>
-                  <Car className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Solicitar</span>
-                </Link>
-                <Link to="/profile" className="tab-item" onClick={onClose}>
-                  <User className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Perfil</span>
-                </Link>
-              </>
-            )}
-            
-            {userRole === 'driver' && (
-              <>
-                <Link to="/driver/dashboard" className="tab-item" onClick={onClose}>
-                  <LayoutDashboard className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Dashboard</span>
-                </Link>
-                <Link to="/driver/trips" className="tab-item" onClick={onClose}>
-                  <Car className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Viagens</span>
-                </Link>
-                <Link to="/driver/navigation" className="tab-item" onClick={onClose}>
-                  <MapPin className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Mapa</span>
-                </Link>
-                <Link to="/driver/profile" className="tab-item" onClick={onClose}>
-                  <User className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Perfil</span>
-                </Link>
-              </>
-            )}
-            
-            {userRole === 'company' && (
-              <>
-                <Link to="/company/dashboard" className="tab-item" onClick={onClose}>
-                  <LayoutDashboard className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Dashboard</span>
-                </Link>
-                <Link to="/company/drivers" className="tab-item" onClick={onClose}>
-                  <Users className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Motoristas</span>
-                </Link>
-                <Link to="/company/calendar" className="tab-item" onClick={onClose}>
-                  <Calendar className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Agenda</span>
-                </Link>
-                <Link to="/company/settings" className="tab-item" onClick={onClose}>
-                  <Settings className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Config</span>
-                </Link>
-              </>
-            )}
-            
-            {userRole === 'admin' && (
-              <>
-                <Link to="/admin/dashboard" className="tab-item" onClick={onClose}>
-                  <LayoutDashboard className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Dashboard</span>
-                </Link>
-                <Link to="/admin/database-setup" className="tab-item" onClick={onClose}>
-                  <Settings className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Database</span>
-                </Link>
-              </>
-            )}
-          </div>
-        ) : (
-          // Non-logged in experience
-          <div className="tab-bar">
-            <Link to="/" className="tab-item" onClick={onClose}>
-              <Home className="h-5 w-5 mb-1" />
-              <span className="text-xs">Início</span>
-            </Link>
-            <a href="#request-service" className="tab-item" onClick={onClose}>
-              <Car className="h-5 w-5 mb-1" />
-              <span className="text-xs">Solicitar</span>
-            </a>
-            <Link to="/auth?type=client" className="tab-item" onClick={onClose}>
-              <User className="h-5 w-5 mb-1" />
-              <span className="text-xs">Login</span>
-            </Link>
-            <Link to="/auth?register=true" className="tab-item" onClick={onClose}>
-              <LogOut className="h-5 w-5 mb-1" />
-              <span className="text-xs">Cadastro</span>
-            </Link>
-          </div>
-        )}
-        
-        {/* Add a swipe indicator for the drawer */}
-        <div className="swipe-indicator" onClick={onClose}></div>
-      </div>
-    );
-  }
-
-  // For larger screens, use the existing vertical menu
   return (
     <div className="md:hidden transition-all duration-300 ease-in-out overflow-hidden max-h-screen opacity-100">
       <div className="container mx-auto px-4 py-4 bg-white/95 backdrop-blur-md shadow-sm">
@@ -336,4 +215,4 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   );
 };
 
-export default MobileMenu;
+export default MobileVerticalMenu;
