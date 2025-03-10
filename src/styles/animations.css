@@ -209,6 +209,45 @@
   animation: bounce 1s ease infinite;
 }
 
+/* Liquid loading effect */
+@keyframes liquid-loading {
+  0% {
+    background-position: 0% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+.animate-liquid-loading {
+  background: linear-gradient(90deg, 
+    rgba(var(--primary-rgb), 0.1) 0%, 
+    rgba(var(--primary-rgb), 0.2) 20%, 
+    rgba(var(--primary-rgb), 0.1) 40%);
+  background-size: 200% 100%;
+  animation: liquid-loading 1.5s infinite;
+}
+
+/* App-like reveal animation */
+@keyframes app-reveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-app-reveal {
+  animation: app-reveal 0.4s cubic-bezier(0.15, 1.15, 0.6, 1) forwards;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   a:nth-of-type(2) .logo {
     animation: logo-spin infinite 20s linear;
@@ -221,4 +260,27 @@
     transform: scale(0.97);
     transition: transform 0.1s;
   }
+}
+
+/* Modern hover effect for buttons */
+.btn-hover-slide {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.btn-hover-slide::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  transition: left 0.3s ease;
+  z-index: -1;
+}
+
+.btn-hover-slide:hover::before {
+  left: 0;
 }

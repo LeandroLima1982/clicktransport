@@ -5,7 +5,7 @@ import TransitionEffect from '@/components/TransitionEffect';
 
 const DriverPanelPage: React.FC = () => {
   return (
-    <TransitionEffect>
+    <TransitionEffect direction="fade" duration={600}>
       <DriverDashboard />
     </TransitionEffect>
   );
