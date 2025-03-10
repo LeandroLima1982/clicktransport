@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -13,10 +13,11 @@ import {
   SheetTrigger,
   SheetFooter,
 } from "@/components/ui/sheet";
-import { Plus } from 'lucide-react';
+import { Plus, MapPin } from 'lucide-react';
 import { supabase } from '@/main';
 import { toast } from 'sonner';
 import { Driver, Vehicle } from './types';
+import { fetchAddressSuggestions, getPlaceIcon, formatPlaceName } from '@/utils/mapbox';
 
 interface OrderFormProps {
   companyId: string;
@@ -45,10 +46,63 @@ const OrderForm: React.FC<OrderFormProps> = ({
     driver_id: '',
     vehicle_id: ''
   });
+  
+  const [originSuggestions, setOriginSuggestions] = React.useState<any[]>([]);
+  const [destinationSuggestions, setDestinationSuggestions] = React.useState<any[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = React.useState(false);
+  
+  const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setNewOrder({ ...newOrder, [name]: value });
+    
+    // Handle address suggestions
+    if (name === 'origin') {
+      if (originTimeoutRef.current) {
+        clearTimeout(originTimeoutRef.current);
+      }
+      
+      originTimeoutRef.current = setTimeout(async () => {
+        if (value.length >= 3) {
+          setIsLoadingSuggestions(true);
+          const suggestions = await fetchAddressSuggestions(value);
+          setOriginSuggestions(suggestions);
+          setIsLoadingSuggestions(false);
+        } else {
+          setOriginSuggestions([]);
+        }
+      }, 500);
+    }
+    
+    if (name === 'destination') {
+      if (destinationTimeoutRef.current) {
+        clearTimeout(destinationTimeoutRef.current);
+      }
+      
+      destinationTimeoutRef.current = setTimeout(async () => {
+        if (value.length >= 3) {
+          setIsLoadingSuggestions(true);
+          const suggestions = await fetchAddressSuggestions(value);
+          setDestinationSuggestions(suggestions);
+          setIsLoadingSuggestions(false);
+        } else {
+          setDestinationSuggestions([]);
+        }
+      }, 500);
+    }
+  };
+  
+  const selectSuggestion = (suggestion: any, isOrigin: boolean) => {
+    const placeName = suggestion.place_name;
+    if (isOrigin) {
+      setNewOrder({ ...newOrder, origin: placeName });
+      setOriginSuggestions([]);
+    } else {
+      setNewOrder({ ...newOrder, destination: placeName });
+      setDestinationSuggestions([]);
+    }
   };
 
   const handleCreateOrder = async () => {
@@ -124,26 +178,72 @@ const OrderForm: React.FC<OrderFormProps> = ({
         <div className="grid gap-4 py-4">
           <div className="space-y-1">
             <Label htmlFor="origin">Origem *</Label>
-            <Input
-              id="origin"
-              name="origin"
-              value={newOrder.origin}
-              onChange={handleInputChange}
-              placeholder="Endereço de origem"
-              required
-            />
+            <div className="relative">
+              <Input
+                id="origin"
+                name="origin"
+                value={newOrder.origin}
+                onChange={handleInputChange}
+                placeholder="Endereço de origem"
+                required
+                className="pl-9"
+              />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              
+              {originSuggestions.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full bg-background border border-input rounded-md shadow-lg">
+                  <ul className="py-1 max-h-60 overflow-auto">
+                    {originSuggestions.map((suggestion) => (
+                      <li
+                        key={suggestion.id}
+                        className="px-3 py-2 text-sm hover:bg-accent cursor-pointer"
+                        onClick={() => selectSuggestion(suggestion, true)}
+                      >
+                        <div className="flex items-center gap-2">
+                          {getPlaceIcon(suggestion)}
+                          {formatPlaceName(suggestion)}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="space-y-1">
             <Label htmlFor="destination">Destino *</Label>
-            <Input
-              id="destination"
-              name="destination"
-              value={newOrder.destination}
-              onChange={handleInputChange}
-              placeholder="Endereço de destino"
-              required
-            />
+            <div className="relative">
+              <Input
+                id="destination"
+                name="destination"
+                value={newOrder.destination}
+                onChange={handleInputChange}
+                placeholder="Endereço de destino"
+                required
+                className="pl-9"
+              />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              
+              {destinationSuggestions.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full bg-background border border-input rounded-md shadow-lg">
+                  <ul className="py-1 max-h-60 overflow-auto">
+                    {destinationSuggestions.map((suggestion) => (
+                      <li
+                        key={suggestion.id}
+                        className="px-3 py-2 text-sm hover:bg-accent cursor-pointer"
+                        onClick={() => selectSuggestion(suggestion, false)}
+                      >
+                        <div className="flex items-center gap-2">
+                          {getPlaceIcon(suggestion)}
+                          {formatPlaceName(suggestion)}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="space-y-1">
