@@ -73,8 +73,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleSignOut = async () => {
     try {
       setLogoutInProgress(true);
+      console.log('Logout initiated...');
+      
+      // Set a timeout to ensure the loading state doesn't get stuck
+      const timeoutId = setTimeout(() => {
+        console.log('Logout timeout triggered - forcing reset of loading state');
+        setLogoutInProgress(false);
+        // Clear user state as a fallback
+        setUser(null);
+        setSession(null);
+        setUserRole(null);
+      }, 5000); // 5 seconds timeout
       
       const result = await signOut();
+      
+      // Clear the timeout if we get a response
+      clearTimeout(timeoutId);
       
       if (result.error) {
         console.error('Error signing out:', result.error);
@@ -85,13 +99,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return result;
       }
       
-      // Clear local state - don't wait for the auth state change event
+      // Clear local state immediately, don't wait for the auth state change event
+      console.log('Logout successful, clearing user state immediately');
       setUser(null);
       setSession(null);
       setUserRole(null);
-      
-      // We'll set logoutInProgress to false when the SIGNED_OUT event is triggered
-      // This prevents weird UI states if the event takes time
+      setLogoutInProgress(false);
       
       return result;
     } catch (error) {

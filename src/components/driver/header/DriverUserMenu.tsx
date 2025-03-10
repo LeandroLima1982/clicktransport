@@ -18,8 +18,10 @@ const DriverUserMenu: React.FC = () => {
   
   const handleSignOut = async () => {
     try {
+      console.log('Driver logging out...');
       await signOut();
-      navigate('/');
+      // Navigate immediately after calling signOut, don't wait for the promise to resolve
+      navigate('/', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
       // Error will be displayed by the AuthProvider

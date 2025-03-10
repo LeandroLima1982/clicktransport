@@ -22,8 +22,15 @@ const DriverSidebar: React.FC = () => {
   const navigate = useNavigate();
   
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      console.log('DriverSidebar logging out...');
+      await signOut();
+      // Navigate immediately after calling signOut
+      navigate('/', { replace: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Error will be displayed by the AuthProvider
+    }
   };
   
   return (
