@@ -3,7 +3,7 @@ import { supabase } from '../../main';
 import { toast } from 'sonner';
 
 // Sign in with email and password
-export const signIn = async (email: string, password: string) => {
+export const signIn = async (email: string, password: string, companyId?: string) => {
   try {
     console.log('Signing in user:', email);
     const result = await supabase.auth.signInWithPassword({
@@ -16,11 +16,38 @@ export const signIn = async (email: string, password: string) => {
       toast.error('Error signing in', {
         description: result.error.message
       });
-    } else {
-      console.log('Sign in successful');
+      return { error: result.error };
+    } 
+    
+    console.log('Sign in successful');
+    
+    // If company ID is provided, verify that the driver belongs to this company
+    if (companyId && result.data.user) {
+      // Verify the association between driver and company
+      const { data: driverData, error: driverError } = await supabase
+        .from('drivers')
+        .select('*')
+        .eq('user_id', result.data.user.id)
+        .eq('company_id', companyId)
+        .single();
+      
+      if (driverError || !driverData) {
+        console.error('Driver not associated with this company:', driverError || 'No driver record found');
+        // Sign out the user since they're not associated with the company
+        await supabase.auth.signOut();
+        
+        return { 
+          error: {
+            message: 'You are not registered as a driver for this company',
+            name: 'invalid_company_association',
+          } as AuthError 
+        };
+      }
+      
+      console.log('Driver company association verified');
     }
     
-    return { error: result.error };
+    return { error: null };
   } catch (err) {
     console.error('Error signing in:', err);
     return { error: err as AuthError };
@@ -154,5 +181,26 @@ export const resetPassword = async (email: string) => {
   } catch (err) {
     console.error('Error resetting password:', err);
     return { error: err as AuthError };
+  }
+};
+
+// Fetch companies for driver login
+export const fetchCompanies = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('companies')
+      .select('id, name')
+      .eq('status', 'active')
+      .order('name');
+    
+    if (error) {
+      console.error('Error fetching companies:', error);
+      return { data: null, error };
+    }
+    
+    return { data, error: null };
+  } catch (err) {
+    console.error('Error fetching companies:', err);
+    return { data: null, error: err as Error };
   }
 };

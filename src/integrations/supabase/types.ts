@@ -38,6 +38,7 @@ export type Database = {
       }
       drivers: {
         Row: {
+          company_id: string | null
           created_at: string | null
           id: string
           name: string
@@ -46,6 +47,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           id?: string
           name: string
@@ -54,6 +56,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           id?: string
           name?: string
@@ -61,7 +64,15 @@ export type Database = {
           status?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "drivers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

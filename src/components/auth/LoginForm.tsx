@@ -1,13 +1,21 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TabsContent } from '@/components/ui/tabs';
 import { CardContent, CardFooter } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Building2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { fetchCompanies } from '@/hooks/auth/authFunctions';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface LoginFormProps {
   handleLogin: (e: React.FormEvent) => Promise<void>;
@@ -22,28 +30,69 @@ const LoginForm: React.FC<LoginFormProps> = ({
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+  const [companies, setCompanies] = useState<{id: string, name: string}[]>([]);
+  const [fetchingCompanies, setFetchingCompanies] = useState(false);
   const { signIn } = useAuth();
   const location = useLocation();
   
   const searchParams = new URLSearchParams(location.search);
   const accountType = searchParams.get('type') || 'client';
   
+  useEffect(() => {
+    // Only fetch companies when in driver login mode
+    if (accountType === 'driver') {
+      loadCompanies();
+    }
+  }, [accountType]);
+
+  const loadCompanies = async () => {
+    setFetchingCompanies(true);
+    const { data, error } = await fetchCompanies();
+    
+    if (error) {
+      toast.error('Erro ao carregar empresas', {
+        description: 'Por favor, tente novamente mais tarde.'
+      });
+    } else if (data) {
+      setCompanies(data);
+    }
+    
+    setFetchingCompanies(false);
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
+      // Validate form
+      if (!email || !password) {
+        toast.error('Por favor, preencha email e senha');
+        return;
+      }
+      
+      // If it's a driver login, require company selection
+      if (accountType === 'driver' && !selectedCompanyId) {
+        toast.error('Por favor, selecione uma empresa');
+        return;
+      }
+      
       // Use the parent handleLogin if provided, otherwise use local logic
       if (handleLogin) {
         await handleLogin(e);
       } else {
-        if (!email || !password) {
-          toast.error('Por favor, preencha email e senha');
-          return;
-        }
+        // For driver logins, pass the company ID for verification
+        const companyIdToUse = accountType === 'driver' ? selectedCompanyId : undefined;
         
-        const { error } = await signIn(email, password);
+        const { error } = await signIn(email, password, companyIdToUse);
         if (error) {
-          toast.error('Falha no login', { description: error.message });
+          if (error.message === 'You are not registered as a driver for this company') {
+            toast.error('Acesso negado', { 
+              description: 'Você não está registrado como motorista para esta empresa'
+            });
+          } else {
+            toast.error('Falha no login', { description: error.message });
+          }
         } else {
           toast.success('Login realizado com sucesso!');
         }
@@ -58,6 +107,38 @@ const LoginForm: React.FC<LoginFormProps> = ({
     <TabsContent value="login">
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4 pt-6">
+          {/* Show company selection only for driver logins */}
+          {accountType === 'driver' && (
+            <div className="space-y-2">
+              <label htmlFor="company-select" className="text-sm font-medium flex items-center">
+                <Building2 className="h-4 w-4 mr-1" />
+                Empresa
+              </label>
+              <Select
+                value={selectedCompanyId}
+                onValueChange={setSelectedCompanyId}
+                disabled={fetchingCompanies}
+              >
+                <SelectTrigger id="company-select" className="w-full">
+                  <SelectValue placeholder="Selecione uma empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {fetchingCompanies && (
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  Carregando empresas...
+                </div>
+              )}
+            </div>
+          )}
+          
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
               Email
@@ -92,7 +173,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
         </CardContent>
         
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full rounded-full" disabled={loading}>
+          <Button type="submit" className="w-full rounded-full" disabled={loading || (accountType === 'driver' && !selectedCompanyId)}>
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

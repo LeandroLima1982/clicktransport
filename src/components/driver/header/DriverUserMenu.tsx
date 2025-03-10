@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { User, LogOut, Loader2, Car, Settings, LayoutDashboard } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, LogOut, Loader2, Car, Settings, LayoutDashboard, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -9,13 +9,53 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenuSeparator,
+  DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/main';
 
 const DriverUserMenu: React.FC = () => {
-  const { signOut, isAuthenticating } = useAuth();
+  const { signOut, isAuthenticating, user } = useAuth();
   const navigate = useNavigate();
+  const [driverData, setDriverData] = useState<any>(null);
+  const [companyName, setCompanyName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    if (user) {
+      loadDriverData();
+    }
+  }, [user]);
+  
+  const loadDriverData = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      // Fetch driver data including company_id
+      const { data: driverData, error: driverError } = await supabase
+        .from('drivers')
+        .select('*, company:company_id(name)')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (driverError) {
+        console.error('Error fetching driver data:', driverError);
+        return;
+      }
+      
+      setDriverData(driverData);
+      
+      if (driverData?.company?.name) {
+        setCompanyName(driverData.company.name);
+      }
+    } catch (error) {
+      console.error('Error in loadDriverData:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const handleSignOut = async () => {
     try {
@@ -37,6 +77,16 @@ const DriverUserMenu: React.FC = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
+        {companyName && (
+          <>
+            <DropdownMenuLabel className="flex items-center text-xs">
+              <Building2 className="h-3 w-3 mr-1" />
+              Empresa: {companyName}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        
         <DropdownMenuItem asChild>
           <Link to="/" className="w-full">
             <LayoutDashboard className="h-4 w-4 mr-2" />
