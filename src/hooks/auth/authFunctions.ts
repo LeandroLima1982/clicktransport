@@ -1,4 +1,3 @@
-
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../main';
 import { toast } from 'sonner';
@@ -134,7 +133,7 @@ export const signOut = async () => {
     return { error: null };
   } catch (err) {
     console.error('Exception during sign out:', err);
-    return { error: err as AuthError };
+    return { error: err as AuthError | Error };
   }
 };
 
