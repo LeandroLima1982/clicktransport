@@ -157,6 +157,12 @@ export const isWebGLSupported = (): boolean => {
   }
 };
 
+// Type declaration for Navigator with deviceMemory
+interface NavigatorWithMemory extends Navigator {
+  deviceMemory?: number;
+  hardwareConcurrency?: number;
+}
+
 // Check if the device has enough performance for interactive maps
 export const hasAdequatePerformance = (): boolean => {
   // Check for mobile devices which might struggle with complex maps
@@ -164,11 +170,14 @@ export const hasAdequatePerformance = (): boolean => {
     navigator.userAgent
   );
   
-  // Check for memory constraints
-  const lowMemory = navigator.deviceMemory !== undefined && navigator.deviceMemory < 4;
+  // Cast navigator to our extended interface
+  const nav = navigator as NavigatorWithMemory;
+  
+  // Check for memory constraints (only if the property exists)
+  const lowMemory = typeof nav.deviceMemory !== 'undefined' && nav.deviceMemory < 4;
   
   // Check processor cores if available
-  const lowCPU = navigator.hardwareConcurrency !== undefined && navigator.hardwareConcurrency < 4;
+  const lowCPU = typeof nav.hardwareConcurrency !== 'undefined' && nav.hardwareConcurrency < 4;
   
   // For low-end devices, use static maps
   if (isMobile && (lowMemory || lowCPU)) {
