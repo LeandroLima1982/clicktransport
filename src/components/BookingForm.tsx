@@ -11,7 +11,7 @@ import { ptBR } from 'date-fns/locale';
 import { CalendarIcon, ArrowRight, MapPin, Calendar as CalendarIcon2, Clock, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import BookingSteps from './BookingSteps';
+import { BookingSteps } from './booking';
 
 const BookingForm: React.FC = () => {
   const [originValue, setOriginValue] = useState('');
