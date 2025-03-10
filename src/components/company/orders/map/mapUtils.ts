@@ -148,7 +148,9 @@ export const isWebGLSupported = (): boolean => {
   try {
     // Try to create a WebGL context
     const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    // Explicitly type the WebGL context
+    const gl = (canvas.getContext('webgl') || 
+                canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null;
     
     if (!gl) {
       console.warn('WebGL not supported by browser');
@@ -163,8 +165,8 @@ export const isWebGLSupported = (): boolean => {
       
       // Check for software renderers which might indicate poor performance
       const isSoftwareRenderer = renderer.includes('SwiftShader') || 
-                                 renderer.includes('ANGLE') ||
-                                 renderer.includes('llvmpipe');
+                               renderer.includes('ANGLE') ||
+                               renderer.includes('llvmpipe');
       
       if (isSoftwareRenderer) {
         console.warn('Software WebGL renderer detected, performance may be limited');
