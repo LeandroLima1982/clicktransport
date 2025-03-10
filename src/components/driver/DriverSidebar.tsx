@@ -1,7 +1,15 @@
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Car, Calendar, Clock, MapPin, Settings, LogOut, User, Home } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  ListChecks, 
+  Calendar, 
+  Navigation, 
+  Settings, 
+  LogOut, 
+  User 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -20,16 +28,14 @@ import {
 const DriverSidebar: React.FC = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const handleSignOut = async () => {
     try {
-      console.log('DriverSidebar logging out...');
       await signOut();
-      // Navigate immediately after calling signOut
       navigate('/', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
-      // Error will be displayed by the AuthProvider
     }
   };
   
@@ -37,7 +43,6 @@ const DriverSidebar: React.FC = () => {
     <Sidebar>
       <SidebarHeader>
         <Link to="/" className="flex items-center space-x-2">
-          <Car className="h-6 w-6 text-primary" />
           <span className="text-lg font-bold">ClickTransfer</span>
         </Link>
       </SidebarHeader>
@@ -47,25 +52,25 @@ const DriverSidebar: React.FC = () => {
           <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
+              <SidebarMenuItem active={location.pathname === '/driver/dashboard'}>
                 <SidebarMenuButton asChild>
                   <Link to="/driver/dashboard">
-                    <Home className="h-5 w-5" />
+                    <LayoutDashboard className="h-5 w-5" />
                     <span>Dashboard</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
-              <SidebarMenuItem>
+              <SidebarMenuItem active={location.pathname === '/driver/assignments'}>
                 <SidebarMenuButton asChild>
                   <Link to="/driver/assignments">
-                    <Clock className="h-5 w-5" />
+                    <ListChecks className="h-5 w-5" />
                     <span>Atribuições</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
-              <SidebarMenuItem>
+              <SidebarMenuItem active={location.pathname === '/driver/schedule'}>
                 <SidebarMenuButton asChild>
                   <Link to="/driver/schedule">
                     <Calendar className="h-5 w-5" />
@@ -74,10 +79,10 @@ const DriverSidebar: React.FC = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
-              <SidebarMenuItem>
+              <SidebarMenuItem active={location.pathname === '/driver/navigation'}>
                 <SidebarMenuButton asChild>
                   <Link to="/driver/navigation">
-                    <MapPin className="h-5 w-5" />
+                    <Navigation className="h-5 w-5" />
                     <span>Navegação</span>
                   </Link>
                 </SidebarMenuButton>
@@ -90,7 +95,7 @@ const DriverSidebar: React.FC = () => {
           <SidebarGroupLabel>Conta</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
+              <SidebarMenuItem active={location.pathname === '/driver/profile'}>
                 <SidebarMenuButton asChild>
                   <Link to="/driver/profile">
                     <User className="h-5 w-5" />
@@ -99,7 +104,7 @@ const DriverSidebar: React.FC = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
-              <SidebarMenuItem>
+              <SidebarMenuItem active={location.pathname === '/driver/settings'}>
                 <SidebarMenuButton asChild>
                   <Link to="/driver/settings">
                     <Settings className="h-5 w-5" />

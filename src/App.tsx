@@ -21,9 +21,11 @@ import CompanyDashboard from './pages/company/Dashboard';
 // Driver pages
 import DriverDashboard from './pages/driver/Dashboard';
 import DriverPanel from './pages/driver/Panel';
-
-// Client pages
-import Bookings from './pages/client/Bookings';
+import DriverAssignments from './pages/driver/Assignments';
+import DriverSchedule from './pages/driver/Schedule';
+import DriverNavigation from './pages/driver/Navigation';
+import DriverProfile from './pages/driver/Profile';
+import DriverSettings from './pages/driver/Settings';
 
 import './App.css';
 
@@ -164,9 +166,29 @@ function App() {
               <DriverDashboard />
             </ProtectedRoute>
           } />
-          <Route path="/driver/panel" element={
+          <Route path="/driver/assignments" element={
             <ProtectedRoute requiredRole="driver">
-              <DriverPanel />
+              <DriverAssignments />
+            </ProtectedRoute>
+          } />
+          <Route path="/driver/schedule" element={
+            <ProtectedRoute requiredRole="driver">
+              <DriverSchedule />
+            </ProtectedRoute>
+          } />
+          <Route path="/driver/navigation" element={
+            <ProtectedRoute requiredRole="driver">
+              <DriverNavigation />
+            </ProtectedRoute>
+          } />
+          <Route path="/driver/profile" element={
+            <ProtectedRoute requiredRole="driver">
+              <DriverProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="/driver/settings" element={
+            <ProtectedRoute requiredRole="driver">
+              <DriverSettings />
             </ProtectedRoute>
           } />
           
