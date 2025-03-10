@@ -1,11 +1,13 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MapIcon, Loader2 } from 'lucide-react';
 import InteractiveMap from './InteractiveMap';
 import StaticMap from './StaticMap';
 import RouteInfo from './RouteInfo';
 import RouteTracker from './RouteTracker';
+import { canUseInteractiveMaps } from './mapUtils';
+import { toast } from 'sonner';
 
 interface MapContainerProps {
   orderId: string;
@@ -25,7 +27,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
   orderId,
   originCoords,
   destinationCoords,
-  useStaticMap,
+  useStaticMap: initialUseStaticMap,
   staticMapUrl,
   routeGeometry,
   routeDistance,
@@ -34,9 +36,47 @@ const MapContainer: React.FC<MapContainerProps> = ({
   destinationAddress = 'Destino',
   onToggleMapType
 }) => {
+  // Internal state to track map type, initialized with the prop but can change based on WebGL detection
+  const [useStaticMap, setUseStaticMap] = useState(initialUseStaticMap);
+  const [mapLoadFailed, setMapLoadFailed] = useState(false);
+
+  // Check WebGL support on component mount
+  useEffect(() => {
+    // Only try to auto-detect if we're supposed to use the interactive map
+    if (!initialUseStaticMap) {
+      const canUseInteractive = canUseInteractiveMaps();
+      
+      if (!canUseInteractive && !useStaticMap) {
+        console.log('WebGL or performance issue detected, switching to static map');
+        setUseStaticMap(true);
+        toast.info('Mapa estático carregado para melhor performance');
+      }
+    }
+  }, [initialUseStaticMap]);
+
+  // Handle map load failures
+  const handleMapLoadFailure = () => {
+    console.log('Interactive map failed to load, falling back to static map');
+    setMapLoadFailed(true);
+    setUseStaticMap(true);
+    toast.error('Falha ao carregar mapa interativo, usando mapa estático');
+  };
+
+  // Handle toggle map type with error handling
+  const handleToggleMapType = () => {
+    if (useStaticMap) {
+      // Switching from static to interactive
+      setUseStaticMap(false);
+    } else {
+      // Switching from interactive to static
+      setUseStaticMap(true);
+    }
+    
+    // Also call the parent's toggle function
+    onToggleMapType();
+  };
+
   // Check if the order is in a status that would have real-time tracking
-  // In a real application, you would check the order status 
-  // (e.g., 'in_progress' would have tracking)
   const hasRealTimeTracking = true;
 
   if (hasRealTimeTracking) {
@@ -52,7 +92,8 @@ const MapContainer: React.FC<MapContainerProps> = ({
         routeDuration={routeDuration}
         originAddress={originAddress}
         destinationAddress={destinationAddress}
-        onToggleMapType={onToggleMapType}
+        onToggleMapType={handleToggleMapType}
+        onMapLoadFailure={handleMapLoadFailure}
       />
     );
   }
@@ -72,6 +113,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
             routeGeometry={routeGeometry}
             originAddress={originAddress}
             destinationAddress={destinationAddress}
+            onMapLoadFailure={handleMapLoadFailure}
           />
         )}
         
@@ -80,7 +122,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
       </div>
       
       <div className="flex justify-center gap-4">
-        <Button onClick={onToggleMapType} variant="outline" className="gap-2">
+        <Button onClick={handleToggleMapType} variant="outline" className="gap-2">
           {useStaticMap ? (
             <>
               <MapIcon className="h-4 w-4" />
@@ -89,7 +131,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
           ) : (
             <>
               <Loader2 className="h-4 w-4" />
-              Recarregar mapa
+              Usar mapa estático
             </>
           )}
         </Button>

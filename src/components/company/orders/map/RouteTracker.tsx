@@ -17,6 +17,7 @@ interface RouteTrackerProps {
   originAddress?: string;
   destinationAddress?: string;
   onToggleMapType: () => void;
+  onMapLoadFailure?: () => void;
 }
 
 interface DriverLocation {
@@ -40,7 +41,8 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
   routeDuration,
   originAddress,
   destinationAddress,
-  onToggleMapType
+  onToggleMapType,
+  onMapLoadFailure
 }) => {
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
   const [remainingDistance, setRemainingDistance] = useState<number>(routeDistance);
@@ -145,6 +147,7 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
             destinationAddress={destinationAddress}
             currentLocation={currentLocation}
             heading={heading}
+            onMapLoadFailure={onMapLoadFailure}
           />
         )}
         
@@ -168,7 +171,7 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
           ) : (
             <>
               <span className="h-4 w-4" />
-              Recarregar mapa
+              Usar mapa estático
             </>
           )}
         </button>

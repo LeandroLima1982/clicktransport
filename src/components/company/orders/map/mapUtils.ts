@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { MAPBOX_TOKEN, isValidMapboxToken } from '@/utils/mapbox';
 import mapboxgl from 'mapbox-gl';
@@ -140,5 +139,62 @@ export const validateMapboxToken = (): boolean => {
     toast.error('Token do Mapbox inválido. Verifique a configuração.');
     return false;
   }
+  return true;
+};
+
+// Check if WebGL is supported by the browser
+export const isWebGLSupported = (): boolean => {
+  try {
+    // Try to create a WebGL context
+    const canvas = document.createElement('canvas');
+    return !!(
+      window.WebGLRenderingContext &&
+      (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+    );
+  } catch (e) {
+    console.error('WebGL detection error:', e);
+    return false;
+  }
+};
+
+// Check if the device has enough performance for interactive maps
+export const hasAdequatePerformance = (): boolean => {
+  // Check for mobile devices which might struggle with complex maps
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+  
+  // Check for memory constraints
+  const lowMemory = navigator.deviceMemory !== undefined && navigator.deviceMemory < 4;
+  
+  // Check processor cores if available
+  const lowCPU = navigator.hardwareConcurrency !== undefined && navigator.hardwareConcurrency < 4;
+  
+  // For low-end devices, use static maps
+  if (isMobile && (lowMemory || lowCPU)) {
+    console.log('Device has limited resources, using static map');
+    return false;
+  }
+  
+  return true;
+};
+
+// Determine if interactive maps can be used
+export const canUseInteractiveMaps = (): boolean => {
+  if (!isValidMapboxToken(MAPBOX_TOKEN)) {
+    console.error('Invalid Mapbox token');
+    return false;
+  }
+  
+  if (!isWebGLSupported()) {
+    console.warn('WebGL not supported, falling back to static maps');
+    return false;
+  }
+  
+  if (!hasAdequatePerformance()) {
+    console.warn('Device performance may be limited, using static maps for better experience');
+    return false;
+  }
+  
   return true;
 };

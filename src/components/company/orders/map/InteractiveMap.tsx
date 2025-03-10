@@ -12,6 +12,7 @@ interface InteractiveMapProps {
   destinationAddress?: string;
   currentLocation?: [number, number] | null;
   heading?: number;
+  onMapLoadFailure?: () => void;
 }
 
 const InteractiveMap: React.FC<InteractiveMapProps> = ({ 
@@ -21,7 +22,8 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   originAddress = 'Origem',
   destinationAddress = 'Destino',
   currentLocation = null,
-  heading
+  heading,
+  onMapLoadFailure
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -63,6 +65,17 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         fadeDuration: 0, // Disable fade animations to help with rendering
         renderWorldCopies: false, // Disable rendering multiple copies of world to reduce load
         attributionControl: false, // Disable attribution to simplify the map
+        preserveDrawingBuffer: false, // Better performance
+        antialias: false, // Better performance on low-end devices
+        maxPitch: 45, // Limit pitch to improve performance
+      });
+
+      // Handle map errors
+      map.current.on('error', (error) => {
+        console.error('Mapbox error:', error);
+        if (onMapLoadFailure) {
+          onMapLoadFailure();
+        }
       });
 
       // Handle successful map load
@@ -139,10 +152,16 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           }
         } catch (error) {
           console.error("Error setting up map markers:", error);
+          if (onMapLoadFailure) {
+            onMapLoadFailure();
+          }
         }
       });
     } catch (error) {
       console.error('Error creating Mapbox instance:', error);
+      if (onMapLoadFailure) {
+        onMapLoadFailure();
+      }
     }
 
     // Cleanup on unmount
