@@ -1,8 +1,8 @@
-
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { MAPBOX_TOKEN } from '@/utils/mapbox';
+import { Loader2 } from 'lucide-react';
 
 interface InteractiveMapProps {
   originCoords: [number, number];
@@ -31,31 +31,45 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
   const vehicleMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const [isMapLoading, setIsMapLoading] = useState(true);
+  const [mapInitError, setMapInitError] = useState<string | null>(null);
+  const initTimerRef = useRef<number | null>(null);
 
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    // Initialize map
-    mapboxgl.accessToken = MAPBOX_TOKEN;
-    
-    // Clear any existing map instance
-    if (map.current) {
-      map.current.remove();
-    }
+    // Set a timeout to detect stalled map initialization
+    const initTimeout = window.setTimeout(() => {
+      console.error("Map initialization timed out");
+      setMapInitError("Map initialization timed out");
+      if (onMapLoadFailure) {
+        onMapLoadFailure();
+      }
+    }, 10000); // 10 seconds timeout
 
-    // Apply explicit styling to ensure map container is visible
-    if (mapContainer.current) {
-      mapContainer.current.style.minHeight = '400px';
-      mapContainer.current.style.height = '100%';
-      mapContainer.current.style.width = '100%';
-      mapContainer.current.style.backgroundColor = '#e9e9e9';
-      mapContainer.current.style.position = 'relative';
-      mapContainer.current.style.display = 'block';
-    }
-    
-    // Create new map instance
+    initTimerRef.current = initTimeout;
+
+    // Initialize map
     try {
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+    
+      // Clear any existing map instance
+      if (map.current) {
+        map.current.remove();
+      }
+
+      // Apply explicit styling to ensure map container is visible
+      if (mapContainer.current) {
+        mapContainer.current.style.minHeight = '400px';
+        mapContainer.current.style.height = '100%';
+        mapContainer.current.style.width = '100%';
+        mapContainer.current.style.backgroundColor = '#e9e9e9';
+        mapContainer.current.style.position = 'relative';
+        mapContainer.current.style.display = 'block';
+      }
+    
+      // Create new map instance
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12',
@@ -68,11 +82,13 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         preserveDrawingBuffer: false, // Better performance
         antialias: false, // Better performance on low-end devices
         maxPitch: 45, // Limit pitch to improve performance
+        trackResize: true,
       });
 
       // Handle map errors
       map.current.on('error', (error) => {
         console.error('Mapbox error:', error);
+        setMapInitError(`Map error: ${error.error?.message || 'Unknown error'}`);
         if (onMapLoadFailure) {
           onMapLoadFailure();
         }
@@ -82,8 +98,15 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       map.current.on('load', () => {
         if (!map.current) return;
         
+        // Clear the timeout as map loaded successfully
+        if (initTimerRef.current) {
+          clearTimeout(initTimerRef.current);
+          initTimerRef.current = null;
+        }
+        
         try {
           console.log("Map loaded successfully, adding markers");
+          setIsMapLoading(false);
           
           // Add origin and destination markers
           new mapboxgl.Marker({ color: '#00FF00' })
@@ -97,8 +120,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             .addTo(map.current);
           
           // Create marker for the vehicle
-          // We'll use this for animation if no real-time data is available
-          // or for showing the real-time position otherwise
           vehicleMarkerRef.current = new mapboxgl.Marker({ 
             color: '#3FB1CE',
             rotation: heading
@@ -119,7 +140,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           map.current.fitBounds(bounds, { padding: 70, maxZoom: 15 });
           
           // Add route to map if routeGeometry is available
-          if (routeGeometry) {
+          if (routeGeometry && routeGeometry.coordinates && routeGeometry.coordinates.length > 0) {
             // Add route to map
             map.current.addSource('route', {
               type: 'geojson',
@@ -152,6 +173,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           }
         } catch (error) {
           console.error("Error setting up map markers:", error);
+          setMapInitError(`Error setting up map markers: ${error}`);
           if (onMapLoadFailure) {
             onMapLoadFailure();
           }
@@ -159,6 +181,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       });
     } catch (error) {
       console.error('Error creating Mapbox instance:', error);
+      setMapInitError(`Error creating Mapbox instance: ${error}`);
       if (onMapLoadFailure) {
         onMapLoadFailure();
       }
@@ -176,38 +199,14 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
       }
+
+      // Clear the initialization timeout
+      if (initTimerRef.current) {
+        clearTimeout(initTimerRef.current);
+        initTimerRef.current = null;
+      }
     };
-  }, [originCoords, destinationCoords, routeGeometry, originAddress, destinationAddress]);
-
-  // Update vehicle marker position when currentLocation changes
-  useEffect(() => {
-    if (!map.current || !currentLocation || !vehicleMarkerRef.current) return;
-
-    // Cancel any ongoing animation
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-
-    // Update marker position and rotation
-    vehicleMarkerRef.current
-      .setLngLat(currentLocation);
-    
-    if (heading !== undefined) {
-      vehicleMarkerRef.current.setRotation(heading);
-    }
-
-    // Check if the marker is in the current viewport
-    const bounds = map.current.getBounds();
-    if (!bounds.contains({ lng: currentLocation[0], lat: currentLocation[1] })) {
-      // If not in viewport, adjust the map view
-      map.current.easeTo({
-        center: currentLocation,
-        duration: 1000,
-        zoom: map.current.getZoom() // Keep current zoom level
-      });
-    }
-  }, [currentLocation, heading]);
+  }, [originCoords, destinationCoords, routeGeometry, originAddress, destinationAddress, onMapLoadFailure]);
 
   const animateMarkerAlongRoute = (coordinates: [number, number][]) => {
     // Cancel any ongoing animation
@@ -274,12 +273,60 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     animationRef.current = requestAnimationFrame(animate);
   };
 
+  // Update vehicle marker position when currentLocation changes
+  useEffect(() => {
+    if (!map.current || !currentLocation || !vehicleMarkerRef.current) return;
+
+    // Cancel any ongoing animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+
+    // Update marker position and rotation
+    vehicleMarkerRef.current
+      .setLngLat(currentLocation);
+    
+    if (heading !== undefined) {
+      vehicleMarkerRef.current.setRotation(heading);
+    }
+
+    // Check if the marker is in the current viewport
+    const bounds = map.current.getBounds();
+    if (!bounds.contains({ lng: currentLocation[0], lat: currentLocation[1] })) {
+      // If not in viewport, adjust the map view
+      map.current.easeTo({
+        center: currentLocation,
+        duration: 1000,
+        zoom: map.current.getZoom() // Keep current zoom level
+      });
+    }
+  }, [currentLocation, heading]);
+
   return (
-    <div 
-      ref={mapContainer} 
-      className="absolute inset-0" 
-      style={{ minHeight: "400px", backgroundColor: "#e9e9e9" }}
-    />
+    <div className="relative h-full w-full">
+      {isMapLoading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100 bg-opacity-80">
+          <div className="text-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Carregando mapa interativo...</p>
+          </div>
+        </div>
+      )}
+      {mapInitError && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100 bg-opacity-80">
+          <div className="text-center max-w-md p-4 bg-destructive/10 rounded-md">
+            <p className="text-sm text-destructive font-medium">Erro ao carregar mapa interativo</p>
+            <p className="text-xs text-muted-foreground mt-1">Tentando usar mapa estático como alternativa</p>
+          </div>
+        </div>
+      )}
+      <div 
+        ref={mapContainer} 
+        className="absolute inset-0 rounded-md" 
+        style={{ minHeight: "400px", backgroundColor: "#e9e9e9" }}
+      />
+    </div>
   );
 };
 

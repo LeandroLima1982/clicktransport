@@ -39,8 +39,11 @@ const MapContainer: React.FC<MapContainerProps> = ({
   // Internal state to track map type, initialized with the prop but can change based on WebGL detection
   const [useStaticMap, setUseStaticMap] = useState(initialUseStaticMap);
   const [mapLoadFailed, setMapLoadFailed] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 2;
 
-  // Check WebGL support on component mount
+  // Check WebGL support and device performance on component mount
   useEffect(() => {
     // Only try to auto-detect if we're supposed to use the interactive map
     if (!initialUseStaticMap) {
@@ -52,6 +55,9 @@ const MapContainer: React.FC<MapContainerProps> = ({
         toast.info('Mapa estático carregado para melhor performance');
       }
     }
+    
+    // Set loading to false after initial check
+    setIsLoading(false);
   }, [initialUseStaticMap]);
 
   // Handle map load failures
@@ -59,7 +65,31 @@ const MapContainer: React.FC<MapContainerProps> = ({
     console.log('Interactive map failed to load, falling back to static map');
     setMapLoadFailed(true);
     setUseStaticMap(true);
-    toast.error('Falha ao carregar mapa interativo, usando mapa estático');
+    
+    if (retryCount >= maxRetries) {
+      toast.error('Não foi possível carregar o mapa interativo após várias tentativas, usando mapa estático');
+    } else {
+      toast.error('Falha ao carregar mapa interativo, usando mapa estático');
+    }
+  };
+
+  // Handle retry loading interactive map
+  const handleRetryInteractiveMap = () => {
+    if (retryCount < maxRetries) {
+      setRetryCount(prev => prev + 1);
+      setMapLoadFailed(false);
+      setUseStaticMap(false);
+      setIsLoading(true);
+      
+      // Add delay before trying again to avoid rapid failures
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
+      
+      toast.info('Tentando carregar mapa interativo novamente...');
+    } else {
+      toast.error('Número máximo de tentativas atingido');
+    }
   };
 
   // Handle toggle map type with error handling
@@ -67,6 +97,12 @@ const MapContainer: React.FC<MapContainerProps> = ({
     if (useStaticMap) {
       // Switching from static to interactive
       setUseStaticMap(false);
+      setIsLoading(true);
+      
+      // Add slight delay to simulate loading
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
     } else {
       // Switching from interactive to static
       setUseStaticMap(true);
@@ -94,6 +130,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
         destinationAddress={destinationAddress}
         onToggleMapType={handleToggleMapType}
         onMapLoadFailure={handleMapLoadFailure}
+        isLoading={isLoading}
       />
     );
   }
@@ -102,7 +139,12 @@ const MapContainer: React.FC<MapContainerProps> = ({
   return (
     <div className="flex flex-col space-y-4 h-full">
       <div className="h-[500px] relative border rounded-md overflow-hidden bg-gray-100">
-        {useStaticMap ? (
+        {isLoading ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2">Carregando mapa...</span>
+          </div>
+        ) : useStaticMap ? (
           /* Static map fallback */
           <StaticMap url={staticMapUrl} />
         ) : (
@@ -118,23 +160,30 @@ const MapContainer: React.FC<MapContainerProps> = ({
         )}
         
         {/* Route info overlay - show for both map types */}
-        <RouteInfo distance={routeDistance} duration={routeDuration} />
+        {!isLoading && <RouteInfo distance={routeDistance} duration={routeDuration} />}
       </div>
       
       <div className="flex justify-center gap-4">
-        <Button onClick={handleToggleMapType} variant="outline" className="gap-2">
-          {useStaticMap ? (
-            <>
-              <MapIcon className="h-4 w-4" />
-              Tentar mapa interativo
-            </>
-          ) : (
-            <>
-              <Loader2 className="h-4 w-4" />
-              Usar mapa estático
-            </>
-          )}
-        </Button>
+        {mapLoadFailed && retryCount < maxRetries ? (
+          <Button onClick={handleRetryInteractiveMap} variant="outline" className="gap-2">
+            <Loader2 className="h-4 w-4" />
+            Tentar novamente
+          </Button>
+        ) : (
+          <Button onClick={handleToggleMapType} variant="outline" className="gap-2" disabled={isLoading}>
+            {useStaticMap ? (
+              <>
+                <MapIcon className="h-4 w-4" />
+                Tentar mapa interativo
+              </>
+            ) : (
+              <>
+                <Loader2 className="h-4 w-4" />
+                Usar mapa estático
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );

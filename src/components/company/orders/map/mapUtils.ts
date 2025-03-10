@@ -148,10 +148,31 @@ export const isWebGLSupported = (): boolean => {
   try {
     // Try to create a WebGL context
     const canvas = document.createElement('canvas');
-    return !!(
-      window.WebGLRenderingContext &&
-      (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
-    );
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    
+    if (!gl) {
+      console.warn('WebGL not supported by browser');
+      return false;
+    }
+    
+    // Additional check for WebGL capabilities
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    if (debugInfo) {
+      const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+      console.log('WebGL renderer:', renderer);
+      
+      // Check for software renderers which might indicate poor performance
+      const isSoftwareRenderer = renderer.includes('SwiftShader') || 
+                                 renderer.includes('ANGLE') ||
+                                 renderer.includes('llvmpipe');
+      
+      if (isSoftwareRenderer) {
+        console.warn('Software WebGL renderer detected, performance may be limited');
+        return false;
+      }
+    }
+    
+    return true;
   } catch (e) {
     console.error('WebGL detection error:', e);
     return false;
@@ -161,7 +182,7 @@ export const isWebGLSupported = (): boolean => {
 // Type declaration for Navigator with deviceMemory
 interface NavigatorWithMemory extends Navigator {
   deviceMemory?: number;
-  // Don't redefine hardwareConcurrency as optional since it's required in Navigator
+  // Note: hardwareConcurrency is already part of Navigator interface
 }
 
 // Check if the device has enough performance for interactive maps
@@ -177,12 +198,13 @@ export const hasAdequatePerformance = (): boolean => {
   // Check for memory constraints (only if the property exists)
   const lowMemory = typeof nav.deviceMemory !== 'undefined' && nav.deviceMemory < 4;
   
-  // Check processor cores if available - hardwareConcurrency is standard in Navigator
+  // Check processor cores
   const lowCPU = navigator.hardwareConcurrency < 4;
   
   // For low-end devices, use static maps
   if (isMobile && (lowMemory || lowCPU)) {
     console.log('Device has limited resources, using static map');
+    toast.info('Dispositivo com recursos limitados, usando mapa estático para melhor experiência');
     return false;
   }
   
@@ -198,6 +220,7 @@ export const canUseInteractiveMaps = (): boolean => {
   
   if (!isWebGLSupported()) {
     console.warn('WebGL not supported, falling back to static maps');
+    toast.info('Seu navegador não suporta mapas interativos, usando mapa estático');
     return false;
   }
   

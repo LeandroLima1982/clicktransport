@@ -1,6 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/main';
+import { Button } from '@/components/ui/button';
+import { MapIcon, Loader2 } from 'lucide-react';
 import InteractiveMap from './InteractiveMap';
 import StaticMap from './StaticMap';
 import RouteInfo from './RouteInfo';
@@ -18,6 +20,7 @@ interface RouteTrackerProps {
   destinationAddress?: string;
   onToggleMapType: () => void;
   onMapLoadFailure?: () => void;
+  isLoading?: boolean;
 }
 
 interface DriverLocation {
@@ -42,12 +45,14 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
   originAddress,
   destinationAddress,
   onToggleMapType,
-  onMapLoadFailure
+  onMapLoadFailure,
+  isLoading = false
 }) => {
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
   const [remainingDistance, setRemainingDistance] = useState<number>(routeDistance);
   const [remainingDuration, setRemainingDuration] = useState<number>(routeDuration);
   const [heading, setHeading] = useState<number | undefined>(undefined);
+  const [locationUpdateTime, setLocationUpdateTime] = useState<Date | null>(null);
 
   // Set up realtime subscription
   useEffect(() => {
@@ -75,6 +80,9 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
             if (newLocation.heading !== undefined) {
               setHeading(newLocation.heading);
             }
+            
+            // Update location timestamp
+            setLocationUpdateTime(new Date());
             
             // Calculate remaining distance and duration
             // This is a simplified estimation - in a real app you might
@@ -136,7 +144,12 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
   return (
     <div className="flex flex-col space-y-4 h-full">
       <div className="h-[500px] relative border rounded-md overflow-hidden bg-gray-100">
-        {useStaticMap ? (
+        {isLoading ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2">Carregando mapa...</span>
+          </div>
+        ) : useStaticMap ? (
           <StaticMap url={staticMapUrl} />
         ) : (
           <InteractiveMap 
@@ -151,30 +164,35 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
           />
         )}
         
-        <RouteInfo 
-          distance={remainingDistance || routeDistance} 
-          duration={remainingDuration || routeDuration} 
-          isRealTimeData={!!currentLocation}
-        />
+        {!isLoading && (
+          <RouteInfo 
+            distance={remainingDistance || routeDistance} 
+            duration={remainingDuration || routeDuration} 
+            isRealTimeData={!!currentLocation}
+            lastUpdate={locationUpdateTime}
+          />
+        )}
       </div>
       
       <div className="flex justify-center gap-4">
-        <button 
+        <Button 
           onClick={onToggleMapType} 
-          className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors flex items-center gap-2"
+          variant="outline"
+          className="gap-2"
+          disabled={isLoading}
         >
           {useStaticMap ? (
             <>
-              <span className="h-4 w-4" />
+              <MapIcon className="h-4 w-4" />
               Tentar mapa interativo
             </>
           ) : (
             <>
-              <span className="h-4 w-4" />
+              <Loader2 className="h-4 w-4" />
               Usar mapa estático
             </>
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );
