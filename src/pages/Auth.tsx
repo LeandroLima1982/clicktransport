@@ -50,7 +50,7 @@ const Auth = () => {
       return;
     }
     
-    // Redirect based on user role
+    // Direct route redirections based on user role
     if (userRole === 'company') {
       navigate('/company/dashboard');
     } else if (userRole === 'driver') {
@@ -58,7 +58,7 @@ const Auth = () => {
     } else if (userRole === 'admin') {
       navigate('/admin/dashboard');
     } else if (userRole === 'client') {
-      navigate('/'); // Clients are redirected to homepage for now
+      navigate('/bookings');
     } else {
       // Default fallback if role is not recognized
       navigate('/');
