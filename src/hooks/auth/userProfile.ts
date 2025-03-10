@@ -22,9 +22,10 @@ export const fetchUserRole = async (userId: string): Promise<UserRole> => {
       return data.role as UserRole;
     }
     
+    console.log('No role found for user, returning null');
     return null;
   } catch (err) {
-    console.error('Error fetching user role:', err);
+    console.error('Exception while fetching user role:', err);
     return null;
   }
 };

@@ -18,21 +18,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      // Fetch user role from profiles table if user exists
-      if (session?.user) {
-        fetchUserRole(session.user.id).then(role => {
+    const initAuth = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Get session first
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Initial session check:', session);
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        // Fetch user role from profiles table if user exists
+        if (session?.user) {
+          const role = await fetchUserRole(session.user.id);
           console.log('User role fetched:', role);
           setUserRole(role);
-        });
+        } else {
+          setUserRole(null);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-    });
+    };
+
+    initAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -43,12 +55,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         // Update user role when auth state changes
         if (currentSession?.user) {
-          const role = await fetchUserRole(currentSession.user.id);
-          console.log('User role updated on auth change:', role);
-          setUserRole(role);
-          
-          if (event === 'SIGNED_IN') {
-            toast.success('Login realizado com sucesso!');
+          setIsLoading(true); // Set loading while fetching role
+          try {
+            const role = await fetchUserRole(currentSession.user.id);
+            console.log('User role updated on auth change:', role);
+            setUserRole(role);
+            
+            if (event === 'SIGNED_IN') {
+              toast.success('Login realizado com sucesso!');
+            }
+          } catch (error) {
+            console.error('Error fetching user role:', error);
+          } finally {
+            setIsLoading(false);
           }
         } else {
           setUserRole(null);
@@ -58,9 +77,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Reset logout in progress state if we get a successful sign out event
             setLogoutInProgress(false);
           }
+          
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       }
     );
 
