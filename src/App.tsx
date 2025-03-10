@@ -1,3 +1,4 @@
+
 // Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
@@ -110,6 +111,7 @@ const HomeRedirect = () => {
   
   // If user is logged in and is a company, redirect to company dashboard
   if (user && userRole === 'company') {
+    console.log("HomeRedirect: Redirecting company user to dashboard");
     return <Navigate to="/company/dashboard" replace />;
   }
   

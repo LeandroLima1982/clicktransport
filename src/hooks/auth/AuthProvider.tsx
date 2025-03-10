@@ -67,10 +67,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.log('Initial user role fetched:', role);
             setUserRole(role);
             
-            // Redirect company users based on path
-            if (role === 'company' && window.location.pathname === '/') {
-              window.location.href = '/company/dashboard';
-            }
+            // Don't redirect here - this was causing part of the loop
+            // Let the React Router handle redirection instead
             
           } catch (roleError) {
             console.error('Error fetching initial user role:', roleError);
@@ -139,10 +137,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUserRole(role);
             toast.success('Login realizado com sucesso!');
             
-            // Redirect company users to dashboard after login
-            if (role === 'company' && window.location.pathname === '/') {
-              window.location.href = '/company/dashboard';
-            }
+            // Don't redirect here - this was causing part of the loop
+            // Let the React Router handle redirection instead
             
           } catch (roleError) {
             console.error('Error fetching user role on auth change:', roleError);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -46,21 +45,21 @@ const Auth = () => {
     console.log('Redirecting user with role:', userRole);
     
     if (returnTo) {
-      navigate(returnTo);
+      navigate(returnTo, { replace: true });
       return;
     }
     
     // Always redirect company users to their dashboard, no matter what
     if (userRole === 'company') {
-      navigate('/company/dashboard');
+      navigate('/company/dashboard', { replace: true });
     } else if (userRole === 'driver') {
-      navigate('/driver/dashboard');
+      navigate('/driver/dashboard', { replace: true });
     } else if (userRole === 'admin') {
-      navigate('/admin/dashboard');
+      navigate('/admin/dashboard', { replace: true });
     } else if (userRole === 'client') {
-      navigate('/bookings');
+      navigate('/bookings', { replace: true });
     } else {
-      navigate('/');
+      navigate('/', { replace: true });
     }
   };
 
