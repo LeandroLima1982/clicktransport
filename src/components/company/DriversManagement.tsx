@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -49,7 +48,11 @@ interface Driver {
   vehicle_id: string | null;
 }
 
-const DriversManagement: React.FC = () => {
+interface DriversManagementProps {
+  companyId: string;
+}
+
+const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
   const { user } = useAuth();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -70,13 +73,11 @@ const DriversManagement: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [user]);
+  }, [user, companyId]);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const companyId = await getCompanyId();
-      
       if (companyId) {
         // Fetch drivers
         const { data: driversData, error: driversError } = await supabase
@@ -107,20 +108,7 @@ const DriversManagement: React.FC = () => {
 
   // Helper function to get company ID from user ID
   const getCompanyId = async () => {
-    if (!user) return null;
-    
-    try {
-      const { data } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-      
-      return data?.id || null;
-    } catch (error) {
-      console.error('Error fetching company ID:', error);
-      return null;
-    }
+    return companyId;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

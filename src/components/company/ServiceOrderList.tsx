@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -46,7 +45,11 @@ interface ServiceOrder {
   vehicle_id: string | null;
 }
 
-const ServiceOrderList: React.FC = () => {
+interface ServiceOrderListProps {
+  companyId: string;
+}
+
+const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [drivers, setDrivers] = useState<any[]>([]);
@@ -68,13 +71,11 @@ const ServiceOrderList: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [user]);
+  }, [user, companyId]);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const companyId = await getCompanyId();
-      
       if (companyId) {
         // Fetch service orders
         const { data: ordersData, error: ordersError } = await supabase
@@ -115,20 +116,7 @@ const ServiceOrderList: React.FC = () => {
 
   // Helper function to get company ID from user ID
   const getCompanyId = async () => {
-    if (!user) return null;
-    
-    try {
-      const { data } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-      
-      return data?.id || null;
-    } catch (error) {
-      console.error('Error fetching company ID:', error);
-      return null;
-    }
+    return companyId;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

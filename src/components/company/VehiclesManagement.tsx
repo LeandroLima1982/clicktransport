@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -47,7 +46,11 @@ interface Vehicle {
   status: 'active' | 'maintenance' | 'inactive';
 }
 
-const VehiclesManagement: React.FC = () => {
+interface VehiclesManagementProps {
+  companyId: string;
+}
+
+const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) => {
   const { user } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,13 +69,11 @@ const VehiclesManagement: React.FC = () => {
 
   useEffect(() => {
     fetchVehicles();
-  }, [user]);
+  }, [user, companyId]);
 
   const fetchVehicles = async () => {
     setIsLoading(true);
     try {
-      const companyId = await getCompanyId();
-      
       if (companyId) {
         const { data, error } = await supabase
           .from('vehicles')
@@ -93,20 +94,7 @@ const VehiclesManagement: React.FC = () => {
 
   // Helper function to get company ID from user ID
   const getCompanyId = async () => {
-    if (!user) return null;
-    
-    try {
-      const { data } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-      
-      return data?.id || null;
-    } catch (error) {
-      console.error('Error fetching company ID:', error);
-      return null;
-    }
+    return companyId;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -383,7 +371,75 @@ const VehiclesManagement: React.FC = () => {
                   </Button>
                 </SheetTrigger>
                 <SheetContent>
-                  {/* Same form content as above */}
+                  <div className="grid gap-4 py-4">
+                    <div>
+                      <label htmlFor="model" className="block text-sm font-medium mb-1">
+                        Modelo *
+                      </label>
+                      <Input
+                        id="model"
+                        name="model"
+                        value={vehicleForm.model}
+                        onChange={handleInputChange}
+                        placeholder="Modelo do veículo"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="license_plate" className="block text-sm font-medium mb-1">
+                        Placa *
+                      </label>
+                      <Input
+                        id="license_plate"
+                        name="license_plate"
+                        value={vehicleForm.license_plate}
+                        onChange={handleInputChange}
+                        placeholder="Placa do veículo"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="year" className="block text-sm font-medium mb-1">
+                        Ano
+                      </label>
+                      <Input
+                        id="year"
+                        name="year"
+                        type="number"
+                        value={vehicleForm.year}
+                        onChange={handleInputChange}
+                        placeholder="Ano do veículo"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="status" className="block text-sm font-medium mb-1">
+                        Status
+                      </label>
+                      <select
+                        id="status"
+                        name="status"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={vehicleForm.status}
+                        onChange={handleInputChange}
+                      >
+                        <option value="active">Ativo</option>
+                        <option value="maintenance">Em manutenção</option>
+                        <option value="inactive">Inativo</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <SheetFooter>
+                    <SheetClose asChild>
+                      <Button variant="outline">Cancelar</Button>
+                    </SheetClose>
+                    <Button onClick={handleSaveVehicle}>
+                      {isEditing ? 'Salvar Alterações' : 'Cadastrar Veículo'}
+                    </Button>
+                  </SheetFooter>
                 </SheetContent>
               </Sheet>
             </div>
@@ -422,29 +478,71 @@ const VehiclesManagement: React.FC = () => {
                               </Button>
                             </SheetTrigger>
                             <SheetContent>
-                              {/* Same form content as above */}
-                            </SheetContent>
-                          </Sheet>
-                          
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setVehicleToDelete(vehicle.id)}
-                          >
-                            <Trash className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
+                              <div className="grid gap-4 py-4">
+                                <div>
+                                  <label htmlFor="model" className="block text-sm font-medium mb-1">
+                                    Modelo *
+                                  </label>
+                                  <Input
+                                    id="model"
+                                    name="model"
+                                    value={vehicleForm.model}
+                                    onChange={handleInputChange}
+                                    placeholder="Modelo do veículo"
+                                    required
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label htmlFor="license_plate" className="block text-sm font-medium mb-1">
+                                    Placa *
+                                  </label>
+                                  <Input
+                                    id="license_plate"
+                                    name="license_plate"
+                                    value={vehicleForm.license_plate}
+                                    onChange={handleInputChange}
+                                    placeholder="Placa do veículo"
+                                    required
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label htmlFor="year" className="block text-sm font-medium mb-1">
+                                    Ano
+                                  </label>
+                                  <Input
+                                    id="year"
+                                    name="year"
+                                    type="number"
+                                    value={vehicleForm.year}
+                                    onChange={handleInputChange}
+                                    placeholder="Ano do veículo"
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label htmlFor="status" className="block text-sm font-medium mb-1">
+                                    Status
+                                  </label>
+                                  <select
+                                    id="status"
+                                    name="status"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={vehicleForm.status}
+                                    onChange={handleInputChange}
+                                  >
+                                    <option value="active">Ativo</option>
+                                    <option value="maintenance">Em manutenção</option>
+                                    <option value="inactive">Inativo</option>
+                                  </select>
+                                </div>
+                              </div>
+                              
+                              <SheetFooter>
+                                <SheetClose asChild>
+                                  <Button variant="outline">Cancelar</Button>
+                                </SheetClose>
+                                <Button onClick={handleSaveVehicle}>
+                                  {is
 
-export default VehiclesManagement;
