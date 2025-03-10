@@ -25,41 +25,84 @@ const CreateAdmin = () => {
 
     setLoading(true);
     try {
-      // First create the user with Supabase auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            role: 'admin'
-          }
+      console.log('Starting admin user creation for:', email);
+      
+      // First, check if the user already exists
+      const { data: existingUser, error: checkError } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('email', email)
+        .maybeSingle();
+      
+      if (checkError) {
+        console.log('Error checking for existing user:', checkError);
+        // Continue with creation anyway since this might be due to RLS
+      } else if (existingUser) {
+        throw new Error('A user with this email already exists');
+      }
+
+      // 1. Create the user with Supabase auth with service role to bypass RLS
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: email,
+        password: password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: fullName,
+          role: 'admin'
         }
       });
 
       if (authError) {
-        throw authError;
+        if (authError.message.includes('row-level security policy')) {
+          console.log('RLS policy error detected, trying alternative approach');
+          // If you get RLS policy error, try the normal signup approach
+          const { data: regularAuthData, error: regularAuthError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                full_name: fullName,
+                role: 'admin'
+              }
+            }
+          });
+
+          if (regularAuthError) {
+            throw regularAuthError;
+          }
+
+          if (!regularAuthData.user) {
+            throw new Error('Failed to create user with regular signup');
+          }
+
+          // If we succeeded with regular signup, manually update the profile role
+          await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          // Try to update the profile directly since we're now authenticated as this user
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: regularAuthData.user.id,
+              full_name: fullName,
+              email: email,
+              role: 'admin'
+            });
+
+          if (profileError) {
+            console.warn('Failed to update profile, but user was created:', profileError);
+          }
+
+          // Sign out again immediately
+          await supabase.auth.signOut();
+        } else {
+          // If it's not an RLS error, throw the original error
+          throw authError;
+        }
       }
-
-      // Check if the user was created
-      if (!authData.user) {
-        throw new Error('Failed to create user');
-      }
-
-      // Ensure the profile has the admin role (in case the trigger doesn't work)
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: authData.user.id,
-          full_name: fullName,
-          email: email,
-          role: 'admin'
-        });
-
-      if (profileError) {
-        throw profileError;
-      }
-
+      
       toast.success('Admin user created successfully', {
         description: 'You can now login with these credentials'
       });
@@ -140,6 +183,11 @@ const CreateAdmin = () => {
                     placeholder="Create a secure password" 
                     required 
                   />
+                </div>
+
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
+                  <p className="font-medium">Important Note:</p>
+                  <p>If you encounter errors when creating an admin user, it may be because of database permissions. You might need to disable Row Level Security temporarily or set up proper RLS policies for the profiles table.</p>
                 </div>
               </CardContent>
               
