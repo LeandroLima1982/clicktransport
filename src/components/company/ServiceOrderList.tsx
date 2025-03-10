@@ -73,6 +73,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
+  const [isNewOrderSheetOpen, setIsNewOrderSheetOpen] = useState(false);
   
   // Form state
   const [newOrder, setNewOrder] = useState({
@@ -181,6 +182,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
         vehicle_id: ''
       });
       
+      setIsNewOrderSheetOpen(false);
       fetchData();
       
     } catch (error) {
@@ -299,7 +301,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
           />
         </div>
         
-        <Sheet>
+        <Sheet open={isNewOrderSheetOpen} onOpenChange={setIsNewOrderSheetOpen}>
           <SheetTrigger asChild>
             <Button className="ml-4">
               <Plus className="mr-2 h-4 w-4" />
@@ -411,11 +413,20 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
               </div>
             </div>
             
-            <SheetFooter>
-              <SheetClose asChild>
-                <Button variant="outline">Cancelar</Button>
-              </SheetClose>
-              <Button onClick={handleCreateOrder}>Criar Ordem</Button>
+            <SheetFooter className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsNewOrderSheetOpen(false)}
+                className="w-full sm:w-auto"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleCreateOrder}
+                className="w-full sm:w-auto"
+              >
+                Criar Ordem
+              </Button>
             </SheetFooter>
           </SheetContent>
         </Sheet>
@@ -436,17 +447,10 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
           ) : filteredOrders.length === 0 ? (
             <div className="h-40 flex items-center justify-center flex-col">
               <p className="text-muted-foreground mb-2">Nenhuma ordem encontrada</p>
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Criar Ordem
-                  </Button>
-                </SheetTrigger>
-                <SheetContent>
-                  {/* Same form content as above */}
-                </SheetContent>
-              </Sheet>
+              <Button onClick={() => setIsNewOrderSheetOpen(true)} variant="outline">
+                <Plus className="mr-2 h-4 w-4" />
+                Criar Ordem
+              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto">
