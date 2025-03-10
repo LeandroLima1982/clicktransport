@@ -1,72 +1,97 @@
 
-/* Vehicle card styles based on the reference */
+/* Modern vehicle card styling based on reference design */
 .vehicle-card {
   background-color: #1F1F1F;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
   margin-bottom: 16px;
-  color: white;
-  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.vehicle-card:active {
+  transform: scale(0.98);
 }
 
 .vehicle-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: 12px 15px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .vehicle-name {
-  font-size: 22px;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 16px;
+  color: white;
 }
 
 .vehicle-plate {
+  background-color: #333;
+  color: white;
   font-size: 12px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 20px;
-  background-color: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
 }
 
 .vehicle-image-container {
-  height: 140px;
-  overflow: hidden;
   position: relative;
+  height: 140px;
+  background-color: #222;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
 }
 
 .vehicle-image {
-  width: 100%;
   height: 100%;
-  object-fit: cover;
+  width: 100%;
+  object-fit: contain;
+  padding: 12px;
 }
 
 .journey-info {
-  background-color: #262626;
-  padding: 16px;
+  padding: 15px;
 }
 
 .journey-location {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .location-dot {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  margin-right: 12px;
   margin-top: 4px;
+  margin-right: 12px;
+  position: relative;
 }
 
-.location-dot.origin {
+.location-dot::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 28px;
+  background-color: rgba(255, 255, 255, 0.1);
+  left: 5px;
+  top: 12px;
+}
+
+.journey-location:last-child .location-dot::after {
+  display: none;
+}
+
+.origin {
   background-color: #F8D748;
 }
 
-.location-dot.destination {
-  background-color: #F87171;
+.destination {
+  background-color: #F8D748;
 }
 
 .location-text {
@@ -74,18 +99,20 @@
 }
 
 .location-name {
-  font-weight: 600;
+  font-size: 14px;
+  color: white;
   margin-bottom: 2px;
 }
 
 .location-time {
   font-size: 12px;
-  opacity: 0.7;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .journey-stats {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -93,35 +120,149 @@
 
 .stat {
   display: flex;
+  flex-direction: column;
   align-items: center;
+  gap: 4px;
 }
 
 .stat-value {
-  margin-left: 8px;
-  font-weight: 600;
+  font-size: 13px;
+  color: white;
+  font-weight: 500;
 }
 
-/* Trip summary card */
-.trip-summary-card {
-  background-color: #262626;
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 16px;
+/* Transfer item styles */
+.transfer-item {
+  background-color: #1F1F1F;
+  border-radius: 14px;
+  padding: 15px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.transfer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.transfer-title {
+  font-weight: 600;
   color: white;
 }
 
-.trip-price {
-  font-size: 28px;
-  font-weight: 700;
-  color: #F8D748;
+.transfer-status {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
 }
 
-/* Route display between points */
-.route-line {
-  position: absolute;
-  left: 6px;
-  top: 18px;
-  bottom: 18px;
-  width: 2px;
-  background: repeating-linear-gradient(to bottom, transparent, transparent 4px, rgba(255,255,255,0.3) 4px, rgba(255,255,255,0.3) 8px);
+.transfer-content {
+  display: flex;
+  gap: 15px;
+}
+
+.transfer-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  background-color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.transfer-details {
+  flex: 1;
+}
+
+.transfer-route {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.route-point {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.point-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #F8D748;
+}
+
+.point-name {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.transfer-footer {
+  margin-top: 5px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Vehicle selection in booking flow */
+.vehicle-option {
+  background-color: #222;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 15px;
+  transition: transform 0.2s;
+}
+
+.vehicle-option:active {
+  transform: scale(0.98);
+}
+
+.vehicle-option-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 15px;
+  background-color: #2A2A2A;
+  color: white;
+}
+
+.vehicle-option-content {
+  padding: 15px;
+  display: flex;
+  gap: 15px;
+}
+
+.vehicle-option-image {
+  width: 80px;
+  height: 80px;
+  background-color: #333;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vehicle-option-details {
+  flex: 1;
+}
+
+.vehicle-option-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vehicle-option-price {
+  font-weight: 600;
+  color: #F8D748;
+  font-size: 18px;
 }

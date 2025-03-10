@@ -111,9 +111,9 @@ const BookingForm: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold text-white">Agende seu Transfer</h3>
-        <Tabs defaultValue="oneway" className="w-[260px]" onValueChange={(value) => setTripType(value as 'oneway' | 'roundtrip')}>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-xl font-semibold text-gray-800">Qual seu destino?</h3>
+        <Tabs defaultValue="oneway" className="w-[200px]" onValueChange={(value) => setTripType(value as 'oneway' | 'roundtrip')}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="oneway">Ida</TabsTrigger>
             <TabsTrigger value="roundtrip">Ida e Volta</TabsTrigger>
@@ -121,27 +121,28 @@ const BookingForm: React.FC = () => {
         </Tabs>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="origin" className="text-white flex items-center">
-            <MapPin className="w-4 h-4 mr-1" /> De onde vai sair?
+          <Label htmlFor="origin" className="text-gray-700 flex items-center text-sm font-medium">
+            De onde vai sair?
           </Label>
           <div className="relative">
             <Input
               id="origin"
-              placeholder="Endereço de origem ou ponto de interesse"
+              placeholder="Endereço origem"
               value={originValue}
               onChange={handleOriginChange}
-              className="bg-white/20 border-white/10 text-white placeholder:text-white/60 focus:ring-primary focus:border-primary"
+              className="pl-10 py-6 rounded-lg border-gray-200"
             />
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             
             {originSuggestions.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-background/90 backdrop-blur-sm border border-border rounded-md shadow-lg">
+              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
                 <ul className="py-1 max-h-60 overflow-auto">
                   {originSuggestions.map((suggestion) => (
                     <li
                       key={suggestion.id}
-                      className="px-3 py-2 text-sm hover:bg-accent cursor-pointer"
+                      className="px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
                       onClick={() => selectSuggestion(suggestion, true)}
                     >
                       <div className="flex items-center gap-2">
@@ -157,25 +158,26 @@ const BookingForm: React.FC = () => {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="destination" className="text-white flex items-center">
-            <MapPin className="w-4 h-4 mr-1" /> Para onde vai?
+          <Label htmlFor="destination" className="text-gray-700 flex items-center text-sm font-medium">
+            Para onde vai?
           </Label>
           <div className="relative">
             <Input
               id="destination"
-              placeholder="Endereço de destino ou ponto de interesse"
+              placeholder="Endereço destino"
               value={destinationValue}
               onChange={handleDestinationChange}
-              className="bg-white/20 border-white/10 text-white placeholder:text-white/60 focus:ring-primary focus:border-primary"
+              className="pl-10 py-6 rounded-lg border-gray-200"
             />
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             
             {destinationSuggestions.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-background/90 backdrop-blur-sm border border-border rounded-md shadow-lg">
+              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
                 <ul className="py-1 max-h-60 overflow-auto">
                   {destinationSuggestions.map((suggestion) => (
                     <li
                       key={suggestion.id}
-                      className="px-3 py-2 text-sm hover:bg-accent cursor-pointer"
+                      className="px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
                       onClick={() => selectSuggestion(suggestion, false)}
                     >
                       <div className="flex items-center gap-2">
@@ -189,21 +191,19 @@ const BookingForm: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="space-y-2">
-          <Label className="text-white flex items-center">
-            <CalendarIcon2 className="w-4 h-4 mr-1" /> Vai quando?
+          <Label className="text-gray-700 flex items-center text-sm font-medium">
+            Vai quando?
           </Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-start text-left font-normal bg-white/20 border-white/10 text-white hover:bg-white/30"
+                className="w-full justify-start text-left font-normal py-6 pl-10 rounded-lg border-gray-200 text-gray-500"
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Data e hora</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -219,26 +219,19 @@ const BookingForm: React.FC = () => {
           </Popover>
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-white flex items-center">
-            <Clock className="w-4 h-4 mr-1" /> Horário de ida
-          </Label>
-          <TimeSelector value={time} onChange={setTime} />
-        </div>
-
         {tripType === 'roundtrip' && (
           <div className="space-y-2">
-            <Label className="text-white flex items-center">
-              <CalendarIcon2 className="w-4 h-4 mr-1" /> Volta quando?
+            <Label className="text-gray-700 flex items-center text-sm font-medium">
+              Volta quando?
             </Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal bg-white/20 border-white/10 text-white hover:bg-white/30"
+                  className="w-full justify-start text-left font-normal py-6 pl-10 rounded-lg border-gray-200 text-gray-500"
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {returnDate ? format(returnDate, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  {returnDate ? format(returnDate, "dd/MM/yyyy", { locale: ptBR }) : <span>Data e hora</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -254,43 +247,15 @@ const BookingForm: React.FC = () => {
             </Popover>
           </div>
         )}
-        
-        {tripType === 'roundtrip' && (
-          <div className="space-y-2">
-            <Label className="text-white flex items-center">
-              <Clock className="w-4 h-4 mr-1" /> Horário de volta
-            </Label>
-            <TimeSelector value={returnTime} onChange={setReturnTime} />
-          </div>
-        )}
-        
-        <div className="space-y-2">
-          <Label htmlFor="passengers" className="text-white flex items-center">
-            <Users className="w-4 h-4 mr-1" /> Passageiros
-          </Label>
-          <Select value={passengers} onValueChange={setPassengers}>
-            <SelectTrigger className="bg-white/20 border-white/10 text-white focus:ring-primary focus:border-primary">
-              <SelectValue placeholder="Número de passageiros" />
-            </SelectTrigger>
-            <SelectContent>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((num) => (
-                <SelectItem key={num} value={num.toString()}>
-                  {num} {num === 1 ? 'passageiro' : 'passageiros'}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       <Button 
         onClick={handleBooking} 
-        className="w-full py-6 rounded-md mt-4 relative overflow-hidden group bg-gradient-to-r from-primary to-yellow-500"
+        className="w-full py-6 rounded-lg mt-4 bg-[#F8D748] hover:bg-[#F8D748]/90 text-black text-lg font-medium"
       >
-        <span className="relative z-10 flex items-center justify-center text-base font-bold">
-          Buscar <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+        <span className="relative z-10 flex items-center justify-center">
+          Buscar
         </span>
-        <span className="absolute inset-0 bg-primary scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></span>
       </Button>
 
       <BookingSteps

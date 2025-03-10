@@ -42,3 +42,153 @@
   transform: scale(0.98);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
+
+/* Card with image */
+.image-card {
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  height: 200px;
+  margin-bottom: 16px;
+}
+
+.image-card-gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+  z-index: 1;
+}
+
+.image-card-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  z-index: 2;
+  color: white;
+}
+
+.image-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.image-card-subtitle {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* Info cards */
+.info-card {
+  background-color: #F8D748;
+  color: black;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.info-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.info-card-content {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* List cards */
+.list-card {
+  background-color: #1F1F1F;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.list-card-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.list-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+}
+
+.list-item {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+.list-item-icon {
+  margin-right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.list-item-content {
+  flex: 1;
+}
+
+.list-item-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: white;
+  margin-bottom: 4px;
+}
+
+.list-item-subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Feature card */
+.feature-card {
+  background-color: #1F1F1F;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.feature-card-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background-color: rgba(248, 215, 72, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: #F8D748;
+}
+
+.feature-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 8px;
+}
+
+.feature-card-text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+}
