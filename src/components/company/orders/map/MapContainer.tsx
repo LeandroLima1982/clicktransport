@@ -5,8 +5,10 @@ import { MapIcon, Loader2 } from 'lucide-react';
 import InteractiveMap from './InteractiveMap';
 import StaticMap from './StaticMap';
 import RouteInfo from './RouteInfo';
+import RouteTracker from './RouteTracker';
 
 interface MapContainerProps {
+  orderId: string;
   originCoords: [number, number];
   destinationCoords: [number, number];
   useStaticMap: boolean;
@@ -20,6 +22,7 @@ interface MapContainerProps {
 }
 
 const MapContainer: React.FC<MapContainerProps> = ({
+  orderId,
   originCoords,
   destinationCoords,
   useStaticMap,
@@ -31,6 +34,30 @@ const MapContainer: React.FC<MapContainerProps> = ({
   destinationAddress = 'Destino',
   onToggleMapType
 }) => {
+  // Check if the order is in a status that would have real-time tracking
+  // In a real application, you would check the order status 
+  // (e.g., 'in_progress' would have tracking)
+  const hasRealTimeTracking = true;
+
+  if (hasRealTimeTracking) {
+    return (
+      <RouteTracker
+        orderId={orderId}
+        originCoords={originCoords}
+        destinationCoords={destinationCoords}
+        useStaticMap={useStaticMap}
+        staticMapUrl={staticMapUrl}
+        routeGeometry={routeGeometry}
+        routeDistance={routeDistance}
+        routeDuration={routeDuration}
+        originAddress={originAddress}
+        destinationAddress={destinationAddress}
+        onToggleMapType={onToggleMapType}
+      />
+    );
+  }
+
+  // Fallback to regular map display without tracking
   return (
     <div className="flex flex-col space-y-4 h-full">
       <div className="h-[500px] relative border rounded-md overflow-hidden bg-gray-100">

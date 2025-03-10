@@ -10,6 +10,8 @@ interface InteractiveMapProps {
   routeGeometry: any;
   originAddress?: string;
   destinationAddress?: string;
+  currentLocation?: [number, number] | null;
+  heading?: number;
 }
 
 const InteractiveMap: React.FC<InteractiveMapProps> = ({ 
@@ -17,14 +19,18 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   destinationCoords, 
   routeGeometry,
   originAddress = 'Origem',
-  destinationAddress = 'Destino'
+  destinationAddress = 'Destino',
+  currentLocation = null,
+  heading
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const marker = useRef<mapboxgl.Marker | null>(null);
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
+  const vehicleMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
+  // Initialize map
   useEffect(() => {
     if (!mapContainer.current) return;
 
@@ -78,14 +84,24 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             .addTo(map.current);
           
           // Create marker for the vehicle
-          marker.current = new mapboxgl.Marker({ color: '#3FB1CE' })
-            .setLngLat(originCoords)
+          // We'll use this for animation if no real-time data is available
+          // or for showing the real-time position otherwise
+          vehicleMarkerRef.current = new mapboxgl.Marker({ 
+            color: '#3FB1CE',
+            rotation: heading
+          })
+            .setLngLat(currentLocation || originCoords)
             .addTo(map.current);
           
           // Set bounds to include both markers
           const bounds = new mapboxgl.LngLatBounds()
             .extend(originCoords)
             .extend(destinationCoords);
+          
+          // If we have current location, include it in the bounds
+          if (currentLocation) {
+            bounds.extend(currentLocation);
+          }
           
           map.current.fitBounds(bounds, { padding: 70, maxZoom: 15 });
           
@@ -116,8 +132,8 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
               }
             });
 
-            // Start animation if route geometry has coordinates
-            if (marker.current && routeGeometry.coordinates.length > 0) {
+            // Start animation only if we don't have real-time location
+            if (!currentLocation && vehicleMarkerRef.current && routeGeometry.coordinates.length > 0) {
               animateMarkerAlongRoute(routeGeometry.coordinates);
             }
           }
@@ -143,6 +159,36 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       }
     };
   }, [originCoords, destinationCoords, routeGeometry, originAddress, destinationAddress]);
+
+  // Update vehicle marker position when currentLocation changes
+  useEffect(() => {
+    if (!map.current || !currentLocation || !vehicleMarkerRef.current) return;
+
+    // Cancel any ongoing animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+
+    // Update marker position and rotation
+    vehicleMarkerRef.current
+      .setLngLat(currentLocation);
+    
+    if (heading !== undefined) {
+      vehicleMarkerRef.current.setRotation(heading);
+    }
+
+    // Check if the marker is in the current viewport
+    const bounds = map.current.getBounds();
+    if (!bounds.contains({ lng: currentLocation[0], lat: currentLocation[1] })) {
+      // If not in viewport, adjust the map view
+      map.current.easeTo({
+        center: currentLocation,
+        duration: 1000,
+        zoom: map.current.getZoom() // Keep current zoom level
+      });
+    }
+  }, [currentLocation, heading]);
 
   const animateMarkerAlongRoute = (coordinates: [number, number][]) => {
     // Cancel any ongoing animation
@@ -180,8 +226,20 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       );
       
       // Update marker position
-      if (marker.current && map.current) {
-        marker.current.setLngLat(coordinates[pointIndex]);
+      if (vehicleMarkerRef.current && map.current) {
+        vehicleMarkerRef.current.setLngLat(coordinates[pointIndex]);
+        
+        // Calculate heading (direction) based on the next point
+        if (pointIndex < coordinates.length - 1) {
+          const currentPoint = coordinates[pointIndex];
+          const nextPoint = coordinates[pointIndex + 1];
+          const angle = Math.atan2(
+            nextPoint[1] - currentPoint[1],
+            nextPoint[0] - currentPoint[0]
+          ) * (180 / Math.PI);
+          
+          vehicleMarkerRef.current.setRotation(angle);
+        }
       }
       
       // Continue animation if not complete

@@ -174,6 +174,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
             <ErrorState message={mapError} onRetry={handleRetry} />
           ) : originCoords && destinationCoords ? (
             <MapContainer 
+              orderId={orderId}
               originCoords={originCoords}
               destinationCoords={destinationCoords}
               useStaticMap={useStaticMap}
