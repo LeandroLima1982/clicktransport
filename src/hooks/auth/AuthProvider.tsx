@@ -16,6 +16,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [logoutInProgress, setLogoutInProgress] = useState(false);
   const [authInitialized, setAuthInitialized] = useState(false);
+  
+  // Add a safety timeout to prevent infinite loading state
+  useEffect(() => {
+    const safetyTimeout = setTimeout(() => {
+      if (isLoading) {
+        console.log('Safety timeout triggered - forcing loading state to false');
+        setIsLoading(false);
+        setAuthInitialized(true);
+      }
+    }, 5000); // 5 second maximum loading time
+    
+    return () => clearTimeout(safetyTimeout);
+  }, [isLoading]);
 
   useEffect(() => {
     let mounted = true;
@@ -26,7 +39,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('Initializing auth...');
         
         // Get session first
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Error getting session:', sessionError);
+          if (mounted) {
+            setIsLoading(false);
+            setAuthInitialized(true);
+          }
+          return;
+        }
         
         if (!mounted) return;
         
@@ -46,6 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUserRole(role);
           } catch (roleError) {
             console.error('Error fetching initial user role:', roleError);
+            // Don't block the app on role fetch failures
             if (!mounted) return;
             setUserRole(null);
           }
@@ -193,6 +216,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Only render children once auth is initialized
+  // But with a fallback to ensure we don't block the app
   if (!authInitialized && isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
