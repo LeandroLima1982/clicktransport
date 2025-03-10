@@ -1,21 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { TabsContent } from '@/components/ui/tabs';
 import { CardContent, CardFooter } from '@/components/ui/card';
-import { Loader2, Building2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { fetchCompanies } from '@/hooks/auth/authFunctions';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import LoginFormInputs from './LoginFormInputs';
+import LoginLinks from './LoginLinks';
 
 interface LoginFormProps {
   handleLogin: (e: React.FormEvent) => Promise<void>;
@@ -31,57 +24,11 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
-  const [companies, setCompanies] = useState<{id: string, name: string}[]>([]);
-  const [fetchingCompanies, setFetchingCompanies] = useState(false);
   const { signIn } = useAuth();
   const location = useLocation();
   
   const searchParams = new URLSearchParams(location.search);
   const accountType = searchParams.get('type') || 'client';
-  
-  useEffect(() => {
-    // Fetch companies when in driver login mode or company login mode
-    if (accountType === 'driver' || accountType === 'company') {
-      loadCompanies();
-    }
-  }, [accountType]);
-
-  const loadCompanies = async () => {
-    setFetchingCompanies(true);
-    console.log('Starting company fetch process...');
-    
-    try {
-      const { data, error } = await fetchCompanies();
-      
-      if (error) {
-        console.error('Error fetching companies:', error);
-        toast.error('Erro ao carregar empresas', {
-          description: 'Por favor, tente novamente mais tarde.'
-        });
-      } else if (data && data.length > 0) {
-        console.log(`Successfully loaded ${data.length} companies:`, data);
-        setCompanies(data);
-        
-        // Auto-select the first company if there's only one
-        if (data.length === 1) {
-          setSelectedCompanyId(data[0].id);
-          console.log('Auto-selected company:', data[0].name);
-        }
-      } else {
-        console.log('No companies found or empty data returned');
-        toast.warning('Nenhuma empresa encontrada', {
-          description: 'Não há empresas cadastradas no sistema.'
-        });
-      }
-    } catch (err) {
-      console.error('Exception when loading companies:', err);
-      toast.error('Erro ao carregar empresas', {
-        description: 'Ocorreu um erro inesperado.'
-      });
-    } finally {
-      setFetchingCompanies(false);
-    }
-  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,90 +80,15 @@ const LoginForm: React.FC<LoginFormProps> = ({
     <TabsContent value="login">
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4 pt-6">
-          {/* Show company selection for driver and company logins */}
-          {(accountType === 'driver' || accountType === 'company') && (
-            <div className="space-y-2">
-              <label htmlFor="company-select" className="text-sm font-medium flex items-center">
-                <Building2 className="h-4 w-4 mr-1" />
-                Empresa
-              </label>
-              <Select
-                value={selectedCompanyId}
-                onValueChange={setSelectedCompanyId}
-                disabled={fetchingCompanies}
-              >
-                <SelectTrigger id="company-select" className="w-full bg-white">
-                  <SelectValue placeholder="Selecione uma empresa" />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-[100] max-h-60 overflow-y-auto">
-                  {companies.length > 0 ? (
-                    companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id} className="py-2">
-                        {company.name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="no-companies" disabled>
-                      {fetchingCompanies ? 'Carregando empresas...' : 'Nenhuma empresa encontrada'}
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              {fetchingCompanies && (
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  Carregando empresas...
-                </div>
-              )}
-              {!fetchingCompanies && companies.length > 0 && (
-                <div className="text-xs text-muted-foreground">
-                  {companies.length} {companies.length === 1 ? 'empresa encontrada' : 'empresas encontradas'}
-                </div>
-              )}
-              {!fetchingCompanies && companies.length === 0 && (
-                <button 
-                  type="button" 
-                  onClick={loadCompanies}
-                  className="text-xs text-primary hover:underline flex items-center"
-                >
-                  <Loader2 className="h-3 w-3 mr-1" />
-                  Tentar novamente
-                </button>
-              )}
-            </div>
-          )}
-          
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
-            <Input 
-              id="email" 
-              type="email" 
-              placeholder="nome@exemplo.com" 
-              required 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label htmlFor="password" className="text-sm font-medium">
-                Senha
-              </label>
-              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                Esqueceu a senha?
-              </Link>
-            </div>
-            <Input 
-              id="password" 
-              type="password" 
-              required 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+          <LoginFormInputs 
+            email={email}
+            setEmail={setEmail}
+            password={password}
+            setPassword={setPassword}
+            selectedCompanyId={selectedCompanyId}
+            setSelectedCompanyId={setSelectedCompanyId}
+            accountType={accountType}
+          />
         </CardContent>
         
         <CardFooter className="flex flex-col space-y-4">
@@ -235,40 +107,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
             )}
           </Button>
           
-          <div className="text-sm text-center text-foreground/70">
-            Não tem uma conta?{' '}
-            <button
-              type="button"
-              onClick={() => setActiveTab('register')}
-              className="text-primary hover:underline"
-            >
-              Cadastre-se
-            </button>
-          </div>
-          
-          {accountType !== 'client' && (
-            <div className="text-sm text-center">
-              <Link to="/auth?type=client" className="text-primary hover:underline">
-                Entrar como cliente
-              </Link>
-            </div>
-          )}
-          
-          {accountType !== 'driver' && (
-            <div className="text-sm text-center">
-              <Link to="/auth?type=driver" className="text-primary hover:underline">
-                Entrar como motorista
-              </Link>
-            </div>
-          )}
-          
-          {accountType !== 'company' && (
-            <div className="text-sm text-center">
-              <Link to="/auth?type=company" className="text-primary hover:underline">
-                Entrar como empresa
-              </Link>
-            </div>
-          )}
+          <LoginLinks
+            accountType={accountType}
+            setActiveTab={setActiveTab}
+          />
         </CardFooter>
       </form>
     </TabsContent>
