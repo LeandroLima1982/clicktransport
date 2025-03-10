@@ -68,8 +68,8 @@ export const formatPlaceName = (place: any): React.ReactElement => {
 
 // Helper function to validate the Mapbox token
 export const isValidMapboxToken = (token: string): boolean => {
-  return token && 
-         token.length > 20 && 
+  if (!token) return false;
+  return token.length > 20 && 
          token.startsWith('pk.') && 
          !token.includes('YOUR_MAPBOX_TOKEN');
 };

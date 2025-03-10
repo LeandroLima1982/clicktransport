@@ -2,12 +2,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Loader2, Navigation, Map as MapIcon } from 'lucide-react';
+import { Loader2, Navigation, Map as MapIcon, Clock } from 'lucide-react';
 import { ServiceOrder } from './types';
 import { supabase } from '@/main';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { MAPBOX_TOKEN } from '@/utils/mapbox';
+import { MAPBOX_TOKEN, isValidMapboxToken } from '@/utils/mapbox';
+import { formatDistance, formatDuration } from './utils';
 
 // Define fallback style for static map image
 const STATIC_MAP_STYLE = 'streets-v12';
@@ -31,6 +32,9 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
   const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
   const [routeDistance, setRouteDistance] = useState(0);
   const [routeDuration, setRouteDuration] = useState(0);
+  const [routeGeometry, setRouteGeometry] = useState<any>(null);
+  const animationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (isOpen && orderId) {
@@ -41,6 +45,12 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       if (map.current) {
         map.current.remove();
         map.current = null;
+      }
+      
+      // Cancel any ongoing animation
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
     };
   }, [isOpen, orderId]);
@@ -79,6 +89,12 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
   const getCoordinatesAndPrepareMap = async (origin: string, destination: string) => {
     try {
       console.log("Getting coordinates for addresses");
+      if (!isValidMapboxToken(MAPBOX_TOKEN)) {
+        console.error("Invalid Mapbox token", MAPBOX_TOKEN);
+        setMapError('Token do Mapbox inválido. Verifique a configuração.');
+        return;
+      }
+      
       // Get coordinates from addresses
       const [originCoords, destinationCoords] = await Promise.all([
         getCoordinatesFromAddress(origin),
@@ -98,14 +114,17 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       // Try to initialize interactive map first
       try {
         await initializeMap(originCoords, destinationCoords);
+        
+        // Get route data for display
+        await fetchRouteData(originCoords, destinationCoords);
       } catch (error) {
         console.error("Interactive map initialization failed, falling back to static map:", error);
         setUseStaticMap(true);
         prepareStaticMap(originCoords, destinationCoords);
+        
+        // Get route data even with static map
+        await fetchRouteData(originCoords, destinationCoords);
       }
-      
-      // Get route data for display even if using static map
-      fetchRouteData(originCoords, destinationCoords);
     } catch (error) {
       console.error("Error in map preparation:", error);
       setMapError('Erro ao preparar o mapa. Tente novamente.');
@@ -177,6 +196,8 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       mapContainer.current.style.height = '100%';
       mapContainer.current.style.width = '100%';
       mapContainer.current.style.backgroundColor = '#e9e9e9';
+      mapContainer.current.style.position = 'relative';
+      mapContainer.current.style.display = 'block';
     }
     
     // Initialize Mapbox
@@ -194,6 +215,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
           container: mapContainer.current!,
           style: 'mapbox://styles/mapbox/streets-v12',
           zoom: 12,
+          center: start, // Start centered on origin
           minZoom: 2,
           fadeDuration: 0, // Disable fade animations to help with rendering
           renderWorldCopies: false, // Disable rendering multiple copies of world to reduce load
@@ -237,7 +259,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
               .extend(start)
               .extend(end);
             
-            map.current.fitBounds(bounds, { padding: 60, maxZoom: 15 });
+            map.current.fitBounds(bounds, { padding: 70, maxZoom: 15 });
             
             resolve();
           } catch (error) {
@@ -267,12 +289,13 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       }
       
       const data = await response.json();
-      console.log("Geocoding response:", data);
+      console.log("Geocoding response for", address, ":", data);
       
       if (data.features && data.features.length > 0) {
         return data.features[0].center;
       }
       
+      console.warn("No geocoding results for address:", address);
       return null;
     } catch (error) {
       console.error('Error geocoding address:', error);
@@ -299,6 +322,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       
       if (data.routes && data.routes.length > 0) {
         const route = data.routes[0];
+        setRouteGeometry(route.geometry);
         
         // Add route to map if interactive map is available
         if (!useStaticMap && map.current && route) {
@@ -306,7 +330,15 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
             console.log("Adding route to interactive map");
             
             // Add route to map
-            if (!map.current.getSource('route')) {
+            if (map.current.getSource('route')) {
+              // Update existing source if it exists
+              (map.current.getSource('route') as mapboxgl.GeoJSONSource).setData({
+                type: 'Feature',
+                properties: {},
+                geometry: route.geometry
+              });
+            } else {
+              // Create new source and layer if it doesn't exist
               map.current.addSource('route', {
                 type: 'geojson',
                 data: {
@@ -331,6 +363,11 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
                 }
               });
             }
+
+            // Start animation once route is added
+            if (marker.current && route.geometry.coordinates.length > 0) {
+              animateMarkerAlongRoute(route.geometry.coordinates);
+            }
           } catch (error) {
             console.error("Error adding route to map:", error);
           }
@@ -348,6 +385,59 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
     }
   };
 
+  const animateMarkerAlongRoute = (coordinates: [number, number][]) => {
+    // Cancel any ongoing animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+
+    // If we have a very simple route with just two points, add some interpolation
+    if (coordinates.length <= 2) {
+      const interpolated = [];
+      for (let i = 0; i < 100; i++) {
+        const ratio = i / 100;
+        interpolated.push([
+          coordinates[0][0] + (coordinates[1][0] - coordinates[0][0]) * ratio,
+          coordinates[0][1] + (coordinates[1][1] - coordinates[0][1]) * ratio
+        ]);
+      }
+      coordinates = interpolated as [number, number][];
+    }
+
+    let start: number;
+    const animationDuration = 30000; // 30 seconds for the full route animation
+
+    const animate = (timestamp: number) => {
+      if (!startTimeRef.current) {
+        startTimeRef.current = timestamp;
+      }
+      const elapsed = timestamp - startTimeRef.current;
+      const progress = Math.min(elapsed / animationDuration, 1);
+      
+      // Get the current point along the route based on progress
+      const pointIndex = Math.min(
+        Math.floor(progress * coordinates.length),
+        coordinates.length - 1
+      );
+      
+      // Update marker position
+      if (marker.current && map.current) {
+        marker.current.setLngLat(coordinates[pointIndex]);
+      }
+      
+      // Continue animation if not complete
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        // Animation complete, reset for potential replay
+        startTimeRef.current = null;
+      }
+    };
+    
+    // Start the animation
+    animationRef.current = requestAnimationFrame(animate);
+  };
+
   const handleRetry = () => {
     // Reset error state
     setMapError(null);
@@ -358,12 +448,16 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
         // If we were using static map, try interactive again
         setUseStaticMap(false);
         try {
-          initializeMap(originCoords, destinationCoords).catch(() => {
-            // If interactive map fails again, go back to static map
-            setUseStaticMap(true);
-          });
+          initializeMap(originCoords, destinationCoords)
+            .then(() => fetchRouteData(originCoords, destinationCoords))
+            .catch(() => {
+              // If interactive map fails again, go back to static map
+              setUseStaticMap(true);
+              prepareStaticMap(originCoords, destinationCoords);
+            });
         } catch {
           setUseStaticMap(true);
+          prepareStaticMap(originCoords, destinationCoords);
         }
       } else {
         // If we were using interactive map, try to refetch order and reinitialize
@@ -428,13 +522,17 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
                 {(routeDistance > 0 || routeDuration > 0) && (
                   <div className="absolute top-4 right-4 bg-white p-3 rounded-md shadow-md z-10 max-w-xs">
                     <div className="flex flex-col space-y-2">
-                      <div className="text-sm font-semibold flex justify-between">
-                        <span>Distância:</span>
-                        <span>{(routeDistance / 1000).toFixed(1)} km</span>
+                      <div className="text-sm font-semibold flex justify-between items-center">
+                        <span className="flex items-center">
+                          <Navigation className="h-4 w-4 mr-1" /> Distância:
+                        </span>
+                        <span>{formatDistance(routeDistance)}</span>
                       </div>
-                      <div className="text-sm font-semibold flex justify-between">
-                        <span>Tempo estimado:</span>
-                        <span>{Math.floor(routeDuration / 60)} min</span>
+                      <div className="text-sm font-semibold flex justify-between items-center">
+                        <span className="flex items-center">
+                          <Clock className="h-4 w-4 mr-1" /> Tempo estimado:
+                        </span>
+                        <span>{formatDuration(routeDuration)}</span>
                       </div>
                     </div>
                   </div>
