@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -371,7 +372,15 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
                   </Button>
                 </SheetTrigger>
                 <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Cadastrar Veículo</SheetTitle>
+                    <SheetDescription>
+                      Preencha os dados para cadastrar um novo veículo.
+                    </SheetDescription>
+                  </SheetHeader>
+                  
                   <div className="grid gap-4 py-4">
+                    {/* Form fields */}
                     <div>
                       <label htmlFor="model" className="block text-sm font-medium mb-1">
                         Modelo *
@@ -437,7 +446,7 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
                       <Button variant="outline">Cancelar</Button>
                     </SheetClose>
                     <Button onClick={handleSaveVehicle}>
-                      {isEditing ? 'Salvar Alterações' : 'Cadastrar Veículo'}
+                      Cadastrar Veículo
                     </Button>
                   </SheetFooter>
                 </SheetContent>
@@ -478,7 +487,15 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
                               </Button>
                             </SheetTrigger>
                             <SheetContent>
+                              <SheetHeader>
+                                <SheetTitle>Editar Veículo</SheetTitle>
+                                <SheetDescription>
+                                  Atualize os dados do veículo.
+                                </SheetDescription>
+                              </SheetHeader>
+                              
                               <div className="grid gap-4 py-4">
+                                {/* Form fields */}
                                 <div>
                                   <label htmlFor="model" className="block text-sm font-medium mb-1">
                                     Modelo *
@@ -544,5 +561,31 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
                                   <Button variant="outline">Cancelar</Button>
                                 </SheetClose>
                                 <Button onClick={handleSaveVehicle}>
-                                  {is
+                                  Salvar Alterações
+                                </Button>
+                              </SheetFooter>
+                            </SheetContent>
+                          </Sheet>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setVehicleToDelete(vehicle.id)}
+                          >
+                            <Trash className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
+export default VehiclesManagement;
