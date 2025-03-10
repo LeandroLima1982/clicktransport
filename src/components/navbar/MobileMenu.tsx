@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, LogOut, Loader2, Settings, Car, Building, Users } from 'lucide-react';
+import { User, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/hooks/auth/types';
 
@@ -58,79 +58,33 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
           >
             Contato
           </Link>
-          
-          {/* Role-specific menu items */}
-          {user && (
-            <div className="pt-2 pb-2 border-b border-gray-100">
-              <p className="text-sm text-gray-500 py-1">
-                {userRole === 'admin' && 'Conta Administrador'}
-                {userRole === 'company' && 'Conta Empresa'}
-                {userRole === 'driver' && 'Conta Motorista'}
-                {userRole === 'client' && 'Conta Cliente'}
-              </p>
-            </div>
-          )}
-          
           <div className="flex flex-col space-y-2 pt-2">
             {user ? (
               <>
-                {/* Admin panel */}
-                {userRole === 'admin' && (
-                  <Link to="/admin/dashboard" onClick={onClose}>
-                    <Button variant="outline" className="w-full text-left justify-start rounded-full">
-                      <Users className="h-4 w-4 mr-2" />
-                      Painel Admin
-                    </Button>
-                  </Link>
-                )}
-                
-                {/* Company panel */}
-                {userRole === 'company' && (
-                  <Link to="/company/dashboard" onClick={onClose}>
-                    <Button variant="outline" className="w-full text-left justify-start rounded-full">
-                      <Building className="h-4 w-4 mr-2" />
-                      Painel da Empresa
-                    </Button>
-                  </Link>
-                )}
-                
-                {/* Driver panel */}
-                {userRole === 'driver' && (
-                  <Link to="/driver/dashboard" onClick={onClose}>
-                    <Button variant="outline" className="w-full text-left justify-start rounded-full">
-                      <Car className="h-4 w-4 mr-2" />
-                      Painel do Motorista
-                    </Button>
-                  </Link>
-                )}
-                
-                {/* Client bookings */}
                 {userRole === 'client' && (
                   <Link to="/bookings" onClick={onClose}>
                     <Button variant="outline" className="w-full text-left justify-start rounded-full">
-                      <Car className="h-4 w-4 mr-2" />
+                      <User className="h-4 w-4 mr-2" />
                       Minhas Reservas
                     </Button>
                   </Link>
                 )}
-                
-                {/* Profile link */}
-                <Link to={`/${userRole}/profile`} onClick={onClose}>
-                  <Button variant="outline" className="w-full text-left justify-start rounded-full">
-                    <User className="h-4 w-4 mr-2" />
-                    Meu Perfil
-                  </Button>
-                </Link>
-                
-                {/* Settings link */}
-                <Link to={`/${userRole}/settings`} onClick={onClose}>
-                  <Button variant="outline" className="w-full text-left justify-start rounded-full">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Configurações
-                  </Button>
-                </Link>
-                
-                {/* Logout button */}
+                {userRole === 'company' && (
+                  <Link to="/company/dashboard" onClick={onClose}>
+                    <Button variant="outline" className="w-full text-left justify-start rounded-full">
+                      <User className="h-4 w-4 mr-2" />
+                      Painel da Empresa
+                    </Button>
+                  </Link>
+                )}
+                {userRole === 'driver' && (
+                  <Link to="/driver/dashboard" onClick={onClose}>
+                    <Button variant="outline" className="w-full text-left justify-start rounded-full">
+                      <User className="h-4 w-4 mr-2" />
+                      Painel do Motorista
+                    </Button>
+                  </Link>
+                )}
                 <Button 
                   onClick={() => {
                     handleSignOut();
