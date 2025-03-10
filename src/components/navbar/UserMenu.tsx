@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, LogOut, Loader2 } from 'lucide-react';
+import { User, LogOut, Loader2, Car, Briefcase, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/hooks/auth/types';
 import {
@@ -9,6 +9,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 interface UserMenuProps {
@@ -27,11 +28,39 @@ const UserMenu: React.FC<UserMenuProps> = ({
   if (!user) {
     return (
       <>
-        <Link to="/auth">
-          <Button variant="outline" className="rounded-full px-6 btn-hover-slide">
-            Entrar
-          </Button>
-        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="rounded-full px-6 btn-hover-slide">
+              Entrar
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem asChild>
+              <Link to="/auth?type=client" className="w-full">
+                <User className="h-4 w-4 mr-2" />
+                Login Cliente
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/auth?type=driver" className="w-full">
+                <Car className="h-4 w-4 mr-2" />
+                Login Motorista
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/auth?type=company" className="w-full">
+                <Briefcase className="h-4 w-4 mr-2" />
+                Login Empresa
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/auth?type=admin" className="w-full">
+                <Shield className="h-4 w-4 mr-2" />
+                Login Admin
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Link to="/auth?register=true">
           <Button className="rounded-full px-6 btn-hover-slide">Cadastrar</Button>
         </Link>

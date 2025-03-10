@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, LogOut, Loader2 } from 'lucide-react';
+import { User, LogOut, Loader2, Car, Briefcase, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/hooks/auth/types';
 
@@ -108,9 +108,29 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
               </>
             ) : (
               <>
-                <Link to="/auth" onClick={onClose}>
-                  <Button variant="outline" className="w-full rounded-full">
-                    Entrar
+                <p className="text-sm font-medium text-muted-foreground py-1">Selecione o tipo de login:</p>
+                <Link to="/auth?type=client" onClick={onClose}>
+                  <Button variant="outline" className="w-full rounded-full flex items-center justify-start">
+                    <User className="h-4 w-4 mr-2" />
+                    Login Cliente
+                  </Button>
+                </Link>
+                <Link to="/auth?type=driver" onClick={onClose}>
+                  <Button variant="outline" className="w-full rounded-full flex items-center justify-start">
+                    <Car className="h-4 w-4 mr-2" />
+                    Login Motorista
+                  </Button>
+                </Link>
+                <Link to="/auth?type=company" onClick={onClose}>
+                  <Button variant="outline" className="w-full rounded-full flex items-center justify-start">
+                    <Briefcase className="h-4 w-4 mr-2" />
+                    Login Empresa
+                  </Button>
+                </Link>
+                <Link to="/auth?type=admin" onClick={onClose}>
+                  <Button variant="outline" className="w-full rounded-full flex items-center justify-start">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Login Admin
                   </Button>
                 </Link>
                 <Link to="/auth?register=true" onClick={onClose}>

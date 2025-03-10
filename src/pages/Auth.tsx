@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { AuthContainer, LoginForm, RegisterForm } from '@/components/auth';
 import { useAuth } from '../hooks/useAuth';
+import { Car, Briefcase, Shield, User } from 'lucide-react';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -143,26 +144,41 @@ const Auth = () => {
 
   const getTitle = () => {
     if (activeTab === 'login') {
-      return 'Welcome back';
+      if (accountType === 'client') return 'Login de Cliente';
+      if (accountType === 'driver') return 'Login de Motorista';
+      if (accountType === 'company') return 'Login de Empresa';
+      if (accountType === 'admin') return 'Login de Administrador';
+      return 'Login';
     }
     
     if (isBusinessUser) {
-      return 'Create a Business Account';
+      if (accountType === 'driver') return 'Cadastro de Motorista';
+      if (accountType === 'company') return 'Cadastro de Empresa';
+      if (accountType === 'admin') return 'Cadastro de Administrador';
+      return 'Cadastro de Conta Empresarial';
     }
     
-    return 'Create a Client Account';
+    return 'Cadastro de Cliente';
   };
 
   const getDescription = () => {
     if (activeTab === 'login') {
-      return 'Enter your credentials to access your account';
+      return 'Digite suas credenciais para acessar sua conta';
     }
     
     if (isBusinessUser) {
-      return 'Fill out the form below to create your business account';
+      return 'Preencha o formulário abaixo para criar sua conta empresarial';
     }
     
-    return 'Fill out the form below to create your client account';
+    return 'Preencha o formulário abaixo para criar sua conta de cliente';
+  };
+
+  const getRoleIcon = () => {
+    if (accountType === 'client') return <User className="h-8 w-8 text-primary mb-2" />;
+    if (accountType === 'driver') return <Car className="h-8 w-8 text-primary mb-2" />;
+    if (accountType === 'company') return <Briefcase className="h-8 w-8 text-primary mb-2" />;
+    if (accountType === 'admin') return <Shield className="h-8 w-8 text-primary mb-2" />;
+    return null;
   };
 
   return (
@@ -172,6 +188,7 @@ const Auth = () => {
       title={getTitle()}
       description={getDescription()}
       error={error}
+      icon={getRoleIcon()}
     >
       <LoginForm 
         handleLogin={handleLogin} 
