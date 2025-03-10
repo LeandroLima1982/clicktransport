@@ -1,4 +1,3 @@
-
 /* Glass morphism effects */
 .glass-morphism {
   background: rgba(255, 255, 255, 0.1);
@@ -56,7 +55,7 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-/* Mobile-friendly card styles */
+/* Mobile-friendly card styles - updated for app-like feel */
 .mobile-card {
   border-radius: 16px;
   background: white;
@@ -67,6 +66,21 @@
 
 .mobile-card:active {
   transform: scale(0.98);
+}
+
+/* App-like card design */
+.app-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  background-color: white;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-bottom: 12px;
+}
+
+.app-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 /* Mobile-friendly button styles */
@@ -97,7 +111,7 @@
 
 /* App-like header */
 .app-header {
-  height: 60px;
+  height: 70px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -182,6 +196,15 @@
   input, button, textarea, select {
     font-size: 16px; /* Prevent zoom on focus for iOS */
   }
+  
+  /* Add safe area padding for modern mobile devices */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+  
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 16px);
+  }
 }
 
 @keyframes bounce {
@@ -198,15 +221,89 @@
 }
 
 /* Native app-specific enhancements */
-.app-card {
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  background-color: white;
-  transition: transform 0.2s, box-shadow 0.2s;
+.app-btn {
+  @apply rounded-full py-3 px-6 font-medium flex items-center justify-center;
+  transition: transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.app-card:active {
-  transform: scale(0.98);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+.app-btn:active {
+  transform: scale(0.97);
+}
+
+/* Map card for the locations */
+.map-location-card {
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.map-location-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  background: rgba(var(--primary-rgb), 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+}
+
+/* Modern iOS-like list items */
+.ios-list-item {
+  padding: 16px;
+  background-color: white;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+}
+
+.ios-list-item:last-child {
+  border-bottom: none;
+}
+
+.ios-list-group {
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* Modern pill badges for status */
+.status-pill {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-pill-success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: rgb(16, 185, 129);
+}
+
+.status-pill-warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: rgb(245, 158, 11);
+}
+
+.status-pill-error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: rgb(239, 68, 68);
+}
+
+/* Bottom navigation indicator */
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  width: 25%;
+  background-color: hsl(var(--primary));
+  transition: transform 0.3s;
 }
