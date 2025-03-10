@@ -1,3 +1,4 @@
+
 // Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
@@ -193,11 +194,12 @@ function App() {
           } />
           
           {/* Client routes */}
-          <Route path="/bookings" element={
+          {/* Temporarily commented out until Bookings component is implemented */}
+          {/* <Route path="/bookings" element={
             <ProtectedRoute requiredRole="client">
               <Bookings />
             </ProtectedRoute>
-          } />
+          } /> */}
           
           {/* 404 route */}
           <Route path="*" element={<NotFound />} />

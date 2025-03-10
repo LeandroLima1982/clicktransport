@@ -4,7 +4,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import TransitionEffect from '@/components/TransitionEffect';
 import DriverSidebar from '@/components/driver/DriverSidebar';
 import DriverHeader from '@/components/driver/DriverHeader';
-import { AssignedOrderList } from '@/components/driver/AssignedOrderList';
+import AssignedOrderList from '@/components/driver/AssignedOrderList';
 
 const DriverAssignments: React.FC = () => {
   return (
