@@ -1,3 +1,4 @@
+
 // Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
@@ -13,6 +14,7 @@ import ForgotPassword from './pages/ForgotPassword';
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
 import DatabaseSetup from './pages/admin/DatabaseSetup';
+import CreateAdmin from './pages/admin/CreateAdmin';
 
 // Company pages
 import CompanyDashboard from './pages/company/Dashboard';
@@ -128,6 +130,7 @@ function App() {
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/admin/create" element={<CreateAdmin />} />
           
           {/* Dashboard redirect based on role */}
           <Route path="/dashboard" element={<RoleBasedRedirect />} />
