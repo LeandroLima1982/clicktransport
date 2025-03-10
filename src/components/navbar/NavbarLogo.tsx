@@ -8,7 +8,7 @@ const NavbarLogo: React.FC = () => {
     <Link to="/" className="flex items-center space-x-2 animate-fade-in">
       <Car className="h-5 w-5 md:h-6 md:w-6 text-primary" />
       <span className="text-lg md:text-xl font-bold tracking-tight">
-        Click<span className="text-primary">Transfer</span>
+        Link<span className="text-primary">Transfer</span>
       </span>
     </Link>
   );
