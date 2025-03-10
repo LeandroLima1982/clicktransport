@@ -1,0 +1,25 @@
+
+/* Modern pill badges for status */
+.status-pill {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-pill-success {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: rgb(16, 185, 129);
+}
+
+.status-pill-warning {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: rgb(245, 158, 11);
+}
+
+.status-pill-error {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: rgb(239, 68, 68);
+}
