@@ -1,4 +1,3 @@
-
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../main';
 import { toast } from 'sonner';
@@ -76,10 +75,21 @@ export const signInWithGoogle = async () => {
 export const signUp = async (email: string, password: string, userData?: any) => {
   try {
     console.log('Signing up user:', email);
-    // Always default to client role if not specified - this prevents accidental registration as company/driver
+    // Always default to client role if not specified - this prevents accidental registration as driver
     const userRole = userData?.accountType || 'client'; 
     
     console.log('User role for registration:', userRole);
+    
+    // Ensure 'driver' role is not allowed in public registration
+    if (userRole === 'driver') {
+      toast.error('Driver registration is only available through the company panel');
+      return { 
+        error: {
+          message: 'Driver registration is not allowed here',
+          name: 'registration_not_allowed'
+        } as AuthError 
+      };
+    }
     
     const result = await supabase.auth.signUp({
       email,
@@ -119,20 +129,7 @@ export const signUp = async (email: string, password: string, userData?: any) =>
       }
     }
     
-    // Create driver record if user is signing up as driver
-    if (userRole === 'driver' && result.data.user) {
-      const { error: driverError } = await supabase
-        .from('drivers')
-        .insert({
-          user_id: result.data.user.id,
-          name: `${userData.firstName} ${userData.lastName}`,
-          phone: userData.phone || '',
-        });
-        
-      if (driverError) {
-        console.error('Error creating driver record:', driverError);
-      }
-    }
+    // Driver creation is now handled only through the company panel
     
     return { error: null };
   } catch (err) {

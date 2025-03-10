@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -28,7 +27,7 @@ const Auth = () => {
     }
     
     const type = searchParams.get('type');
-    if (type && ['company', 'driver', 'admin', 'client'].includes(type)) {
+    if (type && ['company', 'admin', 'client'].includes(type)) {
       setAccountType(type);
       setIsBusinessUser(type !== 'client');
     }
@@ -50,7 +49,6 @@ const Auth = () => {
       return;
     }
     
-    // Direct route redirections based on user role
     if (userRole === 'company') {
       navigate('/company/dashboard');
     } else if (userRole === 'driver') {
@@ -60,7 +58,6 @@ const Auth = () => {
     } else if (userRole === 'client') {
       navigate('/bookings');
     } else {
-      // Default fallback if role is not recognized
       navigate('/');
     }
   };
@@ -152,7 +149,6 @@ const Auth = () => {
     }
     
     if (isBusinessUser) {
-      if (accountType === 'driver') return 'Cadastro de Motorista';
       if (accountType === 'company') return 'Cadastro de Empresa';
       if (accountType === 'admin') return 'Cadastro de Administrador';
       return 'Cadastro de Conta Empresarial';
