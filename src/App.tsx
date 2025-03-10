@@ -1,4 +1,3 @@
-
 // Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
@@ -9,6 +8,7 @@ import { useAuth } from './hooks/useAuth';
 import Index from './pages/Index';
 import Auth from './pages/Auth';
 import NotFound from './pages/NotFound';
+import ForgotPassword from './pages/ForgotPassword';
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -127,6 +127,7 @@ function App() {
           {/* Public routes with special handling for company users */}
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           
           {/* Dashboard redirect based on role */}
           <Route path="/dashboard" element={<RoleBasedRedirect />} />

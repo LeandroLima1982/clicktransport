@@ -11,6 +11,21 @@ export const signIn = async (email: string, password: string, companyId?: string
     // Special handling for admin login
     const isAdminLogin = email.toLowerCase() === 'admin@clicktransfer.com';
     
+    // Check if the user exists before attempting to sign in
+    if (isAdminLogin) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('email', email)
+        .single();
+      
+      if (profileData && profileData.role === 'admin') {
+        console.log('Admin user found in profiles:', profileData);
+      } else {
+        console.warn('Admin user not found in profiles or does not have admin role');
+      }
+    }
+    
     const result = await supabase.auth.signInWithPassword({
       email,
       password,
