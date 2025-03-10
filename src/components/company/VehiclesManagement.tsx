@@ -6,46 +6,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetFooter,
-  SheetClose,
-} from "@/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Car } from 'lucide-react';
+import { SheetContent } from "@/components/ui/sheet";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/main';
-import { Plus, Search, Car, Edit, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface Vehicle {
-  id: string;
-  model: string;
-  license_plate: string;
-  year: number | null;
-  status: 'active' | 'maintenance' | 'inactive';
-}
+// Import components
+import VehiclesList from './vehicles/VehiclesList';
+import VehicleForm from './vehicles/VehicleForm';
+import EmptyVehicleState from './vehicles/EmptyVehicleState';
+import VehicleDeleteDialog from './vehicles/VehicleDeleteDialog';
+import VehicleSearchBar from './vehicles/VehicleSearchBar';
+
+// Import types and utils
+import { Vehicle, VehicleForm as VehicleFormType } from './vehicles/types';
+import { getStatusBadgeClass, translateStatus } from './vehicles/utils';
 
 interface VehiclesManagementProps {
   companyId: string;
@@ -59,7 +35,7 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
   const [vehicleToDelete, setVehicleToDelete] = useState<string | null>(null);
   
   // Form state
-  const [vehicleForm, setVehicleForm] = useState({
+  const [vehicleForm, setVehicleForm] = useState<VehicleFormType>({
     id: '',
     model: '',
     license_plate: '',
@@ -93,11 +69,6 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
     }
   };
 
-  // Helper function to get company ID from user ID
-  const getCompanyId = async () => {
-    return companyId;
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setVehicleForm({ ...vehicleForm, [name]: value });
@@ -127,13 +98,6 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
 
   const handleSaveVehicle = async () => {
     try {
-      const companyId = await getCompanyId();
-      
-      if (!companyId) {
-        toast.error('ID da empresa não encontrado');
-        return;
-      }
-      
       // Validate form
       if (!vehicleForm.model || !vehicleForm.license_plate) {
         toast.error('Modelo e placa são obrigatórios');
@@ -209,145 +173,21 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
     (vehicle.year && vehicle.year.toString().includes(searchTerm))
   );
 
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const translateStatus = (status: string) => {
-    const statusMap: {[key: string]: string} = {
-      'active': 'Ativo',
-      'maintenance': 'Em manutenção',
-      'inactive': 'Inativo'
-    };
-    return statusMap[status] || status;
-  };
-
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar veículos..."
-            className="w-full pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        
-        <Sheet onOpenChange={(open) => !open && resetForm()}>
-          <SheetTrigger asChild>
-            <Button className="ml-4">
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Veículo
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>{isEditing ? 'Editar Veículo' : 'Cadastrar Veículo'}</SheetTitle>
-              <SheetDescription>
-                {isEditing ? 'Atualize os dados do veículo.' : 'Preencha os dados para cadastrar um novo veículo.'}
-              </SheetDescription>
-            </SheetHeader>
-            
-            <div className="grid gap-4 py-4">
-              <div>
-                <label htmlFor="model" className="block text-sm font-medium mb-1">
-                  Modelo *
-                </label>
-                <Input
-                  id="model"
-                  name="model"
-                  value={vehicleForm.model}
-                  onChange={handleInputChange}
-                  placeholder="Modelo do veículo"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="license_plate" className="block text-sm font-medium mb-1">
-                  Placa *
-                </label>
-                <Input
-                  id="license_plate"
-                  name="license_plate"
-                  value={vehicleForm.license_plate}
-                  onChange={handleInputChange}
-                  placeholder="Placa do veículo"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="year" className="block text-sm font-medium mb-1">
-                  Ano
-                </label>
-                <Input
-                  id="year"
-                  name="year"
-                  type="number"
-                  value={vehicleForm.year}
-                  onChange={handleInputChange}
-                  placeholder="Ano do veículo"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="status" className="block text-sm font-medium mb-1">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={vehicleForm.status}
-                  onChange={handleInputChange}
-                >
-                  <option value="active">Ativo</option>
-                  <option value="maintenance">Em manutenção</option>
-                  <option value="inactive">Inativo</option>
-                </select>
-              </div>
-            </div>
-            
-            <SheetFooter>
-              <SheetClose asChild>
-                <Button variant="outline">Cancelar</Button>
-              </SheetClose>
-              <Button onClick={handleSaveVehicle}>
-                {isEditing ? 'Salvar Alterações' : 'Cadastrar Veículo'}
-              </Button>
-            </SheetFooter>
-          </SheetContent>
-        </Sheet>
-      </div>
+      {/* Search and Add New Vehicle */}
+      <VehicleSearchBar 
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onNewVehicleClick={resetForm}
+      />
       
-      {/* Confirmation Dialog for Delete */}
-      <Dialog open={!!vehicleToDelete} onOpenChange={(open) => !open && setVehicleToDelete(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar Exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir este veículo? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setVehicleToDelete(null)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteVehicle}>
-              Excluir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Delete Confirmation Dialog */}
+      <VehicleDeleteDialog 
+        isOpen={!!vehicleToDelete} 
+        onClose={() => setVehicleToDelete(null)} 
+        onConfirm={handleDeleteVehicle} 
+      />
       
       <Card>
         <CardHeader>
@@ -362,228 +202,28 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
               <p>Carregando...</p>
             </div>
           ) : filteredVehicles.length === 0 ? (
-            <div className="h-40 flex items-center justify-center flex-col">
-              <p className="text-muted-foreground mb-2">Nenhum veículo encontrado</p>
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Cadastrar Veículo
-                  </Button>
-                </SheetTrigger>
-                <SheetContent>
-                  <SheetHeader>
-                    <SheetTitle>Cadastrar Veículo</SheetTitle>
-                    <SheetDescription>
-                      Preencha os dados para cadastrar um novo veículo.
-                    </SheetDescription>
-                  </SheetHeader>
-                  
-                  <div className="grid gap-4 py-4">
-                    {/* Form fields */}
-                    <div>
-                      <label htmlFor="model" className="block text-sm font-medium mb-1">
-                        Modelo *
-                      </label>
-                      <Input
-                        id="model"
-                        name="model"
-                        value={vehicleForm.model}
-                        onChange={handleInputChange}
-                        placeholder="Modelo do veículo"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="license_plate" className="block text-sm font-medium mb-1">
-                        Placa *
-                      </label>
-                      <Input
-                        id="license_plate"
-                        name="license_plate"
-                        value={vehicleForm.license_plate}
-                        onChange={handleInputChange}
-                        placeholder="Placa do veículo"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="year" className="block text-sm font-medium mb-1">
-                        Ano
-                      </label>
-                      <Input
-                        id="year"
-                        name="year"
-                        type="number"
-                        value={vehicleForm.year}
-                        onChange={handleInputChange}
-                        placeholder="Ano do veículo"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="status" className="block text-sm font-medium mb-1">
-                        Status
-                      </label>
-                      <select
-                        id="status"
-                        name="status"
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        value={vehicleForm.status}
-                        onChange={handleInputChange}
-                      >
-                        <option value="active">Ativo</option>
-                        <option value="maintenance">Em manutenção</option>
-                        <option value="inactive">Inativo</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <SheetFooter>
-                    <SheetClose asChild>
-                      <Button variant="outline">Cancelar</Button>
-                    </SheetClose>
-                    <Button onClick={handleSaveVehicle}>
-                      Cadastrar Veículo
-                    </Button>
-                  </SheetFooter>
-                </SheetContent>
-              </Sheet>
-            </div>
+            <EmptyVehicleState onNewVehicleClick={resetForm} />
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Modelo</TableHead>
-                    <TableHead>Placa</TableHead>
-                    <TableHead>Ano</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredVehicles.map((vehicle) => (
-                    <TableRow key={vehicle.id}>
-                      <TableCell className="font-medium">{vehicle.model}</TableCell>
-                      <TableCell>{vehicle.license_plate}</TableCell>
-                      <TableCell>{vehicle.year || '-'}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadgeClass(vehicle.status)}`}>
-                          {translateStatus(vehicle.status)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Sheet onOpenChange={(open) => {
-                            if (open) handleEditVehicle(vehicle);
-                            else if (!open) resetForm();
-                          }}>
-                            <SheetTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </SheetTrigger>
-                            <SheetContent>
-                              <SheetHeader>
-                                <SheetTitle>Editar Veículo</SheetTitle>
-                                <SheetDescription>
-                                  Atualize os dados do veículo.
-                                </SheetDescription>
-                              </SheetHeader>
-                              
-                              <div className="grid gap-4 py-4">
-                                {/* Form fields */}
-                                <div>
-                                  <label htmlFor="model" className="block text-sm font-medium mb-1">
-                                    Modelo *
-                                  </label>
-                                  <Input
-                                    id="model"
-                                    name="model"
-                                    value={vehicleForm.model}
-                                    onChange={handleInputChange}
-                                    placeholder="Modelo do veículo"
-                                    required
-                                  />
-                                </div>
-                                
-                                <div>
-                                  <label htmlFor="license_plate" className="block text-sm font-medium mb-1">
-                                    Placa *
-                                  </label>
-                                  <Input
-                                    id="license_plate"
-                                    name="license_plate"
-                                    value={vehicleForm.license_plate}
-                                    onChange={handleInputChange}
-                                    placeholder="Placa do veículo"
-                                    required
-                                  />
-                                </div>
-                                
-                                <div>
-                                  <label htmlFor="year" className="block text-sm font-medium mb-1">
-                                    Ano
-                                  </label>
-                                  <Input
-                                    id="year"
-                                    name="year"
-                                    type="number"
-                                    value={vehicleForm.year}
-                                    onChange={handleInputChange}
-                                    placeholder="Ano do veículo"
-                                  />
-                                </div>
-                                
-                                <div>
-                                  <label htmlFor="status" className="block text-sm font-medium mb-1">
-                                    Status
-                                  </label>
-                                  <select
-                                    id="status"
-                                    name="status"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                    value={vehicleForm.status}
-                                    onChange={handleInputChange}
-                                  >
-                                    <option value="active">Ativo</option>
-                                    <option value="maintenance">Em manutenção</option>
-                                    <option value="inactive">Inativo</option>
-                                  </select>
-                                </div>
-                              </div>
-                              
-                              <SheetFooter>
-                                <SheetClose asChild>
-                                  <Button variant="outline">Cancelar</Button>
-                                </SheetClose>
-                                <Button onClick={handleSaveVehicle}>
-                                  Salvar Alterações
-                                </Button>
-                              </SheetFooter>
-                            </SheetContent>
-                          </Sheet>
-                          
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setVehicleToDelete(vehicle.id)}
-                          >
-                            <Trash className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <VehiclesList 
+              vehicles={filteredVehicles}
+              onEdit={handleEditVehicle}
+              onDelete={setVehicleToDelete}
+              getStatusBadgeClass={getStatusBadgeClass}
+              translateStatus={translateStatus}
+            />
           )}
         </CardContent>
       </Card>
+
+      {/* Add/Edit Vehicle Sheet Content */}
+      <SheetContent>
+        <VehicleForm 
+          isEditing={isEditing}
+          vehicleForm={vehicleForm}
+          handleInputChange={handleInputChange}
+          handleSaveVehicle={handleSaveVehicle}
+        />
+      </SheetContent>
     </div>
   );
 };
