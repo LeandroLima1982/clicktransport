@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ServiceOrderList from '@/components/company/ServiceOrderList';
 import CompanyPanel from '@/components/company/CompanyPanel';
 import DriversManagement from '@/components/company/DriversManagement';
+import VehiclesManagement from '@/components/company/VehiclesManagement';
 import TransitionEffect from '@/components/TransitionEffect';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/main';
@@ -106,8 +107,7 @@ const CompanyDashboard: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="vehicles" className="space-y-4">
-            <h2 className="text-xl font-semibold">Gerenciamento de Veículos</h2>
-            <p>Funcionalidade em desenvolvimento...</p>
+            <VehiclesManagement companyId={companyId} />
           </TabsContent>
         </Tabs>
       </div>
