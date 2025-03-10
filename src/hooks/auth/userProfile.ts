@@ -5,12 +5,17 @@ import { UserRole } from './types';
 // Function to fetch user role from profiles table
 export const fetchUserRole = async (userId: string): Promise<UserRole> => {
   try {
+    if (!userId) {
+      console.log('No user ID provided for role fetch');
+      return null;
+    }
+    
     console.log('Fetching user role for ID:', userId);
     const { data, error } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error('Error fetching user role:', error);

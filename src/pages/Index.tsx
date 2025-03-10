@@ -32,6 +32,9 @@ const Index = () => {
         navigate('/driver/dashboard', { replace: true });
       } else if (userRole === 'client') {
         navigate('/bookings', { replace: true });
+      } else {
+        // If no valid role, show the home page
+        console.log('No valid role found, showing home page');
       }
     }
   }, [user, userRole, isLoading, navigate]);
@@ -41,6 +44,7 @@ const Index = () => {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <div className="ml-3 text-lg font-medium">Carregando...</div>
       </div>
     );
   }
@@ -64,10 +68,15 @@ const Index = () => {
       </TransitionEffect>
     );
   }
-
-  // This return should never be reached due to the redirect in useEffect,
-  // but it's needed for react to compile
-  return null;
+  
+  // If we're still here and the user is authenticated but we're
+  // waiting for a redirection, show a loading indicator
+  return (
+    <div className="flex items-center justify-center h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="ml-3 text-lg font-medium">Redirecionando...</div>
+    </div>
+  );
 };
 
 export default Index;
