@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   ListChecks, 
+  Map,
   Calendar, 
   Navigation, 
   Settings, 
@@ -67,6 +68,15 @@ const DriverSidebar: React.FC = () => {
                   <Link to="/driver/assignments">
                     <ListChecks className="h-5 w-5" />
                     <span>Atribuições</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/trips' ? 'bg-primary/10 text-primary' : '')}>
+                  <Link to="/driver/trips">
+                    <Map className="h-5 w-5" />
+                    <span>Minhas Viagens</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

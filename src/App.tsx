@@ -1,4 +1,3 @@
-
 // Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
@@ -27,6 +26,7 @@ import DriverSchedule from './pages/driver/Schedule';
 import DriverNavigation from './pages/driver/Navigation';
 import DriverProfile from './pages/driver/Profile';
 import DriverSettings from './pages/driver/Settings';
+import DriverTrips from './pages/driver/Trips';
 
 import './App.css';
 
@@ -170,6 +170,11 @@ function App() {
           <Route path="/driver/assignments" element={
             <ProtectedRoute requiredRole="driver">
               <DriverAssignments />
+            </ProtectedRoute>
+          } />
+          <Route path="/driver/trips" element={
+            <ProtectedRoute requiredRole="driver">
+              <DriverTrips />
             </ProtectedRoute>
           } />
           <Route path="/driver/schedule" element={
