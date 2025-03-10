@@ -1,0 +1,78 @@
+
+/* Logo spinning animation */
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+/* Touch effects */
+.tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.tap-highlight::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tap-highlight:active::after {
+  opacity: 1;
+}
+
+/* Shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0.15) 50%, 
+    rgba(255, 255, 255, 0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Liquid loading effect */
+@keyframes liquid-loading {
+  0% {
+    background-position: 0% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+.animate-liquid-loading {
+  background: linear-gradient(90deg, 
+    rgba(var(--primary-rgb), 0.1) 0%, 
+    rgba(var(--primary-rgb), 0.2) 20%, 
+    rgba(var(--primary-rgb), 0.1) 40%);
+  background-size: 200% 100%;
+  animation: liquid-loading 1.5s infinite;
+}

@@ -1,0 +1,57 @@
+
+/* Slide animations */
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.8s ease-out forwards;
+}
+
+/* Mobile-specific slide animations */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.35s cubic-bezier(0.15, 1.15, 0.6, 1) forwards;
+}
+
+/* Swipe animations */
+@keyframes swipe-right {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes swipe-left {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-swipe-right {
+  animation: swipe-right 0.4s cubic-bezier(0.15, 1.15, 0.6, 1) forwards;
+}
+
+.animate-swipe-left {
+  animation: swipe-left 0.4s cubic-bezier(0.15, 1.15, 0.6, 1) forwards;
+}
