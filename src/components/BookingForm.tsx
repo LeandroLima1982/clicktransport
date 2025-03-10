@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,7 +42,6 @@ const BookingForm: React.FC = () => {
       return;
     }
     
-    // All validations passed, open booking steps
     setShowBookingSteps(true);
   };
 
