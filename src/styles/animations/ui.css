@@ -1,28 +1,31 @@
 
-/* App-like reveal animation */
+/* App-like reveal animation - enhanced for smooth performance */
 @keyframes app-reveal {
   0% {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.95) translateZ(0);
   }
   70% {
     opacity: 1;
-    transform: scale(1.02);
+    transform: scale(1.02) translateZ(0);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateZ(0);
   }
 }
 
 .animate-app-reveal {
   animation: app-reveal 0.4s cubic-bezier(0.15, 1.15, 0.6, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
-/* Show interactions for touch devices */
+/* Show interactions for touch devices with improved tap response */
 @media (hover: none) {
   .mobile-press-effect:active {
-    transform: scale(0.97);
+    transform: scale(0.97) translateZ(0);
     transition: transform 0.1s;
   }
 }
@@ -48,4 +51,55 @@
 
 .btn-hover-slide:hover::before {
   left: 0;
+}
+
+/* Responsive scaling animations */
+@media (max-width: 768px) {
+  .animate-app-reveal {
+    animation-duration: 0.3s; /* Faster on mobile for better UX */
+  }
+}
+
+/* Smooth list item animations */
+@keyframes list-item-appear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+.animate-list-item {
+  animation: list-item-appear 0.4s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+/* Apply different animation delays to list items */
+.animate-list-item:nth-child(1) { animation-delay: 0ms; }
+.animate-list-item:nth-child(2) { animation-delay: 50ms; }
+.animate-list-item:nth-child(3) { animation-delay: 100ms; }
+.animate-list-item:nth-child(4) { animation-delay: 150ms; }
+.animate-list-item:nth-child(5) { animation-delay: 200ms; }
+.animate-list-item:nth-child(n+6) { animation-delay: 250ms; }
+
+/* Touch-friendly buttons with feedback */
+.touch-friendly {
+  min-height: 44px; /* Minimum size for better touch targets */
+  transition: transform 0.1s;
+}
+
+.touch-friendly:active {
+  transform: scale(0.98) translateZ(0);
+}
+
+/* Viewport-specific animations */
+@media (min-width: 1200px) {
+  .desktop-hover-effect:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
 }

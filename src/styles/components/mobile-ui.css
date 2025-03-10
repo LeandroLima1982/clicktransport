@@ -189,6 +189,48 @@
   color: black;
 }
 
+/* Enhanced responsiveness for different devices */
+/* Mobile devices (small) */
+@media (max-width: 375px) {
+  .app-header {
+    height: 60px;
+  }
+  
+  .app-logo-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .app-logo-text {
+    font-size: 18px;
+  }
+  
+  .timer-display {
+    font-size: 40px;
+  }
+  
+  .tab-item {
+    font-size: 10px;
+  }
+}
+
+/* Large devices */
+@media (min-width: 1024px) {
+  .app-header {
+    height: 80px;
+    padding: 0 24px;
+  }
+  
+  .app-logo-icon {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .app-logo-text {
+    font-size: 24px;
+  }
+}
+
 /* Fix overscroll issues on mobile */
 @media (max-width: 768px) {
   html, body {
@@ -254,4 +296,49 @@
 
 .app-input-icon ~ input {
   padding-left: 48px;
+}
+
+/* Responsive action buttons */
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #F8D748;
+  color: #1F1F1F;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.action-btn:active {
+  transform: scale(0.98);
+}
+
+.action-btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.action-btn-secondary:active {
+  transform: scale(0.98);
+}
+
+/* Responsive grid layout */
+.responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
 }

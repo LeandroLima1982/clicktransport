@@ -51,10 +51,12 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
     return 'opacity-100 translate-y-0 translate-x-0 scale-100';
   };
 
-  // Mobile specific animations
+  // Mobile specific animations with hardware acceleration for better performance
   const getMobileClass = () => {
     if (!isMobile) return '';
-    return isVisible ? 'animate-app-reveal' : '';
+    
+    // For mobile devices, we apply a more performant animation via GPU
+    return isVisible ? 'animate-app-reveal will-change-transform' : '';
   };
 
   return (
@@ -62,7 +64,8 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
       className={`transition-all ease-out w-full max-w-none ${getTransitionStyles()} ${getMobileClass()}`}
       style={{ 
         transitionDuration: `${duration}ms`, 
-        transitionDelay: `${delay}ms` 
+        transitionDelay: `${delay}ms`,
+        transform: isVisible ? undefined : undefined  // Force hardware acceleration
       }}
     >
       {children}
