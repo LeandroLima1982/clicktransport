@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Building, Landmark, Home, Navigation, MapPin, ShoppingBag, School, Hospital, Park, Hotel, Coffee, Utensils, Bus, Plane, Music as MusicIcon, Dumbbell, Church, Library as LibraryBig } from 'lucide-react';
+import { Building, Landmark, Home, Navigation, MapPin, ShoppingBag, School, Hospital, Hotel, Coffee, Utensils, Bus, Plane, Music as MusicIcon, Dumbbell, Church, Library as LibraryBig, Trees } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 // The public Mapbox token
@@ -25,7 +25,7 @@ export const getPlaceIcon = (place: any): IconComponent => {
   if (category?.includes('shopping') || category?.includes('store') || category?.includes('mall')) return React.createElement(ShoppingBag, { className: "h-4 w-4" });
   if (category?.includes('school') || category?.includes('education') || category?.includes('university')) return React.createElement(School, { className: "h-4 w-4" });
   if (category?.includes('hospital') || category?.includes('medical') || category?.includes('health')) return React.createElement(Hospital, { className: "h-4 w-4" });
-  if (category?.includes('park') || category?.includes('garden') || category?.includes('recreation')) return React.createElement(Park, { className: "h-4 w-4" });
+  if (category?.includes('park') || category?.includes('garden') || category?.includes('recreation')) return React.createElement(Trees, { className: "h-4 w-4" });
   if (category?.includes('bus') || category?.includes('train') || category?.includes('transport')) return React.createElement(Bus, { className: "h-4 w-4" });
   if (category?.includes('entertainment') || category?.includes('music') || category?.includes('theater')) return React.createElement(MusicIcon, { className: "h-4 w-4" });
   if (category?.includes('sports') || category?.includes('gym') || category?.includes('fitness')) return React.createElement(Dumbbell, { className: "h-4 w-4" });
