@@ -1,3 +1,4 @@
+
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../main';
 import { toast } from 'sonner';
