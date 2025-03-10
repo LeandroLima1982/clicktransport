@@ -48,6 +48,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
   const loadCompanies = async () => {
     setFetchingCompanies(true);
+    console.log('Starting company fetch process...');
+    
     try {
       const { data, error } = await fetchCompanies();
       
@@ -57,10 +59,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
           description: 'Por favor, tente novamente mais tarde.'
         });
       } else if (data && data.length > 0) {
-        console.log('Companies loaded:', data);
+        console.log(`Successfully loaded ${data.length} companies:`, data);
         setCompanies(data);
+        
+        // Auto-select the first company if there's only one
+        if (data.length === 1) {
+          setSelectedCompanyId(data[0].id);
+          console.log('Auto-selected company:', data[0].name);
+        }
       } else {
-        console.log('No companies found or empty data');
+        console.log('No companies found or empty data returned');
         toast.warning('Nenhuma empresa encontrada', {
           description: 'Não há empresas cadastradas no sistema.'
         });
@@ -140,16 +148,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 <SelectTrigger id="company-select" className="w-full bg-white">
                   <SelectValue placeholder="Selecione uma empresa" />
                 </SelectTrigger>
-                <SelectContent className="bg-white z-[100]">
+                <SelectContent className="bg-white z-[100] max-h-60 overflow-y-auto">
                   {companies.length > 0 ? (
                     companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
+                      <SelectItem key={company.id} value={company.id} className="py-2">
                         {company.name}
                       </SelectItem>
                     ))
                   ) : (
                     <SelectItem value="no-companies" disabled>
-                      Nenhuma empresa encontrada
+                      {fetchingCompanies ? 'Carregando empresas...' : 'Nenhuma empresa encontrada'}
                     </SelectItem>
                   )}
                 </SelectContent>
@@ -159,6 +167,21 @@ const LoginForm: React.FC<LoginFormProps> = ({
                   <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                   Carregando empresas...
                 </div>
+              )}
+              {!fetchingCompanies && companies.length > 0 && (
+                <div className="text-xs text-muted-foreground">
+                  {companies.length} {companies.length === 1 ? 'empresa encontrada' : 'empresas encontradas'}
+                </div>
+              )}
+              {!fetchingCompanies && companies.length === 0 && (
+                <button 
+                  type="button" 
+                  onClick={loadCompanies}
+                  className="text-xs text-primary hover:underline flex items-center"
+                >
+                  <Loader2 className="h-3 w-3 mr-1" />
+                  Tentar novamente
+                </button>
               )}
             </div>
           )}
