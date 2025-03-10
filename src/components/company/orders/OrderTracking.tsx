@@ -2,11 +2,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { MAPBOX_TOKEN } from '@/utils/mapbox';
 import { Loader2, Navigation } from 'lucide-react';
 import { ServiceOrder } from './types';
 import { supabase } from '@/main';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface OrderTrackingProps {
   orderId: string;
@@ -20,6 +20,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
   const marker = useRef<mapboxgl.Marker | null>(null);
   const [order, setOrder] = useState<ServiceOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [route, setRoute] = useState<any>(null);
   const [progress, setProgress] = useState(0);
   const [routeDistance, setRouteDistance] = useState(0);
@@ -27,8 +28,39 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
   const [animationStarted, setAnimationStarted] = useState(false);
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
+  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
 
   useEffect(() => {
+    // Fetch Mapbox token from Supabase
+    const fetchMapboxToken = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('config')
+          .select('value')
+          .eq('key', 'mapbox_token')
+          .single();
+          
+        if (error) {
+          console.error('Error fetching Mapbox token:', error);
+          return null;
+        }
+        
+        return data?.value;
+      } catch (error) {
+        console.error('Error fetching Mapbox token:', error);
+        return null;
+      }
+    };
+
+    fetchMapboxToken().then(token => {
+      if (token) {
+        setMapboxToken(token);
+      } else {
+        // Use the token from environment variable set in Supabase secrets
+        setMapboxToken(process.env.MAPBOX_TOKEN || null);
+      }
+    });
+
     if (isOpen && orderId) {
       fetchOrderDetails();
     }
@@ -44,8 +76,16 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
     };
   }, [isOpen, orderId]);
 
+  // Initialize map when token is available
+  useEffect(() => {
+    if (mapboxToken && order && isOpen) {
+      initializeMap(order.origin, order.destination);
+    }
+  }, [mapboxToken, order, isOpen]);
+
   const fetchOrderDetails = async () => {
     setLoading(true);
+    setMapError(null);
     try {
       const { data, error } = await supabase
         .from('service_orders')
@@ -57,108 +97,134 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       
       setOrder(data);
       setLoading(false);
-      
-      if (data && data.origin && data.destination) {
-        initializeMap(data.origin, data.destination);
-      }
     } catch (error) {
       console.error('Error fetching order details:', error);
       setLoading(false);
+      toast.error('Erro ao carregar dados da ordem de serviço');
     }
   };
 
   const initializeMap = async (origin: string, destination: string) => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || !mapboxToken) {
+      setMapError('Não foi possível inicializar o mapa. Token inválido ou elemento não encontrado.');
+      return;
+    }
     
-    // Initialize Mapbox
-    mapboxgl.accessToken = MAPBOX_TOKEN;
-    
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      zoom: 12,
-      minZoom: 2,
-    });
+    try {
+      // Initialize Mapbox
+      mapboxgl.accessToken = mapboxToken;
+      
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        zoom: 12,
+        minZoom: 2,
+      });
 
-    map.current.on('load', async () => {
-      // Get coordinates from addresses
-      const [originCoords, destinationCoords] = await Promise.all([
-        getCoordinatesFromAddress(origin),
-        getCoordinatesFromAddress(destination)
-      ]);
-      
-      if (!originCoords || !destinationCoords) {
-        console.error('Could not get coordinates from addresses');
-        return;
-      }
-      
-      // Create marker for the vehicle
-      marker.current = new mapboxgl.Marker({ color: '#3FB1CE' })
-        .setLngLat(originCoords)
-        .addTo(map.current!);
-      
-      // Add origin and destination markers
-      new mapboxgl.Marker({ color: '#00FF00' })
-        .setLngLat(originCoords)
-        .setPopup(new mapboxgl.Popup().setHTML(`<h3>Origem</h3><p>${origin}</p>`))
-        .addTo(map.current!);
-      
-      new mapboxgl.Marker({ color: '#FF0000' })
-        .setLngLat(destinationCoords)
-        .setPopup(new mapboxgl.Popup().setHTML(`<h3>Destino</h3><p>${destination}</p>`))
-        .addTo(map.current!);
-      
-      // Get directions between points
-      const routeData = await getRoute(originCoords, destinationCoords);
-      setRoute(routeData);
-      
-      const bounds = new mapboxgl.LngLatBounds();
-      bounds.extend(originCoords);
-      bounds.extend(destinationCoords);
-      
-      map.current!.fitBounds(bounds, { padding: 60, maxZoom: 15 });
-      
-      if (map.current && routeData) {
-        // Add route to map
-        map.current.addSource('route', {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: routeData.geometry
+      map.current.on('load', async () => {
+        try {
+          // Get coordinates from addresses
+          const [originCoords, destinationCoords] = await Promise.all([
+            getCoordinatesFromAddress(origin),
+            getCoordinatesFromAddress(destination)
+          ]);
+          
+          if (!originCoords || !destinationCoords) {
+            setMapError('Não foi possível obter coordenadas dos endereços fornecidos.');
+            return;
           }
-        });
-        
-        map.current.addLayer({
-          id: 'route',
-          type: 'line',
-          source: 'route',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round'
-          },
-          paint: {
-            'line-color': '#3887be',
-            'line-width': 5,
-            'line-opacity': 0.75
+          
+          // Create marker for the vehicle
+          marker.current = new mapboxgl.Marker({ color: '#3FB1CE' })
+            .setLngLat(originCoords)
+            .addTo(map.current!);
+          
+          // Add origin and destination markers
+          new mapboxgl.Marker({ color: '#00FF00' })
+            .setLngLat(originCoords)
+            .setPopup(new mapboxgl.Popup().setHTML(`<h3>Origem</h3><p>${origin}</p>`))
+            .addTo(map.current!);
+          
+          new mapboxgl.Marker({ color: '#FF0000' })
+            .setLngLat(destinationCoords)
+            .setPopup(new mapboxgl.Popup().setHTML(`<h3>Destino</h3><p>${destination}</p>`))
+            .addTo(map.current!);
+          
+          // Get directions between points
+          const routeData = await getRoute(originCoords, destinationCoords);
+          if (!routeData) {
+            setMapError('Não foi possível calcular a rota entre os pontos.');
+            return;
           }
-        });
-        
-        // Calculate route details
-        if (routeData && routeData.legs && routeData.legs.length > 0) {
-          const leg = routeData.legs[0];
-          setRouteDistance(leg.distance);
-          setRouteDuration(leg.duration);
+          
+          setRoute(routeData);
+          
+          const bounds = new mapboxgl.LngLatBounds();
+          bounds.extend(originCoords);
+          bounds.extend(destinationCoords);
+          
+          map.current!.fitBounds(bounds, { padding: 60, maxZoom: 15 });
+          
+          if (map.current && routeData) {
+            // Add route to map
+            map.current.addSource('route', {
+              type: 'geojson',
+              data: {
+                type: 'Feature',
+                properties: {},
+                geometry: routeData.geometry
+              }
+            });
+            
+            map.current.addLayer({
+              id: 'route',
+              type: 'line',
+              source: 'route',
+              layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+              },
+              paint: {
+                'line-color': '#3887be',
+                'line-width': 5,
+                'line-opacity': 0.75
+              }
+            });
+            
+            // Calculate route details
+            if (routeData && routeData.legs && routeData.legs.length > 0) {
+              const leg = routeData.legs[0];
+              setRouteDistance(leg.distance);
+              setRouteDuration(leg.duration);
+            }
+          }
+        } catch (error) {
+          console.error('Error in map initialization:', error);
+          setMapError('Erro ao inicializar o mapa. Tente novamente mais tarde.');
         }
-      }
-    });
+      });
+
+      map.current.on('error', (e) => {
+        console.error('Mapbox error:', e);
+        setMapError('Erro ao carregar o mapa. Verifique sua conexão com a internet.');
+      });
+    } catch (error) {
+      console.error('Error initializing map:', error);
+      setMapError('Não foi possível inicializar o mapa. Tente novamente mais tarde.');
+    }
   };
 
   const getCoordinatesFromAddress = async (address: string): Promise<[number, number] | null> => {
+    if (!mapboxToken) return null;
+    
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&country=br&limit=1`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxToken}&country=br&limit=1`
       );
+      
+      if (!response.ok) {
+        throw new Error(`Geocoding API error: ${response.status}`);
+      }
       
       const data = await response.json();
       
@@ -174,10 +240,16 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
   };
 
   const getRoute = async (start: [number, number], end: [number, number]) => {
+    if (!mapboxToken) return null;
+    
     try {
       const response = await fetch(
-        `https://api.mapbox.com/directions/v5/mapbox/driving/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&steps=true&overview=full&access_token=${MAPBOX_TOKEN}`
+        `https://api.mapbox.com/directions/v5/mapbox/driving/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&steps=true&overview=full&access_token=${mapboxToken}`
       );
+      
+      if (!response.ok) {
+        throw new Error(`Directions API error: ${response.status}`);
+      }
       
       const data = await response.json();
       
@@ -193,7 +265,10 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
   };
 
   const startAnimation = () => {
-    if (!route || !marker.current || !map.current) return;
+    if (!route || !marker.current || !map.current) {
+      toast.error('Não foi possível iniciar a simulação');
+      return;
+    }
     
     setAnimationStarted(true);
     startTimeRef.current = Date.now();
@@ -218,8 +293,8 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
           // Update marker position
           marker.current.setLngLat(coordinates[pointIndex]);
           
-          // Center map on current position
-          map.current?.panTo(coordinates[pointIndex], { duration: 0 });
+          // Center map on current position with smooth animation
+          map.current?.panTo(coordinates[pointIndex], { duration: 500 });
         }
         
         // Continue animation
@@ -232,6 +307,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
           const finalCoord = route.geometry.coordinates[route.geometry.coordinates.length - 1];
           marker.current.setLngLat(finalCoord);
         }
+        toast.success('Simulação concluída!');
       }
     };
     
@@ -273,7 +349,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
         <div className="flex flex-col h-full space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">
-              {loading ? 'Carregando...' : `Rastreamento da Ordem: ${order?.id}`}
+              {loading ? 'Carregando...' : `Rastreamento da Ordem: ${order?.id?.substring(0, 8)}`}
             </h2>
             <Button variant="outline" onClick={onClose}>Fechar</Button>
           </div>
@@ -281,6 +357,11 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
           {loading ? (
             <div className="flex justify-center items-center h-[500px]">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : mapError ? (
+            <div className="flex flex-col justify-center items-center h-[500px] text-center">
+              <p className="text-destructive text-lg mb-4">{mapError}</p>
+              <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
             </div>
           ) : (
             <div className="flex flex-col space-y-4 h-full">
