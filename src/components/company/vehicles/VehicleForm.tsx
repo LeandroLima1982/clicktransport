@@ -9,16 +9,11 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { VehicleForm as VehicleFormType } from './types';
 
 interface VehicleFormProps {
   isEditing: boolean;
-  vehicleForm: {
-    id: string;
-    model: string;
-    license_plate: string;
-    year: string;
-    status: string;
-  };
+  vehicleForm: VehicleFormType;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   handleSaveVehicle: () => Promise<void>;
 }

@@ -6,8 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Car } from 'lucide-react';
-import { SheetContent } from "@/components/ui/sheet";
+import { Car, Plus } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/main';
 import { toast } from 'sonner';
@@ -22,6 +22,7 @@ import VehicleSearchBar from './vehicles/VehicleSearchBar';
 // Import types and utils
 import { Vehicle, VehicleForm as VehicleFormType } from './vehicles/types';
 import { getStatusBadgeClass, translateStatus } from './vehicles/utils';
+import { Button } from '@/components/ui/button';
 
 interface VehiclesManagementProps {
   companyId: string;
@@ -33,6 +34,7 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [vehicleToDelete, setVehicleToDelete] = useState<string | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   
   // Form state
   const [vehicleForm, setVehicleForm] = useState<VehicleFormType>({
@@ -46,7 +48,7 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
 
   useEffect(() => {
     fetchVehicles();
-  }, [user, companyId]);
+  }, [companyId]);
 
   const fetchVehicles = async () => {
     setIsLoading(true);
@@ -83,6 +85,7 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
       status: vehicle.status
     });
     setIsEditing(true);
+    setIsSheetOpen(true);
   };
 
   const resetForm = () => {
@@ -139,6 +142,7 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
       
       // Reset form and refresh data
       resetForm();
+      setIsSheetOpen(false);
       fetchVehicles();
       
     } catch (error) {
@@ -167,6 +171,11 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
     }
   };
 
+  const handleOpenNewVehicleForm = () => {
+    resetForm();
+    setIsSheetOpen(true);
+  }
+
   const filteredVehicles = vehicles.filter(vehicle => 
     vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehicle.license_plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -179,7 +188,7 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
       <VehicleSearchBar 
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        onNewVehicleClick={resetForm}
+        onNewVehicleClick={handleOpenNewVehicleForm}
       />
       
       {/* Delete Confirmation Dialog */}
@@ -202,7 +211,13 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
               <p>Carregando...</p>
             </div>
           ) : filteredVehicles.length === 0 ? (
-            <EmptyVehicleState onNewVehicleClick={resetForm} />
+            <div className="h-40 flex items-center justify-center flex-col">
+              <p className="text-muted-foreground mb-2">Nenhum veículo encontrado</p>
+              <Button variant="outline" onClick={handleOpenNewVehicleForm}>
+                <Plus className="mr-2 h-4 w-4" />
+                Cadastrar Veículo
+              </Button>
+            </div>
           ) : (
             <VehiclesList 
               vehicles={filteredVehicles}
@@ -215,15 +230,17 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
         </CardContent>
       </Card>
 
-      {/* Add/Edit Vehicle Sheet Content */}
-      <SheetContent>
-        <VehicleForm 
-          isEditing={isEditing}
-          vehicleForm={vehicleForm}
-          handleInputChange={handleInputChange}
-          handleSaveVehicle={handleSaveVehicle}
-        />
-      </SheetContent>
+      {/* Add/Edit Vehicle Sheet */}
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent>
+          <VehicleForm 
+            isEditing={isEditing}
+            vehicleForm={vehicleForm}
+            handleInputChange={handleInputChange}
+            handleSaveVehicle={handleSaveVehicle}
+          />
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

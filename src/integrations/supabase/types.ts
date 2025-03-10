@@ -41,28 +41,34 @@ export type Database = {
           company_id: string | null
           created_at: string | null
           id: string
+          license_number: string | null
           name: string
           phone: string | null
           status: string | null
           user_id: string | null
+          vehicle_id: string | null
         }
         Insert: {
           company_id?: string | null
           created_at?: string | null
           id?: string
+          license_number?: string | null
           name: string
           phone?: string | null
           status?: string | null
           user_id?: string | null
+          vehicle_id?: string | null
         }
         Update: {
           company_id?: string | null
           created_at?: string | null
           id?: string
+          license_number?: string | null
           name?: string
           phone?: string | null
           status?: string | null
           user_id?: string | null
+          vehicle_id?: string | null
         }
         Relationships: [
           {
@@ -70,6 +76,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drivers_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]
@@ -100,6 +113,108 @@ export type Database = {
           role?: string | null
         }
         Relationships: []
+      }
+      service_orders: {
+        Row: {
+          company_id: string
+          created_at: string
+          delivery_date: string | null
+          destination: string
+          driver_id: string | null
+          id: string
+          notes: string | null
+          origin: string
+          pickup_date: string
+          status: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          delivery_date?: string | null
+          destination: string
+          driver_id?: string | null
+          id?: string
+          notes?: string | null
+          origin: string
+          pickup_date: string
+          status?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          delivery_date?: string | null
+          destination?: string
+          driver_id?: string | null
+          id?: string
+          notes?: string | null
+          origin?: string
+          pickup_date?: string
+          status?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          license_plate: string
+          model: string
+          status: string
+          year: number | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          license_plate: string
+          model: string
+          status?: string
+          year?: number | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          license_plate?: string
+          model?: string
+          status?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

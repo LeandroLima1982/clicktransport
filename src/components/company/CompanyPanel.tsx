@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Car, FileText, Users, ChartBar, LogOut, Loader2, AlertTriangle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Car, FileText, Users, ChartBar, LogOut, Loader2, AlertTriangle, Home } from 'lucide-react';
 import CompanyDashboard from './CompanyDashboard';
 import ServiceOrderList from './ServiceOrderList';
 import DriversManagement from './DriversManagement';
@@ -108,22 +107,30 @@ const CompanyPanel: React.FC = () => {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">{companyData.name}</h1>
+          <h1 className="text-2xl font-bold">{companyData.name || 'Painel da Empresa'}</h1>
           <p className="text-muted-foreground">{companyData.status === 'active' ? 'Ativo' : 'Pendente'}</p>
         </div>
-        <Button variant="outline" onClick={handleSignOut} disabled={isAuthenticating} className="flex items-center gap-2">
-          {isAuthenticating ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Saindo...
-            </>
-          ) : (
-            <>
-              <LogOut className="h-4 w-4" />
-              Sair
-            </>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Link to="/">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Home className="h-4 w-4" />
+              Início
+            </Button>
+          </Link>
+          <Button variant="outline" onClick={handleSignOut} disabled={isAuthenticating} className="flex items-center gap-2">
+            {isAuthenticating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saindo...
+              </>
+            ) : (
+              <>
+                <LogOut className="h-4 w-4" />
+                Sair
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
