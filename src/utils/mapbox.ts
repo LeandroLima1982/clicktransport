@@ -1,9 +1,15 @@
+
 import React from 'react';
 import { Building, Landmark, Home, Navigation, MapPin, ShoppingBag, School, Hospital, Hotel, Coffee, Utensils, Bus, Plane, Music as MusicIcon, Dumbbell, Church, Library as LibraryBig, Trees } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-// Export the Mapbox token - this should be the token you have added in Supabase secrets
+// Export the Mapbox token
 export const MAPBOX_TOKEN = 'pk.eyJ1IjoibGVhbmRyb2xpbWExOTgyIiwiYSI6ImNtODA3MGxmaTB0dDAyanFia244dnl1bmcifQ.6iV8YcZ-x_gdi8uJWg5aCw';
+
+// Check if token is valid
+if (!MAPBOX_TOKEN || MAPBOX_TOKEN.trim() === '') {
+  console.error('Mapbox token is missing or invalid - map functionality will not work!');
+}
 
 // POI types to include in the geocoding request
 export const POI_TYPES = 'poi,address,place,neighborhood,locality,district';
@@ -60,6 +66,14 @@ export const formatPlaceName = (place: any): React.ReactElement => {
   ].filter(Boolean));
 };
 
+// Helper function to validate the Mapbox token
+export const isValidMapboxToken = (token: string): boolean => {
+  return token && 
+         token.length > 20 && 
+         token.startsWith('pk.') && 
+         !token.includes('YOUR_MAPBOX_TOKEN');
+};
+
 // Function to build parameters for Mapbox geocoding API
 export const buildMapboxParams = (query: string) => {
   return new URLSearchParams({
@@ -78,13 +92,21 @@ export const buildMapboxParams = (query: string) => {
 export const fetchAddressSuggestions = async (query: string) => {
   if (query.length < 3) return [];
   
+  if (!isValidMapboxToken(MAPBOX_TOKEN)) {
+    console.error('Invalid Mapbox token. Check your configuration.');
+    return [];
+  }
+  
   try {
     const endpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`;
     const params = buildMapboxParams(query);
     
     const response = await fetch(`${endpoint}?${params.toString()}`);
-    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(`Mapbox API error: ${response.status}`);
+    }
     
+    const data = await response.json();
     return data.features || [];
   } catch (error) {
     console.error('Error fetching address suggestions:', error);

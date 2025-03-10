@@ -2,12 +2,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Loader2, Navigation } from 'lucide-react';
+import { Loader2, Navigation, Map as MapIcon } from 'lucide-react';
 import { ServiceOrder } from './types';
 import { supabase } from '@/main';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { MAPBOX_TOKEN } from '@/utils/mapbox';
+
+// Define fallback style for static map image
+const STATIC_MAP_STYLE = 'streets-v12';
 
 interface OrderTrackingProps {
   orderId: string;
@@ -22,13 +25,12 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
   const [order, setOrder] = useState<ServiceOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
-  const [route, setRoute] = useState<any>(null);
-  const [progress, setProgress] = useState(0);
+  const [useStaticMap, setUseStaticMap] = useState(false);
+  const [originCoords, setOriginCoords] = useState<[number, number] | null>(null);
+  const [destinationCoords, setDestinationCoords] = useState<[number, number] | null>(null);
+  const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
   const [routeDistance, setRouteDistance] = useState(0);
   const [routeDuration, setRouteDuration] = useState(0);
-  const [animationStarted, setAnimationStarted] = useState(false);
-  const animationRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (isOpen && orderId) {
@@ -36,9 +38,6 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
     }
     
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
       if (map.current) {
         map.current.remove();
         map.current = null;
@@ -46,11 +45,11 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
     };
   }, [isOpen, orderId]);
 
-  // Initialize map when order is available
+  // Initialize map or fetch coordinates for static map when order is available
   useEffect(() => {
-    if (order && isOpen && mapContainer.current) {
-      console.log("Initializing map with order:", order);
-      initializeMap(order.origin, order.destination);
+    if (order && isOpen) {
+      console.log("Order data available, preparing map:", order);
+      getCoordinatesAndPrepareMap(order.origin, order.destination);
     }
   }, [order, isOpen]);
 
@@ -77,142 +76,180 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
     }
   };
 
-  const initializeMap = async (origin: string, destination: string) => {
+  const getCoordinatesAndPrepareMap = async (origin: string, destination: string) => {
+    try {
+      console.log("Getting coordinates for addresses");
+      // Get coordinates from addresses
+      const [originCoords, destinationCoords] = await Promise.all([
+        getCoordinatesFromAddress(origin),
+        getCoordinatesFromAddress(destination)
+      ]);
+      
+      if (!originCoords || !destinationCoords) {
+        console.error("Could not get coordinates for addresses", { origin, destination });
+        setMapError('Não foi possível obter coordenadas dos endereços fornecidos.');
+        return;
+      }
+      
+      console.log("Got coordinates", { originCoords, destinationCoords });
+      setOriginCoords(originCoords);
+      setDestinationCoords(destinationCoords);
+      
+      // Try to initialize interactive map first
+      try {
+        await initializeMap(originCoords, destinationCoords);
+      } catch (error) {
+        console.error("Interactive map initialization failed, falling back to static map:", error);
+        setUseStaticMap(true);
+        prepareStaticMap(originCoords, destinationCoords);
+      }
+      
+      // Get route data for display even if using static map
+      fetchRouteData(originCoords, destinationCoords);
+    } catch (error) {
+      console.error("Error in map preparation:", error);
+      setMapError('Erro ao preparar o mapa. Tente novamente.');
+    }
+  };
+
+  const prepareStaticMap = (start: [number, number], end: [number, number]) => {
+    // Create static map URL with markers for origin and destination
+    const token = MAPBOX_TOKEN;
+    if (!token) {
+      setMapError('Chave de API do Mapbox não encontrada');
+      return;
+    }
+    
+    const url = new URL('https://api.mapbox.com/styles/v1/mapbox/' + STATIC_MAP_STYLE + '/static/');
+    
+    // Add a line between start and end points
+    url.pathname += `path-5+3887be(${start[0]},${start[1]};${end[0]},${end[1]})/`;
+    
+    // Add markers
+    const originMarker = `pin-s-a+00FF00(${start[0]},${start[1]})`;
+    const destMarker = `pin-s-b+FF0000(${end[0]},${end[1]})`;
+    url.pathname += `${originMarker},${destMarker}/`;
+    
+    // Create a bounding box that includes both points with some padding
+    const lngMin = Math.min(start[0], end[0]);
+    const lngMax = Math.max(start[0], end[0]);
+    const latMin = Math.min(start[1], end[1]);
+    const latMax = Math.max(start[1], end[1]);
+    
+    // Add padding to the bounding box
+    const padding = 0.1;
+    const bounds = [
+      lngMin - padding,
+      latMin - padding,
+      lngMax + padding,
+      latMax + padding
+    ].join(',');
+    
+    // Add bounds and other parameters
+    url.pathname += `${bounds}/`;
+    url.pathname += '800x500@2x';  // width x height @retina
+    
+    // Add access token
+    url.search = `access_token=${token}`;
+    
+    setStaticMapUrl(url.toString());
+    console.log("Generated static map URL:", url.toString());
+  };
+
+  const initializeMap = async (start: [number, number], end: [number, number]) => {
     if (!mapContainer.current) {
       console.error("Map container ref is not available");
-      setMapError('Não foi possível inicializar o mapa. Elemento não encontrado.');
-      return;
+      throw new Error('Elemento do mapa não encontrado');
     }
 
     // Use MAPBOX_TOKEN from utils/mapbox
     const token = MAPBOX_TOKEN;
     if (!token) {
       console.error("Mapbox token is missing");
-      setMapError('Token do Mapbox não encontrado. Verifique a configuração.');
-      return;
+      throw new Error('Token do Mapbox não encontrado');
     }
     
-    try {
-      console.log("Initializing map with Mapbox token");
-      // Initialize Mapbox
-      mapboxgl.accessToken = token;
-      
-      // Clear any existing map instance
-      if (map.current) {
-        map.current.remove();
-      }
-      
-      // Create new map instance
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        zoom: 12,
-        minZoom: 2,
-      });
-
-      // Add specific CSS to ensure the map container is visible
-      mapContainer.current.style.minHeight = '100%';
-      mapContainer.current.style.backgroundColor = '#f0f0f0';
-
-      map.current.on('load', async () => {
-        try {
-          console.log("Map loaded, getting coordinates for addresses");
-          // Get coordinates from addresses
-          const [originCoords, destinationCoords] = await Promise.all([
-            getCoordinatesFromAddress(origin),
-            getCoordinatesFromAddress(destination)
-          ]);
-          
-          if (!originCoords || !destinationCoords) {
-            console.error("Could not get coordinates for addresses", { origin, destination });
-            setMapError('Não foi possível obter coordenadas dos endereços fornecidos.');
-            return;
-          }
-          
-          console.log("Got coordinates", { originCoords, destinationCoords });
-          
-          // Create marker for the vehicle
-          marker.current = new mapboxgl.Marker({ color: '#3FB1CE' })
-            .setLngLat(originCoords)
-            .addTo(map.current!);
-          
-          // Add origin and destination markers
-          new mapboxgl.Marker({ color: '#00FF00' })
-            .setLngLat(originCoords)
-            .setPopup(new mapboxgl.Popup().setHTML(`<h3>Origem</h3><p>${origin}</p>`))
-            .addTo(map.current!);
-          
-          new mapboxgl.Marker({ color: '#FF0000' })
-            .setLngLat(destinationCoords)
-            .setPopup(new mapboxgl.Popup().setHTML(`<h3>Destino</h3><p>${destination}</p>`))
-            .addTo(map.current!);
-          
-          // Get directions between points
-          console.log("Getting route between points");
-          const routeData = await getRoute(originCoords, destinationCoords);
-          if (!routeData) {
-            console.error("Could not calculate route between points");
-            setMapError('Não foi possível calcular a rota entre os pontos.');
-            return;
-          }
-          
-          setRoute(routeData);
-          console.log("Route data received", routeData);
-          
-          const bounds = new mapboxgl.LngLatBounds();
-          bounds.extend(originCoords);
-          bounds.extend(destinationCoords);
-          
-          map.current!.fitBounds(bounds, { padding: 60, maxZoom: 15 });
-          
-          if (map.current && routeData) {
-            console.log("Adding route to map");
-            // Add route to map
-            map.current.addSource('route', {
-              type: 'geojson',
-              data: {
-                type: 'Feature',
-                properties: {},
-                geometry: routeData.geometry
-              }
-            });
-            
-            map.current.addLayer({
-              id: 'route',
-              type: 'line',
-              source: 'route',
-              layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-              },
-              paint: {
-                'line-color': '#3887be',
-                'line-width': 5,
-                'line-opacity': 0.75
-              }
-            });
-            
-            // Calculate route details
-            if (routeData && routeData.legs && routeData.legs.length > 0) {
-              const leg = routeData.legs[0];
-              setRouteDistance(leg.distance);
-              setRouteDuration(leg.duration);
-            }
-          }
-        } catch (error) {
-          console.error('Error in map initialization:', error);
-          setMapError('Erro ao inicializar o mapa. Tente novamente mais tarde.');
-        }
-      });
-
-      map.current.on('error', (e) => {
-        console.error('Mapbox error:', e);
-        setMapError('Erro ao carregar o mapa. Verifique sua conexão com a internet.');
-      });
-    } catch (error) {
-      console.error('Error initializing map:', error);
-      setMapError('Não foi possível inicializar o mapa. Tente novamente mais tarde.');
+    console.log("Initializing interactive map with Mapbox token");
+    
+    // Apply explicit styling to ensure map container is visible
+    if (mapContainer.current) {
+      mapContainer.current.style.minHeight = '400px';
+      mapContainer.current.style.height = '100%';
+      mapContainer.current.style.width = '100%';
+      mapContainer.current.style.backgroundColor = '#e9e9e9';
     }
+    
+    // Initialize Mapbox
+    mapboxgl.accessToken = token;
+    
+    // Clear any existing map instance
+    if (map.current) {
+      map.current.remove();
+    }
+    
+    // Create new map instance with error handling
+    return new Promise<void>((resolve, reject) => {
+      try {
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current!,
+          style: 'mapbox://styles/mapbox/streets-v12',
+          zoom: 12,
+          minZoom: 2,
+          fadeDuration: 0, // Disable fade animations to help with rendering
+          renderWorldCopies: false, // Disable rendering multiple copies of world to reduce load
+          attributionControl: false, // Disable attribution to simplify the map
+        });
+
+        // Add error handler for initialization
+        map.current.on('error', (e) => {
+          console.error('Mapbox error event:', e);
+          reject(new Error('Falha ao inicializar o mapa: ' + e.error?.message || 'Erro desconhecido'));
+        });
+
+        // Handle successful map load
+        map.current.on('load', () => {
+          if (!map.current) {
+            reject(new Error('Instância do mapa não está disponível após o carregamento'));
+            return;
+          }
+          
+          try {
+            console.log("Map loaded successfully, adding markers");
+            
+            // Add origin and destination markers
+            new mapboxgl.Marker({ color: '#00FF00' })
+              .setLngLat(start)
+              .setPopup(new mapboxgl.Popup().setHTML(`<h3>Origem</h3><p>${order?.origin || 'Origem'}</p>`))
+              .addTo(map.current);
+            
+            new mapboxgl.Marker({ color: '#FF0000' })
+              .setLngLat(end)
+              .setPopup(new mapboxgl.Popup().setHTML(`<h3>Destino</h3><p>${order?.destination || 'Destino'}</p>`))
+              .addTo(map.current);
+            
+            // Create marker for the vehicle
+            marker.current = new mapboxgl.Marker({ color: '#3FB1CE' })
+              .setLngLat(start)
+              .addTo(map.current);
+            
+            // Set bounds to include both markers
+            const bounds = new mapboxgl.LngLatBounds()
+              .extend(start)
+              .extend(end);
+            
+            map.current.fitBounds(bounds, { padding: 60, maxZoom: 15 });
+            
+            resolve();
+          } catch (error) {
+            console.error('Error setting up map markers:', error);
+            reject(error);
+          }
+        });
+      } catch (error) {
+        console.error('Error creating Mapbox instance:', error);
+        reject(error);
+      }
+    });
   };
 
   const getCoordinatesFromAddress = async (address: string): Promise<[number, number] | null> => {
@@ -243,9 +280,9 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
     }
   };
 
-  const getRoute = async (start: [number, number], end: [number, number]) => {
+  const fetchRouteData = async (start: [number, number], end: [number, number]) => {
     const token = MAPBOX_TOKEN;
-    if (!token) return null;
+    if (!token) return;
     
     try {
       console.log("Getting route from", start, "to", end);
@@ -261,91 +298,81 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       console.log("Route API response:", data);
       
       if (data.routes && data.routes.length > 0) {
-        return data.routes[0];
+        const route = data.routes[0];
+        
+        // Add route to map if interactive map is available
+        if (!useStaticMap && map.current && route) {
+          try {
+            console.log("Adding route to interactive map");
+            
+            // Add route to map
+            if (!map.current.getSource('route')) {
+              map.current.addSource('route', {
+                type: 'geojson',
+                data: {
+                  type: 'Feature',
+                  properties: {},
+                  geometry: route.geometry
+                }
+              });
+              
+              map.current.addLayer({
+                id: 'route',
+                type: 'line',
+                source: 'route',
+                layout: {
+                  'line-join': 'round',
+                  'line-cap': 'round'
+                },
+                paint: {
+                  'line-color': '#3887be',
+                  'line-width': 5,
+                  'line-opacity': 0.75
+                }
+              });
+            }
+          } catch (error) {
+            console.error("Error adding route to map:", error);
+          }
+        }
+        
+        // Calculate route details
+        if (route.legs && route.legs.length > 0) {
+          const leg = route.legs[0];
+          setRouteDistance(leg.distance);
+          setRouteDuration(leg.duration);
+        }
       }
-      
-      return null;
     } catch (error) {
       console.error('Error getting route:', error);
-      return null;
     }
   };
 
-  const startAnimation = () => {
-    if (!route || !marker.current || !map.current) {
-      toast.error('Não foi possível iniciar a simulação');
-      return;
-    }
+  const handleRetry = () => {
+    // Reset error state
+    setMapError(null);
     
-    setAnimationStarted(true);
-    startTimeRef.current = Date.now();
-    
-    const animateRoute = (timestamp: number) => {
-      if (!startTimeRef.current || !route) return;
-      
-      const elapsedTime = Date.now() - startTimeRef.current;
-      
-      // Calculate progress based on elapsed time and route duration
-      // We speed up the animation by dividing actual route duration by a factor
-      const animationDuration = routeDuration * 100; // Make animation faster for demo purposes
-      const newProgress = Math.min(elapsedTime / animationDuration, 1);
-      setProgress(newProgress);
-      
-      if (newProgress < 1) {
-        // Get coordinate at the current progress point along the route
-        const coordinates = route.geometry.coordinates;
-        const pointIndex = Math.floor(newProgress * (coordinates.length - 1));
-        
-        if (marker.current && coordinates[pointIndex]) {
-          // Update marker position
-          marker.current.setLngLat(coordinates[pointIndex]);
-          
-          // Center map on current position with smooth animation
-          map.current?.panTo(coordinates[pointIndex], { duration: 500 });
+    // If we have coordinates, try to initialize the map again
+    if (originCoords && destinationCoords) {
+      if (useStaticMap) {
+        // If we were using static map, try interactive again
+        setUseStaticMap(false);
+        try {
+          initializeMap(originCoords, destinationCoords).catch(() => {
+            // If interactive map fails again, go back to static map
+            setUseStaticMap(true);
+          });
+        } catch {
+          setUseStaticMap(true);
         }
-        
-        // Continue animation
-        animationRef.current = requestAnimationFrame(animateRoute);
       } else {
-        // Animation complete
-        setProgress(1);
-        if (marker.current && route.geometry.coordinates.length > 0) {
-          // Set to final position
-          const finalCoord = route.geometry.coordinates[route.geometry.coordinates.length - 1];
-          marker.current.setLngLat(finalCoord);
-        }
-        toast.success('Simulação concluída!');
+        // If we were using interactive map, try to refetch order and reinitialize
+        fetchOrderDetails();
       }
-    };
-    
-    // Start the animation loop
-    animationRef.current = requestAnimationFrame(animateRoute);
-  };
-
-  const resetAnimation = () => {
-    // Cancel current animation
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
+    } else {
+      // If we don't have coordinates, refetch everything
+      fetchOrderDetails();
     }
-    
-    // Reset marker to start position
-    if (marker.current && route && route.geometry.coordinates.length > 0) {
-      marker.current.setLngLat(route.geometry.coordinates[0]);
-    }
-    
-    // Reset map view
-    if (map.current && route) {
-      const bounds = new mapboxgl.LngLatBounds();
-      route.geometry.coordinates.forEach((coord: [number, number]) => {
-        bounds.extend(coord);
-      });
-      map.current.fitBounds(bounds, { padding: 60, maxZoom: 15 });
-    }
-    
-    // Reset state
-    setProgress(0);
-    setAnimationStarted(false);
-    startTimeRef.current = null;
   };
 
   if (!isOpen) return null;
@@ -368,15 +395,37 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
           ) : mapError ? (
             <div className="flex flex-col justify-center items-center h-[500px] text-center">
               <p className="text-destructive text-lg mb-4">{mapError}</p>
-              <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
+              <Button onClick={handleRetry}>Tentar novamente</Button>
             </div>
           ) : (
             <div className="flex flex-col space-y-4 h-full">
               <div className="h-[500px] relative border rounded-md overflow-hidden bg-gray-100">
-                <div ref={mapContainer} className="absolute inset-0" />
+                {useStaticMap ? (
+                  /* Static map fallback */
+                  staticMapUrl ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <img 
+                        src={staticMapUrl} 
+                        alt="Mapa da rota" 
+                        className="max-w-full max-h-full object-contain" 
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full bg-gray-100">
+                      <p>Carregando mapa estático...</p>
+                    </div>
+                  )
+                ) : (
+                  /* Interactive map */
+                  <div 
+                    ref={mapContainer} 
+                    className="absolute inset-0" 
+                    style={{ minHeight: "400px", backgroundColor: "#e9e9e9" }}
+                  />
+                )}
                 
-                {/* Route info overlay */}
-                {route && (
+                {/* Route info overlay - show for both map types */}
+                {(routeDistance > 0 || routeDuration > 0) && (
                   <div className="absolute top-4 right-4 bg-white p-3 rounded-md shadow-md z-10 max-w-xs">
                     <div className="flex flex-col space-y-2">
                       <div className="text-sm font-semibold flex justify-between">
@@ -387,31 +436,26 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
                         <span>Tempo estimado:</span>
                         <span>{Math.floor(routeDuration / 60)} min</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div 
-                          className="bg-primary h-2.5 rounded-full transition-all duration-300" 
-                          style={{ width: `${progress * 100}%` }}
-                        ></div>
-                      </div>
                     </div>
                   </div>
                 )}
               </div>
               
-              {route && (
-                <div className="flex justify-center gap-4">
-                  {!animationStarted ? (
-                    <Button onClick={startAnimation} className="gap-2">
-                      <Navigation className="h-4 w-4" />
-                      Iniciar Simulação
-                    </Button>
+              <div className="flex justify-center gap-4">
+                <Button onClick={handleRetry} variant="outline" className="gap-2">
+                  {useStaticMap ? (
+                    <>
+                      <MapIcon className="h-4 w-4" />
+                      Tentar mapa interativo
+                    </>
                   ) : (
-                    <Button onClick={resetAnimation} variant="outline" className="gap-2">
-                      Reiniciar Simulação
-                    </Button>
+                    <>
+                      <Loader2 className="h-4 w-4" />
+                      Recarregar mapa
+                    </>
                   )}
-                </div>
-              )}
+                </Button>
+              </div>
             </div>
           )}
         </div>
