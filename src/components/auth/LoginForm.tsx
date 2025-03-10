@@ -30,6 +30,14 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const searchParams = new URLSearchParams(location.search);
   const accountType = searchParams.get('type') || 'client';
   
+  // Set default email for admin for easier access
+  useEffect(() => {
+    if (accountType === 'admin') {
+      setEmail('admin@clicktransfer.com');
+      setPassword('Admin@123');
+    }
+  }, [accountType]);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -55,6 +63,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
         
         const { error } = await signIn(email, password, companyIdToUse);
         if (error) {
+          console.error('Login error:', error);
           if (error.message === 'You are not registered as a driver for this company') {
             toast.error('Acesso negado', { 
               description: 'Você não está registrado como motorista para esta empresa'

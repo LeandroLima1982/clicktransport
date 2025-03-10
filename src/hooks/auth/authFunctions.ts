@@ -7,6 +7,10 @@ import { toast } from 'sonner';
 export const signIn = async (email: string, password: string, companyId?: string) => {
   try {
     console.log('Signing in user:', email);
+    
+    // Special handling for admin login
+    const isAdminLogin = email.toLowerCase() === 'admin@clicktransfer.com';
+    
     const result = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -21,6 +25,44 @@ export const signIn = async (email: string, password: string, companyId?: string
     } 
     
     console.log('Sign in successful');
+    
+    // If admin login, no need to check company association
+    if (isAdminLogin && result.data.user) {
+      // Verify admin role
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', result.data.user.id)
+        .single();
+      
+      if (profileError) {
+        console.error('Error fetching admin profile:', profileError);
+        await supabase.auth.signOut();
+        return { 
+          error: {
+            message: 'Error fetching admin profile',
+            name: 'profile_fetch_error',
+          } as AuthError 
+        };
+      }
+      
+      const userRole = profileData?.role;
+      console.log('Admin role verification:', userRole);
+      
+      if (userRole !== 'admin') {
+        console.error('User is not an admin');
+        await supabase.auth.signOut();
+        return { 
+          error: {
+            message: 'You do not have administrator privileges',
+            name: 'invalid_admin_role',
+          } as AuthError 
+        };
+      }
+      
+      console.log('Admin login verified successfully');
+      return { error: null };
+    }
     
     // If company ID is provided for driver login, verify the association
     if (companyId && result.data.user) {
