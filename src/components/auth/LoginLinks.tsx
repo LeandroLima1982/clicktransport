@@ -44,6 +44,14 @@ const LoginLinks: React.FC<LoginLinksProps> = ({ accountType, setActiveTab }) =>
           </Link>
         </div>
       )}
+      
+      {accountType !== 'admin' && (
+        <div className="text-sm text-center">
+          <Link to="/auth?type=admin" className="text-primary hover:underline">
+            Entrar como administrador
+          </Link>
+        </div>
+      )}
     </>
   );
 };

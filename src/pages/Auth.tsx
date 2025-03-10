@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -27,7 +28,7 @@ const Auth = () => {
     }
     
     const type = searchParams.get('type');
-    if (type && ['company', 'admin', 'client'].includes(type)) {
+    if (type && ['company', 'admin', 'client', 'driver'].includes(type)) {
       setAccountType(type);
       setIsBusinessUser(type !== 'client');
     }
