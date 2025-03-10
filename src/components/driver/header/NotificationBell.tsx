@@ -19,7 +19,6 @@ const NotificationBell: React.FC = () => {
           variant="ghost" 
           size="icon" 
           className="relative"
-          onClick={clearNotifications}
         >
           <Bell className="h-5 w-5" />
           {notifications > 0 && (
@@ -31,11 +30,28 @@ const NotificationBell: React.FC = () => {
       </PopoverTrigger>
       <PopoverContent className="w-80">
         <div className="space-y-2">
-          <h4 className="font-medium text-sm">Notificações</h4>
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-sm">Notificações</h4>
+            {notifications > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={clearNotifications}
+              >
+                Limpar
+              </Button>
+            )}
+          </div>
+          
           {notifications > 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Você tem {notifications} {notifications === 1 ? 'nova notificação' : 'novas notificações'} de ordens de serviço.
-            </p>
+            <>
+              <p className="text-sm text-muted-foreground">
+                Você tem {notifications} {notifications === 1 ? 'nova notificação' : 'novas notificações'} de ordens de serviço.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Verifique suas atribuições na aba "Ordens de Serviço".
+              </p>
+            </>
           ) : (
             <p className="text-sm text-muted-foreground">
               Não há novas notificações.

@@ -35,29 +35,33 @@ export const useNotifications = () => {
   useEffect(() => {
     if (!driverId) return;
 
-    // Subscribe to new service order assignments
+    // Subscribe to new service order assignments and updates
     const channel = supabase
       .channel('service_orders_changes')
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*', // Listen to all events (INSERT, UPDATE)
           schema: 'public',
           table: 'service_orders',
           filter: `driver_id=eq.${driverId}`
         },
         (payload: any) => {
-          if (payload.new.status === 'assigned') {
-            // Play notification sound
-            const audio = new Audio('/notification.mp3');
-            audio.play().catch(err => console.log('Audio play failed:', err));
-            
-            // Show toast notification
-            toast.success('Nova ordem de serviço atribuída!', {
-              description: 'Você recebeu uma nova atribuição de viagem.'
-            });
-            
-            // Increment notification count
+          console.log('Service order change detected:', payload);
+
+          // For new assignments (INSERT)
+          if (payload.eventType === 'INSERT' && payload.new.status === 'assigned') {
+            playNotificationSound();
+            showAssignmentNotification(payload.new);
+            setNotifications(prev => prev + 1);
+          }
+          
+          // For updates to existing orders (UPDATE)
+          if (payload.eventType === 'UPDATE' && 
+              payload.new.status === 'assigned' && 
+              payload.old.driver_id !== payload.new.driver_id) {
+            playNotificationSound();
+            showAssignmentNotification(payload.new);
             setNotifications(prev => prev + 1);
           }
         }
@@ -68,6 +72,18 @@ export const useNotifications = () => {
       supabase.removeChannel(channel);
     };
   }, [driverId]);
+
+  const playNotificationSound = () => {
+    const audio = new Audio('/notification.mp3');
+    audio.play().catch(err => console.log('Audio play failed:', err));
+  };
+
+  const showAssignmentNotification = (order: any) => {
+    toast.success('Nova ordem de serviço atribuída!', {
+      description: `Origem: ${order.origin} - Destino: ${order.destination}`,
+      duration: 5000,
+    });
+  };
 
   const clearNotifications = () => {
     setNotifications(0);
