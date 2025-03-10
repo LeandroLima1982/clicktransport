@@ -3,15 +3,18 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ServiceOrderList from '@/components/company/ServiceOrderList';
 import CompanyPanel from '@/components/company/CompanyPanel';
+import DriversManagement from '@/components/company/DriversManagement';
 import TransitionEffect from '@/components/TransitionEffect';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/main';
 import { toast } from 'sonner';
+import { Badge } from "@/components/ui/badge";
 
 const CompanyDashboard: React.FC = () => {
   const { user } = useAuth();
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [companyData, setCompanyData] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
@@ -23,7 +26,7 @@ const CompanyDashboard: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('companies')
-        .select('id')
+        .select('*')
         .eq('user_id', user?.id)
         .single();
 
@@ -35,7 +38,8 @@ const CompanyDashboard: React.FC = () => {
 
       if (data) {
         setCompanyId(data.id);
-        console.log('ID da empresa:', data.id);
+        setCompanyData(data);
+        console.log('Dados da empresa:', data);
       }
     } catch (error) {
       console.error('Erro ao buscar empresa:', error);
@@ -63,9 +67,25 @@ const CompanyDashboard: React.FC = () => {
   return (
     <TransitionEffect>
       <div className="container mx-auto p-4 space-y-6">
-        <h1 className="text-2xl font-bold">Painel da Empresa</h1>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
+          <div>
+            <h1 className="text-2xl font-bold">{companyData?.name || 'Painel da Empresa'}</h1>
+            <p className="text-muted-foreground">Gerencie suas operações de transporte</p>
+          </div>
+          
+          {companyData?.status && (
+            <Badge className={`px-2 py-1 ${
+              companyData.status === 'active' ? 'bg-green-100 text-green-800' : 
+              companyData.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+              'bg-red-100 text-red-800'
+            }`}>
+              {companyData.status === 'active' ? 'Ativo' : 
+               companyData.status === 'pending' ? 'Pendente' : 'Inativo'}
+            </Badge>
+          )}
+        </div>
         
-        <Tabs defaultValue="orders" className="space-y-4">
+        <Tabs defaultValue="dashboard" className="space-y-4">
           <TabsList className="grid grid-cols-4 md:w-[600px]">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="orders">Ordens de Serviço</TabsTrigger>
@@ -82,8 +102,7 @@ const CompanyDashboard: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="drivers" className="space-y-4">
-            <h2 className="text-xl font-semibold">Gerenciamento de Motoristas</h2>
-            <p>Funcionalidade em desenvolvimento...</p>
+            <DriversManagement companyId={companyId} />
           </TabsContent>
           
           <TabsContent value="vehicles" className="space-y-4">
