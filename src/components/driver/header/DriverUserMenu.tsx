@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { User, LogOut, Loader2 } from 'lucide-react';
+import { User, LogOut, Loader2, Car, Settings, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +8,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Link } from 'react-router-dom';
 
@@ -37,11 +38,36 @@ const DriverUserMenu: React.FC = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem asChild>
-          <Link to="/driver/profile" className="w-full">Meu Perfil</Link>
+          <Link to="/" className="w-full">
+            <LayoutDashboard className="h-4 w-4 mr-2" />
+            Página Inicial
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/driver/settings" className="w-full">Configurações</Link>
+          <Link to="/driver/dashboard" className="w-full">
+            <LayoutDashboard className="h-4 w-4 mr-2" />
+            Painel do Motorista
+          </Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/driver/profile" className="w-full">
+            <User className="h-4 w-4 mr-2" />
+            Meu Perfil
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/driver/trips" className="w-full">
+            <Car className="h-4 w-4 mr-2" />
+            Minhas Viagens
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/driver/settings" className="w-full">
+            <Settings className="h-4 w-4 mr-2" />
+            Configurações
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} disabled={isAuthenticating}>
           {isAuthenticating ? (
             <>

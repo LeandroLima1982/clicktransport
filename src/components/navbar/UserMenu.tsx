@@ -1,7 +1,19 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, LogOut, Loader2, Car, Briefcase, Shield } from 'lucide-react';
+import { 
+  User, 
+  LogOut, 
+  Loader2, 
+  Car, 
+  Briefcase, 
+  Shield, 
+  LayoutDashboard,
+  Book,
+  Home,
+  Settings,
+  Users
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/hooks/auth/types';
 import {
@@ -10,6 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
 interface UserMenuProps {
@@ -76,22 +89,100 @@ const UserMenu: React.FC<UserMenuProps> = ({
           <span className="hidden md:inline">{user.email?.split('@')[0]}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>Olá, {user.email?.split('@')[0]}</DropdownMenuLabel>
+        
+        {/* Common navigation option for all users */}
+        <DropdownMenuItem asChild>
+          <Link to="/" className="w-full">
+            <Home className="h-4 w-4 mr-2" />
+            Página Inicial
+          </Link>
+        </DropdownMenuItem>
+        
+        {/* Role-specific navigation options */}
         {userRole === 'client' && (
-          <DropdownMenuItem asChild>
-            <Link to="/bookings" className="w-full">Minhas Reservas</Link>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem asChild>
+              <Link to="/bookings" className="w-full">
+                <Book className="h-4 w-4 mr-2" />
+                Minhas Reservas
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/profile" className="w-full">
+                <User className="h-4 w-4 mr-2" />
+                Meu Perfil
+              </Link>
+            </DropdownMenuItem>
+          </>
         )}
+        
         {userRole === 'company' && (
-          <DropdownMenuItem asChild>
-            <Link to="/company/dashboard" className="w-full">Painel da Empresa</Link>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem asChild>
+              <Link to="/company/dashboard" className="w-full">
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                Painel da Empresa
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/company/drivers" className="w-full">
+                <Users className="h-4 w-4 mr-2" />
+                Gestão de Motoristas
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/company/settings" className="w-full">
+                <Settings className="h-4 w-4 mr-2" />
+                Configurações
+              </Link>
+            </DropdownMenuItem>
+          </>
         )}
+        
         {userRole === 'driver' && (
-          <DropdownMenuItem asChild>
-            <Link to="/driver/dashboard" className="w-full">Painel do Motorista</Link>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem asChild>
+              <Link to="/driver/dashboard" className="w-full">
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                Painel do Motorista
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/driver/profile" className="w-full">
+                <User className="h-4 w-4 mr-2" />
+                Meu Perfil
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/driver/trips" className="w-full">
+                <Car className="h-4 w-4 mr-2" />
+                Minhas Viagens
+              </Link>
+            </DropdownMenuItem>
+          </>
         )}
+        
+        {userRole === 'admin' && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link to="/admin/dashboard" className="w-full">
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                Painel Admin
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/admin/database-setup" className="w-full">
+                <Settings className="h-4 w-4 mr-2" />
+                Configuração do Banco
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+        
+        <DropdownMenuSeparator />
+        
         <DropdownMenuItem onClick={handleSignOut} disabled={isAuthenticating}>
           {isAuthenticating ? (
             <>
