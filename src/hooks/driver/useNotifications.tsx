@@ -10,19 +10,16 @@ export const useNotifications = () => {
   const { user } = useAuth();
   const driverId = useDriverId(user);
 
-  // Subscribe to service order changes
-  useServiceOrderSubscription(driverId, (payload) => {
-    // Check if this is a new assignment
-    if (payload.new && payload.new.driver_id === driverId && payload.new.status === 'assigned') {
-      // Show a toast notification
-      toast.success('Nova ordem de serviço!', {
-        description: 'Você recebeu uma nova atribuição de serviço.',
-        duration: 5000,
-      });
-      
-      // Increment notification count
-      setNotifications(prev => prev + 1);
-    }
+  // Subscribe to service order changes - now with correct parameter typing
+  useServiceOrderSubscription(driverId, () => {
+    // Show a toast notification
+    toast.success('Nova ordem de serviço!', {
+      description: 'Você recebeu uma nova atribuição de serviço.',
+      duration: 5000,
+    });
+    
+    // Increment notification count
+    setNotifications(prev => prev + 1);
   });
 
   // Reset notifications when app is focused
