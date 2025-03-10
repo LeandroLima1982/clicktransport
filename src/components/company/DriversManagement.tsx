@@ -1,11 +1,48 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Users } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { 
+  UserPlus, 
+  Users, 
+  Search, 
+  Plus, 
+  Edit, 
+  Trash, 
+  User 
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import DriverRegistrationForm from './DriverRegistrationForm';
 import { supabase } from '@/main';
+import { toast } from 'sonner';
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetDescription, 
+  SheetFooter, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger,
+  SheetClose
+} from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Driver {
   id: string;
