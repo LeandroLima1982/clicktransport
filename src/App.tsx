@@ -1,3 +1,4 @@
+
 // Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
@@ -19,6 +20,9 @@ import CompanyDashboard from './pages/company/Dashboard';
 // Driver pages
 import DriverDashboard from './pages/driver/Dashboard';
 import DriverPanel from './pages/driver/Panel';
+
+// Client pages
+import Bookings from './pages/client/Bookings';
 
 import './App.css';
 
@@ -61,7 +65,7 @@ const ProtectedRoute = ({
     } else if (userRole === 'driver') {
       return <Navigate to="/driver/dashboard" replace />;
     } else if (userRole === 'client') {
-      return <Navigate to="/" replace />;
+      return <Navigate to="/bookings" replace />;
     }
     
     // Fallback to home
@@ -89,9 +93,11 @@ const RoleBasedRedirect = () => {
     return <Navigate to="/company/dashboard" replace />;
   } else if (userRole === 'driver') {
     return <Navigate to="/driver/dashboard" replace />;
+  } else if (userRole === 'client') {
+    return <Navigate to="/bookings" replace />;
   }
   
-  // Default for clients or unknown roles
+  // Default for unknown roles
   return <Navigate to="/" replace />;
 };
 
@@ -135,6 +141,13 @@ function App() {
           <Route path="/driver/panel" element={
             <ProtectedRoute requiredRole="driver">
               <DriverPanel />
+            </ProtectedRoute>
+          } />
+          
+          {/* Client routes */}
+          <Route path="/bookings" element={
+            <ProtectedRoute requiredRole="client">
+              <Bookings />
             </ProtectedRoute>
           } />
           

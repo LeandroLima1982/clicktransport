@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Car, FileText, Users, ChartBar, LogOut } from 'lucide-react';
+import { Car, FileText, Users, ChartBar, LogOut, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import CompanyDashboard from './CompanyDashboard';
 import ServiceOrderList from './ServiceOrderList';
@@ -12,7 +12,7 @@ import DriversManagement from './DriversManagement';
 import VehiclesManagement from './VehiclesManagement';
 
 const CompanyPanel: React.FC = () => {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, signOut, isAuthenticating } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if not authenticated or not a company
@@ -27,17 +27,31 @@ const CompanyPanel: React.FC = () => {
   }
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Error will be displayed by the AuthProvider
+    }
   };
 
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Painel da Empresa</h1>
-        <Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2">
-          <LogOut className="h-4 w-4" />
-          Sair
+        <Button variant="outline" onClick={handleSignOut} disabled={isAuthenticating} className="flex items-center gap-2">
+          {isAuthenticating ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Saindo...
+            </>
+          ) : (
+            <>
+              <LogOut className="h-4 w-4" />
+              Sair
+            </>
+          )}
         </Button>
       </div>
 

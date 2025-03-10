@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole>(null);
+  const [logoutInProgress, setLogoutInProgress] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -54,6 +55,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           if (event === 'SIGNED_OUT') {
             toast.success('Logout realizado com sucesso!');
+            // Reset logout in progress state if we get a successful sign out event
+            setLogoutInProgress(false);
           }
         }
         
@@ -66,24 +69,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  // Enhanced signOut function that clears user state
+  // Enhanced signOut function that clears user state and handles errors
   const handleSignOut = async () => {
-    const result = await signOut();
-    
-    if (!result.error) {
-      // Clear local state
+    try {
+      setLogoutInProgress(true);
+      
+      const result = await signOut();
+      
+      if (result.error) {
+        console.error('Error signing out:', result.error);
+        toast.error('Erro ao fazer logout', {
+          description: 'Ocorreu um erro ao encerrar sua sessão. Tente novamente.'
+        });
+        setLogoutInProgress(false);
+        return result;
+      }
+      
+      // Clear local state - don't wait for the auth state change event
       setUser(null);
       setSession(null);
       setUserRole(null);
+      
+      // We'll set logoutInProgress to false when the SIGNED_OUT event is triggered
+      // This prevents weird UI states if the event takes time
+      
+      return result;
+    } catch (error) {
+      console.error('Unexpected error during sign out:', error);
+      toast.error('Erro ao fazer logout', {
+        description: 'Ocorreu um erro inesperado. Tente novamente mais tarde.'
+      });
+      setLogoutInProgress(false);
+      return { error: error as Error };
     }
-    
-    return result;
   };
 
   const value = {
     session,
     user,
     isLoading,
+    isAuthenticating: logoutInProgress,
     signIn,
     signInWithGoogle,
     signUp,

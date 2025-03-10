@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Car, Menu, X, ChevronDown, LogOut, User } from 'lucide-react';
+import { Car, Menu, X, ChevronDown, LogOut, User, Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -16,12 +16,17 @@ const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, signOut, isAuthenticating } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Error toast will be displayed by the AuthProvider
+    }
   };
 
   useEffect(() => {
@@ -64,9 +69,18 @@ const Navbar: React.FC = () => {
                 <Link to="/driver/dashboard" className="w-full">Painel do Motorista</Link>
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
+            <DropdownMenuItem onClick={handleSignOut} disabled={isAuthenticating}>
+              {isAuthenticating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saindo...
+                </>
+              ) : (
+                <>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair
+                </>
+              )}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -208,11 +222,21 @@ const Navbar: React.FC = () => {
                     onClick={() => {
                       handleSignOut();
                       setMobileMenuOpen(false);
-                    }} 
+                    }}
                     className="w-full rounded-full"
+                    disabled={isAuthenticating}
                   >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sair
+                    {isAuthenticating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saindo...
+                      </>
+                    ) : (
+                      <>
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sair
+                      </>
+                    )}
                   </Button>
                 </>
               ) : (
