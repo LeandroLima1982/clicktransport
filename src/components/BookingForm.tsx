@@ -7,12 +7,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, ArrowRight, MapPin, Calendar as CalendarIcon2, Clock, Users, Building, Landmark, Home, Navigation, MapPinned } from 'lucide-react';
+import { CalendarIcon, ArrowRight, MapPin, Calendar as CalendarIcon2, Clock, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BookingSteps } from './booking';
 import TimeSelector from './TimeSelector';
 import { toast } from 'sonner';
+import { fetchAddressSuggestions, getPlaceIcon, formatPlaceName } from '@/utils/mapbox';
 
 const BookingForm: React.FC = () => {
   const [originValue, setOriginValue] = useState('');
@@ -24,11 +25,9 @@ const BookingForm: React.FC = () => {
   const [showBookingSteps, setShowBookingSteps] = useState(false);
   const [time, setTime] = useState<string>('');
   const [returnTime, setReturnTime] = useState<string>('');
-  const [mapboxToken, setMapboxToken] = useState<string>('');
   const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [showTokenInput, setShowTokenInput] = useState(true);
   
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -67,39 +66,6 @@ const BookingForm: React.FC = () => {
     setShowBookingSteps(true);
   };
 
-  const fetchAddressSuggestions = async (query: string, isOrigin: boolean) => {
-    if (!mapboxToken || query.length < 3) return;
-    
-    try {
-      setIsLoadingSuggestions(true);
-      const endpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`;
-      const params = new URLSearchParams({
-        access_token: mapboxToken,
-        country: 'br',
-        language: 'pt',
-        limit: '5',
-        types: 'poi,address,place,region,district',
-        proximity: '-43.1729,-22.9068',
-        bbox: '-73.9872354,-33.7683777,-34.7299934,5.24448639'
-      });
-      
-      const response = await fetch(`${endpoint}?${params.toString()}`);
-      const data = await response.json();
-      
-      if (data.features) {
-        if (isOrigin) {
-          setOriginSuggestions(data.features);
-        } else {
-          setDestinationSuggestions(data.features);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching address suggestions:', error);
-    } finally {
-      setIsLoadingSuggestions(false);
-    }
-  };
-
   const handleOriginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setOriginValue(value);
@@ -108,8 +74,11 @@ const BookingForm: React.FC = () => {
       clearTimeout(originTimeoutRef.current);
     }
     
-    originTimeoutRef.current = setTimeout(() => {
-      fetchAddressSuggestions(value, true);
+    originTimeoutRef.current = setTimeout(async () => {
+      setIsLoadingSuggestions(true);
+      const suggestions = await fetchAddressSuggestions(value);
+      setOriginSuggestions(suggestions);
+      setIsLoadingSuggestions(false);
     }, 500);
   };
 
@@ -121,8 +90,11 @@ const BookingForm: React.FC = () => {
       clearTimeout(destinationTimeoutRef.current);
     }
     
-    destinationTimeoutRef.current = setTimeout(() => {
-      fetchAddressSuggestions(value, false);
+    destinationTimeoutRef.current = setTimeout(async () => {
+      setIsLoadingSuggestions(true);
+      const suggestions = await fetchAddressSuggestions(value);
+      setDestinationSuggestions(suggestions);
+      setIsLoadingSuggestions(false);
     }, 500);
   };
 
@@ -137,66 +109,8 @@ const BookingForm: React.FC = () => {
     }
   };
 
-  const handleMapboxTokenSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (mapboxToken.trim()) {
-      setShowTokenInput(false);
-      toast.success('Token do Mapbox configurado com sucesso!');
-    } else {
-      toast.error('Por favor, insira um token válido.');
-    }
-  };
-
-  const getPlaceIcon = (place: any) => {
-    const category = place.properties?.category;
-    const placeType = place.place_type?.[0];
-    
-    if (category === 'airport' || category?.includes('airport')) return <Landmark className="h-4 w-4" />;
-    if (category === 'hotel' || category?.includes('hotel') || category?.includes('lodging')) return <Building className="h-4 w-4" />;
-    if (category?.includes('restaurant') || category?.includes('food')) return <MapPinned className="h-4 w-4" />;
-    
-    if (placeType === 'poi') return <Landmark className="h-4 w-4" />;
-    if (placeType === 'address') return <Home className="h-4 w-4" />;
-    if (placeType === 'place') return <Navigation className="h-4 w-4" />;
-    
-    return <MapPin className="h-4 w-4" />;
-  };
-
-  const formatPlaceName = (place: any) => {
-    const mainText = place.text;
-    const context = place.context?.map((c: any) => c.text).join(', ') || '';
-    
-    return (
-      <div>
-        <div className="font-medium">{mainText}</div>
-        {context && <div className="text-xs text-gray-400">{context}</div>}
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6">
-      {showTokenInput && (
-        <div className="mb-6 bg-yellow-500/10 p-4 rounded-lg border border-yellow-500/20">
-          <h4 className="text-white font-semibold mb-2">Configuração do Mapbox</h4>
-          <p className="text-white/80 text-sm mb-3">
-            Para utilizar as sugestões de endereço, é necessário fornecer um token de acesso do Mapbox.
-          </p>
-          <form onSubmit={handleMapboxTokenSubmit} className="flex gap-2">
-            <Input
-              placeholder="Insira seu token do Mapbox"
-              value={mapboxToken}
-              onChange={(e) => setMapboxToken(e.target.value)}
-              className="bg-white/20 border-white/10 text-white placeholder:text-white/60"
-            />
-            <Button type="submit" size="sm">Salvar</Button>
-          </form>
-          <p className="text-xs text-white/60 mt-2">
-            Obtenha um token em <a href="https://account.mapbox.com/access-tokens/" target="_blank" rel="noopener noreferrer" className="underline">mapbox.com</a>
-          </p>
-        </div>
-      )}
-
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-semibold text-white">Agende seu Transfer</h3>
         <Tabs defaultValue="oneway" className="w-[260px]" onValueChange={(value) => setTripType(value as 'oneway' | 'roundtrip')}>
