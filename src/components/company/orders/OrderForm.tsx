@@ -129,7 +129,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
             pickup_date: newOrder.pickup_date,
             delivery_date: newOrder.delivery_date || null,
             notes: newOrder.notes || null,
-            status: orderStatus, // Use 'assigned' status if driver is selected
+            status: orderStatus,
             driver_id: newOrder.driver_id || null,
             vehicle_id: newOrder.vehicle_id || null
           }
@@ -151,7 +151,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
       });
       
       setIsOpen(false);
-      onOrderCreated();
+      await onOrderCreated();
       
     } catch (error) {
       console.error('Error creating order:', error);

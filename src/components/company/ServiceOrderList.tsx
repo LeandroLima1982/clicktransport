@@ -36,40 +36,59 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
   useEffect(() => {
     if (companyId) {
       fetchData();
+      
+      // Subscribe to real-time updates
+      const channel = supabase
+        .channel('service_orders_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'service_orders',
+            filter: `company_id=eq.${companyId}`
+          },
+          (payload) => {
+            console.log('Service order change detected:', payload);
+            fetchData();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [companyId]);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Fetch service orders
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('service_orders')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false });
+      const [ordersResponse, driversResponse, vehiclesResponse] = await Promise.all([
+        supabase
+          .from('service_orders')
+          .select('*')
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false }),
+        
+        supabase
+          .from('drivers')
+          .select('id, name')
+          .eq('company_id', companyId),
+        
+        supabase
+          .from('vehicles')
+          .select('id, model, license_plate')
+          .eq('company_id', companyId)
+      ]);
       
-      if (ordersError) throw ordersError;
+      if (ordersResponse.error) throw ordersResponse.error;
+      if (driversResponse.error) throw driversResponse.error;
+      if (vehiclesResponse.error) throw vehiclesResponse.error;
       
-      // Fetch drivers
-      const { data: driversData, error: driversError } = await supabase
-        .from('drivers')
-        .select('id, name')
-        .eq('company_id', companyId);
-      
-      if (driversError) throw driversError;
-      
-      // Fetch vehicles
-      const { data: vehiclesData, error: vehiclesError } = await supabase
-        .from('vehicles')
-        .select('id, model, license_plate')
-        .eq('company_id', companyId);
-      
-      if (vehiclesError) throw vehiclesError;
-      
-      setOrders(ordersData || []);
-      setDrivers(driversData || []);
-      setVehicles(vehiclesData || []);
+      setOrders(ordersResponse.data || []);
+      setDrivers(driversResponse.data || []);
+      setVehicles(vehiclesResponse.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
