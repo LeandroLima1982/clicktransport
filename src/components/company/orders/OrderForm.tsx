@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -115,6 +116,9 @@ const OrderForm: React.FC<OrderFormProps> = ({
         return;
       }
       
+      // Determine if we should set the status to 'assigned' when a driver is selected
+      const orderStatus = newOrder.driver_id ? 'assigned' : 'pending';
+      
       const { error } = await supabase
         .from('service_orders')
         .insert([
@@ -125,7 +129,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
             pickup_date: newOrder.pickup_date,
             delivery_date: newOrder.delivery_date || null,
             notes: newOrder.notes || null,
-            status: newOrder.status,
+            status: orderStatus, // Use 'assigned' status if driver is selected
             driver_id: newOrder.driver_id || null,
             vehicle_id: newOrder.vehicle_id || null
           }

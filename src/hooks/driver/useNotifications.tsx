@@ -9,7 +9,9 @@ export const useNotifications = () => {
   const { user } = useAuth();
   const driverId = useDriverId(user);
 
+  // Subscribe to service order changes
   useServiceOrderSubscription(driverId, () => {
+    // Increment notification count when a new assignment is detected
     setNotifications(prev => prev + 1);
   });
 
