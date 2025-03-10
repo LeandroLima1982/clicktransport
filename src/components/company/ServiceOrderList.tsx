@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -26,11 +27,14 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/main';
 import { format } from 'date-fns';
-import { FileText, Plus, Search } from 'lucide-react';
+import { FileText, Plus, Search, Eye, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
+import OrderDetailSheet from './OrderDetailSheet';
 
 // Define service order type
 interface ServiceOrder {
@@ -45,6 +49,17 @@ interface ServiceOrder {
   vehicle_id: string | null;
 }
 
+interface Driver {
+  id: string;
+  name: string;
+}
+
+interface Vehicle {
+  id: string;
+  model: string;
+  license_plate: string;
+}
+
 interface ServiceOrderListProps {
   companyId: string;
 }
@@ -52,10 +67,12 @@ interface ServiceOrderListProps {
 const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
-  const [drivers, setDrivers] = useState<any[]>([]);
-  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
+  const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
   
   // Form state
   const [newOrder, setNewOrder] = useState({
@@ -70,53 +87,48 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
   });
 
   useEffect(() => {
-    fetchData();
-  }, [user, companyId]);
+    if (companyId) {
+      fetchData();
+    }
+  }, [companyId]);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      if (companyId) {
-        // Fetch service orders
-        const { data: ordersData, error: ordersError } = await supabase
-          .from('service_orders')
-          .select('*')
-          .eq('company_id', companyId)
-          .order('created_at', { ascending: false });
-        
-        if (ordersError) throw ordersError;
-        
-        // Fetch drivers
-        const { data: driversData, error: driversError } = await supabase
-          .from('drivers')
-          .select('*')
-          .eq('company_id', companyId);
-        
-        if (driversError) throw driversError;
-        
-        // Fetch vehicles
-        const { data: vehiclesData, error: vehiclesError } = await supabase
-          .from('vehicles')
-          .select('*')
-          .eq('company_id', companyId);
-        
-        if (vehiclesError) throw vehiclesError;
-        
-        setOrders(ordersData || []);
-        setDrivers(driversData || []);
-        setVehicles(vehiclesData || []);
-      }
+      // Fetch service orders
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('service_orders')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false });
+      
+      if (ordersError) throw ordersError;
+      
+      // Fetch drivers
+      const { data: driversData, error: driversError } = await supabase
+        .from('drivers')
+        .select('id, name')
+        .eq('company_id', companyId);
+      
+      if (driversError) throw driversError;
+      
+      // Fetch vehicles
+      const { data: vehiclesData, error: vehiclesError } = await supabase
+        .from('vehicles')
+        .select('id, model, license_plate')
+        .eq('company_id', companyId);
+      
+      if (vehiclesError) throw vehiclesError;
+      
+      setOrders(ordersData || []);
+      setDrivers(driversData || []);
+      setVehicles(vehiclesData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Erro ao carregar dados');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Helper function to get company ID from user ID
-  const getCompanyId = async () => {
-    return companyId;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -126,8 +138,6 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
 
   const handleCreateOrder = async () => {
     try {
-      const companyId = await getCompanyId();
-      
       if (!companyId) {
         toast.error('ID da empresa não encontrado');
         return;
@@ -194,6 +204,48 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
       console.error('Error updating status:', error);
       toast.error('Erro ao atualizar status');
     }
+  };
+
+  const handleAssignDriver = async (orderId: string, driverId: string) => {
+    try {
+      const { error } = await supabase
+        .from('service_orders')
+        .update({ 
+          driver_id: driverId,
+          status: driverId ? 'assigned' : 'pending'
+        })
+        .eq('id', orderId);
+      
+      if (error) throw error;
+      
+      toast.success('Motorista atribuído com sucesso');
+      fetchData();
+    } catch (error) {
+      console.error('Error assigning driver:', error);
+      toast.error('Erro ao atribuir motorista');
+    }
+  };
+
+  const handleAssignVehicle = async (orderId: string, vehicleId: string) => {
+    try {
+      const { error } = await supabase
+        .from('service_orders')
+        .update({ vehicle_id: vehicleId })
+        .eq('id', orderId);
+      
+      if (error) throw error;
+      
+      toast.success('Veículo atribuído com sucesso');
+      fetchData();
+    } catch (error) {
+      console.error('Error assigning vehicle:', error);
+      toast.error('Erro ao atribuir veículo');
+    }
+  };
+
+  const handleViewOrderDetails = (order: ServiceOrder) => {
+    setSelectedOrder(order);
+    setIsDetailSheetOpen(true);
   };
 
   const filteredOrders = orders.filter(order => 
@@ -263,10 +315,8 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
             </SheetHeader>
             
             <div className="grid gap-4 py-4">
-              <div>
-                <label htmlFor="origin" className="block text-sm font-medium mb-1">
-                  Origem *
-                </label>
+              <div className="space-y-1">
+                <Label htmlFor="origin">Origem *</Label>
                 <Input
                   id="origin"
                   name="origin"
@@ -277,10 +327,8 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
                 />
               </div>
               
-              <div>
-                <label htmlFor="destination" className="block text-sm font-medium mb-1">
-                  Destino *
-                </label>
+              <div className="space-y-1">
+                <Label htmlFor="destination">Destino *</Label>
                 <Input
                   id="destination"
                   name="destination"
@@ -291,10 +339,8 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
                 />
               </div>
               
-              <div>
-                <label htmlFor="pickup_date" className="block text-sm font-medium mb-1">
-                  Data de Coleta *
-                </label>
+              <div className="space-y-1">
+                <Label htmlFor="pickup_date">Data de Coleta *</Label>
                 <Input
                   id="pickup_date"
                   name="pickup_date"
@@ -305,10 +351,8 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
                 />
               </div>
               
-              <div>
-                <label htmlFor="delivery_date" className="block text-sm font-medium mb-1">
-                  Data de Entrega (Estimada)
-                </label>
+              <div className="space-y-1">
+                <Label htmlFor="delivery_date">Data de Entrega (Estimada)</Label>
                 <Input
                   id="delivery_date"
                   name="delivery_date"
@@ -318,10 +362,8 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
                 />
               </div>
               
-              <div>
-                <label htmlFor="driver_id" className="block text-sm font-medium mb-1">
-                  Motorista
-                </label>
+              <div className="space-y-1">
+                <Label htmlFor="driver_id">Motorista</Label>
                 <select
                   id="driver_id"
                   name="driver_id"
@@ -338,10 +380,8 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
                 </select>
               </div>
               
-              <div>
-                <label htmlFor="vehicle_id" className="block text-sm font-medium mb-1">
-                  Veículo
-                </label>
+              <div className="space-y-1">
+                <Label htmlFor="vehicle_id">Veículo</Label>
                 <select
                   id="vehicle_id"
                   name="vehicle_id"
@@ -358,10 +398,8 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
                 </select>
               </div>
               
-              <div>
-                <label htmlFor="notes" className="block text-sm font-medium mb-1">
-                  Observações
-                </label>
+              <div className="space-y-1">
+                <Label htmlFor="notes">Observações</Label>
                 <Textarea
                   id="notes"
                   name="notes"
@@ -386,7 +424,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
       <Card>
         <CardHeader>
           <CardTitle className="text-xl flex items-center">
-            <FileText className="mr-2 h-5 w-5" />
+            <ClipboardList className="mr-2 h-5 w-5" />
             Ordens de Serviço
           </CardTitle>
         </CardHeader>
@@ -417,6 +455,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
                   <TableRow>
                     <TableHead>Origem/Destino</TableHead>
                     <TableHead>Data de Coleta</TableHead>
+                    <TableHead>Motorista</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
@@ -434,22 +473,45 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
                         {formatDate(order.pickup_date)}
                       </TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadgeClass(order.status)}`}>
-                          {translateStatus(order.status)}
-                        </span>
+                        <select
+                          className="px-2 py-1 border rounded text-sm w-full"
+                          value={order.driver_id || ''}
+                          onChange={(e) => handleAssignDriver(order.id, e.target.value)}
+                        >
+                          <option value="">Não atribuído</option>
+                          {drivers.map(driver => (
+                            <option key={driver.id} value={driver.id}>
+                              {driver.name}
+                            </option>
+                          ))}
+                        </select>
                       </TableCell>
                       <TableCell>
-                        <select
-                          className="px-2 py-1 border rounded text-sm"
-                          value={order.status}
-                          onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                        >
-                          <option value="pending">Pendente</option>
-                          <option value="assigned">Atribuído</option>
-                          <option value="in_progress">Em Progresso</option>
-                          <option value="completed">Concluído</option>
-                          <option value="cancelled">Cancelado</option>
-                        </select>
+                        <Badge className={`px-2 py-1 ${getStatusBadgeClass(order.status)}`}>
+                          {translateStatus(order.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <select
+                            className="px-2 py-1 border rounded text-sm"
+                            value={order.status}
+                            onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                          >
+                            <option value="pending">Pendente</option>
+                            <option value="assigned">Atribuído</option>
+                            <option value="in_progress">Em Progresso</option>
+                            <option value="completed">Concluído</option>
+                            <option value="cancelled">Cancelado</option>
+                          </select>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleViewOrderDetails(order)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -459,6 +521,14 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
           )}
         </CardContent>
       </Card>
+
+      <OrderDetailSheet
+        order={selectedOrder}
+        isOpen={isDetailSheetOpen}
+        onClose={() => setIsDetailSheetOpen(false)}
+        drivers={drivers}
+        vehicles={vehicles}
+      />
     </div>
   );
 };
