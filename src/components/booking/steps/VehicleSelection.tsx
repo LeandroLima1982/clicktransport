@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, CheckCheck, Battery, Clock } from 'lucide-react';
+import { Users, CheckCheck, Battery, Clock, MapPin } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export interface Vehicle {
@@ -31,54 +31,73 @@ const VehicleSelection: React.FC<VehicleSelectionProps> = ({
   
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">Escolha o veículo</h3>
+      <h3 className={`text-lg font-semibold ${isMobile ? 'text-white' : ''}`}>Escolha o veículo</h3>
       
       {isMobile ? (
-        // App-like UI for mobile
+        // App-like UI for mobile based on reference image
         <div className="space-y-4">
           {vehicles.map((vehicle) => (
             <div 
               key={vehicle.id}
-              className={`app-card overflow-hidden ${
-                selectedVehicle === vehicle.id ? 'ring-2 ring-primary' : ''
-              }`}
+              className="vehicle-card"
               onClick={() => onSelectVehicle(vehicle.id)}
             >
-              <div className="flex items-center p-4">
-                <div 
-                  className="w-20 h-20 rounded-xl overflow-hidden bg-gray-200 mr-4 flex-shrink-0"
-                  style={{
-                    backgroundImage: `url(${vehicle.image})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }}
+              <div className="vehicle-header">
+                <div className="vehicle-name">{vehicle.name}</div>
+                {/* License plate (ID used as placeholder) */}
+                <div className="vehicle-plate">
+                  {`F${vehicle.id}${vehicle.id * 12}KL`}
+                </div>
+              </div>
+              
+              <div className="vehicle-image-container">
+                <img 
+                  src={vehicle.image} 
+                  alt={vehicle.name}
+                  className="vehicle-image"
                 />
+                {selectedVehicle === vehicle.id && (
+                  <div className="absolute top-2 right-2 bg-[#F8D748] text-[#1F1F1F] p-1 rounded-full">
+                    <CheckCheck className="w-5 h-5" />
+                  </div>
+                )}
+              </div>
+              
+              <div className="journey-info">
+                <div className="journey-location">
+                  <div className="location-dot origin"></div>
+                  <div className="location-text">
+                    <div className="location-name">Ponto de partida</div>
+                    <div className="location-time">08:00 (estimado)</div>
+                  </div>
+                </div>
                 
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-medium text-base">{vehicle.name}</h4>
-                      <p className="text-gray-500 text-sm line-clamp-1">{vehicle.description}</p>
-                    </div>
-                    {selectedVehicle === vehicle.id && (
-                      <div className="bg-primary rounded-full p-1 flex-shrink-0">
-                        <CheckCheck className="text-white w-4 h-4" />
-                      </div>
-                    )}
+                <div className="journey-location">
+                  <div className="location-dot destination"></div>
+                  <div className="location-text">
+                    <div className="location-name">Destino</div>
+                    <div className="location-time">08:30 (estimado)</div>
+                  </div>
+                </div>
+                
+                <div className="journey-stats">
+                  <div className="stat">
+                    <Users className="h-4 w-4 text-[#F8D748]" />
+                    <span className="stat-value">{vehicle.capacity}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center text-xs text-gray-600">
-                      <Users className="h-3 w-3 mr-1" />
-                      <span>{vehicle.capacity}</span>
-                      <Battery className="h-3 w-3 ml-3 mr-1" />
-                      <span>100%</span>
-                      <Clock className="h-3 w-3 ml-3 mr-1" />
-                      <span>Rápido</span>
-                    </div>
-                    <div className="font-bold text-primary">
-                      {formatCurrency(vehicle.basePrice)}
-                    </div>
+                  <div className="stat">
+                    <MapPin className="h-4 w-4 text-[#F8D748]" />
+                    <span className="stat-value">15 km</span>
+                  </div>
+                  
+                  <div className="stat">
+                    <Clock className="h-4 w-4 text-[#F8D748]" />
+                    <span className="stat-value">30 min</span>
+                  </div>
+                  
+                  <div className="font-bold text-[#F8D748]">
+                    {formatCurrency(vehicle.basePrice)}
                   </div>
                 </div>
               </div>

@@ -21,8 +21,8 @@ const Index = () => {
   // Show a brief loading indicator only during initial authentication check
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center h-screen bg-[#1F1F1F] text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F8D748]"></div>
         <div className="ml-3 text-lg font-medium">Carregando...</div>
       </div>
     );
@@ -32,24 +32,24 @@ const Index = () => {
   if (isMobile) {
     return (
       <TransitionEffect>
-        <div className="flex flex-col min-h-screen overflow-hidden bg-gray-50">
+        <div className="flex flex-col min-h-screen overflow-hidden bg-[#1F1F1F] text-white">
           {/* Mobile app-like header with greeting */}
-          <div className="app-header bg-primary text-primary-foreground shadow-sm">
+          <div className="app-header">
             <div className="container mx-auto px-4 py-3">
               <div className="flex justify-between items-center">
                 <div>
                   <h1 className="text-lg font-bold">
                     {user ? `Olá, ${user.user_metadata?.firstName || 'Usuário'}` : 'Bem-vindo'}
                   </h1>
-                  <p className="text-xs text-primary-foreground/70">Precisa de transporte hoje?</p>
+                  <p className="text-xs text-white/70">Precisa de transporte hoje?</p>
                 </div>
                 <div className="relative">
                   {user ? (
-                    <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-[#F8D748] flex items-center justify-center text-[#1F1F1F]">
                       {user.user_metadata?.firstName?.[0] || 'U'}
                     </div>
                   ) : (
-                    <div className="px-3 py-1 rounded-full border border-primary-foreground/30 text-xs">
+                    <div className="px-3 py-1 rounded-full border border-white/30 text-xs">
                       Entrar
                     </div>
                   )}
@@ -64,33 +64,33 @@ const Index = () => {
             <div className="container mx-auto px-4 py-6">
               <ServiceForm />
             </div>
-            <div className="bg-white py-8">
+            <div className="bg-[#262626] py-8">
               <div className="container mx-auto px-4">
-                <h2 className="text-xl font-bold mb-6">Serviços</h2>
+                <h2 className="text-xl font-bold mb-6 text-white">Serviços</h2>
                 <Solutions />
               </div>
             </div>
             <div className="py-8">
               <div className="container mx-auto px-4">
-                <h2 className="text-xl font-bold mb-6">Nossos Veículos</h2>
+                <h2 className="text-xl font-bold mb-6 text-white">Nossos Veículos</h2>
                 <TransportTypes />
               </div>
             </div>
-            <div className="bg-white py-8">
+            <div className="bg-[#262626] py-8">
               <div className="container mx-auto px-4">
-                <h2 className="text-xl font-bold mb-6">Como Funciona</h2>
+                <h2 className="text-xl font-bold mb-6 text-white">Como Funciona</h2>
                 <ProcessSteps />
               </div>
             </div>
             <div className="py-8">
               <div className="container mx-auto px-4">
-                <h2 className="text-xl font-bold mb-6">Avaliações</h2>
+                <h2 className="text-xl font-bold mb-6 text-white">Avaliações</h2>
                 <Testimonials />
               </div>
             </div>
-            <div className="bg-white py-8">
+            <div className="bg-[#262626] py-8">
               <div className="container mx-auto px-4">
-                <h2 className="text-xl font-bold mb-6">Perguntas Frequentes</h2>
+                <h2 className="text-xl font-bold mb-6 text-white">Perguntas Frequentes</h2>
                 <FAQ />
               </div>
             </div>

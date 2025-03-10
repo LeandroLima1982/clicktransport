@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, CheckCircle, XCircle, Car } from 'lucide-react';
+import { MapPin, CheckCircle, XCircle, Car, Clock, Users } from 'lucide-react';
 import { formatDate, getStatusBadge } from './utils/formatters';
 import OrderDetailSheet from './OrderDetailSheet';
 import { ServiceOrder } from './hooks/useServiceOrders';
@@ -70,8 +70,91 @@ const OrderCard: React.FC<OrderCardProps> = ({
     }
   };
 
+  if (isMobile) {
+    // App-like order card based on reference image
+    return (
+      <div className="vehicle-card">
+        <div className="vehicle-header">
+          <div>
+            <div className="text-xs text-white/60 mb-1">Ordem #{order.id.slice(0, 8)}</div>
+            <div className="vehicle-name">{order.company_name}</div>
+          </div>
+          {getStatusBadge(order.status)}
+        </div>
+        
+        <div className="journey-info">
+          <div className="journey-location">
+            <div className="location-dot origin"></div>
+            <div className="location-text">
+              <div className="location-name">{order.origin}</div>
+              <div className="location-time">{formatDate(order.pickup_date)}</div>
+            </div>
+          </div>
+          
+          <div className="journey-location">
+            <div className="location-dot destination"></div>
+            <div className="location-text">
+              <div className="location-name">{order.destination}</div>
+            </div>
+          </div>
+          
+          <div className="route-line"></div>
+          
+          <div className="journey-stats">
+            <div className="stat">
+              <Users className="h-4 w-4 text-[#F8D748]" />
+              <span className="stat-value">4</span>
+            </div>
+            
+            <div className="stat">
+              <MapPin className="h-4 w-4 text-[#F8D748]" />
+              <span className="stat-value">15 km</span>
+            </div>
+            
+            <div className="stat">
+              <Clock className="h-4 w-4 text-[#F8D748]" />
+              <span className="stat-value">30 min</span>
+            </div>
+          </div>
+          
+          {showActionButtons && (
+            <div className="flex gap-3 mt-4">
+              {isPending && handleAcceptOrder && handleRejectOrder && (
+                <>
+                  <button className="action-btn flex-1" onClick={onAcceptOrder}>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <span>Aceitar</span>
+                  </button>
+                  <button className="action-btn-secondary flex-1" onClick={onRejectOrder}>
+                    <XCircle className="h-4 w-4 mr-2" />
+                    <span>Rejeitar</span>
+                  </button>
+                </>
+              )}
+              
+              {isAssigned && (
+                <button className="action-btn w-full" onClick={() => onUpdateStatus('in_progress')}>
+                  <Car className="h-4 w-4 mr-2" />
+                  <span>Iniciar Corrida</span>
+                </button>
+              )}
+              
+              {isInProgress && (
+                <button className="action-btn w-full" onClick={() => onUpdateStatus('completed')}>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  <span>Finalizar Corrida</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Original card for desktop
   return (
-    <Card key={order.id} className={`overflow-hidden ${isMobile ? 'app-card animate-scale-in' : ''}`}>
+    <Card key={order.id} className="overflow-hidden">
       <CardContent className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -109,7 +192,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 {isPending && handleAcceptOrder && handleRejectOrder && (
                   <>
                     <Button 
-                      className={`w-full ${isMobile ? 'mobile-btn' : ''}`}
+                      className="w-full"
                       onClick={onAcceptOrder}
                     >
                       <CheckCircle className="mr-2 h-4 w-4" />
@@ -118,7 +201,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     
                     <Button 
                       variant="outline" 
-                      className={`w-full ${isMobile ? 'mobile-btn' : ''}`}
+                      className="w-full"
                       onClick={onRejectOrder}
                     >
                       <XCircle className="mr-2 h-4 w-4" />
@@ -129,7 +212,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 
                 {isAssigned && (
                   <Button 
-                    className={`w-full ${isMobile ? 'mobile-btn' : ''}`}
+                    className="w-full"
                     onClick={() => onUpdateStatus('in_progress')}
                   >
                     <Car className="mr-2 h-4 w-4" />
@@ -139,7 +222,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 
                 {isInProgress && (
                   <Button 
-                    className={`w-full ${isMobile ? 'mobile-btn' : ''}`}
+                    className="w-full"
                     variant="default" 
                     onClick={() => onUpdateStatus('completed')}
                   >

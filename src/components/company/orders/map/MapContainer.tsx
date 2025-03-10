@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MapIcon, Loader2, ZoomIn, ZoomOut, LocateFixed, MapPin } from 'lucide-react';
+import { MapIcon, Loader2, ZoomIn, ZoomOut, LocateFixed, MapPin, Clock } from 'lucide-react';
 import InteractiveMap from './InteractiveMap';
 import StaticMap from './StaticMap';
 import RouteInfo from './RouteInfo';
@@ -9,6 +9,16 @@ import RouteTracker from './RouteTracker';
 import { canUseInteractiveMaps } from './mapUtils';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
+
+// Helper function to format travel time
+const formatTravelTime = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) {
+    return `${hours}h ${minutes}min`;
+  }
+  return `${minutes} min`;
+};
 
 interface MapContainerProps {
   orderId: string;
