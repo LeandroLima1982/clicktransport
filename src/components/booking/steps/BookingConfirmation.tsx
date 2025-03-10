@@ -3,19 +3,14 @@ import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Car, MapPin, Calendar, CreditCard, Clock } from 'lucide-react';
 import { Vehicle } from './VehicleSelection';
-
-interface PaymentMethod {
-  id: string;
-  name: string;
-  icon: string;
-}
+import { formatTravelTime } from '@/utils/routeUtils';
 
 interface BookingConfirmationProps {
   selectedVehicle: Vehicle | undefined;
   selectedPaymentMethod: string | null;
-  paymentMethods: PaymentMethod[];
+  paymentMethods: { id: string; name: string; icon: string }[];
   bookingData: {
     origin: string;
     destination: string;
@@ -23,9 +18,13 @@ interface BookingConfirmationProps {
     returnDate: Date | undefined;
     tripType: 'oneway' | 'roundtrip';
     passengers: string;
+    time?: string;
+    returnTime?: string;
   };
   totalPrice: number;
   formatCurrency: (value: number) => string;
+  estimatedDistance: number;
+  estimatedTime: number;
 }
 
 const BookingConfirmation: React.FC<BookingConfirmationProps> = ({
@@ -34,69 +33,87 @@ const BookingConfirmation: React.FC<BookingConfirmationProps> = ({
   paymentMethods,
   bookingData,
   totalPrice,
-  formatCurrency
+  formatCurrency,
+  estimatedDistance,
+  estimatedTime
 }) => {
+  const selectedPaymentOption = paymentMethods.find(method => method.id === selectedPaymentMethod);
+
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">Confirme sua reserva</h3>
+      <div className="text-center">
+        <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+        <h3 className="text-xl font-bold mb-2">Confirme sua reserva</h3>
+        <p className="text-gray-500">Verifique os detalhes abaixo antes de confirmar</p>
+      </div>
       
-      <Card>
-        <CardContent className="pt-6">
+      <Card className="border border-green-100 bg-green-50">
+        <CardContent className="p-6">
           <div className="space-y-4">
-            <div className="text-center mb-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-2">
-                <CheckCircle className="w-8 h-8" />
+            <div className="flex items-start gap-4">
+              <Car className="w-5 h-5 text-primary mt-1" />
+              <div>
+                <div className="font-medium">Veículo</div>
+                <div className="text-gray-600">{selectedVehicle?.name} - {selectedVehicle?.description}</div>
               </div>
-              <h4 className="text-lg font-bold">Tudo pronto!</h4>
-              <p className="text-gray-500">Revise os detalhes abaixo e confirme sua reserva</p>
             </div>
             
-            <div className="border-t border-b py-4 space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Veículo:</span>
-                <span className="font-medium">{selectedVehicle?.name}</span>
+            <div className="flex items-start gap-4">
+              <MapPin className="w-5 h-5 text-primary mt-1" />
+              <div>
+                <div className="font-medium">Trajeto</div>
+                <div className="text-gray-600">De: {bookingData.origin}</div>
+                <div className="text-gray-600">Para: {bookingData.destination}</div>
+                <div className="text-gray-600">Distância: {estimatedDistance} km</div>
+                <div className="text-gray-600">Duração estimada: {formatTravelTime(estimatedTime)}</div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Origem:</span>
-                <span className="font-medium">{bookingData.origin}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Destino:</span>
-                <span className="font-medium">{bookingData.destination}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Data:</span>
-                <span className="font-medium">
-                  {bookingData.date ? format(bookingData.date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : 'Não especificado'}
-                </span>
-              </div>
-              {bookingData.tripType === 'roundtrip' && bookingData.returnDate && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Retorno:</span>
-                  <span className="font-medium">
-                    {format(bookingData.returnDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                  </span>
+            </div>
+            
+            <div className="flex items-start gap-4">
+              <Calendar className="w-5 h-5 text-primary mt-1" />
+              <div>
+                <div className="font-medium">Data e Horário</div>
+                <div className="text-gray-600">
+                  Ida: {bookingData.date ? format(bookingData.date, "dd/MM/yyyy", { locale: ptBR }) : ''}
+                  {bookingData.time ? ` às ${bookingData.time}` : ''}
                 </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-gray-500">Passageiros:</span>
-                <span className="font-medium">{bookingData.passengers}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Pagamento:</span>
-                <span className="font-medium">
-                  {paymentMethods.find(m => m.id === selectedPaymentMethod)?.name || 'Não selecionado'}
-                </span>
+                {bookingData.tripType === 'roundtrip' && (
+                  <div className="text-gray-600">
+                    Volta: {bookingData.returnDate ? format(bookingData.returnDate, "dd/MM/yyyy", { locale: ptBR }) : ''}
+                    {bookingData.returnTime ? ` às ${bookingData.returnTime}` : ''}
+                  </div>
+                )}
               </div>
             </div>
             
-            <div className="flex justify-between items-center pt-2">
-              <span className="font-bold">Total:</span>
-              <span className="font-bold text-xl text-primary">{formatCurrency(totalPrice)}</span>
+            <div className="flex items-start gap-4">
+              <CreditCard className="w-5 h-5 text-primary mt-1" />
+              <div>
+                <div className="font-medium">Forma de Pagamento</div>
+                <div className="text-gray-600">{selectedPaymentOption?.name || 'Não selecionado'}</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4">
+              <Clock className="w-5 h-5 text-primary mt-1" />
+              <div>
+                <div className="font-medium">Valor Total</div>
+                <div className="text-2xl font-bold text-primary">{formatCurrency(totalPrice)}</div>
+                <div className="text-sm text-gray-500">
+                  {bookingData.tripType === 'roundtrip' ? 'Inclui ida e volta' : 'Somente ida'}
+                </div>
+                <div className="text-sm text-gray-500">
+                  Taxa de R$ 2,49/km + taxa base do veículo
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
+      
+      <div className="text-center text-sm text-gray-500">
+        Ao confirmar sua reserva, você concorda com nossos termos de serviço e políticas de cancelamento.
+      </div>
     </div>
   );
 };
