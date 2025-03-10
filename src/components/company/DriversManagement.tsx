@@ -578,4 +578,3 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
 };
 
 export default DriversManagement;
-
