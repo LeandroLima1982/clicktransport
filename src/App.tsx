@@ -1,4 +1,3 @@
-
 // Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
@@ -103,7 +102,7 @@ const RoleBasedRedirect = () => {
   return <Navigate to="/" replace />;
 };
 
-// Special component to handle root path for company users
+// Special component to handle root path for company users and drivers
 const HomeRedirect = () => {
   const { user, userRole, isLoading } = useAuth();
   
@@ -111,10 +110,15 @@ const HomeRedirect = () => {
     return <div className="flex items-center justify-center h-screen">Carregando...</div>;
   }
   
-  // If user is logged in and is a company, redirect to company dashboard
-  if (user && userRole === 'company') {
-    console.log("HomeRedirect: Redirecting company user to dashboard");
-    return <Navigate to="/company/dashboard" replace />;
+  // If user is logged in and is a company or driver, redirect to their respective dashboards
+  if (user) {
+    if (userRole === 'company') {
+      console.log("HomeRedirect: Redirecting company user to dashboard");
+      return <Navigate to="/company/dashboard" replace />;
+    } else if (userRole === 'driver') {
+      console.log("HomeRedirect: Redirecting driver user to dashboard");
+      return <Navigate to="/driver/dashboard" replace />;
+    }
   }
   
   // Otherwise show the normal index page
