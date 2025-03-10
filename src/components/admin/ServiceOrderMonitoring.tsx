@@ -13,9 +13,11 @@ const ServiceOrderMonitoring: React.FC = () => {
   const [filteredOrders, setFilteredOrders] = useState<ServiceOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [totalOrders, setTotalOrders] = useState(0);
 
   useEffect(() => {
     fetchOrders();
+    fetchTotalCount();
   }, []);
 
   useEffect(() => {
@@ -31,6 +33,19 @@ const ServiceOrderMonitoring: React.FC = () => {
       setFilteredOrders(orders);
     }
   }, [searchTerm, orders]);
+
+  const fetchTotalCount = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('service_orders')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw error;
+      setTotalOrders(count || 0);
+    } catch (error) {
+      console.error('Error fetching total orders count:', error);
+    }
+  };
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -64,6 +79,7 @@ const ServiceOrderMonitoring: React.FC = () => {
 
   const handleRefresh = () => {
     fetchOrders();
+    fetchTotalCount();
   };
 
   return (
@@ -72,6 +88,9 @@ const ServiceOrderMonitoring: React.FC = () => {
         <CardTitle className="text-xl flex items-center">
           <FileText className="mr-2 h-5 w-5" />
           Monitoramento de Ordens de Serviço
+          <span className="ml-2 text-sm font-normal text-muted-foreground">
+            (Total: {totalOrders})
+          </span>
         </CardTitle>
         <Button 
           variant="outline" 
