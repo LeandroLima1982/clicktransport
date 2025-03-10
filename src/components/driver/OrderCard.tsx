@@ -7,6 +7,7 @@ import { formatDate, getStatusBadge } from './utils/formatters';
 import OrderDetailSheet from './OrderDetailSheet';
 import { ServiceOrder } from './hooks/useServiceOrders';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface OrderCardProps {
   order: ServiceOrder;
@@ -28,6 +29,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const isPending = order.status === 'pending' && !order.driver_id;
   const isAssigned = order.status === 'assigned' && order.driver_id === driverId;
   const isInProgress = order.status === 'in_progress' && order.driver_id === driverId;
+  const isMobile = useIsMobile();
 
   const onAcceptOrder = async () => {
     if (handleAcceptOrder) {
@@ -69,7 +71,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   };
 
   return (
-    <Card key={order.id} className="overflow-hidden">
+    <Card key={order.id} className={`overflow-hidden ${isMobile ? 'app-card animate-scale-in' : ''}`}>
       <CardContent className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -82,20 +84,20 @@ const OrderCard: React.FC<OrderCardProps> = ({
               {getStatusBadge(order.status)}
             </div>
             
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-3">
               <div className="flex items-start space-x-2">
-                <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <MapPin className="h-5 w-5 text-primary mt-0.5" />
                 <div>
                   <p className="text-sm text-muted-foreground">Origem:</p>
-                  <p>{order.origin}</p>
+                  <p className="font-medium">{order.origin}</p>
                 </div>
               </div>
               
               <div className="flex items-start space-x-2">
-                <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <MapPin className="h-5 w-5 text-destructive mt-0.5" />
                 <div>
                   <p className="text-sm text-muted-foreground">Destino:</p>
-                  <p>{order.destination}</p>
+                  <p className="font-medium">{order.destination}</p>
                 </div>
               </div>
             </div>
@@ -107,7 +109,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 {isPending && handleAcceptOrder && handleRejectOrder && (
                   <>
                     <Button 
-                      className="w-full" 
+                      className={`w-full ${isMobile ? 'mobile-btn' : ''}`}
                       onClick={onAcceptOrder}
                     >
                       <CheckCircle className="mr-2 h-4 w-4" />
@@ -116,7 +118,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                     
                     <Button 
                       variant="outline" 
-                      className="w-full"
+                      className={`w-full ${isMobile ? 'mobile-btn' : ''}`}
                       onClick={onRejectOrder}
                     >
                       <XCircle className="mr-2 h-4 w-4" />
@@ -127,7 +129,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 
                 {isAssigned && (
                   <Button 
-                    className="w-full" 
+                    className={`w-full ${isMobile ? 'mobile-btn' : ''}`}
                     onClick={() => onUpdateStatus('in_progress')}
                   >
                     <Car className="mr-2 h-4 w-4" />
@@ -137,7 +139,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 
                 {isInProgress && (
                   <Button 
-                    className="w-full" 
+                    className={`w-full ${isMobile ? 'mobile-btn' : ''}`}
                     variant="default" 
                     onClick={() => onUpdateStatus('completed')}
                   >

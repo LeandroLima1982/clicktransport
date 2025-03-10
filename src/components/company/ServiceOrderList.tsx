@@ -15,6 +15,7 @@ import SearchBar from './orders/SearchBar';
 import OrderDetailSheet from './OrderDetailSheet';
 import OrderTracking from './orders/OrderTracking';
 import { ServiceOrder, Driver, Vehicle } from './orders/types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ServiceOrderListProps {
   companyId: string;
@@ -32,6 +33,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
   const [isNewOrderSheetOpen, setIsNewOrderSheetOpen] = useState(false);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (companyId) {
@@ -113,8 +115,8 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
   );
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className={isMobile ? "pb-16" : ""}>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
         <SearchBar 
           value={searchTerm} 
           onChange={setSearchTerm} 
@@ -130,8 +132,8 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
         />
       </div>
       
-      <Card>
-        <CardHeader>
+      <Card className={isMobile ? "app-card animate-fade-in" : ""}>
+        <CardHeader className="md:flex md:items-center">
           <CardTitle className="text-xl flex items-center">
             <ClipboardList className="mr-2 h-5 w-5" />
             Ordens de Serviço
@@ -166,6 +168,16 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
             setTrackingOrderId(null);
           }}
         />
+      )}
+
+      {isMobile && (
+        <div className="tab-bar">
+          <div className="tab-item active">
+            <ClipboardList className="h-5 w-5 mb-1" />
+            <span className="text-xs">Ordens</span>
+          </div>
+          {/* Add more tab items for mobile navigation as needed */}
+        </div>
       )}
     </div>
   );
