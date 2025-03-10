@@ -1,5 +1,4 @@
-
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -36,7 +35,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
   setIsOpen,
   onOrderCreated
 }) => {
-  const [newOrder, setNewOrder] = React.useState({
+  const [newOrder, setNewOrder] = useState({
     origin: '',
     destination: '',
     pickup_date: '',
@@ -47,9 +46,9 @@ const OrderForm: React.FC<OrderFormProps> = ({
     vehicle_id: ''
   });
   
-  const [originSuggestions, setOriginSuggestions] = React.useState<any[]>([]);
-  const [destinationSuggestions, setDestinationSuggestions] = React.useState<any[]>([]);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = React.useState(false);
+  const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -58,7 +57,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
     const { name, value } = e.target;
     setNewOrder({ ...newOrder, [name]: value });
     
-    // Handle address suggestions
     if (name === 'origin') {
       if (originTimeoutRef.current) {
         clearTimeout(originTimeoutRef.current);
@@ -112,7 +110,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
         return;
       }
       
-      // Validate form
       if (!newOrder.origin || !newOrder.destination || !newOrder.pickup_date) {
         toast.error('Preencha os campos obrigatórios');
         return;
@@ -138,7 +135,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
       
       toast.success('Ordem de serviço criada com sucesso');
       
-      // Reset form and refresh data
       setNewOrder({
         origin: '',
         destination: '',

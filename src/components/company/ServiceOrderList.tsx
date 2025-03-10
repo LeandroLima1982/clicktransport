@@ -13,6 +13,7 @@ import OrderForm from './orders/OrderForm';
 import OrderTable from './orders/OrderTable';
 import SearchBar from './orders/SearchBar';
 import OrderDetailSheet from './OrderDetailSheet';
+import OrderTracking from './orders/OrderTracking';
 import { ServiceOrder, Driver, Vehicle } from './orders/types';
 
 interface ServiceOrderListProps {
@@ -29,6 +30,8 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
   const [isNewOrderSheetOpen, setIsNewOrderSheetOpen] = useState(false);
+  const [isTrackingOpen, setIsTrackingOpen] = useState(false);
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (companyId) {
@@ -79,6 +82,11 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
     setIsDetailSheetOpen(true);
   };
 
+  const handleTrackOrder = (orderId: string) => {
+    setTrackingOrderId(orderId);
+    setIsTrackingOpen(true);
+  };
+
   const filteredOrders = orders.filter(order => 
     order.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -117,6 +125,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
             loading={isLoading}
             onViewDetails={handleViewOrderDetails}
             onDataRefresh={fetchData}
+            onTrackOrder={handleTrackOrder}
           />
         </CardContent>
       </Card>
@@ -128,6 +137,17 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
         drivers={drivers}
         vehicles={vehicles}
       />
+
+      {trackingOrderId && (
+        <OrderTracking 
+          orderId={trackingOrderId}
+          isOpen={isTrackingOpen}
+          onClose={() => {
+            setIsTrackingOpen(false);
+            setTrackingOrderId(null);
+          }}
+        />
+      )}
     </div>
   );
 };
