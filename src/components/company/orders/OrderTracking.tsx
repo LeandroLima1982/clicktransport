@@ -7,6 +7,7 @@ import { ServiceOrder } from './types';
 import { supabase } from '@/main';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { MAPBOX_TOKEN } from '@/utils/mapbox';
 
 interface OrderTrackingProps {
   orderId: string;
@@ -28,39 +29,8 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
   const [animationStarted, setAnimationStarted] = useState(false);
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
-  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Fetch Mapbox token from Supabase
-    const fetchMapboxToken = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('config')
-          .select('value')
-          .eq('key', 'mapbox_token')
-          .single();
-          
-        if (error) {
-          console.error('Error fetching Mapbox token:', error);
-          return null;
-        }
-        
-        return data?.value;
-      } catch (error) {
-        console.error('Error fetching Mapbox token:', error);
-        return null;
-      }
-    };
-
-    fetchMapboxToken().then(token => {
-      if (token) {
-        setMapboxToken(token);
-      } else {
-        // Use the token from environment variable set in Supabase secrets
-        setMapboxToken(process.env.MAPBOX_TOKEN || null);
-      }
-    });
-
     if (isOpen && orderId) {
       fetchOrderDetails();
     }
@@ -76,17 +46,19 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
     };
   }, [isOpen, orderId]);
 
-  // Initialize map when token is available
+  // Initialize map when order is available
   useEffect(() => {
-    if (mapboxToken && order && isOpen) {
+    if (order && isOpen && mapContainer.current) {
+      console.log("Initializing map with order:", order);
       initializeMap(order.origin, order.destination);
     }
-  }, [mapboxToken, order, isOpen]);
+  }, [order, isOpen]);
 
   const fetchOrderDetails = async () => {
     setLoading(true);
     setMapError(null);
     try {
+      console.log("Fetching order details for ID:", orderId);
       const { data, error } = await supabase
         .from('service_orders')
         .select('*')
@@ -95,6 +67,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       
       if (error) throw error;
       
+      console.log("Order data received:", data);
       setOrder(data);
       setLoading(false);
     } catch (error) {
@@ -105,15 +78,31 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
   };
 
   const initializeMap = async (origin: string, destination: string) => {
-    if (!mapContainer.current || !mapboxToken) {
-      setMapError('Não foi possível inicializar o mapa. Token inválido ou elemento não encontrado.');
+    if (!mapContainer.current) {
+      console.error("Map container ref is not available");
+      setMapError('Não foi possível inicializar o mapa. Elemento não encontrado.');
+      return;
+    }
+
+    // Use MAPBOX_TOKEN from utils/mapbox
+    const token = MAPBOX_TOKEN;
+    if (!token) {
+      console.error("Mapbox token is missing");
+      setMapError('Token do Mapbox não encontrado. Verifique a configuração.');
       return;
     }
     
     try {
+      console.log("Initializing map with Mapbox token");
       // Initialize Mapbox
-      mapboxgl.accessToken = mapboxToken;
+      mapboxgl.accessToken = token;
       
+      // Clear any existing map instance
+      if (map.current) {
+        map.current.remove();
+      }
+      
+      // Create new map instance
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12',
@@ -121,8 +110,13 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
         minZoom: 2,
       });
 
+      // Add specific CSS to ensure the map container is visible
+      mapContainer.current.style.minHeight = '100%';
+      mapContainer.current.style.backgroundColor = '#f0f0f0';
+
       map.current.on('load', async () => {
         try {
+          console.log("Map loaded, getting coordinates for addresses");
           // Get coordinates from addresses
           const [originCoords, destinationCoords] = await Promise.all([
             getCoordinatesFromAddress(origin),
@@ -130,9 +124,12 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
           ]);
           
           if (!originCoords || !destinationCoords) {
+            console.error("Could not get coordinates for addresses", { origin, destination });
             setMapError('Não foi possível obter coordenadas dos endereços fornecidos.');
             return;
           }
+          
+          console.log("Got coordinates", { originCoords, destinationCoords });
           
           // Create marker for the vehicle
           marker.current = new mapboxgl.Marker({ color: '#3FB1CE' })
@@ -151,13 +148,16 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
             .addTo(map.current!);
           
           // Get directions between points
+          console.log("Getting route between points");
           const routeData = await getRoute(originCoords, destinationCoords);
           if (!routeData) {
+            console.error("Could not calculate route between points");
             setMapError('Não foi possível calcular a rota entre os pontos.');
             return;
           }
           
           setRoute(routeData);
+          console.log("Route data received", routeData);
           
           const bounds = new mapboxgl.LngLatBounds();
           bounds.extend(originCoords);
@@ -166,6 +166,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
           map.current!.fitBounds(bounds, { padding: 60, maxZoom: 15 });
           
           if (map.current && routeData) {
+            console.log("Adding route to map");
             // Add route to map
             map.current.addSource('route', {
               type: 'geojson',
@@ -215,11 +216,13 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
   };
 
   const getCoordinatesFromAddress = async (address: string): Promise<[number, number] | null> => {
-    if (!mapboxToken) return null;
+    const token = MAPBOX_TOKEN;
+    if (!token) return null;
     
     try {
+      console.log("Geocoding address:", address);
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxToken}&country=br&limit=1`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${token}&country=br&limit=1`
       );
       
       if (!response.ok) {
@@ -227,6 +230,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       }
       
       const data = await response.json();
+      console.log("Geocoding response:", data);
       
       if (data.features && data.features.length > 0) {
         return data.features[0].center;
@@ -240,11 +244,13 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
   };
 
   const getRoute = async (start: [number, number], end: [number, number]) => {
-    if (!mapboxToken) return null;
+    const token = MAPBOX_TOKEN;
+    if (!token) return null;
     
     try {
+      console.log("Getting route from", start, "to", end);
       const response = await fetch(
-        `https://api.mapbox.com/directions/v5/mapbox/driving/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&steps=true&overview=full&access_token=${mapboxToken}`
+        `https://api.mapbox.com/directions/v5/mapbox/driving/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&steps=true&overview=full&access_token=${token}`
       );
       
       if (!response.ok) {
@@ -252,6 +258,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       }
       
       const data = await response.json();
+      console.log("Route API response:", data);
       
       if (data.routes && data.routes.length > 0) {
         return data.routes[0];
@@ -365,7 +372,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
             </div>
           ) : (
             <div className="flex flex-col space-y-4 h-full">
-              <div className="h-[500px] relative border rounded-md overflow-hidden">
+              <div className="h-[500px] relative border rounded-md overflow-hidden bg-gray-100">
                 <div ref={mapContainer} className="absolute inset-0" />
                 
                 {/* Route info overlay */}

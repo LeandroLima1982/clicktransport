@@ -1,10 +1,8 @@
-
 import React from 'react';
 import { Building, Landmark, Home, Navigation, MapPin, ShoppingBag, School, Hospital, Hotel, Coffee, Utensils, Bus, Plane, Music as MusicIcon, Dumbbell, Church, Library as LibraryBig, Trees } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-// Fetch the Mapbox token from Supabase Edge Function Secrets
-// This gets set dynamically from the component
+// Export the Mapbox token - this should be the token you have added in Supabase secrets
 export const MAPBOX_TOKEN = 'pk.eyJ1IjoibGVhbmRyb2xpbWExOTgyIiwiYSI6ImNtODA3MGxmaTB0dDAyanFia244dnl1bmcifQ.6iV8YcZ-x_gdi8uJWg5aCw';
 
 // POI types to include in the geocoding request
