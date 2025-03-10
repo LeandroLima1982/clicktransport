@@ -15,8 +15,8 @@ const Hero: React.FC = () => {
         }} 
       />
       
-      <div className="container mx-auto px-4 md:px-6 py-[150px] max-w-[1920px] w-full">
-        <div className="max-w-3xl mx-auto text-center text-white mb-12">
+      <div className="w-full py-[150px]">
+        <div className="max-w-3xl mx-auto text-center text-white mb-12 px-4">
           <span className="inline-block text-primary font-bold px-4 py-1 rounded-full bg-primary/10 mb-4 animate-fade-in">
             TRASLADOS EXECUTIVOS | TRANSFER OFFSHORE
           </span>
@@ -33,7 +33,7 @@ const Hero: React.FC = () => {
           </p>
         </div>
         
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full px-4 sm:max-w-4xl sm:mx-auto">
           <div className="glass-morphism rounded-xl p-6 md:p-8 shadow-lg bg-white/10 backdrop-blur-md border border-white/20 transform transition-all duration-500 hover:shadow-xl">
             <BookingForm />
           </div>
