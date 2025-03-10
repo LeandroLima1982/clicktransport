@@ -48,17 +48,31 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
   const loadCompanies = async () => {
     setFetchingCompanies(true);
-    const { data, error } = await fetchCompanies();
-    
-    if (error) {
+    try {
+      const { data, error } = await fetchCompanies();
+      
+      if (error) {
+        console.error('Error fetching companies:', error);
+        toast.error('Erro ao carregar empresas', {
+          description: 'Por favor, tente novamente mais tarde.'
+        });
+      } else if (data && data.length > 0) {
+        console.log('Companies loaded:', data);
+        setCompanies(data);
+      } else {
+        console.log('No companies found or empty data');
+        toast.warning('Nenhuma empresa encontrada', {
+          description: 'Não há empresas cadastradas no sistema.'
+        });
+      }
+    } catch (err) {
+      console.error('Exception when loading companies:', err);
       toast.error('Erro ao carregar empresas', {
-        description: 'Por favor, tente novamente mais tarde.'
+        description: 'Ocorreu um erro inesperado.'
       });
-    } else if (data) {
-      setCompanies(data);
+    } finally {
+      setFetchingCompanies(false);
     }
-    
-    setFetchingCompanies(false);
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,15 +137,21 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 onValueChange={setSelectedCompanyId}
                 disabled={fetchingCompanies}
               >
-                <SelectTrigger id="company-select" className="w-full">
+                <SelectTrigger id="company-select" className="w-full bg-white">
                   <SelectValue placeholder="Selecione uma empresa" />
                 </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.name}
+                <SelectContent className="bg-white z-[100]">
+                  {companies.length > 0 ? (
+                    companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-companies" disabled>
+                      Nenhuma empresa encontrada
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
               {fetchingCompanies && (
