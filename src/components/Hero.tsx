@@ -5,14 +5,14 @@ import BookingForm from './BookingForm';
 import { useIsMobile } from '@/hooks/use-mobile';
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
-  return <section className="">
+  return <section className="bg-zinc-50">
       <div className="absolute inset-0 bg-[#F8D748] -z-10" />
       
-      <div className="w-full py-4 my-8 md:my-12 lg:my-16">
+      <div className="w-full my-8 md:my-12 bg-zinc-50 px-0 py-[99px] mx-0 lg:my-[73px]">
         <div className="max-w-3xl mx-auto text-center mb-8 px-4">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 animate-fade-in text-black">
-            <span className="block mb-2 text-zinc-700">Transporte Executivo</span>
-            <span className="block text-amber-500">para Empresas e Seus Colaboradores</span>
+            <span className="block mb-2 text-gray-600">Transporte Executivo</span>
+            <span className="block text-amber-300 text-4xl">para sua empresas e colaboradores</span>
           </h1>
           
           <p style={{
