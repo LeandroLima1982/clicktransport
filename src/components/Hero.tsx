@@ -11,7 +11,7 @@ const Hero: React.FC = () => {
       <div className="w-full py-4 my-8 md:my-12 lg:my-16">
         <div className="max-w-3xl mx-auto text-center mb-8 px-4">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 animate-fade-in text-black">
-            <span className="block mb-2 text-zinc-700">A Clicktranfer é uma plataforma inteligente que conecta empresas a motoristas executivos com eficiência e segurança</span>
+            <span className="block mb-2 text-zinc-700">Conectando sua empresa</span>
             <span className="block text-amber-500">ao melhor do transporte executivo</span>
           </h1>
           
