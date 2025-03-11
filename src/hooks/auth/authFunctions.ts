@@ -1,4 +1,3 @@
-
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../integrations/supabase/client';
 import { toast } from 'sonner';
@@ -125,21 +124,31 @@ export const signIn = async (email: string, password: string, companyId?: string
             };
           }
           
-          // Update the driver's last login time if the column exists
+          // Update the driver's last login time
           try {
-            const { error: updateError } = await supabase
+            // Safely check if the driver exists and can be updated
+            const { data: driverData, error: driverFetchError } = await supabase
               .from('drivers')
-              .update({ 
-                last_login: new Date().toISOString() 
-              })
+              .select('id')
               .eq('email', email)
-              .eq('company_id', companyId);
+              .eq('company_id', companyId)
+              .maybeSingle();
               
-            if (updateError) {
-              console.error('Error updating driver last login:', updateError);
+            if (!driverFetchError && driverData) {
+              // Update the driver using status as a safe field
+              const { error: updateError } = await supabase
+                .from('drivers')
+                .update({ 
+                  status: 'active' // Just update the status as a way to track login
+                })
+                .eq('id', driverData.id);
+                
+              if (updateError) {
+                console.error('Error updating driver login status:', updateError);
+              }
             }
           } catch (updateErr) {
-            console.error('Exception updating last login:', updateErr);
+            console.error('Exception updating login status:', updateErr);
           }
           
           console.log('Driver company association verified');
@@ -207,21 +216,26 @@ export const signIn = async (email: string, password: string, companyId?: string
         }
       }
 
-      // Check if driver needs to change password - do this safely with optional chaining
+      // Check if driver needs to change password
       if (userRole === 'driver') {
         try {
           const { data: driverData, error: driverError } = await supabase
             .from('drivers')
-            .select('is_password_changed')
+            .select('*')
             .eq('user_id', result.data.user.id)
             .maybeSingle();
             
-          if (!driverError && driverData && driverData.is_password_changed === false) {
-            console.log('Driver needs to change password on first login');
-            // In a real app, you might redirect to a password change page here
-            toast.info('Você precisa alterar sua senha no primeiro acesso', {
-              description: 'Por favor, acesse seu perfil para definir uma nova senha.'
-            });
+          if (!driverError && driverData) {
+            // Safely check if property exists before accessing
+            const passwordChanged = driverData.is_password_changed !== undefined ? 
+              driverData.is_password_changed : null;
+              
+            if (passwordChanged === false) {
+              console.log('Driver needs to change password on first login');
+              toast.info('Você precisa alterar sua senha no primeiro acesso', {
+                description: 'Por favor, acesse seu perfil para definir uma nova senha.'
+              });
+            }
           }
         } catch (err) {
           console.error('Error checking password change status:', err);

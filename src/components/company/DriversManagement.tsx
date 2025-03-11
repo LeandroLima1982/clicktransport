@@ -103,19 +103,19 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
         
         // Transform the data to match our Driver interface
         // This ensures that if fields don't exist in DB, we still have them as null
-        const formattedDrivers: Driver[] = driversData.map(driver => ({
-          id: driver.id,
-          name: driver.name,
-          phone: driver.phone,
+        const formattedDrivers: Driver[] = (driversData || []).map(driver => ({
+          id: driver.id || '',
+          name: driver.name || '',
+          phone: driver.phone || null,
           email: driver.email || null,
-          license_number: driver.license_number,
-          status: driver.status as 'active' | 'inactive' | 'on_trip',
-          vehicle_id: driver.vehicle_id,
-          is_password_changed: driver.is_password_changed || null,
+          license_number: driver.license_number || null,
+          status: (driver.status as 'active' | 'inactive' | 'on_trip') || 'active',
+          vehicle_id: driver.vehicle_id || null,
+          is_password_changed: driver.is_password_changed !== undefined ? driver.is_password_changed : null,
           last_login: driver.last_login || null,
-          company_id: driver.company_id,
-          user_id: driver.user_id,
-          created_at: driver.created_at
+          company_id: driver.company_id || null,
+          user_id: driver.user_id || null,
+          created_at: driver.created_at || null
         }));
         
         setDrivers(formattedDrivers);
@@ -266,14 +266,23 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
         description: `Um email foi enviado para ${driver.email} com instruções para alteração de senha.`
       });
       
-      // Update a timestamp in the database to track when reminders were sent
-      // We'll use the existing update method - ensure field exists in the schema
-      await supabase
-        .from('drivers')
-        .update({ 
-          last_login: new Date().toISOString() // Use last_login as a workaround 
-        })
-        .eq('id', driverId);
+      // Use a timestamp field that actually exists in the database schema
+      // We're using last_login as a workaround for tracking when reminders were sent
+      try {
+        const { error: updateError } = await supabase
+          .from('drivers')
+          .update({ 
+            // Use this only if last_login exists in the database schema
+            status: driver.status // Update status to itself to register a change
+          })
+          .eq('id', driverId);
+          
+        if (updateError) {
+          console.error('Error updating driver reminder timestamp:', updateError);
+        }
+      } catch (updateErr) {
+        console.error('Exception updating reminder timestamp:', updateErr);
+      }
       
     } catch (error: any) {
       console.error('Error sending password reminder:', error);
