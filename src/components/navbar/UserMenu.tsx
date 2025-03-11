@@ -87,10 +87,28 @@ const UserMenu: React.FC<UserMenuProps> = ({
         <Button variant="outline" className="rounded-full px-4 btn-hover-slide flex items-center gap-2">
           <User className="h-4 w-4" />
           <span className="hidden md:inline">{user.email?.split('@')[0]}</span>
+          {userRole && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+              {userRole === 'client' && 'Cliente'}
+              {userRole === 'company' && 'Empresa'}
+              {userRole === 'driver' && 'Motorista'}
+              {userRole === 'admin' && 'Admin'}
+            </span>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Olá, {user.email?.split('@')[0]}</DropdownMenuLabel>
+        <DropdownMenuLabel>
+          Olá, {user.email?.split('@')[0]}
+          {userRole && (
+            <span className="block text-xs text-muted-foreground mt-1">
+              Tipo de conta: {userRole === 'client' ? 'Cliente' : 
+                             userRole === 'company' ? 'Empresa' : 
+                             userRole === 'driver' ? 'Motorista' : 
+                             userRole === 'admin' ? 'Admin' : 'Usuário'}
+            </span>
+          )}
+        </DropdownMenuLabel>
         
         {/* Common navigation option for all users */}
         <DropdownMenuItem asChild>

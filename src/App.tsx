@@ -30,7 +30,7 @@ import DriverTrips from './pages/driver/Trips';
 
 import './App.css';
 
-// Enhanced Protected Route component with role checking and redirection
+// Enhanced Protected Route component with strict role checking
 const ProtectedRoute = ({ 
   children, 
   requiredRole = null,
@@ -52,7 +52,7 @@ const ProtectedRoute = ({
     return <Navigate to={`/auth?return_to=${location.pathname}`} replace />;
   }
   
-  // If role is required and user doesn't have it, redirect based on their actual role
+  // STRICT ROLE CHECK: If role is required and user doesn't have it, deny access
   if (requiredRole && userRole !== requiredRole) {
     console.log(`Access denied: User role ${userRole} doesn't match required role ${requiredRole}`);
     
@@ -79,7 +79,7 @@ const ProtectedRoute = ({
   return <>{children}</>;
 };
 
-// Component to redirect based on user role, with special handling for company users
+// Component to redirect based on user role
 const RoleBasedRedirect = () => {
   const { user, userRole, isLoading } = useAuth();
   
@@ -91,6 +91,7 @@ const RoleBasedRedirect = () => {
     return <Navigate to="/auth" replace />;
   }
   
+  // Strictly redirect based on user role
   if (userRole === 'admin') {
     return <Navigate to="/admin/dashboard" replace />;
   } else if (userRole === 'company') {
@@ -105,7 +106,7 @@ const RoleBasedRedirect = () => {
   return <Navigate to="/" replace />;
 };
 
-// Special component to handle root path for company users and drivers
+// Special component to handle root path with role-based access
 const HomeRedirect = () => {
   const { user, userRole, isLoading } = useAuth();
   
@@ -113,7 +114,7 @@ const HomeRedirect = () => {
     return <div className="flex items-center justify-center h-screen">Carregando...</div>;
   }
   
-  // If user is logged in and is a company or driver, redirect to their respective dashboards
+  // If user is logged in, redirect based on role
   if (user) {
     if (userRole === 'company') {
       console.log("HomeRedirect: Redirecting company user to dashboard");
@@ -121,7 +122,11 @@ const HomeRedirect = () => {
     } else if (userRole === 'driver') {
       console.log("HomeRedirect: Redirecting driver user to dashboard");
       return <Navigate to="/driver/dashboard" replace />;
+    } else if (userRole === 'admin') {
+      console.log("HomeRedirect: Redirecting admin user to dashboard");
+      return <Navigate to="/admin/dashboard" replace />;
     }
+    // Clients can access the home page
   }
   
   // Otherwise show the normal index page
@@ -133,7 +138,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public routes with special handling for company users */}
+          {/* Public routes with special handling for logged in users */}
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -142,7 +147,7 @@ function App() {
           {/* Dashboard redirect based on role */}
           <Route path="/dashboard" element={<RoleBasedRedirect />} />
           
-          {/* Admin routes */}
+          {/* Admin routes - strictly for admin users */}
           <Route path="/admin/dashboard" element={
             <ProtectedRoute requiredRole="admin">
               <AdminDashboard />
@@ -154,14 +159,14 @@ function App() {
             </ProtectedRoute>
           } />
           
-          {/* Company routes */}
+          {/* Company routes - strictly for company users */}
           <Route path="/company/dashboard" element={
             <ProtectedRoute requiredRole="company">
               <CompanyDashboard />
             </ProtectedRoute>
           } />
           
-          {/* Driver routes */}
+          {/* Driver routes - strictly for driver users */}
           <Route path="/driver/dashboard" element={
             <ProtectedRoute requiredRole="driver">
               <DriverDashboard />
@@ -198,8 +203,7 @@ function App() {
             </ProtectedRoute>
           } />
           
-          {/* Client routes */}
-          {/* Temporarily commented out until Bookings component is implemented */}
+          {/* Client routes - temporarily commented out until Bookings component is implemented */}
           {/* <Route path="/bookings" element={
             <ProtectedRoute requiredRole="client">
               <Bookings />

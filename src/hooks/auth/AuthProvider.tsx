@@ -66,10 +66,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             console.log('Initial user role fetched:', role);
             setUserRole(role);
-            
-            // Don't redirect here - this was causing part of the loop
-            // Let the React Router handle redirection instead
-            
           } catch (roleError) {
             console.error('Error fetching initial user role:', roleError);
             // Don't block the app on role fetch failures
@@ -136,10 +132,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.log('User role updated on auth change:', role);
             setUserRole(role);
             toast.success('Login realizado com sucesso!');
-            
-            // Don't redirect here - this was causing part of the loop
-            // Let the React Router handle redirection instead
-            
           } catch (roleError) {
             console.error('Error fetching user role on auth change:', roleError);
             if (!mounted) return;

@@ -79,9 +79,8 @@ export const signIn = async (email: string, password: string, companyId?: string
       return { error: null };
     }
     
-    // If company ID is provided for driver login, verify the association
-    if (companyId && result.data.user) {
-      // First, check user role from profiles
+    // First, check user role from profiles for ALL users
+    if (result.data.user) {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('role')
@@ -102,53 +101,93 @@ export const signIn = async (email: string, password: string, companyId?: string
       const userRole = profileData?.role;
       console.log('User role:', userRole);
       
-      // For driver role, verify driver-company association
-      if (userRole === 'driver') {
-        const { data: driverData, error: driverError } = await supabase
-          .from('drivers')
-          .select('*')
-          .eq('user_id', result.data.user.id)
-          .eq('company_id', companyId)
-          .single();
-        
-        if (driverError || !driverData) {
-          console.error('Driver not associated with this company:', driverError || 'No driver record found');
-          // Sign out the user since they're not associated with the company
+      // If company ID is provided for driver login, verify the association
+      if (companyId) {
+        // For driver role, verify driver-company association
+        if (userRole === 'driver') {
+          const { data: driverData, error: driverError } = await supabase
+            .from('drivers')
+            .select('*')
+            .eq('user_id', result.data.user.id)
+            .eq('company_id', companyId)
+            .single();
+          
+          if (driverError || !driverData) {
+            console.error('Driver not associated with this company:', driverError || 'No driver record found');
+            // Sign out the user since they're not associated with the company
+            await supabase.auth.signOut();
+            
+            return { 
+              error: {
+                message: 'You are not registered as a driver for this company',
+                name: 'invalid_company_association',
+              } as AuthError 
+            };
+          }
+          
+          console.log('Driver company association verified');
+        }
+        // For company role, verify user is a company admin
+        else if (userRole === 'company') {
+          const { data: companyData, error: companyError } = await supabase
+            .from('companies')
+            .select('*')
+            .eq('id', companyId)
+            .eq('user_id', result.data.user.id)
+            .single();
+          
+          if (companyError || !companyData) {
+            console.error('User not associated with this company as admin:', companyError || 'No company record found');
+            // Sign out the user since they're not an admin of the company
+            await supabase.auth.signOut();
+            
+            return { 
+              error: {
+                message: 'You are not registered as a company admin',
+                name: 'invalid_company_admin',
+              } as AuthError 
+            };
+          }
+          
+          console.log('Company admin association verified');
+        }
+        // If user is not driver or company but trying to use company ID, reject
+        else {
+          console.error('User role does not match login type');
           await supabase.auth.signOut();
           
           return { 
             error: {
-              message: 'You are not registered as a driver for this company',
-              name: 'invalid_company_association',
+              message: 'Your account type does not match the selected login method',
+              name: 'role_mismatch',
             } as AuthError 
           };
         }
-        
-        console.log('Driver company association verified');
-      }
-      // For company role, verify user is a company admin
-      else if (userRole === 'company') {
-        const { data: companyData, error: companyError } = await supabase
-          .from('companies')
-          .select('*')
-          .eq('id', companyId)
-          .eq('user_id', result.data.user.id)
-          .single();
-        
-        if (companyError || !companyData) {
-          console.error('User not associated with this company as admin:', companyError || 'No company record found');
-          // Sign out the user since they're not an admin of the company
+      } else {
+        // If no company ID provided, ensure user is not trying to log in as driver or company
+        if (userRole === 'driver') {
+          console.error('Driver attempting to log in without company ID');
           await supabase.auth.signOut();
           
           return { 
             error: {
-              message: 'You are not registered as a company admin',
-              name: 'invalid_company_admin',
+              message: 'Drivers must select a company to log in',
+              name: 'missing_company_id',
             } as AuthError 
           };
         }
         
-        console.log('Company admin association verified');
+        if (userRole === 'company') {
+          console.error('Company admin attempting to log in without company ID');
+          await supabase.auth.signOut();
+          
+          return { 
+            error: {
+              message: 'Company admins must select their company to log in',
+              name: 'missing_company_id',
+            } as AuthError 
+          };
+        }
       }
     }
     
