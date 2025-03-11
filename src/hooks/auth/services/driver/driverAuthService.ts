@@ -106,7 +106,7 @@ export const validateDriverCompanyAssociation = async (email: string, companyId:
     };
     
     const { data, error: validationError } = await supabase
-      .rpc<boolean>('validate_driver_company_association', rpcParams);
+      .rpc<boolean, ValidateDriverParams>('validate_driver_company_association', rpcParams);
     
     if (validationError) {
       return { 
