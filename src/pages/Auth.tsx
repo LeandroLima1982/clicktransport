@@ -9,6 +9,7 @@ const Auth = () => {
     activeTab,
     setActiveTab,
     accountType,
+    setAccountType,
     loading,
     error,
     isBusinessUser,
@@ -50,6 +51,7 @@ const Auth = () => {
         isBusinessUser={isBusinessUser}
         toggleUserType={toggleUserType}
         accountType={accountType}
+        setAccountType={setAccountType}
         setActiveTab={setActiveTab}
       />
     </AuthContainer>
