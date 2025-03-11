@@ -30,7 +30,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const searchParams = new URLSearchParams(location.search);
   const accountType = searchParams.get('type') || 'client';
   
-  // Set default email for admin for easier access
+  // Set default email for admin for easier access during development
   useEffect(() => {
     if (accountType === 'admin') {
       setEmail('admin@clicktransfer.com');
@@ -48,7 +48,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
         return;
       }
       
-      // If it's a driver login or company login, require company selection
+      // If it's a driver or company login, require company selection
       if ((accountType === 'driver' || accountType === 'company') && !selectedCompanyId) {
         toast.error('Por favor, selecione uma empresa');
         return;
@@ -60,7 +60,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
       if (handleLogin) {
         await handleLogin(e);
       } else {
-        // For driver logins or company logins, pass the company ID for verification
+        // For driver or company logins, pass the company ID for verification
         const companyIdToUse = (accountType === 'driver' || accountType === 'company') ? selectedCompanyId : undefined;
         
         const { error } = await signIn(email, password, companyIdToUse);

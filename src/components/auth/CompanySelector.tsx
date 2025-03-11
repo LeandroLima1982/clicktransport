@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Building2, Loader2 } from 'lucide-react';
+import { Building2, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -34,7 +34,7 @@ const CompanySelector: React.FC<CompanySelectorProps> = ({
     console.log('Starting company fetch process...');
     
     try {
-      // Directly fetch from companies table
+      // Fetch all active companies from database
       const { data, error } = await supabase
         .from('companies')
         .select('id, name')
@@ -50,15 +50,15 @@ const CompanySelector: React.FC<CompanySelectorProps> = ({
         console.log(`Successfully loaded ${data.length} companies:`, data);
         setCompanies(data);
         
-        // Auto-select the first company if there's only one
-        if (data.length === 1) {
+        // Auto-select the first company if none is selected and there's only one company
+        if (data.length === 1 && !selectedCompanyId) {
           setSelectedCompanyId(data[0].id);
           console.log('Auto-selected company:', data[0].name);
         }
       } else {
         console.log('No companies found or empty data returned');
         toast.warning('Nenhuma empresa encontrada', {
-          description: 'Não há empresas cadastradas no sistema.'
+          description: 'Não há empresas ativas cadastradas no sistema.'
         });
       }
     } catch (err) {
@@ -117,7 +117,7 @@ const CompanySelector: React.FC<CompanySelectorProps> = ({
           onClick={loadCompanies}
           className="text-xs text-primary hover:underline flex items-center"
         >
-          <Loader2 className="h-3 w-3 mr-1" />
+          <RefreshCw className="h-3 w-3 mr-1" />
           Tentar novamente
         </button>
       )}
