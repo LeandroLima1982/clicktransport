@@ -1,5 +1,3 @@
-
-// Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
 import { Toaster } from 'sonner';
@@ -31,6 +29,8 @@ import DriverTrips from './pages/driver/Trips';
 
 // Client pages
 import Bookings from './pages/client/Bookings';
+import Profile from './pages/client/Profile';
+import PaymentMethods from './pages/client/PaymentMethods';
 
 import './App.css';
 
@@ -211,6 +211,16 @@ function App() {
           <Route path="/bookings" element={
             <ProtectedRoute requiredRole="client">
               <Bookings />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute requiredRole="client">
+              <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/payment-methods" element={
+            <ProtectedRoute requiredRole="client">
+              <PaymentMethods />
             </ProtectedRoute>
           } />
           
