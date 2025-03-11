@@ -94,12 +94,14 @@ export const validateDriverCompanyAssociation = async (email: string, companyId:
     }
     
     // Fix the RPC function call with proper parameter types
-    // Use explicit type assertion with Record<string, any> to avoid type errors
+    // Create a properly typed object for the RPC parameters
+    const rpcParams = {
+      _email: email,
+      _company_id: companyId
+    };
+    
     const { data, error: validationError } = await supabase
-      .rpc('validate_driver_company_association', {
-        _email: email,
-        _company_id: companyId
-      } as Record<string, any>);
+      .rpc('validate_driver_company_association', rpcParams as any);
     
     if (validationError) {
       return { 
