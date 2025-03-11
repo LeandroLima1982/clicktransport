@@ -18,3 +18,6 @@ export type RPCFunctionReturnType<T = any> = T;
 
 // Export function parameter types to be used with RPC calls
 export type RPCParams = ValidateDriverCompanyParams;
+
+// Define the validate driver company function return type
+export type ValidateDriverCompanyReturn = boolean;

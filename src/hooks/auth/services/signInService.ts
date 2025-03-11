@@ -1,8 +1,11 @@
+
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../../integrations/supabase/client';
 import { toast } from 'sonner';
-import { ValidateDriverCompanyParams } from '../databaseFunctions';
-import { fetchUserRole } from '../userProfile';
+import { updateDriverLoginStatus, checkDriverPasswordChange, validateDriverCompanyAssociation } from './driver/driverAuthService';
+import { verifyAdminRole } from './admin/adminAuthService';
+import { verifyCompanyAdmin } from './company/companyAuthService';
+import { verifyUserRole } from './user/userRoleService';
 
 // Sign in with email and password
 export const signIn = async (email: string, password: string, companyId?: string) => {
@@ -42,78 +45,34 @@ export const signIn = async (email: string, password: string, companyId?: string
     
     console.log('Sign in successful');
     
-    // If admin login, no need to check company association
+    // If admin login, verify admin role
     if (isAdminLogin && result.data.user) {
-      // Verify admin role
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', result.data.user.id)
-        .single();
+      const { isAdmin, error: adminError } = await verifyAdminRole(result.data.user.id);
       
-      if (profileError) {
-        console.error('Error fetching admin profile:', profileError);
+      if (adminError || !isAdmin) {
         await supabase.auth.signOut();
-        return { 
-          error: {
-            message: 'Error fetching admin profile',
-            name: 'profile_fetch_error',
-          } as AuthError 
-        };
-      }
-      
-      const userRole = profileData?.role;
-      console.log('Admin role verification:', userRole);
-      
-      if (userRole !== 'admin') {
-        console.error('User is not an admin');
-        await supabase.auth.signOut();
-        return { 
-          error: {
-            message: 'You do not have administrator privileges',
-            name: 'invalid_admin_role',
-          } as AuthError 
-        };
+        return { error: adminError };
       }
       
       console.log('Admin login verified successfully');
       return { error: null };
     }
     
-    // First, check user role from profiles for ALL users
+    // For all users, verify their role from profiles
     if (result.data.user) {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', result.data.user.id)
-        .single();
+      const { role: userRole, error: roleError } = await verifyUserRole(result.data.user.id);
       
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError);
+      if (roleError) {
         await supabase.auth.signOut();
-        return { 
-          error: {
-            message: 'Error fetching user profile',
-            name: 'profile_fetch_error',
-          } as AuthError 
-        };
+        return { error: roleError };
       }
       
-      const userRole = profileData?.role;
-      console.log('User role:', userRole);
-      
-      // If company ID is provided for driver login, verify the association
+      // If company ID is provided, verify the association
       if (companyId && typeof companyId === 'string') {
         // For driver role, verify driver-company association
         if (userRole === 'driver') {
-          // Fix the type issue by using a properly typed RPC call
-          const params: ValidateDriverCompanyParams = {
-            _email: email,
-            _company_id: companyId
-          };
-          
-          const { data: isValid, error: validationError } = await supabase
-            .rpc('validate_driver_company_association', params);
+          const { isValid, error: validationError } = 
+            await validateDriverCompanyAssociation(email, companyId);
           
           if (validationError || !isValid) {
             console.error('Driver not associated with this company:', validationError || 'Validation returned false');
@@ -135,24 +94,12 @@ export const signIn = async (email: string, password: string, companyId?: string
         }
         // For company role, verify user is a company admin
         else if (userRole === 'company') {
-          const { data: companyData, error: companyError } = await supabase
-            .from('companies')
-            .select('*')
-            .eq('id', companyId)
-            .eq('user_id', result.data.user.id)
-            .single();
+          const { isCompanyAdmin, error: companyError } = 
+            await verifyCompanyAdmin(result.data.user.id, companyId);
           
-          if (companyError || !companyData) {
-            console.error('User not associated with this company as admin:', companyError || 'No company record found');
-            // Sign out the user since they're not an admin of the company
+          if (companyError || !isCompanyAdmin) {
             await supabase.auth.signOut();
-            
-            return { 
-              error: {
-                message: 'You are not registered as a company admin',
-                name: 'invalid_company_admin',
-              } as AuthError 
-            };
+            return { error: companyError };
           }
           
           console.log('Company admin association verified');
@@ -194,59 +141,6 @@ export const signIn = async (email: string, password: string, companyId?: string
   } catch (err) {
     console.error('Error signing in:', err);
     return { error: err as AuthError };
-  }
-};
-
-// Helper function to update driver login status
-const updateDriverLoginStatus = async (email: string, companyId: string) => {
-  try {
-    // Safely check if the driver exists and can be updated
-    const { data: driverData, error: driverFetchError } = await supabase
-      .from('drivers')
-      .select('id')
-      .eq('email', email)
-      .eq('company_id', companyId)
-      .maybeSingle();
-      
-    if (!driverFetchError && driverData) {
-      // Update the driver using status as a safe field
-      const { error: updateError } = await supabase
-        .from('drivers')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', driverData.id);
-        
-      if (updateError) {
-        console.error('Error updating driver login status:', updateError);
-      }
-    }
-  } catch (updateErr) {
-    console.error('Exception updating login status:', updateErr);
-  }
-};
-
-// Helper function to check if driver needs to change password
-const checkDriverPasswordChange = async (userId: string) => {
-  try {
-    const { data: driverData, error: driverError } = await supabase
-      .from('drivers')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
-      
-    if (!driverError && driverData) {
-      // Safely check if property exists before accessing
-      const passwordChanged = driverData.is_password_changed !== undefined ? 
-        driverData.is_password_changed : null;
-        
-      if (passwordChanged === false) {
-        console.log('Driver needs to change password on first login');
-        toast.info('Você precisa alterar sua senha no primeiro acesso', {
-          description: 'Por favor, acesse seu perfil para definir uma nova senha.'
-        });
-      }
-    }
-  } catch (err) {
-    console.error('Error checking password change status:', err);
   }
 };
 
