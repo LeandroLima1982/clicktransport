@@ -24,6 +24,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+  const [companyError, setCompanyError] = useState<string | null>(null);
   const { signIn } = useAuth();
   const location = useLocation();
   
@@ -40,6 +41,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCompanyError(null);
     
     try {
       // Validate form
@@ -50,6 +52,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
       
       // If it's a driver login, require company selection
       if (accountType === 'driver' && !selectedCompanyId) {
+        setCompanyError('Por favor, selecione uma empresa');
         toast.error('Por favor, selecione uma empresa');
         return;
       }
@@ -99,6 +102,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
             selectedCompanyId={selectedCompanyId}
             setSelectedCompanyId={setSelectedCompanyId}
             accountType={accountType}
+            companyError={companyError}
           />
         </CardContent>
         

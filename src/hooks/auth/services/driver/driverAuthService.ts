@@ -10,7 +10,7 @@ export const updateDriverLoginStatus = async (email: string, companyId: string) 
     // Safely check if the driver exists and can be updated
     const { data: driverData, error: driverFetchError } = await supabase
       .from('drivers')
-      .select('id')
+      .select('id, status')
       .eq('email', email)
       .eq('company_id', companyId)
       .maybeSingle();
@@ -19,7 +19,10 @@ export const updateDriverLoginStatus = async (email: string, companyId: string) 
       // Update the driver using status as a safe field
       const { error: updateError } = await supabase
         .from('drivers')
-        .update({ last_login: new Date().toISOString() })
+        .update({ 
+          last_login: new Date().toISOString(),
+          status: driverData.status === 'inactive' ? 'active' : driverData.status 
+        })
         .eq('id', driverData.id);
         
       if (updateError) {
@@ -60,7 +63,38 @@ export const checkDriverPasswordChange = async (userId: string) => {
 // Validate if a driver is associated with a specific company
 export const validateDriverCompanyAssociation = async (email: string, companyId: string) => {
   try {
-    // Create properly typed parameters
+    // First check if the driver exists and is active in this company
+    const { data: driverData, error: driverError } = await supabase
+      .from('drivers')
+      .select('id, status')
+      .eq('email', email)
+      .eq('company_id', companyId)
+      .maybeSingle();
+    
+    if (driverError) {
+      console.error('Error checking driver status:', driverError);
+      return { isValid: false, error: driverError, message: 'Erro ao verificar motorista' };
+    }
+    
+    if (!driverData) {
+      console.error('Driver not found or not associated with this company');
+      return { 
+        isValid: false, 
+        error: new Error('Driver not found'),
+        message: 'Você não está registrado como motorista nesta empresa' 
+      };
+    }
+    
+    if (driverData.status === 'inactive') {
+      console.error('Driver account is inactive');
+      return { 
+        isValid: false, 
+        error: new Error('Inactive driver'),
+        message: 'Sua conta de motorista está inativa. Entre em contato com a empresa.' 
+      };
+    }
+    
+    // Create properly typed parameters for the RPC function
     const params: ValidateDriverCompanyParams = {
       _email: email,
       _company_id: companyId
@@ -70,9 +104,49 @@ export const validateDriverCompanyAssociation = async (email: string, companyId:
     const { data, error: validationError } = await supabase
       .rpc('validate_driver_company_association', params);
     
-    return { isValid: data as boolean, error: validationError };
+    if (validationError) {
+      return { 
+        isValid: false, 
+        error: validationError,
+        message: 'Falha na validação de motorista' 
+      };
+    }
+    
+    if (!data) {
+      return { 
+        isValid: false, 
+        error: new Error('Association validation failed'),
+        message: 'Você não está associado a esta empresa' 
+      };
+    }
+    
+    return { isValid: data as boolean, error: null, message: null };
   } catch (err) {
     console.error('Error validating driver company association:', err);
-    return { isValid: false, error: err as Error };
+    return { 
+      isValid: false, 
+      error: err as Error,
+      message: 'Erro ao validar associação com a empresa' 
+    };
+  }
+};
+
+// Get company data for the driver session
+export const getDriverCompanyData = async (companyId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('companies')
+      .select('id, name, status')
+      .eq('id', companyId)
+      .maybeSingle();
+      
+    if (error) {
+      throw error;
+    }
+    
+    return { data, error: null };
+  } catch (err) {
+    console.error('Error fetching company data:', err);
+    return { data: null, error: err as Error };
   }
 };

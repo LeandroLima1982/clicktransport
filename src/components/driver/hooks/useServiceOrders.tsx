@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/main';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface ServiceOrder {
   id: string;
@@ -23,6 +24,7 @@ export const useServiceOrders = (driverId: string | null) => {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { companyContext } = useAuth();
 
   // Set up realtime subscription
   useEffect(() => {
@@ -64,6 +66,9 @@ export const useServiceOrders = (driverId: string | null) => {
   const fetchOrders = async () => {
     setIsLoading(true);
     setError(null);
+    
+    const companyId = companyContext?.id;
+    
     try {
       // Fetch assigned orders (where driver_id is the current driver)
       const { data: assignedData, error: assignedError } = await supabase
@@ -72,7 +77,8 @@ export const useServiceOrders = (driverId: string | null) => {
           *,
           companies (name)
         `)
-        .eq('driver_id', driverId);
+        .eq('driver_id', driverId)
+        .eq('company_id', companyId || 'any');  // Filter by company ID if available
 
       if (assignedError) throw assignedError;
 
@@ -84,7 +90,8 @@ export const useServiceOrders = (driverId: string | null) => {
           companies (name)
         `)
         .is('driver_id', null)
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .eq('company_id', companyId || 'any');  // Filter by company ID if available
 
       if (availableError) throw availableError;
 
@@ -113,8 +120,11 @@ export const useServiceOrders = (driverId: string | null) => {
   const fetchAvailableOrders = async () => {
     setIsLoading(true);
     setError(null);
+    
+    const companyId = companyContext?.id;
+    
     try {
-      const { data, error } = await supabase
+      const query = supabase
         .from('service_orders')
         .select(`
           *,
@@ -122,6 +132,13 @@ export const useServiceOrders = (driverId: string | null) => {
         `)
         .is('driver_id', null)
         .eq('status', 'pending');
+        
+      // If we have a company context, filter by company ID
+      if (companyId) {
+        query.eq('company_id', companyId);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
 

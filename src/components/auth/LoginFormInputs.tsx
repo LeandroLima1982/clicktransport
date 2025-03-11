@@ -12,6 +12,7 @@ interface LoginFormInputsProps {
   selectedCompanyId: string;
   setSelectedCompanyId: (id: string) => void;
   accountType: string;
+  companyError?: string | null;
 }
 
 const LoginFormInputs: React.FC<LoginFormInputsProps> = ({
@@ -21,7 +22,8 @@ const LoginFormInputs: React.FC<LoginFormInputsProps> = ({
   setPassword,
   selectedCompanyId,
   setSelectedCompanyId,
-  accountType
+  accountType,
+  companyError
 }) => {
   // Only show company selector for driver login type
   const showCompanySelector = accountType === 'driver';
@@ -33,6 +35,7 @@ const LoginFormInputs: React.FC<LoginFormInputsProps> = ({
         <CompanySelector 
           selectedCompanyId={selectedCompanyId}
           setSelectedCompanyId={setSelectedCompanyId}
+          error={companyError}
         />
       )}
       

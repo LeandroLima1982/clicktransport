@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Building2, Loader2, RefreshCw } from 'lucide-react';
+import { Building2, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -15,12 +15,14 @@ interface CompanySelectorProps {
   selectedCompanyId: string;
   setSelectedCompanyId: (id: string) => void;
   disabled?: boolean;
+  error?: string | null;
 }
 
 const CompanySelector: React.FC<CompanySelectorProps> = ({
   selectedCompanyId,
   setSelectedCompanyId,
-  disabled = false
+  disabled = false,
+  error
 }) => {
   const [companies, setCompanies] = useState<{id: string, name: string}[]>([]);
   const [fetchingCompanies, setFetchingCompanies] = useState(false);
@@ -71,18 +73,27 @@ const CompanySelector: React.FC<CompanySelectorProps> = ({
     }
   };
 
+  const hasError = !!error;
+
   return (
     <div className="space-y-2">
       <label htmlFor="company-select" className="text-sm font-medium flex items-center">
         <Building2 className="h-4 w-4 mr-1" />
         Empresa
+        {hasError && (
+          <span className="text-destructive ml-1">*</span>
+        )}
       </label>
+      
       <Select
         value={selectedCompanyId}
         onValueChange={setSelectedCompanyId}
         disabled={disabled || fetchingCompanies}
       >
-        <SelectTrigger id="company-select" className="w-full bg-white">
+        <SelectTrigger 
+          id="company-select" 
+          className={`w-full bg-white ${hasError ? 'border-destructive ring-destructive' : ''}`}
+        >
           <SelectValue placeholder="Selecione uma empresa" />
         </SelectTrigger>
         <SelectContent className="bg-white z-[100] max-h-60 overflow-y-auto">
@@ -106,11 +117,20 @@ const CompanySelector: React.FC<CompanySelectorProps> = ({
           Carregando empresas...
         </div>
       )}
+      
+      {hasError && (
+        <div className="flex items-center text-xs text-destructive mt-1">
+          <AlertTriangle className="h-3 w-3 mr-1" />
+          {error}
+        </div>
+      )}
+      
       {!fetchingCompanies && companies.length > 0 && (
         <div className="text-xs text-muted-foreground">
           {companies.length} {companies.length === 1 ? 'empresa encontrada' : 'empresas encontradas'}
         </div>
       )}
+      
       {!fetchingCompanies && companies.length === 0 && (
         <button 
           type="button" 

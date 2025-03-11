@@ -16,10 +16,9 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/main';
 
 const DriverUserMenu: React.FC = () => {
-  const { signOut, isAuthenticating, user } = useAuth();
+  const { signOut, isAuthenticating, user, companyContext } = useAuth();
   const navigate = useNavigate();
   const [driverData, setDriverData] = useState<any>(null);
-  const [companyName, setCompanyName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
@@ -46,10 +45,6 @@ const DriverUserMenu: React.FC = () => {
       }
       
       setDriverData(driverData);
-      
-      if (driverData?.company?.name) {
-        setCompanyName(driverData.company.name);
-      }
     } catch (error) {
       console.error('Error in loadDriverData:', error);
     } finally {
@@ -68,6 +63,8 @@ const DriverUserMenu: React.FC = () => {
       // Error will be displayed by the AuthProvider
     }
   };
+
+  const companyName = companyContext?.name || driverData?.company?.name;
 
   return (
     <DropdownMenu>

@@ -1,3 +1,4 @@
+
 import { 
   Session, 
   User, 
@@ -17,6 +18,10 @@ export type AuthContextType = {
   signOut: () => Promise<{ error: AuthError | Error | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   userRole: UserRole;
+  companyContext?: {
+    id: string;
+    name: string;
+  } | null;
 };
 
 // Extended driver interface to match the database structure

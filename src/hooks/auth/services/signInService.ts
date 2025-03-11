@@ -2,7 +2,7 @@
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../../integrations/supabase/client';
 import { toast } from 'sonner';
-import { updateDriverLoginStatus, checkDriverPasswordChange, validateDriverCompanyAssociation } from './driver/driverAuthService';
+import { updateDriverLoginStatus, checkDriverPasswordChange, validateDriverCompanyAssociation, getDriverCompanyData } from './driver/driverAuthService';
 import { verifyAdminRole } from './admin/adminAuthService';
 import { verifyCompanyAdmin } from './company/companyAuthService';
 import { verifyUserRole } from './user/userRoleService';
@@ -10,10 +10,41 @@ import { verifyUserRole } from './user/userRoleService';
 // Sign in with email and password
 export const signIn = async (email: string, password: string, companyId?: string) => {
   try {
-    console.log('Signing in user:', email);
+    console.log('Signing in user:', email, companyId ? `with company ID: ${companyId}` : '');
     
     // Special handling for admin login
     const isAdminLogin = email.toLowerCase() === 'admin@clicktransfer.com';
+    
+    // For driver login, validate company association before attempting to sign in
+    if (companyId && !isAdminLogin) {
+      // Check if this is likely a driver and validate company association
+      const { isValid, error: validationError, message } = 
+        await validateDriverCompanyAssociation(email, companyId);
+      
+      if (validationError || !isValid) {
+        console.error('Company association validation failed:', validationError || 'Validation returned false');
+        
+        return { 
+          error: {
+            message: message || 'Você não está registrado como motorista para esta empresa',
+            name: 'invalid_company_association',
+          } as AuthError 
+        };
+      }
+      
+      // Get company data to store in session
+      const { data: companyData } = await getDriverCompanyData(companyId);
+      if (!companyData || companyData.status !== 'active') {
+        return { 
+          error: {
+            message: 'A empresa selecionada está inativa ou não existe',
+            name: 'invalid_company',
+          } as AuthError 
+        };
+      }
+      
+      console.log('Driver company association validated successfully');
+    }
     
     // Check if the user exists before attempting to sign in
     if (isAdminLogin) {
@@ -45,6 +76,17 @@ export const signIn = async (email: string, password: string, companyId?: string
     
     console.log('Sign in successful');
     
+    // Store company ID in local storage for driver sessions
+    if (companyId && result.data.user) {
+      localStorage.setItem('driverCompanyId', companyId);
+      
+      // Get company name to display in UI
+      const { data: companyData } = await getDriverCompanyData(companyId);
+      if (companyData) {
+        localStorage.setItem('driverCompanyName', companyData.name);
+      }
+    }
+    
     // If admin login, verify admin role
     if (isAdminLogin && result.data.user) {
       const { isAdmin, error: adminError } = await verifyAdminRole(result.data.user.id);
@@ -71,22 +113,6 @@ export const signIn = async (email: string, password: string, companyId?: string
       if (companyId && typeof companyId === 'string') {
         // For driver role, verify driver-company association
         if (userRole === 'driver') {
-          const { isValid, error: validationError } = 
-            await validateDriverCompanyAssociation(email, companyId);
-          
-          if (validationError || !isValid) {
-            console.error('Driver not associated with this company:', validationError || 'Validation returned false');
-            // Sign out the user since they're not associated with the company
-            await supabase.auth.signOut();
-            
-            return { 
-              error: {
-                message: 'You are not registered as a driver for this company',
-                name: 'invalid_company_association',
-              } as AuthError 
-            };
-          }
-          
           // Update the driver's last login time
           await updateDriverLoginStatus(email, companyId);
           
