@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -12,7 +11,9 @@ import {
   Book,
   Home,
   Settings,
-  Users
+  Users,
+  Calendar,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/hooks/auth/types';
@@ -110,7 +111,6 @@ const UserMenu: React.FC<UserMenuProps> = ({
           )}
         </DropdownMenuLabel>
         
-        {/* Common navigation option for all users */}
         <DropdownMenuItem asChild>
           <Link to="/" className="w-full">
             <Home className="h-4 w-4 mr-2" />
@@ -118,12 +118,11 @@ const UserMenu: React.FC<UserMenuProps> = ({
           </Link>
         </DropdownMenuItem>
         
-        {/* Role-specific navigation options */}
         {userRole === 'client' && (
           <>
             <DropdownMenuItem asChild>
               <Link to="/bookings" className="w-full">
-                <Book className="h-4 w-4 mr-2" />
+                <Calendar className="h-4 w-4 mr-2" />
                 Minhas Reservas
               </Link>
             </DropdownMenuItem>
@@ -131,6 +130,12 @@ const UserMenu: React.FC<UserMenuProps> = ({
               <Link to="/profile" className="w-full">
                 <User className="h-4 w-4 mr-2" />
                 Meu Perfil
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/payment-methods" className="w-full">
+                <CreditCard className="h-4 w-4 mr-2" />
+                Métodos de Pagamento
               </Link>
             </DropdownMenuItem>
           </>

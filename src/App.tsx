@@ -1,3 +1,4 @@
+
 // Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
@@ -27,6 +28,9 @@ import DriverNavigation from './pages/driver/Navigation';
 import DriverProfile from './pages/driver/Profile';
 import DriverSettings from './pages/driver/Settings';
 import DriverTrips from './pages/driver/Trips';
+
+// Client pages
+import Bookings from './pages/client/Bookings';
 
 import './App.css';
 
@@ -203,12 +207,12 @@ function App() {
             </ProtectedRoute>
           } />
           
-          {/* Client routes - temporarily commented out until Bookings component is implemented */}
-          {/* <Route path="/bookings" element={
+          {/* Client routes - strictly for client users */}
+          <Route path="/bookings" element={
             <ProtectedRoute requiredRole="client">
               <Bookings />
             </ProtectedRoute>
-          } /> */}
+          } />
           
           {/* 404 route */}
           <Route path="*" element={<NotFound />} />

@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          additional_notes: string | null
+          booking_date: string
+          created_at: string
+          destination: string
+          id: string
+          origin: string
+          passengers: number | null
+          reference_code: string
+          return_date: string | null
+          status: string
+          total_price: number
+          travel_date: string
+          user_id: string
+          vehicle_type: string | null
+        }
+        Insert: {
+          additional_notes?: string | null
+          booking_date: string
+          created_at?: string
+          destination: string
+          id?: string
+          origin: string
+          passengers?: number | null
+          reference_code: string
+          return_date?: string | null
+          status?: string
+          total_price: number
+          travel_date: string
+          user_id: string
+          vehicle_type?: string | null
+        }
+        Update: {
+          additional_notes?: string | null
+          booking_date?: string
+          created_at?: string
+          destination?: string
+          id?: string
+          origin?: string
+          passengers?: number | null
+          reference_code?: string
+          return_date?: string | null
+          status?: string
+          total_price?: number
+          travel_date?: string
+          user_id?: string
+          vehicle_type?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           cnpj: string | null
