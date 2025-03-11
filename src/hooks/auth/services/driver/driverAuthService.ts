@@ -1,4 +1,3 @@
-
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../../../integrations/supabase/client';
 import { toast } from 'sonner';
@@ -93,24 +92,13 @@ export const validateDriverCompanyAssociation = async (email: string, companyId:
       };
     }
     
-    // Create a properly typed object for the RPC parameters
-    interface ValidateDriverParams {
-      _email: string;
-      _company_id: string;
-    }
-    
-    const rpcParams: ValidateDriverParams = {
-      _email: email,
-      _company_id: companyId
-    };
-    
-    // Fix the typing issue by using a different approach
-    // Using any as a workaround for the RPC typing issues
-    const { data, error: validationError } = await supabase
-      .rpc('validate_driver_company_association', rpcParams) as { 
-        data: boolean | null, 
-        error: AuthError | null 
-      };
+    const { data, error: validationError } = await supabase.rpc(
+      'validate_driver_company_association',
+      {
+        _email: email,
+        _company_id: companyId
+      }
+    );
     
     if (validationError) {
       return { 
