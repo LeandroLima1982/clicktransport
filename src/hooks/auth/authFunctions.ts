@@ -189,7 +189,7 @@ export const signIn = async (email: string, password: string, companyId?: string
           };
         }
       } else {
-        // If no company ID provided, ensure user is not trying to log in as driver or company
+        // If no company ID provided but user is a driver, reject login
         if (userRole === 'driver') {
           console.error('Driver attempting to log in without company ID');
           await supabase.auth.signOut();
@@ -197,18 +197,6 @@ export const signIn = async (email: string, password: string, companyId?: string
           return { 
             error: {
               message: 'Drivers must select a company to log in',
-              name: 'missing_company_id',
-            } as AuthError 
-          };
-        }
-        
-        if (userRole === 'company') {
-          console.error('Company admin attempting to log in without company ID');
-          await supabase.auth.signOut();
-          
-          return { 
-            error: {
-              message: 'Company admins must select their company to log in',
               name: 'missing_company_id',
             } as AuthError 
           };

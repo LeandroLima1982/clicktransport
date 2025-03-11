@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -72,12 +73,12 @@ const Auth = () => {
     const email = (form.elements.namedItem('email') as HTMLInputElement).value;
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     
-    // Get company ID if applicable (required for driver and company logins)
+    // Get company ID if applicable (required for driver logins only)
     const companyIdElement = form.querySelector('[id="company-select"]') as HTMLSelectElement;
-    const companyId = companyIdElement ? companyIdElement.value : '';
+    const companyId = (accountType === 'driver' && companyIdElement) ? companyIdElement.value : undefined;
     
-    // Validate company selection for driver and company logins
-    if ((accountType === 'driver' || accountType === 'company') && !companyId) {
+    // Validate company selection for driver logins only
+    if (accountType === 'driver' && !companyId) {
       setError('Por favor, selecione uma empresa para fazer login');
       setLoading(false);
       return;

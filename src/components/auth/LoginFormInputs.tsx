@@ -23,12 +23,12 @@ const LoginFormInputs: React.FC<LoginFormInputsProps> = ({
   setSelectedCompanyId,
   accountType
 }) => {
-  // Determine if we should show the company selector based on account type
-  const showCompanySelector = accountType === 'driver' || accountType === 'company';
+  // Only show company selector for driver login type
+  const showCompanySelector = accountType === 'driver';
   
   return (
     <div className="space-y-4">
-      {/* Only show company selector for driver or company login types */}
+      {/* Only show company selector for driver login type */}
       {showCompanySelector && (
         <CompanySelector 
           selectedCompanyId={selectedCompanyId}

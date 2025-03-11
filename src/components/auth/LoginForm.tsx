@@ -48,8 +48,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
         return;
       }
       
-      // If it's a driver or company login, require company selection
-      if ((accountType === 'driver' || accountType === 'company') && !selectedCompanyId) {
+      // If it's a driver login, require company selection
+      if (accountType === 'driver' && !selectedCompanyId) {
         toast.error('Por favor, selecione uma empresa');
         return;
       }
@@ -60,8 +60,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
       if (handleLogin) {
         await handleLogin(e);
       } else {
-        // For driver or company logins, pass the company ID for verification
-        const companyIdToUse = (accountType === 'driver' || accountType === 'company') ? selectedCompanyId : undefined;
+        // Only pass companyId for driver logins
+        const companyIdToUse = accountType === 'driver' ? selectedCompanyId : undefined;
         
         const { error } = await signIn(email, password, companyIdToUse);
         if (error) {
@@ -106,7 +106,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
           <Button 
             type="submit" 
             className="w-full rounded-full" 
-            disabled={loading || ((accountType === 'driver' || accountType === 'company') && !selectedCompanyId)}
+            disabled={loading || (accountType === 'driver' && !selectedCompanyId)}
           >
             {loading ? (
               <>
