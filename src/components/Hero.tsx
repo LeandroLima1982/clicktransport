@@ -6,7 +6,7 @@ const Hero: React.FC = () => {
   return <section className="relative min-h-[calc(100vh-80px)] flex items-center w-full">
       <div className="absolute inset-0 bg-[#F8D748] -z-10" />
       
-      <div className="w-full py-[50px] md:py-0">
+      <div className="w-full py-[10px] md:py-0 mx-0 my-[78px]">
         <div className="max-w-3xl mx-auto text-center mb-8 px-4">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 animate-fade-in text-black">
             <span className="block mb-2">Aluguel de Van, Ônibus e</span>
@@ -23,7 +23,7 @@ const Hero: React.FC = () => {
         </div>
         
         <div className="w-full px-4 sm:max-w-4xl sm:mx-auto">
-          <div className="rounded-xl p-6 md:p-8 shadow-lg bg-white animate-scale-in">
+          <div className="rounded-xl p-6 md:p-8 shadow-lg bg-white animate-scale-in mx-[52px] my-[101px]">
             <BookingForm />
           </div>
         </div>
