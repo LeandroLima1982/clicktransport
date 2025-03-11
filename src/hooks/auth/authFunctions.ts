@@ -1,5 +1,6 @@
+
 import { AuthError } from '@supabase/supabase-js';
-import { supabase } from '../../main';
+import { supabase } from '../../integrations/supabase/client';
 import { toast } from 'sonner';
 
 // Sign in with email and password
@@ -104,15 +105,15 @@ export const signIn = async (email: string, password: string, companyId?: string
       if (companyId) {
         // For driver role, verify driver-company association
         if (userRole === 'driver') {
-          const { data: driverData, error: driverError } = await supabase
-            .from('drivers')
-            .select('*')
-            .eq('user_id', result.data.user.id)
-            .eq('company_id', companyId)
-            .single();
+          // Call our database function to validate driver-company association
+          const { data: isValid, error: validationError } = await supabase
+            .rpc('validate_driver_company_association', { 
+              _email: email,
+              _company_id: companyId 
+            });
           
-          if (driverError || !driverData) {
-            console.error('Driver not associated with this company:', driverError || 'No driver record found');
+          if (validationError || !isValid) {
+            console.error('Driver not associated with this company:', validationError || 'Validation returned false');
             // Sign out the user since they're not associated with the company
             await supabase.auth.signOut();
             
@@ -122,6 +123,17 @@ export const signIn = async (email: string, password: string, companyId?: string
                 name: 'invalid_company_association',
               } as AuthError 
             };
+          }
+          
+          // Update the driver's last login time
+          const { error: updateError } = await supabase
+            .from('drivers')
+            .update({ last_login: new Date().toISOString() })
+            .eq('email', email)
+            .eq('company_id', companyId);
+            
+          if (updateError) {
+            console.error('Error updating driver last login:', updateError);
           }
           
           console.log('Driver company association verified');
@@ -186,6 +198,23 @@ export const signIn = async (email: string, password: string, companyId?: string
               name: 'missing_company_id',
             } as AuthError 
           };
+        }
+      }
+
+      // Check if driver needs to change password
+      if (userRole === 'driver') {
+        const { data: driverData, error: driverError } = await supabase
+          .from('drivers')
+          .select('is_password_changed')
+          .eq('user_id', result.data.user.id)
+          .single();
+          
+        if (!driverError && driverData && driverData.is_password_changed === false) {
+          console.log('Driver needs to change password on first login');
+          // In a real app, you might redirect to a password change page here
+          toast.info('Você precisa alterar sua senha no primeiro acesso', {
+            description: 'Por favor, acesse seu perfil para definir uma nova senha.'
+          });
         }
       }
     }
