@@ -13,5 +13,6 @@ export interface ValidateDriverCompanyParams {
   _company_id: string;
 }
 
-// Generic type for RPC function calls that removes the 'never' constraint
-export type RPCFunctionReturnType<T> = T extends infer R ? R : never;
+// Updated generic type for RPC function calls
+export type RPCFunctionReturnType<T> = T;
+
