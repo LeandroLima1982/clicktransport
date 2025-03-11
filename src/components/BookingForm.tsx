@@ -38,7 +38,7 @@ const BookingForm: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'items-center justify-between'} mb-4`}>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 space-y-3 md:space-y-0">
         <h3 className="text-xl font-bold text-gray-800">Qual seu destino?</h3>
         <TripTypeTabs 
           value={tripType}

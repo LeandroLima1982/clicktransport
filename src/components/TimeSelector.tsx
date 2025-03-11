@@ -45,7 +45,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({ value, onChange }) => {
           )}
         </SelectValue>
       </SelectTrigger>
-      <SelectContent className={`max-h-[${isMobile ? '160px' : '200px'}]`}>
+      <SelectContent className="max-h-[200px]">
         {timeOptions.map((time) => (
           <SelectItem key={time} value={time} className="cursor-pointer hover:bg-[#FEF7CD]">
             {time}
