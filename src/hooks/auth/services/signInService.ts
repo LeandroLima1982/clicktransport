@@ -1,4 +1,3 @@
-
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../../integrations/supabase/client';
 import { toast } from 'sonner';
@@ -107,7 +106,7 @@ export const signIn = async (email: string, password: string, companyId?: string
       if (companyId && typeof companyId === 'string') {
         // For driver role, verify driver-company association
         if (userRole === 'driver') {
-          // Call our database function to validate driver-company association
+          // Fix the type issue by specifically defining the return type as boolean
           const { data: isValid, error: validationError } = await supabase
             .rpc<boolean, ValidateDriverCompanyParams>('validate_driver_company_association', {
               _email: email,
