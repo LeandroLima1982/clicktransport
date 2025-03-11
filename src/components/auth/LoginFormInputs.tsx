@@ -25,8 +25,16 @@ const LoginFormInputs: React.FC<LoginFormInputsProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      {/* Show company selection for driver and company logins */}
-      {(accountType === 'driver' || accountType === 'company') && (
+      {/* Always show company selection for driver logins */}
+      {accountType === 'driver' && (
+        <CompanySelector 
+          selectedCompanyId={selectedCompanyId}
+          setSelectedCompanyId={setSelectedCompanyId}
+        />
+      )}
+      
+      {/* Show company selection for company logins */}
+      {accountType === 'company' && (
         <CompanySelector 
           selectedCompanyId={selectedCompanyId}
           setSelectedCompanyId={setSelectedCompanyId}

@@ -1,4 +1,3 @@
-
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../main';
 import { toast } from 'sonner';
@@ -331,10 +330,11 @@ export const fetchCompanies = async () => {
   try {
     console.log('Fetching companies from Supabase...');
     
-    // Get all companies regardless of status
+    // Get all active companies
     const { data, error } = await supabase
       .from('companies')
       .select('id, name')
+      .eq('status', 'active')
       .order('name');
     
     if (error) {

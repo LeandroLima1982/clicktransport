@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Building2, Loader2 } from 'lucide-react';
-import { fetchCompanies } from '@/hooks/auth/authFunctions';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   Select,
@@ -34,7 +34,12 @@ const CompanySelector: React.FC<CompanySelectorProps> = ({
     console.log('Starting company fetch process...');
     
     try {
-      const { data, error } = await fetchCompanies();
+      // Directly fetch from companies table
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name')
+        .eq('status', 'active')
+        .order('name');
       
       if (error) {
         console.error('Error fetching companies:', error);

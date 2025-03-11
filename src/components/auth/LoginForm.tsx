@@ -54,6 +54,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
         return;
       }
       
+      console.log(`Login attempt: ${accountType} with company ${selectedCompanyId}`);
+      
       // Use the parent handleLogin if provided, otherwise use local logic
       if (handleLogin) {
         await handleLogin(e);

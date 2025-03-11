@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -74,8 +73,8 @@ const Auth = () => {
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     
     // Get company ID if applicable (required for driver and company logins)
-    const companyIdInput = form.elements.namedItem('company-id') as HTMLInputElement;
-    const companyId = companyIdInput ? companyIdInput.value : undefined;
+    const companyIdElement = form.querySelector('[id="company-select"]') as HTMLSelectElement;
+    const companyId = companyIdElement ? companyIdElement.value : '';
     
     // Validate company selection for driver and company logins
     if ((accountType === 'driver' || accountType === 'company') && !companyId) {
@@ -85,6 +84,7 @@ const Auth = () => {
     }
     
     try {
+      console.log(`Attempting login with accountType: ${accountType}, companyId: ${companyId}`);
       const { error } = await signIn(email, password, companyId);
       
       if (error) throw error;
