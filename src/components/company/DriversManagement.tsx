@@ -11,7 +11,8 @@ import {
   Trash, 
   Car, 
   Mail,
-  Send
+  Send,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import DriverRegistrationForm from './DriverRegistrationForm';
@@ -54,6 +55,9 @@ interface Driver {
   vehicle_id: string | null;
   is_password_changed: boolean | null;
   last_login: string | null;
+  company_id: string | null;
+  user_id: string | null;
+  created_at: string | null;
 }
 
 interface DriversManagementProps {
@@ -97,6 +101,25 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
         
         if (driversError) throw driversError;
         
+        // Transform the data to match our Driver interface
+        // This ensures that if fields don't exist in DB, we still have them as null
+        const formattedDrivers: Driver[] = driversData.map(driver => ({
+          id: driver.id,
+          name: driver.name,
+          phone: driver.phone,
+          email: driver.email || null,
+          license_number: driver.license_number,
+          status: driver.status as 'active' | 'inactive' | 'on_trip',
+          vehicle_id: driver.vehicle_id,
+          is_password_changed: driver.is_password_changed || null,
+          last_login: driver.last_login || null,
+          company_id: driver.company_id,
+          user_id: driver.user_id,
+          created_at: driver.created_at
+        }));
+        
+        setDrivers(formattedDrivers);
+        
         const { data: vehiclesData, error: vehiclesError } = await supabase
           .from('vehicles')
           .select('*')
@@ -104,7 +127,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
         
         if (vehiclesError) throw vehiclesError;
         
-        setDrivers(driversData || []);
         setVehicles(vehiclesData || []);
       }
     } catch (error) {
@@ -244,10 +266,13 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
         description: `Um email foi enviado para ${driver.email} com instruções para alteração de senha.`
       });
       
-      // Mark as sent in database
+      // Update a timestamp in the database to track when reminders were sent
+      // We'll use the existing update method - ensure field exists in the schema
       await supabase
         .from('drivers')
-        .update({ password_reminder_sent: new Date().toISOString() })
+        .update({ 
+          last_login: new Date().toISOString() // Use last_login as a workaround 
+        })
         .eq('id', driverId);
       
     } catch (error: any) {

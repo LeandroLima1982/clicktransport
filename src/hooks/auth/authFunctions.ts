@@ -102,7 +102,7 @@ export const signIn = async (email: string, password: string, companyId?: string
       console.log('User role:', userRole);
       
       // If company ID is provided for driver login, verify the association
-      if (companyId) {
+      if (companyId && typeof companyId === 'string') {
         // For driver role, verify driver-company association
         if (userRole === 'driver') {
           // Call our database function to validate driver-company association
@@ -125,15 +125,21 @@ export const signIn = async (email: string, password: string, companyId?: string
             };
           }
           
-          // Update the driver's last login time
-          const { error: updateError } = await supabase
-            .from('drivers')
-            .update({ last_login: new Date().toISOString() })
-            .eq('email', email)
-            .eq('company_id', companyId);
-            
-          if (updateError) {
-            console.error('Error updating driver last login:', updateError);
+          // Update the driver's last login time if the column exists
+          try {
+            const { error: updateError } = await supabase
+              .from('drivers')
+              .update({ 
+                last_login: new Date().toISOString() 
+              })
+              .eq('email', email)
+              .eq('company_id', companyId);
+              
+            if (updateError) {
+              console.error('Error updating driver last login:', updateError);
+            }
+          } catch (updateErr) {
+            console.error('Exception updating last login:', updateErr);
           }
           
           console.log('Driver company association verified');
@@ -201,20 +207,24 @@ export const signIn = async (email: string, password: string, companyId?: string
         }
       }
 
-      // Check if driver needs to change password
+      // Check if driver needs to change password - do this safely with optional chaining
       if (userRole === 'driver') {
-        const { data: driverData, error: driverError } = await supabase
-          .from('drivers')
-          .select('is_password_changed')
-          .eq('user_id', result.data.user.id)
-          .single();
-          
-        if (!driverError && driverData && driverData.is_password_changed === false) {
-          console.log('Driver needs to change password on first login');
-          // In a real app, you might redirect to a password change page here
-          toast.info('Você precisa alterar sua senha no primeiro acesso', {
-            description: 'Por favor, acesse seu perfil para definir uma nova senha.'
-          });
+        try {
+          const { data: driverData, error: driverError } = await supabase
+            .from('drivers')
+            .select('is_password_changed')
+            .eq('user_id', result.data.user.id)
+            .maybeSingle();
+            
+          if (!driverError && driverData && driverData.is_password_changed === false) {
+            console.log('Driver needs to change password on first login');
+            // In a real app, you might redirect to a password change page here
+            toast.info('Você precisa alterar sua senha no primeiro acesso', {
+              description: 'Por favor, acesse seu perfil para definir uma nova senha.'
+            });
+          }
+        } catch (err) {
+          console.error('Error checking password change status:', err);
         }
       }
     }
