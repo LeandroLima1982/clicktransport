@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Home, Book, Car, User, CreditCard } from 'lucide-react';
+import { Home, Book, User, CreditCard } from 'lucide-react';
 
 interface ClientTabItemsProps {
   onClose: () => void;
