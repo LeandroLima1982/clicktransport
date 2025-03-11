@@ -70,7 +70,7 @@ const Profile: React.FC = () => {
                     <span className="text-sm font-medium">Nome Completo</span>
                   </div>
                   <p className="text-muted-foreground">
-                    {user.displayName || user.email?.split('@')[0] || "Não informado"}
+                    {user.user_metadata?.full_name || user.email?.split('@')[0] || "Não informado"}
                   </p>
                 </div>
                 
