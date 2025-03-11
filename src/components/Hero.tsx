@@ -11,17 +11,13 @@ const Hero: React.FC = () => {
       <div className="w-full py-4 my-8 md:my-12 lg:my-16">
         <div className="max-w-3xl mx-auto text-center mb-8 px-4">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 animate-fade-in text-black">
-            <span className="block mb-2 text-zinc-700">Transporte executivo</span>
-            <span className="block text-amber-500">para empresas e seus colaboradores</span>
+            <span className="block mb-2 text-zinc-700">Transporte Executivo</span>
+            <span className="block text-amber-500">para Empresas e Seus Colaboradores</span>
           </h1>
           
           <p style={{
           animationDelay: '0.2s'
-        }} className="text-base md:text-lg mb-8 animate-fade-in text-gray-700 max-w-2xl mx-auto">
-            São mais de 20 anos de experiência oferecendo serviços
-            de locação de vans, ônibus e microônibus com motorista,
-            proporcionando segurança e conforto para sua viagem.
-          </p>
+        }} className="text-base md:text-lg mb-8 animate-fade-in text-gray-700 max-w-2xl mx-auto">Conectamos empresas a motoristas executivos com eficiência e segurança.</p>
         </div>
         
         <div className="w-full px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
