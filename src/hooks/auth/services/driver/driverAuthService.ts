@@ -67,10 +67,10 @@ export const validateDriverCompanyAssociation = async (email: string, companyId:
     };
     
     // Call the RPC function with the correct parameters
-    const { data: isValid, error: validationError } = await supabase
+    const { data, error: validationError } = await supabase
       .rpc('validate_driver_company_association', params);
     
-    return { isValid, error: validationError };
+    return { isValid: data as boolean, error: validationError };
   } catch (err) {
     console.error('Error validating driver company association:', err);
     return { isValid: false, error: err as Error };
