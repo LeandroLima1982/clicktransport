@@ -15,3 +15,6 @@ export interface ValidateDriverCompanyParams {
 
 // Define the RPC function return type without constraints
 export type RPCFunctionReturnType<T = any> = T;
+
+// Export function parameter types to be used with RPC calls
+export type RPCParams = ValidateDriverCompanyParams;
