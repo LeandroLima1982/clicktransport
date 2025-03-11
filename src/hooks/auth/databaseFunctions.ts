@@ -12,3 +12,6 @@ export interface ValidateDriverCompanyParams {
   _email: string;
   _company_id: string;
 }
+
+// Generic type for RPC function calls
+export type RPCFunctionReturnType<T> = T;

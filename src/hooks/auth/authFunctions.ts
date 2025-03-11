@@ -1,7 +1,7 @@
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../integrations/supabase/client';
 import { toast } from 'sonner';
-import { ValidateDriverCompanyParams, DbFunctionResponse } from './databaseFunctions';
+import { ValidateDriverCompanyParams, DbFunctionResponse, RPCFunctionReturnType } from './databaseFunctions';
 
 // Sign in with email and password
 export const signIn = async (email: string, password: string, companyId?: string) => {
@@ -107,7 +107,7 @@ export const signIn = async (email: string, password: string, companyId?: string
         if (userRole === 'driver') {
           // Call our database function to validate driver-company association
           const { data: isValid, error: validationError } = await supabase
-            .rpc<boolean, ValidateDriverCompanyParams>('validate_driver_company_association', {
+            .rpc<RPCFunctionReturnType<boolean>, ValidateDriverCompanyParams>('validate_driver_company_association', {
               _email: email,
               _company_id: companyId
             });
