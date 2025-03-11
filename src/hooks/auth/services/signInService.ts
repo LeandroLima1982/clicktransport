@@ -106,9 +106,9 @@ export const signIn = async (email: string, password: string, companyId?: string
       if (companyId && typeof companyId === 'string') {
         // For driver role, verify driver-company association
         if (userRole === 'driver') {
-          // Correctly specify the type parameters for the RPC call
+          // Fix the type parameters for the RPC call
           const { data: isValid, error: validationError } = await supabase
-            .rpc<boolean, ValidateDriverCompanyParams>('validate_driver_company_association', {
+            .rpc('validate_driver_company_association', {
               _email: email,
               _company_id: companyId
             });
