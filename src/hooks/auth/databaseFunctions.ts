@@ -13,5 +13,5 @@ export interface ValidateDriverCompanyParams {
   _company_id: string;
 }
 
-// Update the generic type for RPC function returns to accept any type
+// Properly define generic type for RPC function returns without constraints
 export type RPCFunctionReturnType<T> = T;
