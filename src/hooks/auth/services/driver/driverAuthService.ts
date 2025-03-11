@@ -1,4 +1,3 @@
-
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../../../integrations/supabase/client';
 import { toast } from 'sonner';
@@ -93,11 +92,11 @@ export const validateDriverCompanyAssociation = async (email: string, companyId:
       };
     }
     
-    // Call the RPC function with the correct parameters
+    // Fix the RPC function call with proper parameter types
     const { data, error: validationError } = await supabase
       .rpc('validate_driver_company_association', {
         _email: email,
-        _company_id: companyId
+        _company_id: companyId as string
       });
     
     if (validationError) {
