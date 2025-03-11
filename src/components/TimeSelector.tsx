@@ -26,18 +26,23 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({ value, onChange }) => {
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="bg-white/20 border-white/10 text-white focus:ring-primary focus:border-primary">
+      <SelectTrigger className="w-full py-6 pl-10 rounded-lg border-gray-200 focus:ring-[#F8D748] focus:border-[#F8D748] text-gray-700 relative">
+        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
         <SelectValue placeholder="Selecione o horário">
-          {value || (
-            <span className="flex items-center text-white/60">
-              <Clock className="w-4 h-4 mr-2 opacity-60" /> Selecione o horário
+          {value ? (
+            <span className="flex items-center">
+              {value}
+            </span>
+          ) : (
+            <span className="flex items-center text-gray-500">
+              Selecione o horário
             </span>
           )}
         </SelectValue>
       </SelectTrigger>
       <SelectContent className="max-h-[200px]">
         {timeOptions.map((time) => (
-          <SelectItem key={time} value={time}>
+          <SelectItem key={time} value={time} className="cursor-pointer hover:bg-[#FEF7CD]">
             {time}
           </SelectItem>
         ))}

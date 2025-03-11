@@ -6,6 +6,8 @@ import { useBookingForm } from '@/hooks/useBookingForm';
 import LocationInput from './booking/LocationInput';
 import DateSelector from './booking/DateSelector';
 import TripTypeTabs from './booking/TripTypeTabs';
+import { Clock } from 'lucide-react';
+import TimeSelector from './TimeSelector';
 
 const BookingForm: React.FC = () => {
   const {
@@ -14,12 +16,16 @@ const BookingForm: React.FC = () => {
     date,
     returnDate,
     tripType,
+    time,
+    returnTime,
     originSuggestions,
     destinationSuggestions,
     showBookingSteps,
     setTripType,
     setDate,
     setReturnDate,
+    setTime,
+    setReturnTime,
     handleOriginChange,
     handleDestinationChange,
     selectSuggestion,
@@ -29,9 +35,9 @@ const BookingForm: React.FC = () => {
   } = useBookingForm();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-xl font-semibold text-gray-800">Qual seu destino?</h3>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-bold text-gray-800">Qual seu destino?</h3>
         <TripTypeTabs 
           value={tripType}
           onChange={setTripType}
@@ -59,35 +65,68 @@ const BookingForm: React.FC = () => {
           onSelectSuggestion={(suggestion) => selectSuggestion(suggestion, false)}
         />
 
-        <DateSelector
-          label="Vai quando?"
-          date={date}
-          onSelect={setDate}
-          disabledDates={(date) => date < new Date()}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <DateSelector
+            label="Vai quando?"
+            date={date}
+            onSelect={setDate}
+            disabledDates={(date) => date < new Date()}
+          />
+
+          <div className="space-y-2">
+            <label className="text-gray-700 flex items-center text-sm font-medium">
+              Horário de ida
+            </label>
+            <TimeSelector
+              value={time}
+              onChange={setTime}
+            />
+          </div>
+        </div>
 
         {tripType === 'roundtrip' && (
-          <DateSelector
-            label="Volta quando?"
-            date={returnDate}
-            onSelect={setReturnDate}
-            disabledDates={(currentDate) => currentDate < (date || new Date())}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+            <DateSelector
+              label="Volta quando?"
+              date={returnDate}
+              onSelect={setReturnDate}
+              disabledDates={(currentDate) => currentDate < (date || new Date())}
+            />
+            
+            <div className="space-y-2">
+              <label className="text-gray-700 flex items-center text-sm font-medium">
+                Horário de volta
+              </label>
+              <TimeSelector
+                value={returnTime}
+                onChange={setReturnTime}
+              />
+            </div>
+          </div>
         )}
       </div>
 
       <Button 
         onClick={handleBooking} 
-        className="w-full py-6 rounded-lg mt-4 bg-[#F8D748] hover:bg-[#F8D748]/90 text-black text-lg font-medium"
+        className="w-full py-6 rounded-lg mt-6 bg-[#F8D748] hover:bg-[#F8D748]/90 text-black text-lg font-medium transition-all duration-300 shadow-md hover:shadow-lg"
       >
         <span className="relative z-10 flex items-center justify-center">
           Buscar
         </span>
       </Button>
 
-      {bookingData && (
+      {bookingData && showBookingSteps && (
         <BookingSteps
-          bookingData={bookingData}
+          bookingData={{
+            origin: originValue,
+            destination: destinationValue,
+            date: date,
+            returnDate: returnDate,
+            tripType: tripType,
+            passengers: bookingData.passengers,
+            time: time,
+            returnTime: returnTime
+          }}
           isOpen={showBookingSteps}
           onClose={() => setShowBookingSteps(false)}
         />
