@@ -12,20 +12,27 @@ export const useBookings = () => {
   const fetchBookings = async (): Promise<Booking[]> => {
     if (!user) return [];
     
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching bookings:', error);
-      toast.error('Erro ao carregar reservas', {
-        description: 'Ocorreu um erro ao buscar suas reservas. Tente novamente mais tarde.'
-      });
-      throw error;
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching bookings:', error);
+        toast.error('Erro ao carregar reservas', {
+          description: 'Ocorreu um erro ao buscar suas reservas. Tente novamente mais tarde.'
+        });
+        throw error;
+      }
+      
+      return data as Booking[];
+    } catch (error) {
+      console.error('Exception fetching bookings:', error);
+      toast.error('Erro ao carregar reservas');
+      return [];
     }
-    
-    return data as Booking[];
   };
   
   const { 
@@ -44,7 +51,8 @@ export const useBookings = () => {
       const { error } = await supabase
         .from('bookings')
         .update({ status: 'cancelled' })
-        .eq('id', bookingId);
+        .eq('id', bookingId)
+        .eq('user_id', user?.id);
       
       if (error) throw error;
       

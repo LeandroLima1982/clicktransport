@@ -1,15 +1,18 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { User, LogOut, Loader2, Car, Briefcase, Shield, LayoutDashboard, Book, Home, Settings, Users, Calendar, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/hooks/auth/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+
 interface UserMenuProps {
   user: any;
   userRole: UserRole;
   handleSignOut: () => Promise<void>;
   isAuthenticating: boolean;
 }
+
 const UserMenu: React.FC<UserMenuProps> = ({
   user,
   userRole,
@@ -56,6 +59,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
         </Link>
       </>;
   }
+  
   return <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="rounded-full px-4 btn-hover-slide flex items-center gap-2">
@@ -176,4 +180,5 @@ const UserMenu: React.FC<UserMenuProps> = ({
       </DropdownMenuContent>
     </DropdownMenu>;
 };
+
 export default UserMenu;

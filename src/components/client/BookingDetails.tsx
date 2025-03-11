@@ -2,36 +2,46 @@
 import React from 'react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, MapPin, Clock, Users, Car, CreditCard, FileText } from 'lucide-react';
-import { Booking } from '@/types/booking';
-import BookingStatus from './BookingStatus';
-import { Button } from '@/components/ui/button';
-import {
+import { 
+  Calendar, 
+  Clock, 
+  MapPin, 
+  Car, 
+  CreditCard,
+  X,
+  User
+} from 'lucide-react';
+import { 
   Sheet,
-  SheetClose,
   SheetContent,
-  SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
+  SheetClose,
+  SheetFooter
 } from "@/components/ui/sheet";
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import BookingStatus from './BookingStatus';
+import { Booking } from '@/types/booking';
 
 interface BookingDetailsProps {
   booking: Booking;
   isOpen: boolean;
   onClose: () => void;
-  onCancel: (id: string) => Promise<boolean>;
+  onCancel: (bookingId: string) => Promise<boolean>;
 }
 
-const BookingDetails: React.FC<BookingDetailsProps> = ({ 
-  booking, 
-  isOpen, 
-  onClose, 
-  onCancel 
+const BookingDetails: React.FC<BookingDetailsProps> = ({
+  booking,
+  isOpen,
+  onClose,
+  onCancel
 }) => {
+  const [isCancelling, setIsCancelling] = React.useState(false);
+  
   const formatDate = (dateString: string) => {
     try {
-      return format(parseISO(dateString), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+      return format(parseISO(dateString), "dd 'de' MMMM, yyyy", { locale: ptBR });
     } catch (e) {
       return dateString;
     }
@@ -46,131 +56,143 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
   };
   
   const handleCancel = async () => {
-    if (window.confirm('Tem certeza que deseja cancelar esta reserva?')) {
+    if (booking.status === 'cancelled' || booking.status === 'completed') {
+      return;
+    }
+    
+    setIsCancelling(true);
+    try {
       const success = await onCancel(booking.id);
-      if (success) onClose();
+      if (success) {
+        onClose();
+      }
+    } finally {
+      setIsCancelling(false);
     }
   };
   
-  const canBeCancelled = ['confirmed', 'pending'].includes(booking.status);
-  
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="sm:max-w-md">
+      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader className="mb-4">
-          <SheetTitle className="text-xl flex items-center justify-between">
-            <span>Reserva {booking.reference_code}</span>
-            <BookingStatus status={booking.status} />
-          </SheetTitle>
-          <SheetDescription>
-            Detalhes completos da sua reserva
-          </SheetDescription>
+          <SheetTitle className="text-xl">Detalhes da Reserva</SheetTitle>
+          <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Fechar</span>
+          </SheetClose>
         </SheetHeader>
         
-        <div className="space-y-5 py-2">
-          <div className="space-y-1">
-            <div className="flex items-center text-muted-foreground text-sm">
-              <CreditCard className="h-4 w-4 mr-2" />
-              Valor Total
+        <div className="space-y-6">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-lg">Código</h3>
+              <BookingStatus status={booking.status} />
             </div>
-            <div className="text-xl font-semibold">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(booking.total_price)}
+            <p className="text-lg font-mono">{booking.reference_code}</p>
+            <p className="text-sm text-muted-foreground">
+              Reserva feita em {formatDate(booking.booking_date)}
+            </p>
+          </div>
+          
+          <Separator />
+          
+          <div>
+            <h3 className="font-semibold mb-2 flex items-center">
+              <Calendar className="h-4 w-4 mr-2" />
+              Data e Hora
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Ida</p>
+                <p className="font-medium">{formatDate(booking.travel_date)}</p>
+                <p className="text-sm">{formatTime(booking.travel_date)}</p>
+              </div>
+              
+              {booking.return_date && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Volta</p>
+                  <p className="font-medium">{formatDate(booking.return_date)}</p>
+                  <p className="text-sm">{formatTime(booking.return_date)}</p>
+                </div>
+              )}
             </div>
           </div>
           
-          <div className="space-y-1">
-            <div className="flex items-center text-muted-foreground text-sm">
-              <CalendarIcon className="h-4 w-4 mr-2" />
-              Data da Viagem
-            </div>
-            <div className="font-medium">
-              {formatDate(booking.travel_date)} às {formatTime(booking.travel_date)}
-            </div>
-          </div>
+          <Separator />
           
-          {booking.return_date && (
-            <div className="space-y-1">
-              <div className="flex items-center text-muted-foreground text-sm">
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                Data de Retorno
-              </div>
-              <div className="font-medium">
-                {formatDate(booking.return_date)} às {formatTime(booking.return_date)}
-              </div>
-            </div>
-          )}
-          
-          <div className="space-y-1">
-            <div className="flex items-center text-muted-foreground text-sm">
+          <div>
+            <h3 className="font-semibold mb-2 flex items-center">
               <MapPin className="h-4 w-4 mr-2" />
-              Origem
-            </div>
-            <div className="font-medium">
-              {booking.origin}
+              Trajeto
+            </h3>
+            <div className="space-y-2">
+              <div>
+                <p className="text-sm text-muted-foreground">Origem</p>
+                <p>{booking.origin}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Destino</p>
+                <p>{booking.destination}</p>
+              </div>
             </div>
           </div>
           
-          <div className="space-y-1">
-            <div className="flex items-center text-muted-foreground text-sm">
-              <MapPin className="h-4 w-4 mr-2" />
-              Destino
-            </div>
-            <div className="font-medium">
-              {booking.destination}
-            </div>
-          </div>
+          <Separator />
           
-          {booking.vehicle_type && (
-            <div className="space-y-1">
-              <div className="flex items-center text-muted-foreground text-sm">
-                <Car className="h-4 w-4 mr-2" />
-                Tipo de Veículo
+          <div>
+            <h3 className="font-semibold mb-2 flex items-center">
+              <Car className="h-4 w-4 mr-2" />
+              Detalhes do Serviço
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Tipo de Veículo</p>
+                <p>{booking.vehicle_type || "Não especificado"}</p>
               </div>
-              <div className="font-medium">
-                {booking.vehicle_type}
+              <div>
+                <p className="text-sm text-muted-foreground">Passageiros</p>
+                <p>{booking.passengers || 1}</p>
               </div>
-            </div>
-          )}
-          
-          <div className="space-y-1">
-            <div className="flex items-center text-muted-foreground text-sm">
-              <Users className="h-4 w-4 mr-2" />
-              Passageiros
-            </div>
-            <div className="font-medium">
-              {booking.passengers || 1}
             </div>
           </div>
           
           {booking.additional_notes && (
-            <div className="space-y-1">
-              <div className="flex items-center text-muted-foreground text-sm">
-                <FileText className="h-4 w-4 mr-2" />
-                Observações
+            <>
+              <Separator />
+              <div>
+                <h3 className="font-semibold mb-2">Observações</h3>
+                <p className="text-sm">{booking.additional_notes}</p>
               </div>
-              <div className="font-medium">
-                {booking.additional_notes}
-              </div>
-            </div>
+            </>
           )}
+          
+          <Separator />
+          
+          <div>
+            <h3 className="font-semibold mb-2 flex items-center">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Pagamento
+            </h3>
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-muted-foreground">Valor Total</p>
+              <p className="text-lg font-semibold">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(booking.total_price)}
+              </p>
+            </div>
+          </div>
         </div>
         
         <SheetFooter className="mt-6">
-          <div className="flex w-full space-x-2">
-            <SheetClose asChild>
-              <Button className="flex-1" variant="outline">Fechar</Button>
-            </SheetClose>
-            
-            {canBeCancelled && (
-              <Button 
-                className="flex-1" 
-                variant="destructive"
-                onClick={handleCancel}
-              >
-                Cancelar Reserva
-              </Button>
-            )}
-          </div>
+          {booking.status !== 'cancelled' && booking.status !== 'completed' && (
+            <Button 
+              variant="destructive" 
+              onClick={handleCancel}
+              disabled={isCancelling}
+              className="w-full"
+            >
+              {isCancelling ? "Cancelando..." : "Cancelar Reserva"}
+            </Button>
+          )}
         </SheetFooter>
       </SheetContent>
     </Sheet>
