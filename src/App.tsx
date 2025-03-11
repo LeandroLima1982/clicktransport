@@ -1,8 +1,10 @@
+
 // Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
 import { Toaster } from 'sonner';
 import { useAuth } from './hooks/useAuth';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Import pages and components
 import Index from './pages/Index';
@@ -34,6 +36,9 @@ import Profile from './pages/client/Profile';
 import PaymentMethods from './pages/client/PaymentMethods';
 
 import './App.css';
+
+// Create a client
+const queryClient = new QueryClient();
 
 // Enhanced Protected Route component with strict role checking
 const ProtectedRoute = ({ 
@@ -140,97 +145,99 @@ const HomeRedirect = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public routes with special handling for logged in users */}
-          <Route path="/" element={<HomeRedirect />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/admin/create" element={<CreateAdmin />} />
-          
-          {/* Dashboard redirect based on role */}
-          <Route path="/dashboard" element={<RoleBasedRedirect />} />
-          
-          {/* Admin routes - strictly for admin users */}
-          <Route path="/admin/dashboard" element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/database-setup" element={
-            <ProtectedRoute requiredRole="admin">
-              <DatabaseSetup />
-            </ProtectedRoute>
-          } />
-          
-          {/* Company routes - strictly for company users */}
-          <Route path="/company/dashboard" element={
-            <ProtectedRoute requiredRole="company">
-              <CompanyDashboard />
-            </ProtectedRoute>
-          } />
-          
-          {/* Driver routes - strictly for driver users */}
-          <Route path="/driver/dashboard" element={
-            <ProtectedRoute requiredRole="driver">
-              <DriverDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/driver/assignments" element={
-            <ProtectedRoute requiredRole="driver">
-              <DriverAssignments />
-            </ProtectedRoute>
-          } />
-          <Route path="/driver/trips" element={
-            <ProtectedRoute requiredRole="driver">
-              <DriverTrips />
-            </ProtectedRoute>
-          } />
-          <Route path="/driver/schedule" element={
-            <ProtectedRoute requiredRole="driver">
-              <DriverSchedule />
-            </ProtectedRoute>
-          } />
-          <Route path="/driver/navigation" element={
-            <ProtectedRoute requiredRole="driver">
-              <DriverNavigation />
-            </ProtectedRoute>
-          } />
-          <Route path="/driver/profile" element={
-            <ProtectedRoute requiredRole="driver">
-              <DriverProfile />
-            </ProtectedRoute>
-          } />
-          <Route path="/driver/settings" element={
-            <ProtectedRoute requiredRole="driver">
-              <DriverSettings />
-            </ProtectedRoute>
-          } />
-          
-          {/* Client routes - strictly for client users */}
-          <Route path="/bookings" element={
-            <ProtectedRoute requiredRole="client">
-              <Bookings />
-            </ProtectedRoute>
-          } />
-          <Route path="/profile" element={
-            <ProtectedRoute requiredRole="client">
-              <Profile />
-            </ProtectedRoute>
-          } />
-          <Route path="/payment-methods" element={
-            <ProtectedRoute requiredRole="client">
-              <PaymentMethods />
-            </ProtectedRoute>
-          } />
-          
-          {/* 404 route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster richColors position="top-right" />
-      </BrowserRouter>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public routes with special handling for logged in users */}
+            <Route path="/" element={<HomeRedirect />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/admin/create" element={<CreateAdmin />} />
+            
+            {/* Dashboard redirect based on role */}
+            <Route path="/dashboard" element={<RoleBasedRedirect />} />
+            
+            {/* Admin routes - strictly for admin users */}
+            <Route path="/admin/dashboard" element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/database-setup" element={
+              <ProtectedRoute requiredRole="admin">
+                <DatabaseSetup />
+              </ProtectedRoute>
+            } />
+            
+            {/* Company routes - strictly for company users */}
+            <Route path="/company/dashboard" element={
+              <ProtectedRoute requiredRole="company">
+                <CompanyDashboard />
+              </ProtectedRoute>
+            } />
+            
+            {/* Driver routes - strictly for driver users */}
+            <Route path="/driver/dashboard" element={
+              <ProtectedRoute requiredRole="driver">
+                <DriverDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/driver/assignments" element={
+              <ProtectedRoute requiredRole="driver">
+                <DriverAssignments />
+              </ProtectedRoute>
+            } />
+            <Route path="/driver/trips" element={
+              <ProtectedRoute requiredRole="driver">
+                <DriverTrips />
+              </ProtectedRoute>
+            } />
+            <Route path="/driver/schedule" element={
+              <ProtectedRoute requiredRole="driver">
+                <DriverSchedule />
+              </ProtectedRoute>
+            } />
+            <Route path="/driver/navigation" element={
+              <ProtectedRoute requiredRole="driver">
+                <DriverNavigation />
+              </ProtectedRoute>
+            } />
+            <Route path="/driver/profile" element={
+              <ProtectedRoute requiredRole="driver">
+                <DriverProfile />
+              </ProtectedRoute>
+            } />
+            <Route path="/driver/settings" element={
+              <ProtectedRoute requiredRole="driver">
+                <DriverSettings />
+              </ProtectedRoute>
+            } />
+            
+            {/* Client routes - strictly for client users */}
+            <Route path="/bookings" element={
+              <ProtectedRoute requiredRole="client">
+                <Bookings />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute requiredRole="client">
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/payment-methods" element={
+              <ProtectedRoute requiredRole="client">
+                <PaymentMethods />
+              </ProtectedRoute>
+            } />
+            
+            {/* 404 route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster richColors position="top-right" />
+        </BrowserRouter>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
