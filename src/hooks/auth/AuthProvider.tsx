@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, ReactNode } from 'react';
 import { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '../../main';
@@ -17,7 +16,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [logoutInProgress, setLogoutInProgress] = useState(false);
   const [authInitialized, setAuthInitialized] = useState(false);
   
-  // Add a safety timeout to prevent infinite loading state
   useEffect(() => {
     const safetyTimeout = setTimeout(() => {
       if (isLoading) {
@@ -25,7 +23,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
         setAuthInitialized(true);
       }
-    }, 5000); // 5 second maximum loading time
+    }, 5000);
     
     return () => clearTimeout(safetyTimeout);
   }, [isLoading]);
@@ -33,12 +31,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
     
-    // Get initial session
     const initAuth = async () => {
       try {
         console.log('Initializing auth...');
         
-        // Get session first
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -58,7 +54,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(session);
           setUser(session.user);
           
-          // Fetch user role from profiles table
           try {
             console.log('Fetching initial user role...');
             const role = await fetchUserRole(session.user.id);
@@ -68,12 +63,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUserRole(role);
           } catch (roleError) {
             console.error('Error fetching initial user role:', roleError);
-            // Don't block the app on role fetch failures
             if (!mounted) return;
             setUserRole(null);
           }
         } else {
-          // No session exists
           setSession(null);
           setUser(null);
           setUserRole(null);
@@ -82,7 +75,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error('Error initializing auth:', error);
         if (!mounted) return;
         
-        // Reset states on error for safety
         setSession(null);
         setUser(null);
         setUserRole(null);
@@ -97,7 +89,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     initAuth();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, currentSession: Session | null) => {
         console.log('Auth state changed:', event);
@@ -115,11 +106,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
         
-        // Update session and user
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        // For SIGNED_IN events, fetch the user role
         if (event === 'SIGNED_IN' && currentSession?.user) {
           setIsLoading(true);
           
@@ -142,7 +131,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           }
         } else {
-          // For other events, just update loading state
           setIsLoading(false);
         }
       }
@@ -154,25 +142,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  // Enhanced signOut function that clears user state and handles errors
   const handleSignOut = async () => {
     try {
       setLogoutInProgress(true);
       console.log('Logout initiated...');
       
-      // Set a timeout to ensure the loading state doesn't get stuck
       const timeoutId = setTimeout(() => {
         console.log('Logout timeout triggered - forcing reset of loading state');
         setLogoutInProgress(false);
-        // Clear user state as a fallback
         setUser(null);
         setSession(null);
         setUserRole(null);
-      }, 5000); // 5 seconds timeout
+      }, 5000);
       
       const result = await signOut();
       
-      // Clear the timeout if we get a response
       clearTimeout(timeoutId);
       
       if (result.error) {
@@ -184,7 +168,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return result;
       }
       
-      // Clear local state immediately, don't wait for the auth state change event
       console.log('Logout successful, clearing user state immediately');
       setUser(null);
       setSession(null);
@@ -215,8 +198,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     userRole,
   };
 
-  // Only render children once auth is initialized
-  // But with a fallback to ensure we don't block the app
   if (!authInitialized && isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
