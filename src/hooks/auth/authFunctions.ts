@@ -108,7 +108,7 @@ export const signIn = async (email: string, password: string, companyId?: string
           const { data: isValid, error: validationError } = await supabase
             .rpc('validate_driver_company_association', { 
               _email: email,
-              _company_id: companyId 
+              _company_id: companyId as string
             });
           
           if (validationError || !isValid) {
@@ -138,9 +138,7 @@ export const signIn = async (email: string, password: string, companyId?: string
               // Update the driver using status as a safe field
               const { error: updateError } = await supabase
                 .from('drivers')
-                .update({ 
-                  status: 'active' // Just update the status as a way to track login
-                })
+                .update({ last_login: new Date().toISOString() })
                 .eq('id', driverData.id);
                 
               if (updateError) {

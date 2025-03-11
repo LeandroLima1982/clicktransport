@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -101,8 +100,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
         
         if (driversError) throw driversError;
         
-        // Transform the data to match our Driver interface
-        // This ensures that if fields don't exist in DB, we still have them as null
         const formattedDrivers: Driver[] = (driversData || []).map(driver => ({
           id: driver.id || '',
           name: driver.name || '',
@@ -195,7 +192,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
         
         toast.success('Motorista atualizado com sucesso');
       } else {
-        // Simple editing without auth integration is kept for backward compat
         const { error } = await supabase
           .from('drivers')
           .insert([
@@ -249,7 +245,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
   const handleSendPasswordReminder = async (driverId: string) => {
     setSendingReminder(driverId);
     try {
-      // Get driver info
       const { data: driver, error: driverError } = await supabase
         .from('drivers')
         .select('*')
@@ -260,20 +255,15 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
         throw new Error('Erro ao encontrar dados do motorista');
       }
       
-      // In a production app, you would send an email here
-      // For now, just show a toast message
       toast.success(`Lembrete enviado para ${driver.name}`, {
         description: `Um email foi enviado para ${driver.email} com instruções para alteração de senha.`
       });
       
-      // Use a timestamp field that actually exists in the database schema
-      // We're using last_login as a workaround for tracking when reminders were sent
       try {
         const { error: updateError } = await supabase
           .from('drivers')
           .update({ 
-            // Use this only if last_login exists in the database schema
-            status: driver.status // Update status to itself to register a change
+            status: driver.status
           })
           .eq('id', driverId);
           
@@ -366,7 +356,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
         </Sheet>
       </div>
       
-      {/* Confirmation Dialog for Delete */}
       <Dialog open={!!driverToDelete} onOpenChange={(open) => !open && setDriverToDelete(null)}>
         <DialogContent>
           <DialogHeader>
