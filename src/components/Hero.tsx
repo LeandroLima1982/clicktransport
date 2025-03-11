@@ -6,7 +6,7 @@ const Hero: React.FC = () => {
   return <section className="relative min-h-[calc(100vh-80px)] flex items-center w-full mx-0 px-0 py-0 bg-gray-50">
       <div className="absolute inset-0 bg-[#F8D748] -z-10" />
       
-      <div className="w-full py-[10px] md:py-0 mx-0 my-[60px] md:my-[80px]">
+      <div className="w-full py-[10px] md:py-0 mx-0 my-[60px] md:my-[111px]">
         <div className="max-w-3xl mx-auto text-center mb-8 px-4">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 animate-fade-in text-black">
             <span className="block mb-2 text-zinc-700 my-[28px] mx-[48px]">Transporte executivo</span>
