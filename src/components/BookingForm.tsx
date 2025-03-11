@@ -6,7 +6,6 @@ import { useBookingForm } from '@/hooks/useBookingForm';
 import LocationInput from './booking/LocationInput';
 import DateSelector from './booking/DateSelector';
 import TripTypeTabs from './booking/TripTypeTabs';
-import { Clock } from 'lucide-react';
 import TimeSelector from './TimeSelector';
 
 const BookingForm: React.FC = () => {

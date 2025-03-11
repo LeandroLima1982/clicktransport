@@ -135,6 +135,8 @@ export const useBookingForm = () => {
     setTripType,
     setDate,
     setReturnDate,
+    setTime,         // Added explicitly to match what's used in BookingForm
+    setReturnTime,   // Added explicitly to match what's used in BookingForm
     handleOriginChange,
     handleDestinationChange,
     selectSuggestion,
