@@ -7,6 +7,7 @@ import LocationInput from './booking/LocationInput';
 import DateSelector from './booking/DateSelector';
 import TripTypeTabs from './booking/TripTypeTabs';
 import TimeSelector from './TimeSelector';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const BookingForm: React.FC = () => {
   const {
@@ -32,10 +33,12 @@ const BookingForm: React.FC = () => {
     setShowBookingSteps,
     bookingData
   } = useBookingForm();
+  
+  const isMobile = useIsMobile();
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between mb-4">
+      <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'items-center justify-between'} mb-4`}>
         <h3 className="text-xl font-bold text-gray-800">Qual seu destino?</h3>
         <TripTypeTabs 
           value={tripType}
