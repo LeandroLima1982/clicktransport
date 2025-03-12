@@ -28,7 +28,7 @@ export const useServiceOrderSubscription = (
           if (payload.eventType === 'INSERT' && 
               (payload.new.status === 'assigned' || payload.new.driver_id === driverId)) {
             playNotificationSound();
-            showAssignmentNotification(payload.new);
+            showAssignmentNotification(payload.new as ServiceOrder);
             onNotification(payload);
           }
           
@@ -37,7 +37,7 @@ export const useServiceOrderSubscription = (
               payload.old.driver_id !== payload.new.driver_id && 
               payload.new.driver_id === driverId) {
             playNotificationSound();
-            showAssignmentNotification(payload.new);
+            showAssignmentNotification(payload.new as ServiceOrder);
             onNotification(payload);
           }
           
@@ -46,7 +46,7 @@ export const useServiceOrderSubscription = (
               payload.old.status !== 'assigned' && 
               payload.new.status === 'assigned') {
             playNotificationSound();
-            showAssignmentNotification(payload.new);
+            showAssignmentNotification(payload.new as ServiceOrder);
             onNotification(payload);
           }
         }

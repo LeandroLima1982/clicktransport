@@ -72,9 +72,9 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     console.log('Service order created successfully:', data);
     
     // Notify company about the new order (this will be picked up by real-time subscriptions)
-    await notifyCompanyAboutNewOrder(companyId, data);
+    await notifyCompanyAboutNewOrder(companyId, data as ServiceOrder);
     
-    return { serviceOrder: data, error: null };
+    return { serviceOrder: data as ServiceOrder, error: null };
   } catch (error) {
     console.error('Error creating service order from booking:', error);
     return { serviceOrder: null, error };
@@ -127,7 +127,7 @@ export const assignServiceOrderToDriver = async (orderId: string, driverId: stri
     if (error) throw error;
     
     console.log('Service order assigned successfully:', data);
-    return { updated: data, error: null };
+    return { updated: data as ServiceOrder, error: null };
   } catch (error) {
     console.error('Error assigning service order to driver:', error);
     return { updated: null, error };
@@ -147,7 +147,7 @@ export const getCompanyServiceOrders = async (companyId: string) => {
     
     if (error) throw error;
     
-    return { orders: data, error: null };
+    return { orders: data as ServiceOrder[], error: null };
   } catch (error) {
     console.error('Error fetching company service orders:', error);
     return { orders: [], error };
