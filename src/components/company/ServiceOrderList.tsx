@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -112,7 +111,12 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
       if (driversResponse.error) throw driversResponse.error;
       if (vehiclesResponse.error) throw vehiclesResponse.error;
       
-      setOrders(ordersResponse.data || []);
+      const typedOrders = (ordersResponse.data || []).map(order => ({
+        ...order,
+        status: order.status as ServiceOrder['status'] 
+      }));
+      
+      setOrders(typedOrders);
       setDrivers(driversResponse.data || []);
       setVehicles(vehiclesResponse.data || []);
     } catch (error) {

@@ -57,7 +57,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       destination: booking.destination,
       pickup_date: booking.travel_date,
       delivery_date: booking.return_date || null,
-      status: 'pending',
+      status: 'pending' as const,
       notes: `Reserva #${booking.reference_code} - ${booking.additional_notes || 'Sem observações'}`,
     };
     
@@ -92,7 +92,6 @@ const notifyCompanyAboutNewOrder = async (companyId: string, serviceOrder: Servi
     const { error } = await supabase
       .from('service_orders')
       .update({ 
-        updated_at: new Date().toISOString(),
         // Add a notification flag that can be read by the company
         notification_sent: true 
       })
@@ -119,8 +118,7 @@ export const assignServiceOrderToDriver = async (orderId: string, driverId: stri
       .from('service_orders')
       .update({ 
         driver_id: driverId,
-        status: 'assigned',
-        updated_at: new Date().toISOString()
+        status: 'assigned' as const
       })
       .eq('id', orderId)
       .select()

@@ -73,10 +73,7 @@ export const useServiceOrders = (driverId: string | null) => {
           event: '*',
           schema: 'public',
           table: 'service_orders',
-          or: [
-            `driver_id=eq.${driverId}`,
-            `status=eq.pending,driver_id=is.null`
-          ]
+          filter: `driver_id=eq.${driverId}`
         },
         (payload) => {
           console.log('Service order change detected:', payload);
@@ -98,8 +95,27 @@ export const useServiceOrders = (driverId: string | null) => {
       )
       .subscribe();
 
+    // Also subscribe to pending orders (for orders that might become available)
+    const pendingChannel = supabase
+      .channel('pending_service_orders')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'service_orders',
+          filter: `status=eq.pending,driver_id=is.null`
+        },
+        () => {
+          // Refresh orders list when new pending orders appear
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(pendingChannel);
     };
   }, [driverId, fetchOrders]);
 
@@ -118,7 +134,10 @@ export const useServiceOrders = (driverId: string | null) => {
     try {
       const { data, error: updateError } = await supabase
         .from('service_orders')
-        .update({ driver_id: driverId, status: 'assigned', updated_at: new Date().toISOString() })
+        .update({ 
+          driver_id: driverId, 
+          status: 'assigned' as const
+        })
         .eq('id', orderId)
         .select()
         .single();
@@ -153,7 +172,7 @@ export const useServiceOrders = (driverId: string | null) => {
     try {
       const { data, error: updateError } = await supabase
         .from('service_orders')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .update({ status: newStatus })
         .eq('id', orderId)
         .select()
         .single();

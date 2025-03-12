@@ -6,6 +6,13 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { calculateRoute, calculateTripPrice, RouteInfo } from '@/utils/routeUtils';
 import { createBooking, createServiceOrderFromBooking } from '@/services/booking/bookingService';
+import VehicleSelection, { Vehicle } from './steps/VehicleSelection';
+import TripDetails from './steps/TripDetails';
+import PaymentSelection from './steps/PaymentSelection';
+import BookingConfirmation from './steps/BookingConfirmation';
+import LoginForm from './LoginForm';
+import RegisterForm from './RegisterForm';
+import BookingComplete from './steps/BookingComplete';
 
 const vehicleOptions: Vehicle[] = [
   {
@@ -172,6 +179,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     
     try {
       const reference = 'TRF-' + Math.floor(100000 + Math.random() * 900000);
+      const selectedVehicleDetails = vehicleOptions.find(v => v.id === selectedVehicle);
       
       const bookingObject = {
         reference_code: reference,
@@ -183,7 +191,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
         total_price: totalPrice,
         passengers: parseInt(bookingData.passengers),
         vehicle_type: selectedVehicleDetails?.name || '',
-        status: 'confirmed',
+        status: 'confirmed' as const,
         user_id: user?.id || '',
         additional_notes: `${bookingData.time ? 'Horário ida: ' + bookingData.time : ''} 
                           ${bookingData.returnTime ? 'Horário volta: ' + bookingData.returnTime : ''}`

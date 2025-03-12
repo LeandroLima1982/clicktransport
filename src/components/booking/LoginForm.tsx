@@ -2,10 +2,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { LogIn, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft } from 'lucide-react';
+import { z } from 'zod';
+import { toast } from 'sonner';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -16,96 +17,138 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
   const { signIn } = useAuth();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const schema = z.object({
+    email: z.string().email({ message: 'Email inválido' }),
+    password: z.string().min(6, { message: 'Senha deve ter pelo menos 6 caracteres' }),
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      toast.error('Por favor, preencha todos os campos');
-      return;
-    }
-    
-    setIsLoading(true);
-    
     try {
-      const { error } = await signIn(email, password);
+      const validatedData = schema.parse({ email, password });
+      setIsLoading(true);
+      
+      const { user, error } = await signIn(validatedData.email, validatedData.password);
       
       if (error) {
-        toast.error('Erro ao fazer login: ' + error.message);
-      } else {
-        toast.success('Login realizado com sucesso!');
+        console.error('Login error:', error);
+        toast.error('Erro ao fazer login', { 
+          description: error.message === 'Invalid login credentials'
+            ? 'Email ou senha incorretos'
+            : error.message
+        });
+        return;
+      }
+      
+      if (user) {
+        toast.success('Login realizado com sucesso');
         onLoginSuccess();
       }
     } catch (error) {
-      toast.error('Ocorreu um erro durante o login');
-      console.error('Login error:', error);
+      if (error instanceof z.ZodError) {
+        const fieldErrors = error.flatten().fieldErrors;
+        Object.values(fieldErrors).forEach(messages => {
+          if (messages && messages.length > 0) {
+            toast.error(messages[0]);
+          }
+        });
+      } else {
+        console.error('Unexpected login error:', error);
+        toast.error('Erro ao fazer login');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
-          <LogIn className="w-8 h-8" />
-        </div>
-        <h3 className="text-xl font-bold">Faça login para continuar</h3>
-        <p className="text-gray-500 mt-2">
-          Para finalizar sua reserva, é necessário fazer login
+    <div className="space-y-6 py-4">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Faça login para continuar</h2>
+        <p className="text-muted-foreground mt-2">
+          Entre com sua conta para confirmar sua reserva
         </p>
       </div>
       
-      <form onSubmit={handleLogin} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Email
+          </label>
           <Input
             id="email"
             type="email"
             placeholder="seu@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            disabled={isLoading}
             required
           />
         </div>
+        
         <div className="space-y-2">
-          <Label htmlFor="password">Senha</Label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Senha
+            </label>
+            <a href="#" className="text-sm text-primary hover:underline">
+              Esqueceu a senha?
+            </a>
+          </div>
           <Input
             id="password"
             type="password"
-            placeholder="********"
+            placeholder="Sua senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            disabled={isLoading}
             required
           />
         </div>
         
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Entrando...
-            </>
-          ) : (
-            'Entrar'
-          )}
+          {isLoading ? 'Entrando...' : 'Entrar'}
         </Button>
-        
-        <div className="text-center text-sm text-gray-500 mt-4">
-          <p>
-            Não tem uma conta?{' '}
-            <button
-              type="button"
-              onClick={onShowRegister}
-              className="text-primary hover:underline"
-            >
-              Registre-se
-            </button>
-          </p>
-        </div>
       </form>
+      
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <Separator />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Ou
+          </span>
+        </div>
+      </div>
+      
+      <div className="text-center space-y-4">
+        <p className="text-sm">
+          Não tem uma conta?{' '}
+          <button
+            type="button"
+            onClick={onShowRegister}
+            className="text-primary hover:underline font-medium"
+          >
+            Cadastre-se
+          </button>
+        </p>
+        
+        <Button 
+          variant="outline" 
+          type="button" 
+          className="flex items-center w-full"
+          onClick={() => window.history.back()}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar
+        </Button>
+      </div>
     </div>
   );
 };

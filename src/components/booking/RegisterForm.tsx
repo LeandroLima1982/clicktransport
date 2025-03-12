@@ -2,10 +2,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { UserPlus, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft } from 'lucide-react';
+import { z } from 'zod';
+import { toast } from 'sonner';
 
 interface RegisterFormProps {
   onRegisterSuccess: () => void;
@@ -13,180 +14,179 @@ interface RegisterFormProps {
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLogin }) => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const { signUp, signIn } = useAuth();
+  const { signUp } = useAuth();
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const schema = z.object({
+    fullName: z.string().min(3, { message: 'Nome completo deve ter pelo menos 3 caracteres' }),
+    email: z.string().email({ message: 'Email inválido' }),
+    password: z.string().min(6, { message: 'Senha deve ter pelo menos 6 caracteres' }),
+    confirmPassword: z.string(),
+  }).refine(data => data.password === data.confirmPassword, {
+    message: 'As senhas não conferem',
+    path: ['confirmPassword'],
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    
-    if (!email || !password || !firstName || !lastName) {
-      setError('Por favor, preencha todos os campos obrigatórios');
-      setIsLoading(false);
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem');
-      setIsLoading(false);
-      return;
-    }
     
     try {
-      // Always register as client when from booking flow
-      const userData = {
-        accountType: 'client', // Force client role
-        firstName,
-        lastName,
-        phone
-      };
+      const validatedData = schema.parse({ fullName, email, password, confirmPassword });
+      setIsLoading(true);
       
-      console.log('Registering client account with data:', userData);
+      const { user, error } = await signUp(validatedData.email, validatedData.password, {
+        full_name: validatedData.fullName,
+        role: 'client'
+      });
       
-      const { error: signUpError } = await signUp(email, password, userData);
-      
-      if (signUpError) {
-        setError(signUpError.message);
-      } else {
-        toast.success('Cadastro realizado com sucesso!');
-        const { error: loginError } = await signIn(email, password);
-        
-        if (!loginError) {
-          onRegisterSuccess();
+      if (error) {
+        console.error('Registration error:', error);
+        if (error.message.includes('Email already registered')) {
+          toast.error('Email já registrado');
         } else {
-          toast.info('Por favor, faça login com suas credenciais');
+          toast.error('Erro ao criar conta', { description: error.message });
         }
+        return;
       }
-    } catch (err: any) {
-      setError(err.message || 'Erro ao criar conta');
+      
+      if (user) {
+        toast.success('Conta criada com sucesso', { 
+          description: 'Bem-vindo ao nosso serviço de transporte executivo!'
+        });
+        onRegisterSuccess();
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors = error.flatten().fieldErrors;
+        Object.values(fieldErrors).forEach(messages => {
+          if (messages && messages.length > 0) {
+            toast.error(messages[0]);
+          }
+        });
+      } else {
+        console.error('Unexpected registration error:', error);
+        toast.error('Erro ao criar conta');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
-          <UserPlus className="w-8 h-8" />
-        </div>
-        <h3 className="text-xl font-bold">Crie sua conta de cliente</h3>
-        <p className="text-gray-500 mt-2">
-          Registre-se como cliente para finalizar sua reserva
+    <div className="space-y-6 py-4">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Criar uma nova conta</h2>
+        <p className="text-muted-foreground mt-2">
+          Cadastre-se para reservar sua viagem
         </p>
       </div>
       
-      {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-          {error}
-        </div>
-      )}
-      
-      <form onSubmit={handleRegister} className="space-y-4 max-h-[55vh] overflow-y-auto pr-2">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="first-name">Nome</Label>
-            <Input
-              id="first-name"
-              placeholder="Seu nome"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="last-name">Sobrenome</Label>
-            <Input
-              id="last-name"
-              placeholder="Seu sobrenome"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              required
-            />
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="fullName" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Nome completo
+          </label>
+          <Input
+            id="fullName"
+            type="text"
+            placeholder="Seu nome completo"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            disabled={isLoading}
+            required
+          />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="register-email">Email</Label>
+          <label htmlFor="registerEmail" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Email
+          </label>
           <Input
-            id="register-email"
+            id="registerEmail"
             type="email"
             placeholder="seu@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            disabled={isLoading}
             required
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="phone">Telefone</Label>
+          <label htmlFor="registerPassword" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Senha
+          </label>
           <Input
-            id="phone"
-            placeholder="Seu telefone"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="register-password">Senha</Label>
-          <Input
-            id="register-password"
+            id="registerPassword"
             type="password"
-            placeholder="********"
+            placeholder="Crie uma senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            disabled={isLoading}
             required
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="confirm-password">Confirmar Senha</Label>
+          <label htmlFor="confirmPassword" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Confirmar senha
+          </label>
           <Input
-            id="confirm-password"
+            id="confirmPassword"
             type="password"
-            placeholder="********"
+            placeholder="Confirme sua senha"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
+            autoComplete="new-password"
+            disabled={isLoading}
             required
           />
         </div>
         
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Criando conta...
-            </>
-          ) : (
-            'Criar Conta de Cliente'
-          )}
+          {isLoading ? 'Criando conta...' : 'Criar conta'}
         </Button>
-        
-        <div className="text-center text-sm text-gray-500 mt-4">
-          <p>
-            Já tem uma conta?{' '}
-            <button
-              type="button"
-              onClick={onShowLogin}
-              className="text-primary hover:underline"
-            >
-              Faça login
-            </button>
-          </p>
-        </div>
       </form>
+      
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <Separator />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Ou
+          </span>
+        </div>
+      </div>
+      
+      <div className="text-center space-y-4">
+        <p className="text-sm">
+          Já tem uma conta?{' '}
+          <button
+            type="button"
+            onClick={onShowLogin}
+            className="text-primary hover:underline font-medium"
+          >
+            Faça login
+          </button>
+        </p>
+        
+        <Button 
+          variant="outline" 
+          type="button" 
+          className="flex items-center w-full"
+          onClick={() => window.history.back()}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar
+        </Button>
+      </div>
     </div>
   );
 };
