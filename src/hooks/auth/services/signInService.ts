@@ -1,8 +1,7 @@
-
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../../integrations/supabase/client';
 import { toast } from 'sonner';
-import { validateDriverAssociation, updateDriverLoginStatus, checkDriverPasswordChange, getDriverCompanyData } from './driver/driverAuthService';
+import { validateDriverAssociation, updateDriverLoginStatus, checkDriverPasswordChange } from './driver/driverAuthService';
 import { verifyAdminRole } from './admin/adminAuthService';
 import { verifyCompanyAdmin } from './company/companyAuthService';
 import { verifyUserRole } from './user/userRoleService';
@@ -91,7 +90,7 @@ export const signIn = async (email: string, password: string) => {
       }
       // For company role, verify company admin status
       else if (userRole === 'company') {
-        const companyId = localStorage.getItem('driverCompanyId'); // Use stored company ID
+        const companyId = localStorage.getItem('driverCompanyId');
         if (companyId) {
           const { isCompanyAdmin, error: companyError } = 
             await verifyCompanyAdmin(result.data.user.id, companyId);
