@@ -4,14 +4,13 @@ import { supabase } from '../../../../integrations/supabase/client';
 import { toast } from 'sonner';
 
 // Helper function to update driver login status
-export const updateDriverLoginStatus = async (email: string, companyId: string) => {
+export const updateDriverLoginStatus = async (email: string) => {
   try {
     // Safely check if the driver exists and can be updated
     const { data: driverData, error: driverFetchError } = await supabase
       .from('drivers')
       .select('id, status')
       .eq('email', email)
-      .eq('company_id', companyId)
       .maybeSingle();
       
     if (!driverFetchError && driverData) {
@@ -59,17 +58,16 @@ export const checkDriverPasswordChange = async (userId: string) => {
   }
 };
 
-// Validate if a driver is associated with a specific company
-export const validateDriverCompanyAssociation = async (email: string, companyId: string) => {
+// Validate if a driver exists in the system
+export const validateDriverAssociation = async (email: string) => {
   try {
-    console.log('Validating driver association:', email, 'for company:', companyId);
+    console.log('Validating driver association for:', email);
     
-    // First check if the driver exists and is active in this company
+    // Check if the driver exists and is active
     const { data: driverData, error: driverError } = await supabase
       .from('drivers')
-      .select('id, status')
+      .select('id, status, company_id, email')
       .eq('email', email)
-      .eq('company_id', companyId)
       .maybeSingle();
     
     if (driverError) {
@@ -78,11 +76,11 @@ export const validateDriverCompanyAssociation = async (email: string, companyId:
     }
     
     if (!driverData) {
-      console.error('Driver not found or not associated with this company');
+      console.error('Driver not found');
       return { 
         isValid: false, 
         error: new Error('Driver not found'),
-        message: 'Você não está registrado como motorista nesta empresa' 
+        message: 'Usuário não encontrado como motorista no sistema' 
       };
     }
     
@@ -94,16 +92,32 @@ export const validateDriverCompanyAssociation = async (email: string, companyId:
         message: 'Sua conta de motorista está inativa. Entre em contato com a empresa.' 
       };
     }
+
+    // If we get here, store the company ID for the session
+    if (driverData.company_id) {
+      localStorage.setItem('driverCompanyId', driverData.company_id);
+      
+      // Get company name to display in UI
+      const { data: companyData } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', driverData.company_id)
+        .single();
+        
+      if (companyData) {
+        localStorage.setItem('driverCompanyName', companyData.name);
+      }
+    }
     
-    // If we get here, the driver exists and is active in this company
-    console.log('Driver is valid and active in this company');
+    // Driver exists and is active
+    console.log('Driver is valid and active');
     return { isValid: true, error: null, message: null };
   } catch (err) {
-    console.error('Error validating driver company association:', err);
+    console.error('Error validating driver:', err);
     return { 
       isValid: false, 
       error: err as Error,
-      message: 'Erro ao validar associação com a empresa' 
+      message: 'Erro ao validar motorista' 
     };
   }
 };
