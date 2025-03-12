@@ -23,8 +23,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
-  const [companyError, setCompanyError] = useState<string | null>(null);
   const { signIn } = useAuth();
   const location = useLocation();
   
@@ -41,7 +39,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCompanyError(null);
     
     try {
       // Validate form
@@ -50,23 +47,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
         return;
       }
       
-      // If it's a driver login, require company selection
-      if (accountType === 'driver' && !selectedCompanyId) {
-        setCompanyError('Por favor, selecione uma empresa');
-        toast.error('Por favor, selecione uma empresa');
-        return;
-      }
-      
-      console.log(`Login attempt: ${accountType} with company ${selectedCompanyId}`);
+      console.log(`Login attempt: ${accountType}`);
       
       // Use the parent handleLogin if provided, otherwise use local logic
       if (handleLogin) {
         await handleLogin(e);
       } else {
-        // Only pass companyId for driver logins
-        const companyIdToUse = accountType === 'driver' ? selectedCompanyId : undefined;
-        
-        const { error } = await signIn(email, password, companyIdToUse);
+        const { error } = await signIn(email, password);
         if (error) {
           console.error('Login error:', error);
           if (error.message === 'You are not registered as a driver for this company') {
@@ -99,10 +86,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
             setEmail={setEmail}
             password={password}
             setPassword={setPassword}
-            selectedCompanyId={selectedCompanyId}
-            setSelectedCompanyId={setSelectedCompanyId}
             accountType={accountType}
-            companyError={companyError}
           />
         </CardContent>
         
@@ -110,7 +94,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
           <Button 
             type="submit" 
             className="w-full rounded-full" 
-            disabled={loading || (accountType === 'driver' && !selectedCompanyId)}
+            disabled={loading}
           >
             {loading ? (
               <>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -71,20 +70,9 @@ export const useAuthPage = () => {
     const email = (form.elements.namedItem('email') as HTMLInputElement).value;
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     
-    // Get company ID if applicable (required for driver logins only)
-    const companyIdElement = form.querySelector('[id="company-select"]') as HTMLSelectElement;
-    const companyId = (accountType === 'driver' && companyIdElement) ? companyIdElement.value : undefined;
-    
-    // Validate company selection for driver logins only
-    if (accountType === 'driver' && !companyId) {
-      setError('Por favor, selecione uma empresa para fazer login');
-      setLoading(false);
-      return;
-    }
-    
     try {
-      console.log(`Attempting login with accountType: ${accountType}, companyId: ${companyId}`);
-      const { error } = await signIn(email, password, companyId);
+      console.log(`Attempting login with accountType: ${accountType}`);
+      const { error } = await signIn(email, password);
       
       if (error) throw error;
       

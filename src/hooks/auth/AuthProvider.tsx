@@ -1,4 +1,3 @@
-
 import React, { createContext, useEffect, useState, useCallback } from 'react';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../integrations/supabase/client';
@@ -112,10 +111,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [getUserRole]);
   
   // Handle sign-in with wrapper function to manage loading state
-  const handleSignIn = async (email: string, password: string, companyId?: string) => {
+  const handleSignIn = async (email: string, password: string) => {
     try {
       setIsAuthenticating(true);
-      const result = await signIn(email, password, companyId);
+      const result = await signIn(email, password);
       
       if (!result.error) {
         toast.success('Login realizado com sucesso');
