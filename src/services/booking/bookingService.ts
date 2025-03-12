@@ -11,16 +11,22 @@ export const createBooking = async (bookingData: Omit<Booking, 'id' | 'created_a
   try {
     console.log('Creating new booking:', bookingData);
     
+    // Ensure status is of the correct type
+    const formattedData = {
+      ...bookingData,
+      status: bookingData.status as 'confirmed' | 'pending' | 'completed' | 'cancelled'
+    };
+    
     const { data, error } = await supabase
       .from('bookings')
-      .insert(bookingData)
+      .insert(formattedData)
       .select()
       .single();
     
     if (error) throw error;
     
     console.log('Booking created successfully:', data);
-    return { booking: data, error: null };
+    return { booking: data as Booking, error: null };
   } catch (error) {
     console.error('Error creating booking:', error);
     return { booking: null, error };
@@ -45,10 +51,12 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     
     if (!companies || companies.length === 0) {
       console.error('No active companies found to assign the order');
+      toast.error('Não foi possível encontrar uma empresa disponível para atribuir o pedido');
       return { serviceOrder: null, error: new Error('No active companies found') };
     }
     
     const companyId = companies[0].id;
+    console.log('Found company to assign order:', companyId);
     
     // Create service order with booking details
     const serviceOrderData = {
@@ -57,7 +65,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       destination: booking.destination,
       pickup_date: booking.travel_date,
       delivery_date: booking.return_date || null,
-      status: 'pending' as const,
+      status: 'pending' as 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled',
       notes: `Reserva #${booking.reference_code} - ${booking.additional_notes || 'Sem observações'}`,
     };
     
@@ -67,7 +75,10 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating service order:', error);
+      throw error;
+    }
     
     console.log('Service order created successfully:', data);
     
@@ -77,6 +88,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     return { serviceOrder: data as ServiceOrder, error: null };
   } catch (error) {
     console.error('Error creating service order from booking:', error);
+    toast.error('Erro ao criar ordem de serviço. Por favor, tente novamente.');
     return { serviceOrder: null, error };
   }
 };
@@ -118,7 +130,7 @@ export const assignServiceOrderToDriver = async (orderId: string, driverId: stri
       .from('service_orders')
       .update({ 
         driver_id: driverId,
-        status: 'assigned' as const
+        status: 'assigned' as 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled'
       })
       .eq('id', orderId)
       .select()
