@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
 import { CardContent, CardFooter } from '@/components/ui/card';
@@ -25,6 +25,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const [password, setPassword] = useState('');
   const { signIn } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   
   const searchParams = new URLSearchParams(location.search);
   const accountType = searchParams.get('type') || 'client';
@@ -41,7 +42,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
     e.preventDefault();
     
     try {
-      // Validate form
       if (!email || !password) {
         toast.error('Por favor, preencha email e senha');
         return;
@@ -49,7 +49,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
       
       console.log(`Login attempt: ${accountType}`);
       
-      // Use the parent handleLogin if provided, otherwise use local logic
       if (handleLogin) {
         await handleLogin(e);
       } else {
@@ -67,6 +66,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
           } else {
             toast.error('Falha no login', { description: error.message });
           }
+          
+          // Maintain the account type in URL when redirecting after error
+          navigate(`/auth?type=${accountType}`);
         } else {
           toast.success('Login realizado com sucesso!');
         }
@@ -74,6 +76,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
     } catch (error) {
       console.error('Login error:', error);
       toast.error('Ocorreu um erro inesperado');
+      // Maintain the account type in URL when redirecting after error
+      navigate(`/auth?type=${accountType}`);
     }
   };
   

@@ -38,9 +38,6 @@ export const signIn = async (email: string, password: string) => {
     
     if (result.error) {
       console.error('Error signing in:', result.error);
-      toast.error('Error signing in', {
-        description: result.error.message
-      });
       return { error: result.error };
     } 
     
@@ -64,30 +61,39 @@ export const signIn = async (email: string, password: string) => {
       const { role: userRole, error: roleError } = await verifyUserRole(result.data.user.id);
       
       if (roleError) {
-        await supabase.auth.signOut();
+        console.error('Error verifying user role:', roleError);
         return { error: roleError };
       }
       
       // For driver role, validate the association
       if (userRole === 'driver') {
-        const { isValid, error: validationError, message } = 
-          await validateDriverAssociation(email);
-        
-        if (!isValid || validationError) {
-          await supabase.auth.signOut();
-          return { 
-            error: {
-              message: message || 'Validação do motorista falhou',
-              name: 'driver_validation_failed',
-            } as AuthError 
-          };
+        try {
+          const { isValid, error: validationError, message } = 
+            await validateDriverAssociation(email);
+          
+          if (!isValid || validationError) {
+            console.error('Driver validation failed:', message);
+            return { 
+              error: {
+                message: message || 'Validação do motorista falhou',
+                name: 'driver_validation_failed',
+              } as AuthError 
+            };
+          }
+          
+          // Update login status and check password change requirement
+          // Don't await these operations to prevent blocking the login
+          updateDriverLoginStatus(email).catch(console.error);
+          checkDriverPasswordChange(result.data.user.id).catch(console.error);
+          
+          console.log('Driver login validated successfully');
+        } catch (err) {
+          console.error('Error in driver validation:', err);
+          // Don't prevent login on validation error, just log it
+          toast.error('Aviso: Erro ao validar dados do motorista', {
+            description: 'Você pode continuar, mas alguns recursos podem estar limitados'
+          });
         }
-        
-        // Update login status and check password change requirement
-        await updateDriverLoginStatus(email);
-        await checkDriverPasswordChange(result.data.user.id);
-        
-        console.log('Driver login validated successfully');
       }
       // For company role, verify company admin status
       else if (userRole === 'company') {
@@ -97,7 +103,7 @@ export const signIn = async (email: string, password: string) => {
             await verifyCompanyAdmin(result.data.user.id, companyId);
           
           if (companyError || !isCompanyAdmin) {
-            await supabase.auth.signOut();
+            console.error('Company admin verification failed:', companyError);
             return { error: companyError };
           }
           
