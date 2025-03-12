@@ -93,13 +93,13 @@ export const validateDriverCompanyAssociation = async (email: string, companyId:
       };
     }
     
-    // Fixed: Correctly type the parameters for the RPC call
+    // Fixed: Use a properly typed object without type parameters for the RPC call
     const { data, error: validationError } = await supabase.rpc(
       'validate_driver_company_association',
       {
         _email: email,
         _company_id: companyId
-      } as any // Use type assertion to bypass TypeScript's type checking
+      }
     );
     
     if (validationError) {
@@ -118,7 +118,7 @@ export const validateDriverCompanyAssociation = async (email: string, companyId:
       };
     }
     
-    return { isValid: data as boolean, error: null, message: null };
+    return { isValid: Boolean(data), error: null, message: null };
   } catch (err) {
     console.error('Error validating driver company association:', err);
     return { 
