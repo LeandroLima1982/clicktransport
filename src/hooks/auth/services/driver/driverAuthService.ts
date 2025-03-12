@@ -1,3 +1,4 @@
+
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../../../integrations/supabase/client';
 import { toast } from 'sonner';
@@ -92,19 +93,21 @@ export const validateDriverCompanyAssociation = async (email: string, companyId:
       };
     }
     
-    type ValidateDriverAssociationParams = {
+    // Define the parameters type
+    interface ValidateDriverAssociationParams {
       _email: string;
       _company_id: string;
-    };
+    }
 
-    // Add type annotation to specify the parameter shape
-    const { data, error: validationError } = await supabase.rpc<boolean, ValidateDriverAssociationParams>(
-      'validate_driver_company_association',
-      {
-        _email: email,
-        _company_id: companyId
-      }
-    );
+    // Call the RPC function with proper type parameters - fixing the typing issue
+    const { data, error: validationError } = await supabase
+      .rpc<boolean>(
+        'validate_driver_company_association',
+        {
+          _email: email,
+          _company_id: companyId
+        } as ValidateDriverAssociationParams
+      );
     
     if (validationError) {
       return { 
