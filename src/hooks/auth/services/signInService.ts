@@ -17,6 +17,8 @@ export const signIn = async (email: string, password: string, companyId?: string
     
     // For driver login, validate company association before attempting to sign in
     if (companyId && !isAdminLogin) {
+      console.log('Driver login detected. Validating company association...');
+      
       // Check if this is likely a driver and validate company association
       const { isValid, error: validationError, message } = 
         await validateDriverCompanyAssociation(email, companyId);
@@ -61,6 +63,7 @@ export const signIn = async (email: string, password: string, companyId?: string
       }
     }
     
+    // Authenticate the user
     const result = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -85,6 +88,9 @@ export const signIn = async (email: string, password: string, companyId?: string
       if (companyData) {
         localStorage.setItem('driverCompanyName', companyData.name);
       }
+      
+      // Update the driver's last login time
+      await updateDriverLoginStatus(email, companyId);
     }
     
     // If admin login, verify admin role
@@ -111,12 +117,12 @@ export const signIn = async (email: string, password: string, companyId?: string
       
       // If company ID is provided, verify the association
       if (companyId && typeof companyId === 'string') {
-        // For driver role, verify driver-company association
+        // For driver role, we already verified the association above
         if (userRole === 'driver') {
-          // Update the driver's last login time
-          await updateDriverLoginStatus(email, companyId);
-          
           console.log('Driver company association verified');
+          
+          // Check if driver needs to change password
+          await checkDriverPasswordChange(result.data.user.id);
         }
         // For company role, verify user is a company admin
         else if (userRole === 'company') {
@@ -155,11 +161,6 @@ export const signIn = async (email: string, password: string, companyId?: string
             } as AuthError 
           };
         }
-      }
-
-      // Check if driver needs to change password
-      if (userRole === 'driver') {
-        await checkDriverPasswordChange(result.data.user.id);
       }
     }
     

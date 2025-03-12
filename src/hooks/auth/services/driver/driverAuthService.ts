@@ -62,6 +62,8 @@ export const checkDriverPasswordChange = async (userId: string) => {
 // Validate if a driver is associated with a specific company
 export const validateDriverCompanyAssociation = async (email: string, companyId: string) => {
   try {
+    console.log('Validating driver association:', email, 'for company:', companyId);
+    
     // First check if the driver exists and is active in this company
     const { data: driverData, error: driverError } = await supabase
       .from('drivers')
@@ -93,39 +95,9 @@ export const validateDriverCompanyAssociation = async (email: string, companyId:
       };
     }
     
-    // Define the parameters type
-    interface ValidateDriverAssociationParams {
-      _email: string;
-      _company_id: string;
-    }
-
-    // Call the RPC function with proper type parameters - fixing the typing issue
-    const { data, error: validationError } = await supabase
-      .rpc<boolean>(
-        'validate_driver_company_association',
-        {
-          _email: email,
-          _company_id: companyId
-        } as ValidateDriverAssociationParams
-      );
-    
-    if (validationError) {
-      return { 
-        isValid: false, 
-        error: validationError,
-        message: 'Falha na validação de motorista' 
-      };
-    }
-    
-    if (!data) {
-      return { 
-        isValid: false, 
-        error: new Error('Association validation failed'),
-        message: 'Você não está associado a esta empresa' 
-      };
-    }
-    
-    return { isValid: Boolean(data), error: null, message: null };
+    // If we get here, the driver exists and is active in this company
+    console.log('Driver is valid and active in this company');
+    return { isValid: true, error: null, message: null };
   } catch (err) {
     console.error('Error validating driver company association:', err);
     return { 
