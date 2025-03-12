@@ -2,10 +2,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft } from 'lucide-react';
-import { z } from 'zod';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface LoginFormProps {
@@ -17,137 +16,94 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
-
-  const schema = z.object({
-    email: z.string().email({ message: 'Email inválido' }),
-    password: z.string().min(6, { message: 'Senha deve ter pelo menos 6 caracteres' }),
-  });
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError(null);
     
     try {
-      const validatedData = schema.parse({ email, password });
-      setIsLoading(true);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      const { user, error } = await signIn(validatedData.email, validatedData.password);
+      if (error) throw error;
       
-      if (error) {
-        console.error('Login error:', error);
-        toast.error('Erro ao fazer login', { 
-          description: error.message === 'Invalid login credentials'
-            ? 'Email ou senha incorretos'
-            : error.message
-        });
-        return;
-      }
-      
-      if (user) {
-        toast.success('Login realizado com sucesso');
+      if (data?.session) {
+        toast.success('Login realizado com sucesso!');
         onLoginSuccess();
       }
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const fieldErrors = error.flatten().fieldErrors;
-        Object.values(fieldErrors).forEach(messages => {
-          if (messages && messages.length > 0) {
-            toast.error(messages[0]);
-          }
-        });
-      } else {
-        console.error('Unexpected login error:', error);
-        toast.error('Erro ao fazer login');
-      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setError(error.message || 'Erro ao fazer login. Verifique suas credenciais.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6 py-4">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Faça login para continuar</h2>
-        <p className="text-muted-foreground mt-2">
-          Entre com sua conta para confirmar sua reserva
+    <div className="space-y-4 py-2 pb-4">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">Faça login para continuar</h2>
+        <p className="text-sm text-muted-foreground">
+          Entre com sua conta para confirmar a reserva
         </p>
       </div>
       
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            Email
-          </label>
+          <Label htmlFor="email">Email</Label>
           <Input
             id="email"
-            type="email"
-            placeholder="seu@email.com"
+            type="email" 
+            placeholder="seu-email@exemplo.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            disabled={isLoading}
             required
           />
         </div>
         
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Senha
-            </label>
-            <a href="#" className="text-sm text-primary hover:underline">
+            <Label htmlFor="password">Senha</Label>
+            <button
+              type="button"
+              className="text-sm font-medium text-primary hover:underline"
+              onClick={() => toast.info('Função de recuperação em breve!')}
+            >
               Esqueceu a senha?
-            </a>
+            </button>
           </div>
           <Input
             id="password"
             type="password"
-            placeholder="Sua senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            disabled={isLoading}
             required
           />
         </div>
         
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? 'Entrando...' : 'Entrar'}
+          {isLoading ? 'Processando...' : 'Entrar'}
         </Button>
       </form>
       
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <Separator />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Ou
-          </span>
-        </div>
-      </div>
-      
-      <div className="text-center space-y-4">
-        <p className="text-sm">
-          Não tem uma conta?{' '}
-          <button
-            type="button"
-            onClick={onShowRegister}
-            className="text-primary hover:underline font-medium"
-          >
-            Cadastre-se
-          </button>
-        </p>
-        
-        <Button 
-          variant="outline" 
-          type="button" 
-          className="flex items-center w-full"
-          onClick={() => window.history.back()}
+      <div className="mt-4 text-center text-sm">
+        Não tem uma conta?{' '}
+        <button 
+          className="font-semibold text-primary hover:underline" 
+          onClick={onShowRegister}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar
-        </Button>
+          Cadastre-se
+        </button>
       </div>
     </div>
   );

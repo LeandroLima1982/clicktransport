@@ -9,7 +9,7 @@ export interface ServiceOrder {
   origin: string;
   destination: string;
   pickup_date: string;
-  status: string;
+  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
   driver_id: string | null;
   company_id: string;
   company_name?: string | null;
@@ -47,7 +47,8 @@ export const useServiceOrders = (driverId: string | null) => {
       // Format orders to include company name
       const formattedOrders = data?.map(order => ({
         ...order,
-        company_name: order.companies?.name || null
+        company_name: order.companies?.name || null,
+        status: order.status as ServiceOrder['status'] // Ensure correct typing
       })) as ServiceOrder[];
 
       setOrders(formattedOrders || []);
@@ -172,7 +173,7 @@ export const useServiceOrders = (driverId: string | null) => {
     try {
       const { data, error: updateError } = await supabase
         .from('service_orders')
-        .update({ status: newStatus })
+        .update({ status: newStatus as ServiceOrder['status'] })
         .eq('id', orderId)
         .select()
         .single();

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -111,6 +112,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
       if (driversResponse.error) throw driversResponse.error;
       if (vehiclesResponse.error) throw vehiclesResponse.error;
       
+      // Ensure the correct typing of status by using type assertion
       const typedOrders = (ordersResponse.data || []).map(order => ({
         ...order,
         status: order.status as ServiceOrder['status'] 

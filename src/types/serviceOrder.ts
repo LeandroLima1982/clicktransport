@@ -3,7 +3,12 @@ export interface ServiceOrder {
   id: string;
   origin: string;
   destination: string;
-  status: string;
+  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
   driver_id: string | null;
-  [key: string]: any; // for other properties that might be needed
+  notes?: string | null;
+  company_id?: string;
+  pickup_date: string;
+  delivery_date?: string | null;
+  vehicle_id?: string | null;
+  created_at?: string;
 }

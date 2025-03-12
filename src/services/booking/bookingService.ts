@@ -92,8 +92,8 @@ const notifyCompanyAboutNewOrder = async (companyId: string, serviceOrder: Servi
     const { error } = await supabase
       .from('service_orders')
       .update({ 
-        // Add a notification flag that can be read by the company
-        notification_sent: true 
+        // Update something innocuous to trigger the update event
+        notes: serviceOrder.notes ? serviceOrder.notes + " [Notificação enviada]" : "Notificação enviada"
       })
       .eq('id', serviceOrder.id);
     
