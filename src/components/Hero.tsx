@@ -14,7 +14,7 @@ const Hero: React.FC = () => {
       <div className="absolute inset-0 bg-[#F8D748] -z-10" />
       
       <div className="w-full bg-zinc-50 pt-16 pb-32 md:pt-24 md:pb-36 px-4 sm:px-6 relative rounded-b-[40px] md:rounded-b-[80px]">
-        <div className="max-w-3xl mx-auto text-center mb-12">
+        <div className="container mx-auto text-center mb-12">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 animate-fade-in">
             <span className="block mb-2 text-gray-800">Transporte Executivo</span>
             <span className="block text-amber-400 mt-2">para seus colaboradores</span>
@@ -34,7 +34,7 @@ const Hero: React.FC = () => {
         </div>
         
         {/* Form Container - Elevated above the fold */}
-        <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative -mb-24">
+        <div className="container mx-auto relative -mb-24">
           <div className="rounded-xl p-4 md:p-6 lg:p-8 shadow-xl bg-white animate-scale-in">
             <BookingForm />
           </div>

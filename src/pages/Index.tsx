@@ -22,19 +22,24 @@ const Index = () => {
 
   // Show a brief loading indicator only during initial authentication check
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen text-primary">
+    return <div className="flex items-center justify-center h-screen w-full text-primary">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F8D748]"></div>
         <div className="ml-3 text-lg font-medium">Carregando...</div>
       </div>;
   }
   
-  return <TransitionEffect>
+  return (
+    <TransitionEffect>
       <Navbar />
       <div className="flex flex-col min-h-screen w-full">
         <Hero />
-        <TransportTypes />
+        <div className="container mx-auto">
+          <TransportTypes />
+        </div>
         <Solutions />
-        <ProcessSteps />
+        <div className="container mx-auto">
+          <ProcessSteps />
+        </div>
         <section id="request-service" className="py-16 bg-gray-50 w-full">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
@@ -53,7 +58,8 @@ const Index = () => {
         <CTA />
         <Footer />
       </div>
-    </TransitionEffect>;
+    </TransitionEffect>
+  );
 };
 
 export default Index;
