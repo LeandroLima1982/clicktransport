@@ -30,9 +30,9 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({ value, onChange }) => {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger 
-        className={`w-full ${isMobile ? 'py-4' : 'py-6'} pl-10 rounded-lg border-gray-200 focus:ring-[#F8D748] focus:border-[#F8D748] text-gray-700 relative`}
+        className={`w-full ${isMobile ? 'py-5' : 'py-6'} pl-10 rounded-lg border-gray-200 focus:ring-amber-400 focus:border-amber-400 text-gray-700 relative bg-[#fdfdfd]`}
       >
-        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
         <SelectValue placeholder="Selecione o horário">
           {value ? (
             <span className="flex items-center">
@@ -47,7 +47,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({ value, onChange }) => {
       </SelectTrigger>
       <SelectContent className="max-h-[200px]">
         {timeOptions.map((time) => (
-          <SelectItem key={time} value={time} className="cursor-pointer hover:bg-[#FEF7CD]">
+          <SelectItem key={time} value={time} className="cursor-pointer hover:bg-amber-50">
             {time}
           </SelectItem>
         ))}
