@@ -35,7 +35,7 @@ const FAQ: React.FC = () => {
 
   return (
     <section className="py-16 bg-white w-full">
-      <div className="w-full px-4">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-6 w-full">
         <div className="text-center mb-12">
           <h2 className="section-title mb-6">Dúvidas? Temos as respostas!</h2>
           <p className="text-foreground/70 max-w-2xl mx-auto">

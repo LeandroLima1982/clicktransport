@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -7,6 +8,7 @@ import DateSelector from './booking/DateSelector';
 import TripTypeTabs from './booking/TripTypeTabs';
 import TimeSelector from './TimeSelector';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 const BookingForm: React.FC = () => {
   const {
     originValue,
@@ -32,7 +34,9 @@ const BookingForm: React.FC = () => {
     bookingData
   } = useBookingForm();
   const isMobile = useIsMobile();
-  return <div className="w-full space-y-4 md:space-y-5 bg-gray-100 py-0 mx-0 my-0 px-[26px] rounded-2xl">
+  
+  return (
+    <div className="w-full space-y-4 md:space-y-5 bg-gray-100 py-6 px-4 md:px-[26px] rounded-2xl">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 md:mb-4 space-y-2 md:space-y-0">
         <h3 className="text-lg md:text-xl font-bold text-gray-800">Qual seu destino?</h3>
         <TripTypeTabs value={tripType} onChange={setTripType} />
@@ -82,6 +86,8 @@ const BookingForm: React.FC = () => {
       time: time,
       returnTime: returnTime
     }} isOpen={showBookingSteps} onClose={() => setShowBookingSteps(false)} />}
-    </div>;
+    </div>
+  );
 };
+
 export default BookingForm;

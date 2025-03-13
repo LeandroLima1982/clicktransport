@@ -65,7 +65,8 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
       style={{ 
         transitionDuration: `${duration}ms`, 
         transitionDelay: `${delay}ms`,
-        transform: isVisible ? undefined : undefined  // Force hardware acceleration
+        transform: isVisible ? undefined : undefined,  // Force hardware acceleration
+        maxWidth: '100vw'  // Ensure full width
       }}
     >
       {children}

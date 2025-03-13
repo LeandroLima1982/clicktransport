@@ -38,7 +38,7 @@ const additionalInfo = [
 const ProcessSteps: React.FC = () => {
   return (
     <section className="py-16 bg-white w-full">
-      <div className="px-4 w-full">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-6 w-full">
         <div className="text-center mb-8">
           <h2 className="section-title mb-6">Seu Transfer em 3 Passos Simples</h2>
           <p className="text-foreground/70 max-w-2xl mx-auto">

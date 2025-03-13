@@ -31,7 +31,7 @@ const NavbarContainer: React.FC<NavbarContainerProps> = ({
       style={safeAreaTop ? { paddingTop: `${safeAreaTop}px` } : {}}
     >
       <div className="py-3 md:py-4 w-full bg-neutral-50">
-        <div className="w-full px-4 md:px-6 flex items-center justify-between">
+        <div className="max-w-[1400px] mx-auto w-full px-4 md:px-6 flex items-center justify-between">
           {children}
         </div>
       </div>
