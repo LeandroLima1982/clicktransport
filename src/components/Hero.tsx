@@ -13,13 +13,15 @@ const Hero: React.FC = () => {
         <div className="w-full text-center mb-8 md:mb-12 px-4 max-w-[1400px] md:px-0 mx-0 my-0 py-[36px]">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 animate-fade-in">
             <span className="block mb-2 text-gray-800 font-extrabold">Transporte Executivo</span>
-            <span className="block text-amber-400 mt-1 md:mt-2 my-0">para seus colaboradores</span>
+            <span className="block text-amber-400 mt-1 md:mt-2 my-0">para colaboradores
+ da sua empresa</span>
           </h1>
           
           <p className="text-sm md:text-lg mb-6 md:mb-8 animate-fade-in opacity-90 text-gray-600 max-w-2xl mx-auto" style={{
           animationDelay: '0.2s'
-        }}>Conectamos motoristas executivos a empresas offshore, 
-agências de turismo e hoteis. Sempre com eficiência e segurança.</p>
+        }}>Conectamos motoristas executivos a empresas offshore,
+  agências de turismo e hoteis e pousadas.
+ Sempre com eficiência e segurança.</p>
           
           <div className="flex justify-center animate-fade-in" style={{
           animationDelay: '0.3s'
@@ -30,7 +32,7 @@ agências de turismo e hoteis. Sempre com eficiência e segurança.</p>
         </div>
         
         {/* Booking Form - Full width on mobile */}
-        <div className="relative -mb-28 md:-mb-32 max-w-[1400px] mx-auto px-0 py-0 md:px-[100px] bg-white">
+        <div className="relative -mb-28 md:-mb-32 max-w-[1400px] mx-auto px-0 py-0 bg-white md:px-0">
           <div className="rounded-none sm:rounded-xl p-0 sm:p-6 lg:p-8 shadow-xl bg-white animate-scale-in my-0 py-[75px] px-[69px]">
             <BookingForm />
           </div>
