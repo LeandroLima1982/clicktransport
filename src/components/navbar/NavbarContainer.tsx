@@ -30,8 +30,8 @@ const NavbarContainer: React.FC<NavbarContainerProps> = ({
         ${isMobile ? 'safe-area-top' : ''}`}
       style={safeAreaTop ? { paddingTop: `${safeAreaTop}px` } : {}}
     >
-      <div className="py-3 md:py-4 bg-neutral-50 w-full">
-        <div className="container mx-auto flex items-center justify-between px-4 md:px-6 lg:px-8">
+      <div className="py-3 md:py-4 w-full bg-neutral-50">
+        <div className="w-full px-4 md:px-6 lg:px-8 max-w-7xl mx-auto flex items-center justify-between">
           {children}
         </div>
       </div>

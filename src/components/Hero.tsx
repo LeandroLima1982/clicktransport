@@ -10,11 +10,11 @@ const Hero: React.FC = () => {
   
   return (
     <section className="relative overflow-hidden w-full">
-      {/* Yellow background with wave shape */}
+      {/* Yellow background that extends full width */}
       <div className="absolute inset-0 bg-[#F8D748] -z-10" />
       
-      <div className="w-full bg-zinc-50 pt-10 pb-28 md:pt-24 md:pb-36 px-2 sm:px-4 relative rounded-b-[40px] md:rounded-b-[80px]">
-        <div className="container mx-auto text-center mb-8 md:mb-12 px-2">
+      <div className="w-full bg-zinc-50 pt-10 pb-16 md:pt-20 md:pb-32 relative rounded-b-[40px] md:rounded-b-[80px]">
+        <div className="w-full max-w-7xl mx-auto text-center mb-8 md:mb-12 px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 animate-fade-in">
             <span className="block mb-2 text-gray-800">Transporte Executivo</span>
             <span className="block text-amber-400 mt-1 md:mt-2">para seus colaboradores</span>
@@ -33,9 +33,9 @@ const Hero: React.FC = () => {
           </div>
         </div>
         
-        {/* Form Container - Elevated above the fold */}
-        <div className="px-2 sm:px-4 md:container mx-auto relative -mb-24 md:-mb-28">
-          <div className="rounded-xl p-3 md:p-6 lg:p-8 shadow-xl bg-white animate-scale-in">
+        {/* Booking Form - Full width on mobile */}
+        <div className="px-0 sm:px-4 md:container mx-auto relative -mb-28 md:-mb-32">
+          <div className="rounded-none sm:rounded-xl p-0 sm:p-6 lg:p-8 shadow-xl bg-white animate-scale-in sm:shadow-xl sm:bg-white sm:p-6">
             <BookingForm />
           </div>
         </div>

@@ -28,7 +28,7 @@ const PassengersAndInfo: React.FC<PassengersAndInfoProps> = ({
           min="1"
           value={passengers} 
           onChange={onChange} 
-          className="border-gray-200 focus:border-primary focus:ring-primary w-full"
+          className="border-gray-200 focus:border-primary focus:ring-primary w-full h-12"
           placeholder="1"
           required
         />
