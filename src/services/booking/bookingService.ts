@@ -11,6 +11,12 @@ export const createBooking = async (bookingData: Omit<Booking, 'id' | 'created_a
   try {
     console.log('Creating new booking:', bookingData);
     
+    // Ensure user_id is provided
+    if (!bookingData.user_id) {
+      console.error('Error: user_id is required for creating a booking');
+      throw new Error('User ID is required');
+    }
+    
     // Ensure status is of the correct type
     const formattedData = {
       ...bookingData,
