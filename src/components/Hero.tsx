@@ -30,7 +30,7 @@ agências de turismo e hoteis. Sempre com eficiência e segurança.</p>
         </div>
         
         {/* Booking Form - Full width on mobile */}
-        <div className="relative -mb-28 md:-mb-32 max-w-[1400px] mx-auto px-0 py-0 md:px-[100px] bg-slate-50">
+        <div className="relative -mb-28 md:-mb-32 max-w-[1400px] mx-auto px-0 py-0 md:px-[100px] bg-white">
           <div className="rounded-none sm:rounded-xl p-0 sm:p-6 lg:p-8 shadow-xl bg-white animate-scale-in my-0 py-[75px] px-[69px]">
             <BookingForm />
           </div>
