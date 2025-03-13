@@ -9,11 +9,11 @@ const Hero: React.FC = () => {
   const isMobile = useIsMobile();
   
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden w-full">
       {/* Yellow background with wave shape */}
       <div className="absolute inset-0 bg-[#F8D748] -z-10" />
       
-      <div className="w-full bg-zinc-50 pt-16 pb-32 md:pt-24 md:pb-36 px-4 relative rounded-b-[40px] md:rounded-b-[80px]">
+      <div className="w-full bg-zinc-50 pt-16 pb-32 md:pt-24 md:pb-36 px-4 sm:px-6 relative rounded-b-[40px] md:rounded-b-[80px]">
         <div className="max-w-3xl mx-auto text-center mb-12">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 animate-fade-in">
             <span className="block mb-2 text-gray-800">Transporte Executivo</span>

@@ -13,7 +13,7 @@ const ServiceTypeSelector: React.FC<ServiceTypeSelectorProps> = ({
   onChange
 }) => {
   return (
-    <div className="mb-4">
+    <div className="mb-4 w-full">
       <label htmlFor="serviceType" className="block text-sm font-medium text-gray-700 mb-2">Tipo de Serviço</label>
       <Select 
         name="serviceType" 
@@ -23,7 +23,7 @@ const ServiceTypeSelector: React.FC<ServiceTypeSelectorProps> = ({
         <SelectTrigger id="serviceType" className="w-full border border-gray-200 rounded-md">
           <SelectValue placeholder="Selecione o tipo de serviço" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="w-full">
           <SelectItem value="transfer" className="flex items-center py-2.5">
             <div className="flex items-center">
               <Car className="h-4 w-4 mr-2 text-primary" />

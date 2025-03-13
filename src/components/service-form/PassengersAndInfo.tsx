@@ -16,7 +16,7 @@ const PassengersAndInfo: React.FC<PassengersAndInfoProps> = ({
   onChange
 }) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       <div className="bg-gray-50 p-4 rounded-lg">
         <label htmlFor="passengers" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
           <Users className="h-4 w-4 mr-1 text-gray-500" /> Número de Passageiros
@@ -28,7 +28,7 @@ const PassengersAndInfo: React.FC<PassengersAndInfoProps> = ({
           min="1"
           value={passengers} 
           onChange={onChange} 
-          className="border-gray-200 focus:border-primary focus:ring-primary"
+          className="border-gray-200 focus:border-primary focus:ring-primary w-full"
           placeholder="1"
           required
         />
@@ -44,7 +44,7 @@ const PassengersAndInfo: React.FC<PassengersAndInfoProps> = ({
           value={additionalInfo} 
           onChange={onChange} 
           rows={4}
-          className="border-gray-200 focus:border-primary focus:ring-primary"
+          className="border-gray-200 focus:border-primary focus:ring-primary w-full"
           placeholder="Bagagens, necessidades especiais, horários flexíveis, etc."
         />
       </div>
