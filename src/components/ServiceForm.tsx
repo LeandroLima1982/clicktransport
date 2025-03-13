@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,8 +12,10 @@ import { useServiceRequests } from '@/hooks/useServiceRequests';
 import TimeSelector from './TimeSelector';
 import { toast } from 'sonner';
 import { fetchAddressSuggestions, getPlaceIcon, formatPlaceName } from '@/utils/mapbox';
+import { useAuth } from '@/hooks/useAuth';
 
 const ServiceForm: React.FC = () => {
+  const { user } = useAuth();
   const [date, setDate] = useState<Date>();
   const [time, setTime] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -39,16 +40,12 @@ const ServiceForm: React.FC = () => {
   } = useServiceRequests();
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const {
-      name,
-      value
-    } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
 
-    // Trigger address suggestions for origin and destination fields
     if (name === 'origin') {
       if (originTimeoutRef.current) {
         clearTimeout(originTimeoutRef.current);
@@ -93,17 +90,20 @@ const ServiceForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Prepare data for submission
+    if (!user) {
+      toast.error("Você precisa estar logado para solicitar um serviço");
+      return;
+    }
+
     const requestData = {
       ...formData,
       requestDate: date ? format(date, 'yyyy-MM-dd') : '',
-      requestTime: time
+      requestTime: time,
+      userId: user.id
     };
 
-    // Submit to Supabase
     const success = await submitServiceRequest(requestData);
 
-    // Reset form if submission was successful
     if (success) {
       setFormData({
         name: '',

@@ -23,7 +23,10 @@ export const createBooking = async (bookingData: Omit<Booking, 'id' | 'created_a
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating booking:', error);
+      throw error;
+    }
     
     console.log('Booking created successfully:', data);
     return { booking: data as Booking, error: null };
@@ -47,7 +50,10 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       .eq('status', 'active')
       .limit(1);
     
-    if (companiesError) throw companiesError;
+    if (companiesError) {
+      console.error('Error fetching companies:', companiesError);
+      throw companiesError;
+    }
     
     if (!companies || companies.length === 0) {
       console.error('No active companies found to assign the order');
@@ -82,6 +88,18 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     
     console.log('Service order created successfully:', data);
     
+    // Update the booking status to confirmed after service order is created
+    const { error: updateError } = await supabase
+      .from('bookings')
+      .update({ status: 'confirmed' })
+      .eq('id', booking.id);
+      
+    if (updateError) {
+      console.error('Error updating booking status:', updateError);
+      // We don't throw here because the service order was created successfully
+      toast.warning('Reserva criada, mas houve um erro ao atualizar o status');
+    }
+    
     // Notify company about the new order (this will be picked up by real-time subscriptions)
     await notifyCompanyAboutNewOrder(companyId, data as ServiceOrder);
     
@@ -109,7 +127,10 @@ const notifyCompanyAboutNewOrder = async (companyId: string, serviceOrder: Servi
       })
       .eq('id', serviceOrder.id);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error notifying company:', error);
+      throw error;
+    }
     
     console.log('Company notification sent for new order');
     return { success: true, error: null };
