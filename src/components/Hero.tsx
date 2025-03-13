@@ -5,7 +5,7 @@ import BookingForm from './BookingForm';
 import { useIsMobile } from '@/hooks/use-mobile';
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
-  return <section className="relative overflow-hidden w-full bg-zinc-50">
+  return <section className="relative overflow-hidden w-full bg-slate-50">
       {/* Yellow background that extends full width */}
       <div className="absolute inset-0 bg-[#F8D748] -z-10 w-full" />
       
@@ -30,7 +30,7 @@ agências de turismo e hoteis. Sempre com eficiência e segurança.</p>
         </div>
         
         {/* Booking Form - Full width on mobile */}
-        <div className="relative -mb-28 md:-mb-32 md:px-6 max-w-[1400px] mx-auto px-0">
+        <div className="relative -mb-28 md:-mb-32 max-w-[1400px] mx-auto px-0 py-0 md:px-[100px]">
           <div className="rounded-none sm:rounded-xl p-0 sm:p-6 lg:p-8 shadow-xl bg-white animate-scale-in my-0 py-[75px] px-[69px]">
             <BookingForm />
           </div>
