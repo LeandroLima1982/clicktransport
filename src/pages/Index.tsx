@@ -1,4 +1,3 @@
-
 import React from 'react';
 import TransitionEffect from '@/components/TransitionEffect';
 import Navbar from '@/components/Navbar';
@@ -13,7 +12,6 @@ import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
-
 const Index = () => {
   const {
     isLoading,
@@ -27,12 +25,10 @@ const Index = () => {
         <div className="ml-3 text-lg font-medium">Carregando...</div>
       </div>;
   }
-  
-  return (
-    <div className="w-full overflow-x-hidden">
+  return <div className="w-full overflow-x-hidden">
       <TransitionEffect>
         <Navbar />
-        <div className="flex flex-col w-full bg-gray-50">
+        <div className="flex flex-col w-full bg-slate-50">
           <Hero />
           <TransportTypes />
           <Solutions />
@@ -43,8 +39,6 @@ const Index = () => {
           <Footer />
         </div>
       </TransitionEffect>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
