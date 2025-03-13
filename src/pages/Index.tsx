@@ -1,4 +1,3 @@
-
 import React from 'react';
 import TransitionEffect from '@/components/TransitionEffect';
 import Navbar from '@/components/Navbar';
@@ -13,22 +12,20 @@ import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
-
 const Index = () => {
-  const { isLoading, user } = useAuth();
-  
+  const {
+    isLoading,
+    user
+  } = useAuth();
+
   // Show a brief loading indicator only during initial authentication check
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen text-primary">
+    return <div className="flex items-center justify-center h-screen text-primary">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F8D748]"></div>
         <div className="ml-3 text-lg font-medium">Carregando...</div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <TransitionEffect>
+  return <TransitionEffect>
       <Navbar />
       <div className="flex flex-col min-h-screen w-full">
         <Hero />
@@ -43,9 +40,7 @@ const Index = () => {
                 Preencha o formulário abaixo e entraremos em contato em até 30 minutos com as melhores opções para sua necessidade.
               </p>
             </div>
-            <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
-              <ServiceForm />
-            </div>
+            
           </div>
         </section>
         <Testimonials />
@@ -53,8 +48,6 @@ const Index = () => {
         <CTA />
         <Footer />
       </div>
-    </TransitionEffect>
-  );
+    </TransitionEffect>;
 };
-
 export default Index;
