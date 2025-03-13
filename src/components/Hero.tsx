@@ -1,34 +1,47 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import BookingForm from './BookingForm';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
-  return <section className="bg-zinc-50">
+  
+  return (
+    <section className="relative overflow-hidden">
+      {/* Yellow background with wave shape */}
       <div className="absolute inset-0 bg-[#F8D748] -z-10" />
       
-      <div className="w-full my-8 md:my-12 bg-zinc-50 px-0 py-[99px] mx-0 lg:my-[73px]">
-        <div className="max-w-3xl mx-auto text-center mb-8 px-4">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 animate-fade-in text-black">
-            <span className="block mb-2 text-gray-600">Transporte Executivo</span>
-            <span className="block text-amber-300 text-4xl">para seus colaboradores</span>
+      <div className="w-full bg-zinc-50 pt-16 pb-32 md:pt-24 md:pb-36 px-4 relative rounded-b-[40px] md:rounded-b-[80px]">
+        <div className="max-w-3xl mx-auto text-center mb-12">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 animate-fade-in">
+            <span className="block mb-2 text-gray-800">Transporte Executivo</span>
+            <span className="block text-amber-400 mt-2">para seus colaboradores</span>
           </h1>
           
-          <p style={{
-          animationDelay: '0.2s'
-        }} className="text-base md:text-lg mb-8 animate-fade-in text-gray-700 max-w-2xl mx-auto">Conectamos motoristas executivos a empresas offshore,
- agências de turismo e hoteis com eficiência e segurança.</p>
+          <p className="text-base md:text-lg mb-8 animate-fade-in opacity-90 text-gray-600 max-w-2xl mx-auto" style={{animationDelay: '0.2s'}}>
+            Conectamos motoristas executivos a empresas offshore, agências de turismo e hoteis com eficiência e segurança.
+          </p>
+          
+          <div className="flex justify-center space-x-4 animate-fade-in" style={{animationDelay: '0.3s'}}>
+            <a href="#request-service">
+              <Button size="lg" className="rounded-full bg-[#F8D748] text-black hover:bg-[#F8D748]/90 font-medium px-6">
+                Solicitar Transfer <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </a>
+          </div>
         </div>
         
-        <div className="w-full px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+        {/* Form Container - Elevated above the fold */}
+        <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative -mb-24">
           <div className="rounded-xl p-4 md:p-6 lg:p-8 shadow-xl bg-white animate-scale-in">
             <BookingForm />
           </div>
         </div>
       </div>
-
-      <div className="absolute bottom-0 left-0 right-0 h-[60px] bg-white -z-5"></div>
-    </section>;
+    </section>
+  );
 };
+
 export default Hero;
