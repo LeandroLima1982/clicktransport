@@ -1,15 +1,11 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import BookingForm from './BookingForm';
 import { useIsMobile } from '@/hooks/use-mobile';
-
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
-  
-  return (
-    <section className="relative overflow-hidden w-full">
+  return <section className="relative overflow-hidden w-full">
       {/* Yellow background that extends full width */}
       <div className="absolute inset-0 bg-[#F8D748] -z-10" />
       
@@ -20,28 +16,28 @@ const Hero: React.FC = () => {
             <span className="block text-amber-400 mt-1 md:mt-2">para seus colaboradores</span>
           </h1>
           
-          <p className="text-sm md:text-lg mb-6 md:mb-8 animate-fade-in opacity-90 text-gray-600 max-w-2xl mx-auto" style={{animationDelay: '0.2s'}}>
+          <p className="text-sm md:text-lg mb-6 md:mb-8 animate-fade-in opacity-90 text-gray-600 max-w-2xl mx-auto" style={{
+          animationDelay: '0.2s'
+        }}>
             Conectamos motoristas executivos a empresas offshore, agências de turismo e hoteis com eficiência e segurança.
           </p>
           
-          <div className="flex justify-center animate-fade-in" style={{animationDelay: '0.3s'}}>
+          <div className="flex justify-center animate-fade-in" style={{
+          animationDelay: '0.3s'
+        }}>
             <a href="#request-service" className="w-full max-w-xs md:max-w-none md:w-auto">
-              <Button size={isMobile ? "default" : "lg"} className="w-full md:w-auto rounded-full bg-[#F8D748] text-black hover:bg-[#F8D748]/90 font-medium px-4 md:px-6">
-                Solicitar Transfer <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              
             </a>
           </div>
         </div>
         
         {/* Booking Form - Full width on mobile */}
         <div className="px-0 sm:px-4 md:container mx-auto relative -mb-28 md:-mb-32">
-          <div className="rounded-none sm:rounded-xl p-0 sm:p-6 lg:p-8 shadow-xl bg-white animate-scale-in sm:shadow-xl sm:bg-white sm:p-6">
+          <div className="rounded-none sm:rounded-xl p-0 sm:p-6 lg:p-8 shadow-xl bg-white animate-scale-in sm:shadow-xl sm:p-6 sm:bg-white/[0.31]">
             <BookingForm />
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Hero;
