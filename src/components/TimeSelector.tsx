@@ -30,7 +30,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({ value, onChange }) => {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger 
-        className="w-full py-6 pl-10 rounded-lg border border-gray-100 shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 relative"
+        className="w-full py-6 pl-10 rounded-lg border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 relative"
       >
         <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-400" />
         <SelectValue placeholder="Selecione o horário">

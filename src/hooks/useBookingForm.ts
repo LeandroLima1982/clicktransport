@@ -135,6 +135,7 @@ export const useBookingForm = () => {
     setTripType,
     setDate,
     setReturnDate,
+    setPassengers,
     setTime,
     setReturnTime,
     handleOriginChange,

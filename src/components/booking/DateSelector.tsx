@@ -34,7 +34,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
         <PopoverTrigger asChild>
           <Button 
             variant="outline" 
-            className="w-full justify-start text-left font-normal py-6 pl-10 rounded-lg border border-gray-100 shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700"
+            className="w-full justify-start text-left font-normal py-6 pl-10 rounded-lg border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700"
           >
             <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-400" />
             {date ? (
@@ -53,6 +53,13 @@ const DateSelector: React.FC<DateSelectorProps> = ({
             className={cn("p-3 pointer-events-auto")}
             disabled={disabledDates}
             locale={ptBR}
+            classNames={{
+              day_selected: "bg-amber-400 text-amber-900 hover:bg-amber-400 hover:text-amber-900 focus:bg-amber-400 focus:text-amber-900",
+              day_today: "bg-amber-100 text-amber-800",
+              nav_button_previous: "hover:bg-amber-50",
+              nav_button_next: "hover:bg-amber-50",
+              caption: "text-amber-800",
+            }}
           />
         </PopoverContent>
       </Popover>

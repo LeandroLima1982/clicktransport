@@ -7,6 +7,7 @@ import LocationInput from './booking/LocationInput';
 import DateSelector from './booking/DateSelector';
 import TripTypeTabs from './booking/TripTypeTabs';
 import TimeSelector from './TimeSelector';
+import PassengerSelector from './booking/PassengerSelector';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const BookingForm: React.FC = () => {
@@ -18,6 +19,8 @@ const BookingForm: React.FC = () => {
     tripType,
     time,
     returnTime,
+    passengers,
+    setPassengers,
     originSuggestions,
     destinationSuggestions,
     showBookingSteps,
@@ -66,7 +69,7 @@ const BookingForm: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <DateSelector 
               label="Vai quando?" 
               date={date} 
@@ -80,10 +83,15 @@ const BookingForm: React.FC = () => {
               </label>
               <TimeSelector value={time} onChange={setTime} />
             </div>
+
+            <PassengerSelector
+              value={passengers}
+              onChange={setPassengers}
+            />
           </div>
 
           {tripType === 'roundtrip' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 mt-1 border-t border-amber-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 mt-1 border-t border-amber-200">
               <DateSelector 
                 label="Volta quando?" 
                 date={returnDate} 
@@ -96,6 +104,10 @@ const BookingForm: React.FC = () => {
                   Horário de volta
                 </label>
                 <TimeSelector value={returnTime} onChange={setReturnTime} />
+              </div>
+              
+              <div className="space-y-2 md:block hidden">
+                {/* Empty div to maintain grid alignment */}
               </div>
             </div>
           )}
@@ -118,7 +130,7 @@ const BookingForm: React.FC = () => {
               date: date,
               returnDate: returnDate,
               tripType: tripType,
-              passengers: bookingData.passengers,
+              passengers: passengers,
               time: time,
               returnTime: returnTime
             }} 
