@@ -6,7 +6,7 @@ import { Car, Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from
 const Footer: React.FC = () => {
   return (
     <footer className="bg-secondary text-white pt-16 pb-8 w-full">
-      <div className="w-full px-4">
+      <div className="content-container">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           <div>
             <div className="flex items-center space-x-2 mb-6">
