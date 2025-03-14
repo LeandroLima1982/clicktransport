@@ -41,7 +41,7 @@ const BookingForm: React.FC = () => {
   return <div className="w-full bg-[#FEF7E4] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
       <div className="px-4 md:px-8 pt-5 md:pt-7 pb-6 md:pb-8 bg-amber-300">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 space-y-3 md:space-y-0">
-          <h3 className="text-xl font-bold text-gray-800">Agende seu tranfer executivo</h3>
+          <h3 className="text-gray-800 font-extrabold text-2xl">Agendar tranfer executivo</h3>
           <TripTypeTabs value={tripType} onChange={setTripType} />
         </div>
 
