@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Check, CalendarCheck, Copy, Download } from 'lucide-react';
+import { Check, CalendarCheck, Copy, Download, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -15,6 +15,10 @@ interface BookingCompleteProps {
     destination: string;
     date: Date | undefined;
     tripType: string;
+    passengerData?: {
+      name: string;
+      phone: string;
+    }[];
   };
   totalPrice: number;
   formatCurrency: (value: number) => string;
@@ -33,6 +37,9 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
     if (!date) return '';
     return format(date, 'dd/MM/yyyy', { locale: ptBR });
   };
+
+  const oneWayPrice = bookingData.tripType === 'roundtrip' ? totalPrice / 2 : totalPrice;
+  const returnPrice = bookingData.tripType === 'roundtrip' ? totalPrice / 2 : 0;
 
   const handleCopyReference = () => {
     navigator.clipboard.writeText(bookingReference);
@@ -82,9 +89,42 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
           <span className="text-gray-600">Data:</span>
           <span className="font-medium">{formatDate(bookingData.date)}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">Valor total:</span>
-          <span className="font-bold text-primary">{formatCurrency(totalPrice)}</span>
+        
+        {bookingData.passengerData && bookingData.passengerData.length > 0 && (
+          <div className="text-left border rounded p-3 mt-2">
+            <div className="flex items-center mb-2">
+              <Users className="h-4 w-4 mr-1" />
+              <span className="font-medium">Passageiros:</span>
+            </div>
+            <div className="space-y-2 pl-5">
+              {bookingData.passengerData.map((passenger, index) => (
+                <div key={index} className="text-sm">
+                  <div>{passenger.name}</div>
+                  <div className="text-gray-500">WhatsApp: {passenger.phone}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        <div className="border-t pt-3 mt-3">
+          <div className="text-gray-600 font-medium text-left mb-2">Detalhamento do valor:</div>
+          <div className="flex justify-between text-sm">
+            <span>Valor da ida:</span>
+            <span>{formatCurrency(oneWayPrice)}</span>
+          </div>
+          
+          {bookingData.tripType === 'roundtrip' && (
+            <div className="flex justify-between text-sm">
+              <span>Valor da volta:</span>
+              <span>{formatCurrency(returnPrice)}</span>
+            </div>
+          )}
+          
+          <div className="flex justify-between mt-2 pt-2 border-t font-bold text-primary">
+            <span>Valor total:</span>
+            <span>{formatCurrency(totalPrice)}</span>
+          </div>
         </div>
       </div>
       

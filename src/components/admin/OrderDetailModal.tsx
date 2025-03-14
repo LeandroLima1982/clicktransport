@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from '@/main';
 import { toast } from 'sonner';
-import { MapPin, Calendar, User, Truck, FileText } from 'lucide-react';
+import { MapPin, Calendar, User, Truck, FileText, Users, CreditCard } from 'lucide-react';
 import { ServiceOrder } from './ServiceOrderTable';
 
 interface OrderDetailModalProps {
@@ -56,6 +56,13 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     });
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -70,6 +77,24 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         return <Badge>{status}</Badge>;
     }
   };
+
+  // Parse passenger data if available
+  let passengerData = [];
+  try {
+    if (order.passenger_data) {
+      passengerData = typeof order.passenger_data === 'string' 
+        ? JSON.parse(order.passenger_data) 
+        : order.passenger_data;
+    }
+  } catch (e) {
+    console.error('Error parsing passenger data:', e);
+  }
+
+  // Calculate one-way price and return price
+  const totalPrice = order.total_price || 0;
+  const isRoundTrip = order.trip_type === 'roundtrip';
+  const oneWayPrice = isRoundTrip ? totalPrice / 2 : totalPrice;
+  const returnPrice = isRoundTrip ? totalPrice / 2 : 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -149,6 +174,48 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 Veículo
               </h3>
               <p className="mt-1">{order.vehicle_id ? 'Atribuído' : 'Não atribuído'}</p>
+            </div>
+          </div>
+          
+          {passengerData && passengerData.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 flex items-center">
+                <Users className="h-4 w-4 mr-1" />
+                Passageiros
+              </h3>
+              <div className="mt-2 space-y-2">
+                {passengerData.map((passenger, index) => (
+                  <div key={index} className="bg-gray-50 p-3 rounded-md">
+                    <div className="font-medium">Passageiro {index + 1}: {passenger.name}</div>
+                    <div className="text-sm text-gray-500">WhatsApp: {passenger.phone}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 flex items-center">
+              <CreditCard className="h-4 w-4 mr-1" />
+              Pagamento
+            </h3>
+            <div className="mt-2 space-y-1">
+              {isRoundTrip ? (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span>Valor da ida:</span>
+                    <span>{formatCurrency(oneWayPrice)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Valor da volta:</span>
+                    <span>{formatCurrency(returnPrice)}</span>
+                  </div>
+                </>
+              ) : null}
+              <div className="flex justify-between font-medium pt-1 mt-1 border-t">
+                <span>Total:</span>
+                <span className="text-primary">{formatCurrency(totalPrice)}</span>
+              </div>
             </div>
           </div>
           

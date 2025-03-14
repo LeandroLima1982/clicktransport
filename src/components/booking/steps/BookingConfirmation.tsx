@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Check, Calendar, MapPin, CreditCard, User, Clock } from 'lucide-react';
+import { Check, Calendar, MapPin, CreditCard, User, Clock, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Vehicle } from './VehicleSelection';
@@ -21,6 +21,10 @@ interface BookingConfirmationProps {
     passengers: string;
     time?: string;
     returnTime?: string;
+    passengerData?: {
+      name: string;
+      phone: string;
+    }[];
   };
   totalPrice: number;
   formatCurrency: (value: number) => string;
@@ -48,6 +52,9 @@ const BookingConfirmation: React.FC<BookingConfirmationProps> = ({
     const mins = minutes % 60;
     return `${hours}h ${mins}min`;
   };
+
+  const oneWayPrice = bookingData.tripType === 'roundtrip' ? totalPrice / 2 : totalPrice;
+  const returnPrice = bookingData.tripType === 'roundtrip' ? totalPrice / 2 : 0;
 
   const selectedPaymentMethodName = paymentMethods.find(m => m.id === selectedPaymentMethod)?.name || '';
 
@@ -128,15 +135,27 @@ const BookingConfirmation: React.FC<BookingConfirmationProps> = ({
         
         <div className="border rounded-lg p-4">
           <h4 className="font-medium mb-3 flex items-center">
-            <User className="h-5 w-5 mr-2 text-gray-500" />
-            Passageiros e veículo
+            <Users className="h-5 w-5 mr-2 text-gray-500" />
+            Passageiros
           </h4>
           
-          <div className="space-y-3 pl-7">
+          <div className="space-y-4 pl-7">
             <div>
               <div className="text-sm text-gray-500">Número de passageiros</div>
               <div className="font-medium">{bookingData.passengers}</div>
             </div>
+            
+            {bookingData.passengerData && bookingData.passengerData.length > 0 && (
+              <div className="space-y-3">
+                <div className="text-sm text-gray-500">Detalhes dos passageiros:</div>
+                {bookingData.passengerData.map((passenger, index) => (
+                  <div key={index} className="bg-gray-50 p-3 rounded-md">
+                    <div className="font-medium">Passageiro {index + 1}: {passenger.name}</div>
+                    <div className="text-sm text-gray-500">WhatsApp: {passenger.phone}</div>
+                  </div>
+                ))}
+              </div>
+            )}
             
             <div>
               <div className="text-sm text-gray-500">Veículo</div>
@@ -158,12 +177,25 @@ const BookingConfirmation: React.FC<BookingConfirmationProps> = ({
               <div className="font-medium">{selectedPaymentMethodName}</div>
             </div>
             
-            <div>
-              <div className="text-sm text-gray-500">Valor total</div>
-              <div className="font-medium text-primary text-xl">{formatCurrency(totalPrice)}</div>
+            <div className="space-y-1">
+              <div className="text-sm text-gray-500">Detalhamento do valor:</div>
+              
+              <div className="flex justify-between text-sm">
+                <span>Valor da ida:</span>
+                <span>{formatCurrency(oneWayPrice)}</span>
+              </div>
+              
               {bookingData.tripType === 'roundtrip' && (
-                <div className="text-xs text-gray-500">*Inclui ida e volta</div>
+                <div className="flex justify-between text-sm">
+                  <span>Valor da volta:</span>
+                  <span>{formatCurrency(returnPrice)}</span>
+                </div>
               )}
+              
+              <div className="flex justify-between font-medium text-primary text-xl pt-2 border-t mt-2">
+                <span>Valor total:</span>
+                <span>{formatCurrency(totalPrice)}</span>
+              </div>
             </div>
           </div>
         </div>

@@ -17,6 +17,10 @@ interface PaymentSelectionProps {
   estimatedDistance: number;
   bookingData: {
     tripType: string;
+    passengerData?: {
+      name: string;
+      phone: string;
+    }[];
   };
   totalPrice: number;
   formatCurrency: (value: number) => string;
@@ -47,6 +51,8 @@ const PaymentSelection: React.FC<PaymentSelectionProps> = ({
     }
   };
 
+  const oneWayPrice = bookingData.tripType === 'roundtrip' ? totalPrice / 2 : totalPrice;
+  
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold mb-4">Escolha a forma de pagamento</h3>
@@ -77,6 +83,20 @@ const PaymentSelection: React.FC<PaymentSelectionProps> = ({
         ))}
       </div>
       
+      {bookingData.passengerData && bookingData.passengerData.length > 0 && (
+        <div className="border rounded-lg p-4 mt-6">
+          <h4 className="font-medium mb-2">Detalhes dos Passageiros</h4>
+          <div className="space-y-3">
+            {bookingData.passengerData.map((passenger, index) => (
+              <div key={index} className="bg-gray-50 p-3 rounded-md">
+                <div className="font-medium">Passageiro {index + 1}: {passenger.name}</div>
+                <div className="text-sm text-gray-500">WhatsApp: {passenger.phone}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
       <div className="bg-gray-50 p-4 rounded-lg mt-6">
         <h4 className="font-medium mb-2">Resumo de valores</h4>
         <div className="space-y-2">
@@ -88,11 +108,21 @@ const PaymentSelection: React.FC<PaymentSelectionProps> = ({
             <span>Distância ({estimatedDistance} km x {formatCurrency(selectedVehicle?.pricePerKm || 0)}/km)</span>
             <span>{formatCurrency((selectedVehicle?.pricePerKm || 0) * estimatedDistance)}</span>
           </div>
+          <div className="flex justify-between text-sm pt-2 mt-2 border-t">
+            <span className="font-medium">Subtotal por trecho:</span>
+            <span className="font-medium">{formatCurrency(oneWayPrice)}</span>
+          </div>
           {bookingData.tripType === 'roundtrip' && (
-            <div className="flex justify-between text-sm">
-              <span>Taxa de retorno</span>
-              <span>{formatCurrency(totalPrice * 0.8)}</span>
-            </div>
+            <>
+              <div className="flex justify-between text-sm">
+                <span>Valor da ida:</span>
+                <span>{formatCurrency(oneWayPrice)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Valor da volta:</span>
+                <span>{formatCurrency(oneWayPrice)}</span>
+              </div>
+            </>
           )}
           <div className="border-t pt-2 mt-2 flex justify-between font-bold">
             <span>Total</span>
