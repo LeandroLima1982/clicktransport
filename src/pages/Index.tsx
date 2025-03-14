@@ -20,7 +20,7 @@ const Index = () => {
   // Show a brief loading indicator only during initial authentication check
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen w-screen text-primary">
+      <div className="flex items-center justify-center h-screen w-full text-primary">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F8D748]"></div>
         <div className="ml-3 text-lg font-medium">Carregando...</div>
       </div>
@@ -28,7 +28,7 @@ const Index = () => {
   }
 
   return (
-    <div className="w-screen overflow-x-hidden">
+    <div className="w-full overflow-x-hidden">
       <TransitionEffect>
         <Navbar />
         <div className="flex flex-col w-full bg-slate-50">
