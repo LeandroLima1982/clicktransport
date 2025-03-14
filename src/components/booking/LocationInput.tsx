@@ -26,7 +26,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
 }) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="text-gray-700 flex items-center text-sm font-medium">
+      <Label htmlFor={id} className="text-gray-700 block text-sm font-medium">
         {label}
       </Label>
       <div className="relative">
@@ -35,17 +35,17 @@ const LocationInput: React.FC<LocationInputProps> = ({
           placeholder={placeholder}
           value={value}
           onChange={onChange}
-          className="pl-10 py-6 rounded-lg border-gray-200"
+          className="pl-10 py-6 rounded-lg border border-gray-100 shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300"
         />
-        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-400" />
         
         {suggestions.length > 0 && (
-          <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
+          <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-md shadow-lg">
             <ul className="py-1 max-h-60 overflow-auto">
               {suggestions.map((suggestion) => (
                 <li
                   key={suggestion.id}
-                  className="px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
+                  className="px-3 py-2 text-sm hover:bg-amber-50 cursor-pointer"
                   onClick={() => onSelectSuggestion(suggestion)}
                 >
                   <div className="flex items-center gap-2">

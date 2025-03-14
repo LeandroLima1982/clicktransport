@@ -34,13 +34,13 @@ const DateSelector: React.FC<DateSelectorProps> = ({
         <PopoverTrigger asChild>
           <Button 
             variant="outline" 
-            className={`w-full justify-start text-left font-normal ${isMobile ? 'py-5' : 'py-6'} pl-10 rounded-lg border-gray-200 text-gray-700 bg-[#fdfdfd] focus:ring-amber-400 focus:border-amber-400`}
+            className="w-full justify-start text-left font-normal py-6 pl-10 rounded-lg border border-gray-100 shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700"
           >
-            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-400" />
             {date ? (
               format(date, "dd/MM/yyyy", { locale: ptBR })
             ) : (
-              <span className="text-gray-500">Selecione uma data</span>
+              <span className="text-gray-400">Selecione uma data</span>
             )}
           </Button>
         </PopoverTrigger>
@@ -50,7 +50,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
             selected={date} 
             onSelect={onSelect} 
             initialFocus 
-            className={cn("p-3")} 
+            className={cn("p-3 pointer-events-auto")}
             disabled={disabledDates}
             locale={ptBR}
           />
