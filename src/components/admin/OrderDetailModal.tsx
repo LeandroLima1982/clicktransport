@@ -56,7 +56,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     });
   };
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number = 0) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
@@ -184,7 +184,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 Passageiros
               </h3>
               <div className="mt-2 space-y-2">
-                {passengerData.map((passenger, index) => (
+                {passengerData.map((passenger: any, index: number) => (
                   <div key={index} className="bg-gray-50 p-3 rounded-md">
                     <div className="font-medium">Passageiro {index + 1}: {passenger.name}</div>
                     <div className="text-sm text-gray-500">WhatsApp: {passenger.phone}</div>
@@ -194,30 +194,32 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             </div>
           )}
           
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 flex items-center">
-              <CreditCard className="h-4 w-4 mr-1" />
-              Pagamento
-            </h3>
-            <div className="mt-2 space-y-1">
-              {isRoundTrip ? (
-                <>
-                  <div className="flex justify-between text-sm">
-                    <span>Valor da ida:</span>
-                    <span>{formatCurrency(oneWayPrice)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Valor da volta:</span>
-                    <span>{formatCurrency(returnPrice)}</span>
-                  </div>
-                </>
-              ) : null}
-              <div className="flex justify-between font-medium pt-1 mt-1 border-t">
-                <span>Total:</span>
-                <span className="text-primary">{formatCurrency(totalPrice)}</span>
+          {totalPrice > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 flex items-center">
+                <CreditCard className="h-4 w-4 mr-1" />
+                Pagamento
+              </h3>
+              <div className="mt-2 space-y-1">
+                {isRoundTrip ? (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span>Valor da ida:</span>
+                      <span>{formatCurrency(oneWayPrice)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Valor da volta:</span>
+                      <span>{formatCurrency(returnPrice)}</span>
+                    </div>
+                  </>
+                ) : null}
+                <div className="flex justify-between font-medium pt-1 mt-1 border-t">
+                  <span>Total:</span>
+                  <span className="text-primary">{formatCurrency(totalPrice)}</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
           
           <div>
             <h3 className="text-sm font-medium text-gray-500 flex items-center">

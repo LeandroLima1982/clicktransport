@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Table,
@@ -36,6 +35,9 @@ export interface ServiceOrder {
   status: string;
   notes: string | null;
   created_at: string;
+  passenger_data?: any;
+  total_price?: number;
+  trip_type?: 'oneway' | 'roundtrip';
 }
 
 interface ServiceOrderTableProps {
