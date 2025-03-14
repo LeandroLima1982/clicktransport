@@ -1,6 +1,5 @@
 
 import React from 'react';
-import TransitionEffect from '@/components/TransitionEffect';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Solutions from '@/components/Solutions';
@@ -29,19 +28,17 @@ const Index = () => {
 
   return (
     <main className="w-full">
-      <TransitionEffect>
-        <Navbar />
-        <div className="w-full bg-slate-50">
-          <Hero />
-          <TransportTypes />
-          <Solutions />
-          <ProcessSteps />
-          <Testimonials />
-          <FAQ />
-          <CTA />
-          <Footer />
-        </div>
-      </TransitionEffect>
+      <Navbar />
+      <div className="w-full bg-slate-50">
+        <Hero />
+        <TransportTypes />
+        <Solutions />
+        <ProcessSteps />
+        <Testimonials />
+        <FAQ />
+        <CTA />
+        <Footer />
+      </div>
     </main>
   );
 };
