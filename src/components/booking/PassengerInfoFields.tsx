@@ -19,7 +19,7 @@ const PassengerInfoFields: React.FC<PassengerInfoFieldsProps> = ({
   passengerData,
   onPassengerDataChange
 }) => {
-  const numPassengers = parseInt(passengerCount, 10);
+  const numPassengers = passengerCount;
   
   // Initialize or update passenger data array based on count
   React.useEffect(() => {
@@ -104,6 +104,18 @@ const PassengerInfoFields: React.FC<PassengerInfoFieldsProps> = ({
       ))}
     </div>
   );
+  
+  function handleNameChange(index: number, value: string) {
+    const newData = [...passengerData];
+    newData[index] = { ...newData[index], name: value };
+    onPassengerDataChange(newData);
+  }
+  
+  function handlePhoneChange(index: number, value: string) {
+    const newData = [...passengerData];
+    newData[index] = { ...newData[index], phone: value };
+    onPassengerDataChange(newData);
+  }
 };
 
 export default PassengerInfoFields;

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -100,8 +99,13 @@ const BookingForm: React.FC = () => {
               </div>
             </div>}
           
-          {/* Passenger Information Fields */}
-          {passengers && parseInt(passengers) > 0 && <PassengerInfoFields passengerCount={parseInt(passengers)} passengerData={passengerData} onPassengerDataChange={setPassengerData} />}
+          {passengers && parseInt(passengers) > 0 && 
+            <PassengerInfoFields 
+              passengerCount={parseInt(passengers)} 
+              passengerData={passengerData} 
+              onPassengerDataChange={setPassengerData} 
+            />
+          }
         </div>
 
         <Button onClick={handleBooking} className="w-full rounded-lg mt-7 text-black text-lg font-medium h-14 bg-amber-400 hover:bg-amber-500 transition-all duration-300">
@@ -110,17 +114,23 @@ const BookingForm: React.FC = () => {
           </span>
         </Button>
 
-        {bookingData && showBookingSteps && <BookingSteps bookingData={{
-        origin: originValue,
-        destination: destinationValue,
-        date: date,
-        returnDate: returnDate,
-        tripType: tripType,
-        passengers: passengers,
-        time: time,
-        returnTime: returnTime,
-        passengerData: passengerData
-      }} isOpen={showBookingSteps} onClose={() => setShowBookingSteps(false)} />}
+        {bookingData && showBookingSteps && (
+          <BookingSteps 
+            bookingData={{
+              origin: originValue,
+              destination: destinationValue,
+              date: date,
+              returnDate: returnDate,
+              tripType: tripType,
+              passengers: passengers,
+              time: time,
+              returnTime: returnTime,
+              passengerData: passengerData
+            }} 
+            isOpen={showBookingSteps} 
+            onClose={() => setShowBookingSteps(false)} 
+          />
+        )}
       </div>
     </div>;
 };

@@ -61,6 +61,10 @@ interface BookingStepsProps {
     passengers: string;
     time?: string;
     returnTime?: string;
+    passengerData?: {
+      name: string;
+      phone: string;
+    }[];
   };
   isOpen: boolean;
   onClose: () => void;
