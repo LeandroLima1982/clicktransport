@@ -1,9 +1,12 @@
+
 import React, { ReactNode, useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 interface NavbarContainerProps {
   children: ReactNode;
   scrolled: boolean;
 }
+
 const NavbarContainer: React.FC<NavbarContainerProps> = ({
   children,
   scrolled
@@ -19,16 +22,21 @@ const NavbarContainer: React.FC<NavbarContainerProps> = ({
       setSafeAreaTop(parseInt(safeAreaValue, 10) || 0);
     }
   }, [isMobile]);
-  return <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 w-full
+
+  return (
+    <header 
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 w-screen
         ${scrolled ? 'bg-white shadow-sm' : 'bg-transparent'}
-        ${isMobile ? 'safe-area-top' : ''}`} style={safeAreaTop ? {
-    paddingTop: `${safeAreaTop}px`
-  } : {}}>
+        ${isMobile ? 'safe-area-top' : ''}`} 
+      style={safeAreaTop ? { paddingTop: `${safeAreaTop}px` } : {}}
+    >
       <div className="py-3 w-full bg-neutral-50 md:py-[10px] my-0 mx-0">
-        <div className="max-w-[1400px] mx-auto w-full px-4 md:px-6 flex items-center justify-between">
+        <div className="w-full px-4 md:px-6 flex items-center justify-between max-w-[1400px] mx-auto">
           {children}
         </div>
       </div>
-    </header>;
+    </header>
+  );
 };
+
 export default NavbarContainer;
