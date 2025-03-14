@@ -11,21 +11,27 @@ interface PassengerSelectorProps {
 
 const PassengerSelector: React.FC<PassengerSelectorProps> = ({ value, onChange }) => {
   const isMobile = useIsMobile();
+  const [open, setOpen] = React.useState(false);
   
   // Generate passenger options from 1 to 10
   const passengerOptions = Array.from({ length: 10 }, (_, i) => (i + 1).toString());
+
+  const handleValueChange = (newValue: string) => {
+    onChange(newValue);
+    setOpen(false);
+  };
 
   return (
     <div className="space-y-2">
       <label className="text-gray-700 block text-sm font-medium">
         Passageiros
       </label>
-      <Select value={value} onValueChange={onChange}>
+      <Select value={value} onValueChange={handleValueChange} open={open} onOpenChange={setOpen}>
         <SelectTrigger 
-          className="w-full py-6 pl-10 rounded-lg border border-gray-100 shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 relative"
+          className="w-full py-6 rounded-lg border border-gray-100 shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700"
         >
-          <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-400" />
-          <SelectValue placeholder="Nº de passageiros">
+          <div className="flex items-center">
+            <Users className="mr-2 h-5 w-5 text-amber-400" />
             {value ? (
               <span className="flex items-center">
                 {value} {parseInt(value) === 1 ? 'passageiro' : 'passageiros'}
@@ -35,7 +41,7 @@ const PassengerSelector: React.FC<PassengerSelectorProps> = ({ value, onChange }
                 Nº de passageiros
               </span>
             )}
-          </SelectValue>
+          </div>
         </SelectTrigger>
         <SelectContent className="max-h-[200px]">
           {passengerOptions.map((num) => (

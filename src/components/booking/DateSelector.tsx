@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
@@ -24,19 +24,27 @@ const DateSelector: React.FC<DateSelectorProps> = ({
   disabledDates
 }) => {
   const isMobile = useIsMobile();
+  const [open, setOpen] = React.useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  
+  // Handle date selection and auto-close
+  const handleSelect = (newDate: Date | undefined) => {
+    onSelect(newDate);
+    setOpen(false);
+  };
   
   return (
     <div className="space-y-2">
       <Label className="text-gray-700 block text-sm font-medium">
         {label}
       </Label>
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button 
             variant="outline" 
-            className="w-full justify-start text-left font-normal py-6 pl-10 rounded-lg border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700"
+            className="w-full justify-start text-left font-normal py-6 rounded-lg border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700"
           >
-            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-400" />
+            <CalendarIcon className="mr-2 h-5 w-5 text-amber-400" />
             {date ? (
               format(date, "dd/MM/yyyy", { locale: ptBR })
             ) : (
@@ -48,7 +56,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
           <Calendar 
             mode="single" 
             selected={date} 
-            onSelect={onSelect} 
+            onSelect={handleSelect} 
             initialFocus 
             className={cn("p-3 pointer-events-auto")}
             disabled={disabledDates}

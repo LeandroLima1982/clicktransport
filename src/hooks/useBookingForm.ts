@@ -3,6 +3,11 @@ import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { fetchAddressSuggestions } from '@/utils/mapbox';
 
+export interface PassengerInfo {
+  name: string;
+  phone: string;
+}
+
 export interface BookingFormData {
   originValue: string;
   destinationValue: string;
@@ -12,6 +17,7 @@ export interface BookingFormData {
   passengers: string;
   time: string;
   returnTime: string;
+  passengerData: PassengerInfo[];
 }
 
 export const useBookingForm = () => {
@@ -21,6 +27,7 @@ export const useBookingForm = () => {
   const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
   const [tripType, setTripType] = useState<'oneway' | 'roundtrip'>('oneway');
   const [passengers, setPassengers] = useState('1');
+  const [passengerData, setPassengerData] = useState<PassengerInfo[]>([{ name: '', phone: '' }]);
   const [showBookingSteps, setShowBookingSteps] = useState(false);
   const [time, setTime] = useState<string>('');
   const [returnTime, setReturnTime] = useState<string>('');
@@ -60,6 +67,20 @@ export const useBookingForm = () => {
     if (tripType === 'roundtrip' && !returnTime) {
       toast.error('Por favor, selecione a hora de retorno.');
       return;
+    }
+    
+    // Validate passenger information
+    const passengerCount = parseInt(passengers, 10);
+    for (let i = 0; i < passengerCount; i++) {
+      if (!passengerData[i]?.name) {
+        toast.error(`Por favor, informe o nome do passageiro ${i + 1}.`);
+        return;
+      }
+      
+      if (!passengerData[i]?.phone) {
+        toast.error(`Por favor, informe o WhatsApp do passageiro ${i + 1}.`);
+        return;
+      }
     }
     
     setShowBookingSteps(true);
@@ -116,7 +137,8 @@ export const useBookingForm = () => {
     tripType,
     passengers,
     time,
-    returnTime
+    returnTime,
+    passengerData
   };
 
   return {
@@ -126,6 +148,7 @@ export const useBookingForm = () => {
     returnDate,
     tripType,
     passengers,
+    passengerData,
     time,
     returnTime,
     originSuggestions,
@@ -136,6 +159,7 @@ export const useBookingForm = () => {
     setDate,
     setReturnDate,
     setPassengers,
+    setPassengerData,
     setTime,
     setReturnTime,
     handleOriginChange,
