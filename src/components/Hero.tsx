@@ -13,12 +13,13 @@ const Hero: React.FC = () => {
         <div className="w-full text-center mb-8 md:mb-12 max-w-[1400px] mx-auto px-4 md:px-6">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 animate-fade-in">
             <span className="block mb-2 text-gray-800 text-center font-extrabold text-5xl">Transfers com Motoristas Executivos</span>
-            <span className="block text-amber-400 mt-1 md:mt-2 my-0 text-2xl">Para colaboradores de empresas offshore, hóspedes e turistas.</span>
+            <span className="block text-amber-400 mt-1 md:mt-2 my-0 text-2xl">Para colaboradores de empresas, hóspedes e turistas.</span>
           </h1>
           
           <p style={{
           animationDelay: '0.2s'
-        }} className="md:text-lg mb-6 md:mb-8 animate-fade-in opacity-90 text-gray-600 max-w-2xl mx-auto">Conectamos motoristas executivos a empresas offshore, agências de turismo, hotéis e pousadas. Sempre com pontualida,eficiência e segurança.</p>
+        }} className="mb-6 md:mb-8 animate-fade-in opacity-90 text-gray-600 max-w-2xl mx-auto font-light md:text-lg text-base">Conectamos motoristas executivos a empresas offshore,
+ agências de turismo, hotéis e pousadas. Sempre com pontualida,eficiência e segurança.</p>
           
           <div className="flex justify-center animate-fade-in" style={{
           animationDelay: '0.3s'
