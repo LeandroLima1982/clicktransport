@@ -5,6 +5,11 @@ import { ServiceOrder } from '@/types/serviceOrder';
 export const playNotificationSound = () => {
   const audio = new Audio('/notification.mp3');
   audio.play().catch(err => console.log('Audio play failed:', err));
+  
+  // Vibrate device if supported (mobile-friendly)
+  if (navigator.vibrate) {
+    navigator.vibrate([100, 50, 100]);
+  }
 };
 
 export const showAssignmentNotification = (order: ServiceOrder) => {
@@ -20,4 +25,19 @@ export const showAssignmentNotification = (order: ServiceOrder) => {
       }
     }
   });
+};
+
+// Mobile-friendly haptic feedback
+export const vibrate = (pattern: number | number[]) => {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
+
+// Feedback patterns
+export const feedbackPatterns = {
+  success: [100, 30, 100],
+  error: 150,
+  warning: [100, 50, 100, 50],
+  notification: [50, 100, 50]
 };

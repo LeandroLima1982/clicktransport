@@ -13,6 +13,41 @@ const DashboardContent: React.FC = () => {
   const isMobile = useIsMobile();
   const { user } = useAuth();
   
+  if (isMobile) {
+    return (
+      <div className="space-y-6 pb-10">
+        <Tabs defaultValue="dashboard" className="w-full animate-fade-in">
+          <TabsList className="w-full grid grid-cols-3 mb-6 bg-[#262626] p-1 rounded-xl">
+            <TabsTrigger value="dashboard" className="rounded-lg text-white data-[state=active]:bg-[#333333] data-[state=active]:text-[#F8D748]">
+              <ChartBar className="h-4 w-4 mr-2" />
+              <span>Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="rounded-lg text-white data-[state=active]:bg-[#333333] data-[state=active]:text-[#F8D748]">
+              <FileText className="h-4 w-4 mr-2" />
+              <span>Serviços</span>
+            </TabsTrigger>
+            <TabsTrigger value="history" className="rounded-lg text-white data-[state=active]:bg-[#333333] data-[state=active]:text-[#F8D748]">
+              <History className="h-4 w-4 mr-2" />
+              <span>Histórico</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard" className="space-y-4 animate-fade-in">
+            <DriverDashboard />
+          </TabsContent>
+          
+          <TabsContent value="orders" className="space-y-4 animate-fade-in">
+            <ServiceOrderList />
+          </TabsContent>
+          
+          <TabsContent value="history" className="space-y-4 animate-fade-in">
+            <TripHistory />
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
+  
   return (
     <main className="flex-1 p-4 md:p-6 bg-gray-50 overflow-auto">
       <div className="mb-6 md:mb-8 space-y-2 animate-fade-in">
