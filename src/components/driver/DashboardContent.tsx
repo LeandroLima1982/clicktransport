@@ -5,7 +5,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import DriverDashboard from './DriverDashboard';
 import ServiceOrderList from './ServiceOrderList';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChartBar, FileText, History } from 'lucide-react';
+import { ChartBar, FileText, History, MapPin, Clock } from 'lucide-react';
 import TripHistory from './TripHistory';
 import { useAuth } from '@/hooks/useAuth';
 

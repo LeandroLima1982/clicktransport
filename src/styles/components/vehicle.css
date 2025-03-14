@@ -1,23 +1,18 @@
 
-/* Modern vehicle card styling based on reference design */
+/* Vehicle cards - mobile optimized */
 .vehicle-card {
-  background-color: #1F1F1F;
-  border-radius: 14px;
+  background-color: #262626;
+  border-radius: 12px;
   overflow: hidden;
   margin-bottom: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
-}
-
-.vehicle-card:active {
-  transform: scale(0.98);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .vehicle-header {
+  padding: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 15px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -27,71 +22,32 @@
   color: white;
 }
 
-.vehicle-plate {
-  background-color: #333;
-  color: white;
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  letter-spacing: 1px;
-}
-
-.vehicle-image-container {
-  position: relative;
-  height: 140px;
-  background-color: #222;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
-
-.vehicle-image {
-  height: 100%;
-  width: 100%;
-  object-fit: contain;
-  padding: 12px;
-}
-
 .journey-info {
-  padding: 15px;
+  padding: 16px;
 }
 
 .journey-location {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 12px;
-}
-
-.location-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  margin-top: 4px;
-  margin-right: 12px;
+  margin-bottom: 16px;
   position: relative;
 }
 
-.location-dot::after {
-  content: '';
-  position: absolute;
-  width: 2px;
-  height: 28px;
-  background-color: rgba(255, 255, 255, 0.1);
-  left: 5px;
-  top: 12px;
+.location-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 6px;
+  margin-right: 12px;
+  flex-shrink: 0;
 }
 
-.journey-location:last-child .location-dot::after {
-  display: none;
-}
-
-.origin {
+.location-dot.origin {
   background-color: #F8D748;
 }
 
-.destination {
-  background-color: #F8D748;
+.location-dot.destination {
+  background-color: #FF4B4B;
 }
 
 .location-text {
@@ -99,21 +55,30 @@
 }
 
 .location-name {
-  font-size: 14px;
   color: white;
-  margin-bottom: 2px;
+  font-weight: 500;
+  margin-bottom: 4px;
 }
 
 .location-time {
+  color: rgba(255, 255, 255, 0.6);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+}
+
+.route-line {
+  position: absolute;
+  left: 5px;
+  top: 16px;
+  bottom: 16px;
+  width: 1px;
+  background-color: rgba(255, 255, 255, 0.2);
+  z-index: 0;
 }
 
 .journey-stats {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-top: 16px;
+  margin-top: 20px;
   padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -126,143 +91,19 @@
 }
 
 .stat-value {
-  font-size: 13px;
   color: white;
-  font-weight: 500;
-}
-
-/* Transfer item styles */
-.transfer-item {
-  background-color: #1F1F1F;
-  border-radius: 14px;
-  padding: 15px;
-  margin-bottom: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.transfer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.transfer-title {
   font-weight: 600;
-  color: white;
 }
 
-.transfer-status {
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 12px;
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .vehicle-card {
+    display: none; /* Hide mobile cards on desktop */
+  }
 }
 
-.transfer-content {
-  display: flex;
-  gap: 15px;
-}
-
-.transfer-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 10px;
-  background-color: #333;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.transfer-details {
-  flex: 1;
-}
-
-.transfer-route {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.route-point {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.point-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #F8D748;
-}
-
-.point-name {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.transfer-footer {
-  margin-top: 5px;
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-/* Vehicle selection in booking flow */
-.vehicle-option {
-  background-color: #222;
-  border-radius: 16px;
-  overflow: hidden;
-  margin-bottom: 15px;
-  transition: transform 0.2s;
-}
-
-.vehicle-option:active {
-  transform: scale(0.98);
-}
-
-.vehicle-option-header {
-  display: flex;
-  justify-content: space-between;
-  padding: 12px 15px;
-  background-color: #2A2A2A;
-  color: white;
-}
-
-.vehicle-option-content {
-  padding: 15px;
-  display: flex;
-  gap: 15px;
-}
-
-.vehicle-option-image {
-  width: 80px;
-  height: 80px;
-  background-color: #333;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.vehicle-option-details {
-  flex: 1;
-}
-
-.vehicle-option-stats {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.vehicle-option-price {
-  font-weight: 600;
-  color: #F8D748;
-  font-size: 18px;
+@media (max-width: 767px) {
+  .desktop-card {
+    display: none; /* Hide desktop cards on mobile */
+  }
 }
