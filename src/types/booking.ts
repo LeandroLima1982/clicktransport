@@ -14,4 +14,5 @@ export interface Booking {
   additional_notes?: string | null;
   created_at: string;
   user_id: string;
+  passenger_data?: any;
 }

@@ -9,7 +9,8 @@ import {
   Car, 
   CreditCard,
   X,
-  User
+  User,
+  Users
 } from 'lucide-react';
 import { 
   Sheet,
@@ -55,6 +56,13 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
     }
   };
   
+  const formatCurrency = (value: number = 0) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+  
   const handleCancel = async () => {
     if (booking.status === 'cancelled' || booking.status === 'completed') {
       return;
@@ -70,6 +78,24 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
       setIsCancelling(false);
     }
   };
+  
+  // Parse passenger data if available
+  let passengerData = [];
+  try {
+    if (booking.passenger_data) {
+      passengerData = typeof booking.passenger_data === 'string' 
+        ? JSON.parse(booking.passenger_data) 
+        : booking.passenger_data;
+    }
+  } catch (e) {
+    console.error('Error parsing passenger data:', e);
+  }
+  
+  // Calculate one-way price and return price
+  const totalPrice = booking.total_price || 0;
+  const isRoundTrip = booking.return_date !== null;
+  const oneWayPrice = isRoundTrip ? totalPrice / 2 : totalPrice;
+  const returnPrice = isRoundTrip ? totalPrice / 2 : 0;
   
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -156,6 +182,26 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
             </div>
           </div>
           
+          {passengerData && passengerData.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="font-semibold mb-2 flex items-center">
+                  <Users className="h-4 w-4 mr-2" />
+                  Passageiros
+                </h3>
+                <div className="space-y-2">
+                  {passengerData.map((passenger: any, index: number) => (
+                    <div key={index} className="bg-gray-50 p-3 rounded-md">
+                      <div className="font-medium">{passenger.name}</div>
+                      <div className="text-sm text-muted-foreground">WhatsApp: {passenger.phone}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+          
           {booking.additional_notes && (
             <>
               <Separator />
@@ -173,11 +219,32 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
               <CreditCard className="h-4 w-4 mr-2" />
               Pagamento
             </h3>
-            <div className="flex justify-between items-center">
-              <p className="text-sm text-muted-foreground">Valor Total</p>
-              <p className="text-lg font-semibold">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(booking.total_price)}
-              </p>
+            <div className="space-y-2">
+              {isRoundTrip ? (
+                <>
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-muted-foreground">Valor da Ida</p>
+                    <p className="font-medium">{formatCurrency(oneWayPrice)}</p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-muted-foreground">Valor da Volta</p>
+                    <p className="font-medium">{formatCurrency(returnPrice)}</p>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 mt-1 border-t">
+                    <p className="font-semibold">Total</p>
+                    <p className="text-lg font-semibold text-primary">
+                      {formatCurrency(booking.total_price)}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between items-center">
+                  <p className="font-semibold">Valor Total</p>
+                  <p className="text-lg font-semibold text-primary">
+                    {formatCurrency(booking.total_price)}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
