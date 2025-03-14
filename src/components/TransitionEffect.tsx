@@ -61,11 +61,10 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
 
   return (
     <div
-      className={`transition-all ease-out w-full overflow-hidden ${getTransitionStyles()} ${getMobileClass()}`}
+      className={`transition-all ease-out w-full ${getTransitionStyles()} ${getMobileClass()}`}
       style={{ 
         transitionDuration: `${duration}ms`, 
-        transitionDelay: `${delay}ms`,
-        transform: isVisible ? undefined : undefined  // Force hardware acceleration
+        transitionDelay: `${delay}ms`
       }}
     >
       {children}

@@ -28,10 +28,10 @@ const Index = () => {
   }
 
   return (
-    <div className="w-full overflow-x-hidden">
+    <main className="w-full">
       <TransitionEffect>
         <Navbar />
-        <div className="flex flex-col w-full bg-slate-50">
+        <div className="w-full bg-slate-50">
           <Hero />
           <TransportTypes />
           <Solutions />
@@ -42,7 +42,7 @@ const Index = () => {
           <Footer />
         </div>
       </TransitionEffect>
-    </div>
+    </main>
   );
 };
 
