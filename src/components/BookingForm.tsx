@@ -32,9 +32,9 @@ const BookingForm: React.FC = () => {
     bookingData
   } = useBookingForm();
   const isMobile = useIsMobile();
-  return <div className="w-full bg-yellow-400 rounded-lg md:rounded-2xl p-5 md:p-8 shadow-md mx-0 my-0 py-[15px] px-[24px]">
+  return <div className="w-full bg-yellow-400 rounded-lg md:rounded-2xl p-5 md:p-8 shadow-md my-0 mx-0 py-[36px] px-[160px]">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0">
-        <h3 className="text-xl font-bold text-gray-800">Agende Agora</h3>
+        <h3 className="text-xl font-bold text-gray-800">Agende sua Viajem</h3>
         <TripTypeTabs value={tripType} onChange={setTripType} />
       </div>
 
