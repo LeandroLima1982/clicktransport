@@ -23,7 +23,7 @@ const transportTypes = [{
   duration: 'A partir de 4h • R$ 600,00'
 }];
 const TransportTypes: React.FC = () => {
-  return <section className="bg-gray-50 w-full py-[30px] mx-0 my-[6px]">
+  return <section className="bg-gray-50 w-full py-[8px] my-[15px] mx-[2px]">
       <div className="max-w-[1400px] mx-auto px-4 md:px-6 w-full">
         <div className="text-center mb-12">
           <h2 className="section-title mb-6">Soluções de Transporte Feitas para Você</h2>
