@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -9,6 +10,7 @@ import TimeSelector from './TimeSelector';
 import PassengerSelector from './booking/PassengerSelector';
 import PassengerInfoFields from './booking/PassengerInfoFields';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 const BookingForm: React.FC = () => {
   const {
     originValue,
@@ -35,9 +37,13 @@ const BookingForm: React.FC = () => {
     selectSuggestion,
     handleBooking,
     setShowBookingSteps,
-    bookingData
+    bookingData,
+    clearOrigin,
+    clearDestination
   } = useBookingForm();
+
   const isMobile = useIsMobile();
+
   return <div className="w-full bg-[#FEF7E4] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
       <div className="px-4 md:px-8 pt-5 md:pt-7 pb-6 md:pb-8 bg-amber-300">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 space-y-3 md:space-y-0">
@@ -47,9 +53,27 @@ const BookingForm: React.FC = () => {
 
         <div className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <LocationInput id="origin" label="De onde vai sair?" placeholder="Endereço origem" value={originValue} onChange={handleOriginChange} suggestions={originSuggestions} onSelectSuggestion={suggestion => selectSuggestion(suggestion, true)} />
+            <LocationInput 
+              id="origin" 
+              label="De onde vai sair?" 
+              placeholder="Endereço origem" 
+              value={originValue} 
+              onChange={handleOriginChange} 
+              suggestions={originSuggestions} 
+              onSelectSuggestion={suggestion => selectSuggestion(suggestion, true)}
+              onClear={clearOrigin}
+            />
             
-            <LocationInput id="destination" label="Para onde vai?" placeholder="Endereço destino" value={destinationValue} onChange={handleDestinationChange} suggestions={destinationSuggestions} onSelectSuggestion={suggestion => selectSuggestion(suggestion, false)} />
+            <LocationInput 
+              id="destination" 
+              label="Para onde vai?" 
+              placeholder="Endereço destino" 
+              value={destinationValue} 
+              onChange={handleDestinationChange} 
+              suggestions={destinationSuggestions} 
+              onSelectSuggestion={suggestion => selectSuggestion(suggestion, false)}
+              onClear={clearDestination}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -100,4 +124,5 @@ const BookingForm: React.FC = () => {
       </div>
     </div>;
 };
+
 export default BookingForm;

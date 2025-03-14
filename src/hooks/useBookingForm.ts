@@ -94,12 +94,16 @@ export const useBookingForm = () => {
       clearTimeout(originTimeoutRef.current);
     }
     
-    originTimeoutRef.current = setTimeout(async () => {
-      setIsLoadingSuggestions(true);
-      const suggestions = await fetchAddressSuggestions(value);
-      setOriginSuggestions(suggestions);
-      setIsLoadingSuggestions(false);
-    }, 500);
+    if (value.length >= 3) {
+      originTimeoutRef.current = setTimeout(async () => {
+        setIsLoadingSuggestions(true);
+        const suggestions = await fetchAddressSuggestions(value);
+        setOriginSuggestions(suggestions);
+        setIsLoadingSuggestions(false);
+      }, 500);
+    } else {
+      setOriginSuggestions([]);
+    }
   };
 
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,12 +114,16 @@ export const useBookingForm = () => {
       clearTimeout(destinationTimeoutRef.current);
     }
     
-    destinationTimeoutRef.current = setTimeout(async () => {
-      setIsLoadingSuggestions(true);
-      const suggestions = await fetchAddressSuggestions(value);
-      setDestinationSuggestions(suggestions);
-      setIsLoadingSuggestions(false);
-    }, 500);
+    if (value.length >= 3) {
+      destinationTimeoutRef.current = setTimeout(async () => {
+        setIsLoadingSuggestions(true);
+        const suggestions = await fetchAddressSuggestions(value);
+        setDestinationSuggestions(suggestions);
+        setIsLoadingSuggestions(false);
+      }, 500);
+    } else {
+      setDestinationSuggestions([]);
+    }
   };
 
   const selectSuggestion = (suggestion: any, isOrigin: boolean) => {
@@ -127,6 +135,16 @@ export const useBookingForm = () => {
       setDestinationValue(placeName);
       setDestinationSuggestions([]);
     }
+  };
+
+  const clearOrigin = () => {
+    setOriginValue('');
+    setOriginSuggestions([]);
+  };
+
+  const clearDestination = () => {
+    setDestinationValue('');
+    setDestinationSuggestions([]);
   };
 
   const bookingData: BookingFormData = {
@@ -167,6 +185,8 @@ export const useBookingForm = () => {
     selectSuggestion,
     handleBooking,
     setShowBookingSteps,
-    bookingData
+    bookingData,
+    clearOrigin,
+    clearDestination
   };
 };
