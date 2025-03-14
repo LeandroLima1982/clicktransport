@@ -32,7 +32,7 @@ const BookingForm: React.FC = () => {
     bookingData
   } = useBookingForm();
   const isMobile = useIsMobile();
-  return <div className="w-full bg-yellow-400 rounded-lg md:rounded-2xl p-5 md:p-8 shadow-md mx-0 my-0 px-[17px] py-[99px]">
+  return <div className="w-full bg-yellow-400 rounded-lg md:rounded-2xl p-5 md:p-8 shadow-md mx-0 my-0 py-[15px] px-[24px]">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0">
         <h3 className="text-xl font-bold text-gray-800">Qual seu destino?</h3>
         <TripTypeTabs value={tripType} onChange={setTripType} />
@@ -66,7 +66,7 @@ const BookingForm: React.FC = () => {
           </div>}
       </div>
 
-      <Button onClick={handleBooking} className="w-full rounded-lg mt-6 md:mt-8 text-black text-base md:text-lg font-medium shadow-md hover:shadow-lg h-12 md:h-14 bg-amber-500 hover:bg-amber-400 transition-all duration-300">
+      <Button onClick={handleBooking} className="w-full rounded-lg mt-6 md:mt-8 text-black text-base md:text-lg font-medium shadow-md hover:shadow-lg h-12 md:h-14 bg-amber-500 hover:bg-amber-400 transition-all duration-300 mx-0 px-0 my-[48px]">
         <span className="relative z-10 flex items-center justify-center">
           Buscar
         </span>
