@@ -40,14 +40,19 @@ export const useQueueDiagnostics = () => {
   } = useQuery({
     queryKey: ['queue-health'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('check_queue_health');
-      if (error) throw error;
-      return data as { 
-        health_score: number; 
-        invalid_positions: number; 
-        duplicate_positions: number; 
-        active_companies: number; 
+      // Use any as a temporary type to handle the JSON response
+      const { data, error } = await supabase.rpc('check_queue_health') as { 
+        data: { 
+          health_score: number; 
+          invalid_positions: number; 
+          duplicate_positions: number; 
+          active_companies: number; 
+        } | null; 
+        error: any 
       };
+      
+      if (error) throw error;
+      return data;
     }
   });
   
