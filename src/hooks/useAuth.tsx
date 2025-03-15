@@ -19,7 +19,7 @@ export interface AuthContextType {
   } | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, role: UserRole, metadata?: any) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, userData?: any) => Promise<{ error: Error | null }>;
   isAuthenticating: boolean;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
 }
@@ -207,12 +207,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Sign up function
-  const signUp = async (email: string, password: string, role: UserRole, metadata: any = {}) => {
+  const signUp = async (email: string, password: string, userData?: any) => {
     setIsAuthenticating(true);
     try {
+      // Get the role from userData if available
+      const role = userData?.accountType || 'client';
+      
       // Include the role in the user metadata for the trigger function
       const metadataWithRole = {
-        ...metadata,
+        ...userData,
         role
       };
       
