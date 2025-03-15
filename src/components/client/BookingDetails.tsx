@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -84,7 +83,6 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
     }
   };
   
-  // Parse passenger data if available
   let passengerData = [];
   try {
     if (booking.passenger_data) {
@@ -96,7 +94,6 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
     console.error('Error parsing passenger data:', e);
   }
   
-  // Calculate one-way price and return price
   const totalPrice = booking.total_price || 0;
   const isRoundTrip = booking.return_date !== null;
   const oneWayPrice = isRoundTrip ? totalPrice / 2 : totalPrice;
