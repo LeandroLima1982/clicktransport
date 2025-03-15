@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { format, parseISO } from 'date-fns';
+
+import React, { useState, useEffect } from 'react';
+import { format, parseISO, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   Calendar, 
@@ -11,7 +12,8 @@ import {
   User,
   Users,
   Share2,
-  Phone
+  Phone,
+  ArrowRight
 } from 'lucide-react';
 import { 
   Sheet,
@@ -27,6 +29,7 @@ import BookingStatus from './BookingStatus';
 import { Booking } from '@/types/booking';
 import { shareViaWhatsApp, formatBookingShareMessage, vibrate, feedbackPatterns } from '@/services/notifications/notificationService';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { calculateRoute } from '@/utils/routeUtils';
 
 interface BookingDetailsProps {
   booking: Booking;
@@ -42,7 +45,26 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
   onCancel
 }) => {
   const [isCancelling, setIsCancelling] = useState(false);
+  const [estimatedDuration, setEstimatedDuration] = useState<number | null>(null);
   const isMobile = useIsMobile();
+  
+  // Calculate route and estimated times when booking details are opened
+  useEffect(() => {
+    if (isOpen && booking.origin && booking.destination) {
+      const fetchRouteData = async () => {
+        try {
+          const routeInfo = await calculateRoute(booking.origin, booking.destination);
+          if (routeInfo) {
+            setEstimatedDuration(routeInfo.duration);
+          }
+        } catch (error) {
+          console.error('Error calculating route:', error);
+        }
+      };
+      
+      fetchRouteData();
+    }
+  }, [isOpen, booking.origin, booking.destination]);
   
   const formatDate = (dateString: string) => {
     try {
@@ -60,11 +82,42 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
     }
   };
   
+  const formatDateTime = (dateString: string) => {
+    try {
+      return format(parseISO(dateString), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    } catch (e) {
+      return dateString;
+    }
+  };
+  
   const formatCurrency = (value: number = 0) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+  
+  const calculateArrivalTime = (departureTime: string, durationMinutes: number) => {
+    try {
+      const departure = parseISO(departureTime);
+      const arrival = addMinutes(departure, durationMinutes);
+      return format(arrival, "HH:mm", { locale: ptBR });
+    } catch (e) {
+      return "";
+    }
+  };
+  
+  const formatTravelTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    
+    if (hours === 0) {
+      return `${mins} min`;
+    } else if (mins === 0) {
+      return `${hours}h`;
+    } else {
+      return `${hours}h ${mins}min`;
+    }
   };
   
   const handleCancel = async () => {
@@ -99,6 +152,17 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
   const oneWayPrice = isRoundTrip ? totalPrice / 2 : totalPrice;
   const returnPrice = isRoundTrip ? totalPrice / 2 : 0;
   
+  const departureTime = formatTime(booking.travel_date);
+  const returnDepartureTime = booking.return_date ? formatTime(booking.return_date) : '';
+  
+  const arrivalTime = estimatedDuration && departureTime 
+    ? calculateArrivalTime(booking.travel_date, estimatedDuration) 
+    : '';
+    
+  const returnArrivalTime = estimatedDuration && returnDepartureTime && booking.return_date
+    ? calculateArrivalTime(booking.return_date, estimatedDuration)
+    : '';
+  
   const handleShareViaWhatsApp = () => {
     vibrate(feedbackPatterns.success);
     
@@ -106,15 +170,26 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
       origin: booking.origin,
       destination: booking.destination,
       date: formatDate(booking.travel_date),
-      time: formatTime(booking.travel_date),
+      time: departureTime,
+      arrivalTime: arrivalTime,
+      duration: estimatedDuration,
       tripType: isRoundTrip ? 'roundtrip' : 'oneway',
-      passengerData
+      passengerData,
+      creationDate: formatDateTime(booking.booking_date)
     };
+    
+    if (isRoundTrip && booking.return_date) {
+      bookingData.returnDate = formatDate(booking.return_date);
+      bookingData.returnTime = returnDepartureTime;
+      bookingData.returnArrivalTime = returnArrivalTime;
+    }
     
     const message = formatBookingShareMessage(bookingData, {
       simplified: true,
       referenceCode: booking.reference_code,
-      includePassengers: true
+      includePassengers: true,
+      includePrice: true,
+      totalPrice: totalPrice
     });
     
     shareViaWhatsApp(message);
@@ -139,7 +214,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
             </div>
             <p className="text-lg font-mono">{booking.reference_code}</p>
             <p className="text-sm text-muted-foreground">
-              Reserva feita em {formatDate(booking.booking_date)}
+              Reserva feita em {formatDateTime(booking.booking_date)}
             </p>
             
             <Button 
@@ -164,14 +239,52 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
               <div>
                 <p className="text-sm text-muted-foreground">Ida</p>
                 <p className="font-medium">{formatDate(booking.travel_date)}</p>
-                <p className="text-sm">{formatTime(booking.travel_date)}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center">
+                    <Clock className="h-3 w-3 mr-1 text-gray-500" />
+                    <p className="text-sm">{departureTime}</p>
+                  </div>
+                  {arrivalTime && (
+                    <>
+                      <ArrowRight className="h-3 w-3 text-gray-400" />
+                      <div className="flex items-center">
+                        <Clock className="h-3 w-3 mr-1 text-gray-500" />
+                        <p className="text-sm">{arrivalTime} (est.)</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+                {estimatedDuration && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Duração: {formatTravelTime(estimatedDuration)}
+                  </p>
+                )}
               </div>
               
               {booking.return_date && (
                 <div>
                   <p className="text-sm text-muted-foreground">Volta</p>
                   <p className="font-medium">{formatDate(booking.return_date)}</p>
-                  <p className="text-sm">{formatTime(booking.return_date)}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center">
+                      <Clock className="h-3 w-3 mr-1 text-gray-500" />
+                      <p className="text-sm">{returnDepartureTime}</p>
+                    </div>
+                    {returnArrivalTime && (
+                      <>
+                        <ArrowRight className="h-3 w-3 text-gray-400" />
+                        <div className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1 text-gray-500" />
+                          <p className="text-sm">{returnArrivalTime} (est.)</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {estimatedDuration && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Duração: {formatTravelTime(estimatedDuration)}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -227,10 +340,15 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
                   {passengerData.map((passenger: any, index: number) => (
                     <div key={index} className="bg-gray-50 p-3 rounded-md">
                       <div className="font-medium">{passenger.name}</div>
-                      <div className="flex items-center text-sm text-muted-foreground">
+                      <a 
+                        href={`https://wa.me/${passenger.phone.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center text-sm text-muted-foreground hover:text-green-600 transition-colors"
+                      >
                         <Phone className="h-3 w-3 mr-1 text-green-600" />
                         {passenger.phone}
-                      </div>
+                      </a>
                     </div>
                   ))}
                 </div>
