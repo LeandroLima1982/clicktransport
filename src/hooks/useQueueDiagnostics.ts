@@ -42,7 +42,12 @@ export const useQueueDiagnostics = () => {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('check_queue_health');
       if (error) throw error;
-      return data;
+      return data as { 
+        health_score: number; 
+        invalid_positions: number; 
+        duplicate_positions: number; 
+        active_companies: number; 
+      };
     }
   });
   
