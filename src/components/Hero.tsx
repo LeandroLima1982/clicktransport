@@ -13,7 +13,7 @@ const Hero: React.FC = () => {
         <div className="w-full text-center mb-8 md:mb-12 max-w-[1400px] mx-auto px-4 md:px-6">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 animate-fade-in">
             <span className="block mb-2 text-gray-800 text-center font-extrabold text-5xl">Transporte Executivo
- para Empresas</span>
+  para Empresas</span>
             <span className="block text-amber-400 mt-1 md:mt-2 my-0 text-2xl">transporte de qualidade para colaboradores, hóspedes e turistas.</span>
           </h1>
           
