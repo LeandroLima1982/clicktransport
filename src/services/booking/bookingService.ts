@@ -449,13 +449,23 @@ export const reconcilePendingBookings = async () => {
       if (!existingOrders || existingOrders.length === 0) {
         console.log(`Creating missing service order for booking ${booking.id} (${booking.reference_code})`);
         
-        // Ensure the booking has the correct status type
+        // Create a properly typed booking object with strict type for status
         const typedBooking: Booking = {
-          ...booking,
+          id: booking.id,
+          reference_code: booking.reference_code,
+          user_id: booking.user_id,
+          origin: booking.origin,
+          destination: booking.destination,
+          booking_date: booking.booking_date,
+          travel_date: booking.travel_date,
+          created_at: booking.created_at,
+          // Explicit type casting for the status field
           status: booking.status as 'confirmed' | 'pending' | 'completed' | 'cancelled',
-          passengers: booking.passengers || 1,
+          total_price: booking.total_price,
+          // Handle optional fields with fallbacks
           return_date: booking.return_date || null,
           vehicle_type: booking.vehicle_type || null,
+          passengers: booking.passengers || 1,
           additional_notes: booking.additional_notes || null
         };
         
