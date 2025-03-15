@@ -1,5 +1,7 @@
 
+# A string specifying the project ID
 project_id = "ofctyafulvkwaldondsj"
+
 [api]
 # Port to use for the API URL.
 port = 54321
@@ -74,3 +76,8 @@ url = ""
 port = 54321
 # Directory for Function definitions.
 serve_dir = "supabase/functions"
+
+# Configure function settings individually
+[functions.check_queue_health]
+verify_jwt = false
+
