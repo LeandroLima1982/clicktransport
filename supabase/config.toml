@@ -71,11 +71,11 @@ redirect_uri = ""
 # or any other third-party OIDC providers.
 url = ""
 
-# Global function settings
+# Correct format for functions section
 [functions]
-# Directory for Function definitions
-serve_dir = "supabase/functions"
+# Empty map for the root functions configuration
+port = 54321
 
-# Function-specific settings are defined in individual sections
+# Function-specific settings defined in separate sections
 [functions.check_queue_health]
 verify_jwt = false
