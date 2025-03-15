@@ -116,7 +116,7 @@ const ManualAssignment = () => {
         
       if (companyError) throw companyError;
       
-      // Create service order
+      // Create service order with explicit reference to booking
       const serviceOrderData = {
         company_id: companyId,
         origin: booking.origin,
