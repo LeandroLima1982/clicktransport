@@ -16,7 +16,7 @@ export const getNextCompanyInQueue = async () => {
       .from('companies')
       .select('id, name, queue_position, last_order_assigned, status')
       .eq('status', 'active')
-      .order('queue_position', { ascending: true })
+      .order('queue_position', { ascending: true, nullsFirst: false })
       .order('last_order_assigned', { ascending: true, nullsFirst: true })
       .limit(10); // Get more companies in case we need to filter some out
       
@@ -30,7 +30,13 @@ export const getNextCompanyInQueue = async () => {
       return { company: null, error: new Error('No active companies found') };
     }
     
-    // Get the company with the lowest queue position
+    // Check if any companies have null or 0 queue positions and log warning
+    const hasInvalidPositions = companies.some(c => c.queue_position === null || c.queue_position === 0);
+    if (hasInvalidPositions) {
+      console.warn('Some companies have null or 0 queue positions. Consider resetting the queue.');
+    }
+    
+    // Get the company with the lowest queue position or oldest last assignment
     // This ensures we're implementing proper round-robin assignment
     const availableCompany = companies[0];
     
@@ -155,7 +161,11 @@ export const resetCompanyQueuePositions = async () => {
     for (let i = 0; i < companies.length; i++) {
       const { error } = await supabase
         .from('companies')
-        .update({ queue_position: i + 1 })
+        .update({ 
+          queue_position: i + 1,
+          // Only reset last_order_assigned if we're doing a full reset
+          last_order_assigned: i === 0 ? new Date().toISOString() : null
+        })
         .eq('id', companies[i].id);
         
       if (error) {
