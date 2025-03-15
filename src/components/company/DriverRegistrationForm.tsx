@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, User, Car } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/main';
 
 interface DriverRegistrationFormProps {
   companyId: string;
@@ -78,7 +78,7 @@ const DriverRegistrationForm: React.FC<DriverRegistrationFormProps> = ({
         throw new Error('Erro ao criar usuário');
       }
       
-      // 2. Create the driver record in the drivers table with email field
+      // 2. Create the driver record in the drivers table
       const { error: driverError } = await supabase
         .from('drivers')
         .insert({
@@ -87,9 +87,7 @@ const DriverRegistrationForm: React.FC<DriverRegistrationFormProps> = ({
           license_number: formData.licenseNumber,
           company_id: companyId,
           user_id: authData.user.id,
-          status: 'active',
-          email: formData.email,
-          is_password_changed: false
+          status: 'active'
         });
       
       if (driverError) throw driverError;

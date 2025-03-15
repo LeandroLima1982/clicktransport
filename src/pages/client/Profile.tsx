@@ -46,7 +46,7 @@ const Profile: React.FC = () => {
                 <div className="mx-auto mb-4 bg-primary/10 h-24 w-24 rounded-full flex items-center justify-center">
                   <User className="h-12 w-12 text-primary" />
                 </div>
-                <CardTitle>{user.user_metadata?.full_name || user.email?.split('@')[0]}</CardTitle>
+                <CardTitle>{user.email?.split('@')[0]}</CardTitle>
                 <p className="text-sm text-muted-foreground">{user.email}</p>
               </CardHeader>
               <CardContent>
@@ -91,7 +91,7 @@ const Profile: React.FC = () => {
                     <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
                     <span className="text-sm font-medium">Telefone</span>
                   </div>
-                  <p className="text-muted-foreground">{user.user_metadata?.phone || "Não informado"}</p>
+                  <p className="text-muted-foreground">Não informado</p>
                 </div>
                 
                 <div className="pt-4">

@@ -1,10 +1,30 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, LogOut, Loader2, Car, Briefcase, Shield, LayoutDashboard, Book, Home, Settings, Users, Calendar, CreditCard } from 'lucide-react';
+import { 
+  User, 
+  LogOut, 
+  Loader2, 
+  Car, 
+  Briefcase, 
+  Shield, 
+  LayoutDashboard,
+  Book,
+  Home,
+  Settings,
+  Users,
+  Calendar,
+  CreditCard
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/hooks/auth/types';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 interface UserMenuProps {
   user: any;
@@ -13,14 +33,15 @@ interface UserMenuProps {
   isAuthenticating: boolean;
 }
 
-const UserMenu: React.FC<UserMenuProps> = ({
-  user,
-  userRole,
+const UserMenu: React.FC<UserMenuProps> = ({ 
+  user, 
+  userRole, 
   handleSignOut,
   isAuthenticating
 }) => {
   if (!user) {
-    return <>
+    return (
+      <>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="rounded-full px-6 btn-hover-slide">
@@ -55,30 +76,39 @@ const UserMenu: React.FC<UserMenuProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
         <Link to="/auth?register=true">
-          <Button className="rounded-full px-6 btn-hover-slide mx-[8px]">Cadastrar-se</Button>
+          <Button className="rounded-full px-6 btn-hover-slide">Cadastrar</Button>
         </Link>
-      </>;
+      </>
+    );
   }
-  
-  return <DropdownMenu>
+
+  return (
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="rounded-full px-4 btn-hover-slide flex items-center gap-2">
           <User className="h-4 w-4" />
           <span className="hidden md:inline">{user.email?.split('@')[0]}</span>
-          {userRole && <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+          {userRole && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
               {userRole === 'client' && 'Cliente'}
               {userRole === 'company' && 'Empresa'}
               {userRole === 'driver' && 'Motorista'}
               {userRole === 'admin' && 'Admin'}
-            </span>}
+            </span>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           Olá, {user.email?.split('@')[0]}
-          {userRole && <span className="block text-xs text-muted-foreground mt-1">
-              Tipo de conta: {userRole === 'client' ? 'Cliente' : userRole === 'company' ? 'Empresa' : userRole === 'driver' ? 'Motorista' : userRole === 'admin' ? 'Admin' : 'Usuário'}
-            </span>}
+          {userRole && (
+            <span className="block text-xs text-muted-foreground mt-1">
+              Tipo de conta: {userRole === 'client' ? 'Cliente' : 
+                             userRole === 'company' ? 'Empresa' : 
+                             userRole === 'driver' ? 'Motorista' : 
+                             userRole === 'admin' ? 'Admin' : 'Usuário'}
+            </span>
+          )}
         </DropdownMenuLabel>
         
         <DropdownMenuItem asChild>
@@ -88,7 +118,8 @@ const UserMenu: React.FC<UserMenuProps> = ({
           </Link>
         </DropdownMenuItem>
         
-        {userRole === 'client' && <>
+        {userRole === 'client' && (
+          <>
             <DropdownMenuItem asChild>
               <Link to="/bookings" className="w-full">
                 <Calendar className="h-4 w-4 mr-2" />
@@ -107,9 +138,11 @@ const UserMenu: React.FC<UserMenuProps> = ({
                 Métodos de Pagamento
               </Link>
             </DropdownMenuItem>
-          </>}
+          </>
+        )}
         
-        {userRole === 'company' && <>
+        {userRole === 'company' && (
+          <>
             <DropdownMenuItem asChild>
               <Link to="/company/dashboard" className="w-full">
                 <LayoutDashboard className="h-4 w-4 mr-2" />
@@ -128,9 +161,11 @@ const UserMenu: React.FC<UserMenuProps> = ({
                 Configurações
               </Link>
             </DropdownMenuItem>
-          </>}
+          </>
+        )}
         
-        {userRole === 'driver' && <>
+        {userRole === 'driver' && (
+          <>
             <DropdownMenuItem asChild>
               <Link to="/driver/dashboard" className="w-full">
                 <LayoutDashboard className="h-4 w-4 mr-2" />
@@ -149,9 +184,11 @@ const UserMenu: React.FC<UserMenuProps> = ({
                 Minhas Viagens
               </Link>
             </DropdownMenuItem>
-          </>}
+          </>
+        )}
         
-        {userRole === 'admin' && <>
+        {userRole === 'admin' && (
+          <>
             <DropdownMenuItem asChild>
               <Link to="/admin/dashboard" className="w-full">
                 <LayoutDashboard className="h-4 w-4 mr-2" />
@@ -164,21 +201,27 @@ const UserMenu: React.FC<UserMenuProps> = ({
                 Configuração do Banco
               </Link>
             </DropdownMenuItem>
-          </>}
+          </>
+        )}
         
         <DropdownMenuSeparator />
         
         <DropdownMenuItem onClick={handleSignOut} disabled={isAuthenticating}>
-          {isAuthenticating ? <>
+          {isAuthenticating ? (
+            <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Saindo...
-            </> : <>
+            </>
+          ) : (
+            <>
               <LogOut className="h-4 w-4 mr-2" />
               Sair
-            </>}
+            </>
+          )}
         </DropdownMenuItem>
       </DropdownMenuContent>
-    </DropdownMenu>;
+    </DropdownMenu>
+  );
 };
 
 export default UserMenu;

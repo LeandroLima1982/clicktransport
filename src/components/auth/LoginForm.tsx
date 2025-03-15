@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
 import { CardContent, CardFooter } from '@/components/ui/card';
@@ -23,19 +23,18 @@ const LoginForm: React.FC<LoginFormProps> = ({
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const { signIn } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   
   const searchParams = new URLSearchParams(location.search);
   const accountType = searchParams.get('type') || 'client';
   
-  // Set default email for admin for easier access during development
+  // Set default email for admin for easier access
   useEffect(() => {
     if (accountType === 'admin') {
       setEmail('admin@clicktransfer.com');
       setPassword('Admin@123');
-      console.log('Admin login form initialized with default credentials');
     }
   }, [accountType]);
   
@@ -43,27 +42,29 @@ const LoginForm: React.FC<LoginFormProps> = ({
     e.preventDefault();
     
     try {
+      // Validate form
       if (!email || !password) {
         toast.error('Por favor, preencha email e senha');
         return;
       }
       
-      console.log(`Login attempt for account type: ${accountType}`);
+      // If it's a driver login or company login, require company selection
+      if ((accountType === 'driver' || accountType === 'company') && !selectedCompanyId) {
+        toast.error('Por favor, selecione uma empresa');
+        return;
+      }
       
+      // Use the parent handleLogin if provided, otherwise use local logic
       if (handleLogin) {
         await handleLogin(e);
       } else {
-        console.log(`Attempting direct login with email: ${email}`);
-        const { error } = await signIn(email, password);
+        // For driver logins or company logins, pass the company ID for verification
+        const companyIdToUse = (accountType === 'driver' || accountType === 'company') ? selectedCompanyId : undefined;
+        
+        const { error } = await signIn(email, password, companyIdToUse);
         if (error) {
           console.error('Login error:', error);
-          
-          // Show specific error messages based on error type
-          if (error.message === 'You do not have administrator privileges') {
-            toast.error('Acesso negado', { 
-              description: 'Você não tem privilégios de administrador'
-            });
-          } else if (error.message === 'You are not registered as a driver for this company') {
+          if (error.message === 'You are not registered as a driver for this company') {
             toast.error('Acesso negado', { 
               description: 'Você não está registrado como motorista para esta empresa'
             });
@@ -71,26 +72,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
             toast.error('Acesso negado', { 
               description: 'Você não está registrado como administrador desta empresa'
             });
-          } else if (error.message.includes('Invalid login credentials')) {
-            toast.error('Falha no login', { 
-              description: 'Email ou senha inválidos'
-            });
           } else {
             toast.error('Falha no login', { description: error.message });
           }
-          
-          // Maintain the account type in URL when redirecting after error
-          navigate(`/auth?type=${accountType}`);
         } else {
           toast.success('Login realizado com sucesso!');
-          // Let the AuthProvider handle the redirect based on user role
         }
       }
     } catch (error) {
       console.error('Login error:', error);
       toast.error('Ocorreu um erro inesperado');
-      // Maintain the account type in URL when redirecting after error
-      navigate(`/auth?type=${accountType}`);
     }
   };
   
@@ -103,6 +94,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
             setEmail={setEmail}
             password={password}
             setPassword={setPassword}
+            selectedCompanyId={selectedCompanyId}
+            setSelectedCompanyId={setSelectedCompanyId}
             accountType={accountType}
           />
         </CardContent>
@@ -111,7 +104,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
           <Button 
             type="submit" 
             className="w-full rounded-full" 
-            disabled={loading}
+            disabled={loading || ((accountType === 'driver' || accountType === 'company') && !selectedCompanyId)}
           >
             {loading ? (
               <>

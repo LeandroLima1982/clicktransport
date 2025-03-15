@@ -1,36 +1,20 @@
 
 import React from 'react';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface TripTypeTabsProps {
   value: 'oneway' | 'roundtrip';
   onChange: (value: 'oneway' | 'roundtrip') => void;
 }
 
-const TripTypeTabs: React.FC<TripTypeTabsProps> = ({
-  value,
-  onChange
-}) => {
+const TripTypeTabs: React.FC<TripTypeTabsProps> = ({ value, onChange }) => {
   return (
-    <ToggleGroup
-      type="single"
-      value={value}
-      onValueChange={(val) => val && onChange(val as 'oneway' | 'roundtrip')}
-      className="bg-amber-100/60 p-1 rounded-full"
-    >
-      <ToggleGroupItem 
-        value="oneway" 
-        className="rounded-full text-sm px-4 py-1.5 data-[state=on]:bg-white data-[state=on]:shadow-sm data-[state=on]:text-amber-800 transition-colors"
-      >
-        Somente Ida
-      </ToggleGroupItem>
-      <ToggleGroupItem 
-        value="roundtrip" 
-        className="rounded-full text-sm px-4 py-1.5 data-[state=on]:bg-white data-[state=on]:shadow-sm data-[state=on]:text-amber-800 transition-colors"
-      >
-        Ida e Volta
-      </ToggleGroupItem>
-    </ToggleGroup>
+    <Tabs defaultValue={value} className="w-[200px]" onValueChange={(value) => onChange(value as 'oneway' | 'roundtrip')}>
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="oneway">Ida</TabsTrigger>
+        <TabsTrigger value="roundtrip">Ida e Volta</TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 };
 

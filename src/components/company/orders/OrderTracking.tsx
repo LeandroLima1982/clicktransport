@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { ServiceOrder } from './types';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/main';
 import { validateMapboxToken, getCoordinatesFromAddress, fetchRouteData, createStaticMapUrl } from './map/mapUtils';
 import LoadingState from './map/LoadingState';
 import ErrorState from './map/ErrorState';
@@ -55,14 +55,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       if (error) throw error;
       
       console.log("Order data received:", data);
-      
-      // Type cast the status to match ServiceOrder type
-      const typedOrder: ServiceOrder = {
-        ...data,
-        status: data.status as 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled'
-      };
-      
-      setOrder(typedOrder);
+      setOrder(data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching order details:', error);

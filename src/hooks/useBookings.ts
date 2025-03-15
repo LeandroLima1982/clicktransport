@@ -12,27 +12,20 @@ export const useBookings = () => {
   const fetchBookings = async (): Promise<Booking[]> => {
     if (!user) return [];
     
-    try {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching bookings:', error);
-        toast.error('Erro ao carregar reservas', {
-          description: 'Ocorreu um erro ao buscar suas reservas. Tente novamente mais tarde.'
-        });
-        throw error;
-      }
-      
-      return data as Booking[];
-    } catch (error) {
-      console.error('Exception fetching bookings:', error);
-      toast.error('Erro ao carregar reservas');
-      return [];
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching bookings:', error);
+      toast.error('Erro ao carregar reservas', {
+        description: 'Ocorreu um erro ao buscar suas reservas. Tente novamente mais tarde.'
+      });
+      throw error;
     }
+    
+    return data as Booking[];
   };
   
   const { 
@@ -46,25 +39,24 @@ export const useBookings = () => {
     enabled: !!user,
   });
   
-  const cancelBooking = async (bookingId: string): Promise<void> => {
+  const cancelBooking = async (bookingId: string) => {
     try {
       const { error } = await supabase
         .from('bookings')
         .update({ status: 'cancelled' })
-        .eq('id', bookingId)
-        .eq('user_id', user?.id);
+        .eq('id', bookingId);
       
       if (error) throw error;
       
       toast.success('Reserva cancelada com sucesso');
       refetch();
-      return;
+      return true;
     } catch (error) {
       console.error('Error cancelling booking:', error);
       toast.error('Erro ao cancelar reserva', {
         description: 'Não foi possível cancelar sua reserva. Tente novamente.'
       });
-      throw error;
+      return false;
     }
   };
   

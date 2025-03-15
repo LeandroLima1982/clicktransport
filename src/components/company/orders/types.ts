@@ -9,8 +9,6 @@ export interface ServiceOrder {
   notes: string | null;
   driver_id: string | null;
   vehicle_id: string | null;
-  created_at?: string;
-  company_id?: string;
 }
 
 export interface Driver {

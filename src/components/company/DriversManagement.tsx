@@ -8,14 +8,11 @@ import {
   Plus, 
   Edit, 
   Trash, 
-  Car, 
-  Mail,
-  Send,
-  Loader2
+  Car 
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import DriverRegistrationForm from './DriverRegistrationForm';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/main';
 import { toast } from 'sonner';
 import { 
   Sheet, 
@@ -48,15 +45,9 @@ interface Driver {
   id: string;
   name: string;
   phone: string | null;
-  email: string | null;
   license_number: string | null;
   status: 'active' | 'inactive' | 'on_trip';
   vehicle_id: string | null;
-  is_password_changed: boolean | null;
-  last_login: string | null;
-  company_id: string | null;
-  user_id: string | null;
-  created_at: string | null;
 }
 
 interface DriversManagementProps {
@@ -70,13 +61,11 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [driverToDelete, setDriverToDelete] = useState<string | null>(null);
-  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   
   const [driverForm, setDriverForm] = useState({
     id: '',
     name: '',
     phone: '',
-    email: '',
     license_number: '',
     status: 'active',
     vehicle_id: ''
@@ -100,23 +89,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
         
         if (driversError) throw driversError;
         
-        const formattedDrivers: Driver[] = (driversData || []).map(driver => ({
-          id: driver.id || '',
-          name: driver.name || '',
-          phone: driver.phone || null,
-          email: driver.email || null,
-          license_number: driver.license_number || null,
-          status: (driver.status as 'active' | 'inactive' | 'on_trip') || 'active',
-          vehicle_id: driver.vehicle_id || null,
-          is_password_changed: driver.is_password_changed !== undefined ? driver.is_password_changed : null,
-          last_login: driver.last_login || null,
-          company_id: driver.company_id || null,
-          user_id: driver.user_id || null,
-          created_at: driver.created_at || null
-        }));
-        
-        setDrivers(formattedDrivers);
-        
         const { data: vehiclesData, error: vehiclesError } = await supabase
           .from('vehicles')
           .select('*')
@@ -124,6 +96,7 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
         
         if (vehiclesError) throw vehiclesError;
         
+        setDrivers(driversData || []);
         setVehicles(vehiclesData || []);
       }
     } catch (error) {
@@ -144,7 +117,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
       id: driver.id,
       name: driver.name,
       phone: driver.phone || '',
-      email: driver.email || '',
       license_number: driver.license_number || '',
       status: driver.status,
       vehicle_id: driver.vehicle_id || ''
@@ -157,7 +129,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
       id: '',
       name: '',
       phone: '',
-      email: '',
       license_number: '',
       status: 'active',
       vehicle_id: ''
@@ -167,8 +138,8 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
 
   const handleSaveDriver = async () => {
     try {
-      if (!driverForm.name || !driverForm.email) {
-        toast.error('Nome e email do motorista são obrigatórios');
+      if (!driverForm.name) {
+        toast.error('Nome do motorista é obrigatório');
         return;
       }
       
@@ -178,7 +149,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
           .update({
             name: driverForm.name,
             phone: driverForm.phone || null,
-            email: driverForm.email,
             license_number: driverForm.license_number || null,
             status: driverForm.status as 'active' | 'inactive' | 'on_trip',
             vehicle_id: driverForm.vehicle_id || null
@@ -199,7 +169,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
               company_id: companyId,
               name: driverForm.name,
               phone: driverForm.phone || null,
-              email: driverForm.email,
               license_number: driverForm.license_number || null,
               status: driverForm.status,
               vehicle_id: driverForm.vehicle_id || null
@@ -242,52 +211,9 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
     }
   };
 
-  const handleSendPasswordReminder = async (driverId: string) => {
-    setSendingReminder(driverId);
-    try {
-      const { data: driver, error: driverError } = await supabase
-        .from('drivers')
-        .select('*')
-        .eq('id', driverId)
-        .single();
-      
-      if (driverError || !driver) {
-        throw new Error('Erro ao encontrar dados do motorista');
-      }
-      
-      toast.success(`Lembrete enviado para ${driver.name}`, {
-        description: `Um email foi enviado para ${driver.email} com instruções para alteração de senha.`
-      });
-      
-      try {
-        const { error: updateError } = await supabase
-          .from('drivers')
-          .update({ 
-            status: driver.status
-          })
-          .eq('id', driverId);
-          
-        if (updateError) {
-          console.error('Error updating driver reminder timestamp:', updateError);
-        }
-      } catch (updateErr) {
-        console.error('Exception updating reminder timestamp:', updateErr);
-      }
-      
-    } catch (error: any) {
-      console.error('Error sending password reminder:', error);
-      toast.error('Erro ao enviar lembrete', {
-        description: error.message || 'Ocorreu um problema ao enviar o lembrete'
-      });
-    } finally {
-      setSendingReminder(null);
-    }
-  };
-
   const filteredDrivers = drivers.filter(driver => 
     driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (driver.phone && driver.phone.includes(searchTerm)) ||
-    (driver.email && driver.email.includes(searchTerm)) ||
     (driver.license_number && driver.license_number.includes(searchTerm))
   );
 
@@ -356,6 +282,7 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
         </Sheet>
       </div>
       
+      {/* Confirmation Dialog for Delete */}
       <Dialog open={!!driverToDelete} onOpenChange={(open) => !open && setDriverToDelete(null)}>
         <DialogContent>
           <DialogHeader>
@@ -416,21 +343,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
                         value={driverForm.name}
                         onChange={handleInputChange}
                         placeholder="Nome completo"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium mb-1">
-                        Email *
-                      </label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={driverForm.email}
-                        onChange={handleInputChange}
-                        placeholder="email@exemplo.com"
                         required
                       />
                     </div>
@@ -516,12 +428,10 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
                     <TableHead>Telefone</TableHead>
                     <TableHead>CNH</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Veículo</TableHead>
-                    <TableHead>Último Login</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -529,7 +439,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
                   {filteredDrivers.map((driver) => (
                     <TableRow key={driver.id}>
                       <TableCell className="font-medium">{driver.name}</TableCell>
-                      <TableCell>{driver.email || '-'}</TableCell>
                       <TableCell>{driver.phone || '-'}</TableCell>
                       <TableCell>{driver.license_number || '-'}</TableCell>
                       <TableCell>
@@ -538,14 +447,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
                         </span>
                       </TableCell>
                       <TableCell>{getVehicleName(driver.vehicle_id)}</TableCell>
-                      <TableCell>
-                        {driver.last_login ? new Date(driver.last_login).toLocaleString('pt-BR') : 'Nunca'}
-                        {!driver.is_password_changed && (
-                          <span className="ml-2 px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
-                            Senha provisória
-                          </span>
-                        )}
-                      </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Sheet onOpenChange={(open) => {
@@ -576,21 +477,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
                                     value={driverForm.name}
                                     onChange={handleInputChange}
                                     placeholder="Nome completo"
-                                    required
-                                  />
-                                </div>
-                                
-                                <div>
-                                  <label htmlFor="edit-email" className="block text-sm font-medium mb-1">
-                                    Email *
-                                  </label>
-                                  <Input
-                                    id="edit-email"
-                                    name="email"
-                                    type="email"
-                                    value={driverForm.email}
-                                    onChange={handleInputChange}
-                                    placeholder="email@exemplo.com"
                                     required
                                   />
                                 </div>
@@ -669,21 +555,6 @@ const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
                               </SheetFooter>
                             </SheetContent>
                           </Sheet>
-                          
-                          {!driver.is_password_changed && driver.email && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleSendPasswordReminder(driver.id)}
-                              disabled={sendingReminder === driver.id}
-                            >
-                              {sendingReminder === driver.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Mail className="h-4 w-4 text-blue-500" />
-                              )}
-                            </Button>
-                          )}
                           
                           <Button 
                             variant="outline" 

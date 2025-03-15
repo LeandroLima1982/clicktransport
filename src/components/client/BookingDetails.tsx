@@ -1,52 +1,42 @@
 
 import React from 'react';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { CalendarIcon, MapPin, Clock, Users, Car, CreditCard, FileText } from 'lucide-react';
 import { Booking } from '@/types/booking';
 import BookingStatus from './BookingStatus';
-import ServiceOrderStatus from './ServiceOrderStatus';
+import { Button } from '@/components/ui/button';
 import {
-  Calendar,
-  Clock,
-  MapPin,
-  Users,
-  Car,
-  CreditCard,
-  Phone,
-  AlertTriangle,
-} from 'lucide-react';
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 interface BookingDetailsProps {
   booking: Booking;
   isOpen: boolean;
   onClose: () => void;
-  onCancel: (bookingId: string) => Promise<void>;
+  onCancel: (id: string) => Promise<boolean>;
 }
 
-const BookingDetails: React.FC<BookingDetailsProps> = ({
-  booking,
-  isOpen,
-  onClose,
-  onCancel,
+const BookingDetails: React.FC<BookingDetailsProps> = ({ 
+  booking, 
+  isOpen, 
+  onClose, 
+  onCancel 
 }) => {
-  const [isCancelling, setIsCancelling] = React.useState(false);
-
   const formatDate = (dateString: string) => {
     try {
-      return format(parseISO(dateString), "dd 'de' MMMM, yyyy", { locale: ptBR });
+      return format(parseISO(dateString), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     } catch (e) {
       return dateString;
     }
   };
-
+  
   const formatTime = (dateString: string) => {
     try {
       return format(parseISO(dateString), "HH:mm", { locale: ptBR });
@@ -54,190 +44,134 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
       return "";
     }
   };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const handleCancelBooking = async () => {
+  
+  const handleCancel = async () => {
     if (window.confirm('Tem certeza que deseja cancelar esta reserva?')) {
-      setIsCancelling(true);
-      try {
-        await onCancel(booking.id);
-        onClose();
-      } catch (error) {
-        console.error('Error cancelling booking:', error);
-      } finally {
-        setIsCancelling(false);
-      }
+      const success = await onCancel(booking.id);
+      if (success) onClose();
     }
   };
-
-  // Get passenger data from booking
-  const getPassengerData = () => {
-    if (booking.passenger_data) {
-      try {
-        return typeof booking.passenger_data === 'string'
-          ? JSON.parse(booking.passenger_data)
-          : booking.passenger_data;
-      } catch (e) {
-        return [];
-      }
-    }
-    return [];
-  };
-
-  const passengerData = getPassengerData();
-  const isRoundTrip = booking.return_date !== null;
-
+  
+  const canBeCancelled = ['confirmed', 'pending'].includes(booking.status);
+  
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="sm:max-w-lg overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Detalhes da Reserva</SheetTitle>
+      <SheetContent className="sm:max-w-md">
+        <SheetHeader className="mb-4">
+          <SheetTitle className="text-xl flex items-center justify-between">
+            <span>Reserva {booking.reference_code}</span>
+            <BookingStatus status={booking.status} />
+          </SheetTitle>
           <SheetDescription>
-            Reserva #{booking.reference_code}
+            Detalhes completos da sua reserva
           </SheetDescription>
         </SheetHeader>
-
-        <div className="py-4">
-          <div className="flex justify-between items-center mb-4">
-            <BookingStatus status={booking.status} className="py-1 px-3" />
-            {booking.status !== 'cancelled' && booking.status !== 'completed' && (
+        
+        <div className="space-y-5 py-2">
+          <div className="space-y-1">
+            <div className="flex items-center text-muted-foreground text-sm">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Valor Total
+            </div>
+            <div className="text-xl font-semibold">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(booking.total_price)}
+            </div>
+          </div>
+          
+          <div className="space-y-1">
+            <div className="flex items-center text-muted-foreground text-sm">
+              <CalendarIcon className="h-4 w-4 mr-2" />
+              Data da Viagem
+            </div>
+            <div className="font-medium">
+              {formatDate(booking.travel_date)} às {formatTime(booking.travel_date)}
+            </div>
+          </div>
+          
+          {booking.return_date && (
+            <div className="space-y-1">
+              <div className="flex items-center text-muted-foreground text-sm">
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                Data de Retorno
+              </div>
+              <div className="font-medium">
+                {formatDate(booking.return_date)} às {formatTime(booking.return_date)}
+              </div>
+            </div>
+          )}
+          
+          <div className="space-y-1">
+            <div className="flex items-center text-muted-foreground text-sm">
+              <MapPin className="h-4 w-4 mr-2" />
+              Origem
+            </div>
+            <div className="font-medium">
+              {booking.origin}
+            </div>
+          </div>
+          
+          <div className="space-y-1">
+            <div className="flex items-center text-muted-foreground text-sm">
+              <MapPin className="h-4 w-4 mr-2" />
+              Destino
+            </div>
+            <div className="font-medium">
+              {booking.destination}
+            </div>
+          </div>
+          
+          {booking.vehicle_type && (
+            <div className="space-y-1">
+              <div className="flex items-center text-muted-foreground text-sm">
+                <Car className="h-4 w-4 mr-2" />
+                Tipo de Veículo
+              </div>
+              <div className="font-medium">
+                {booking.vehicle_type}
+              </div>
+            </div>
+          )}
+          
+          <div className="space-y-1">
+            <div className="flex items-center text-muted-foreground text-sm">
+              <Users className="h-4 w-4 mr-2" />
+              Passageiros
+            </div>
+            <div className="font-medium">
+              {booking.passengers || 1}
+            </div>
+          </div>
+          
+          {booking.additional_notes && (
+            <div className="space-y-1">
+              <div className="flex items-center text-muted-foreground text-sm">
+                <FileText className="h-4 w-4 mr-2" />
+                Observações
+              </div>
+              <div className="font-medium">
+                {booking.additional_notes}
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <SheetFooter className="mt-6">
+          <div className="flex w-full space-x-2">
+            <SheetClose asChild>
+              <Button className="flex-1" variant="outline">Fechar</Button>
+            </SheetClose>
+            
+            {canBeCancelled && (
               <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleCancelBooking}
-                disabled={isCancelling}
+                className="flex-1" 
+                variant="destructive"
+                onClick={handleCancel}
               >
-                {isCancelling ? 'Cancelando...' : 'Cancelar Reserva'}
+                Cancelar Reserva
               </Button>
             )}
           </div>
-
-          {/* Service Order Status Flow */}
-          <ServiceOrderStatus status={booking.status} className="my-6" />
-
-          <div className="space-y-4 mt-6">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-semibold flex items-center mb-2">
-                <Calendar className="h-4 w-4 mr-2 text-primary" />
-                Data e Horário
-              </h3>
-              <div className="text-sm space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Data:</span>
-                  <span>{formatDate(booking.travel_date)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Horário:</span>
-                  <span>{formatTime(booking.travel_date)}</span>
-                </div>
-                {isRoundTrip && booking.return_date && (
-                  <>
-                    <div className="border-t border-gray-200 my-2"></div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Data de retorno:</span>
-                      <span>{formatDate(booking.return_date)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Horário de retorno:</span>
-                      <span>{formatTime(booking.return_date)}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-semibold flex items-center mb-2">
-                <MapPin className="h-4 w-4 mr-2 text-primary" />
-                Trajeto
-              </h3>
-              <div className="text-sm space-y-1">
-                <div className="flex flex-col">
-                  <span className="text-muted-foreground">Origem:</span>
-                  <span className="font-medium">{booking.origin}</span>
-                </div>
-                <div className="flex flex-col mt-2">
-                  <span className="text-muted-foreground">Destino:</span>
-                  <span className="font-medium">{booking.destination}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-semibold flex items-center mb-2">
-                <Car className="h-4 w-4 mr-2 text-primary" />
-                Veículo
-              </h3>
-              <div className="text-sm space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tipo:</span>
-                  <span>{booking.vehicle_type || "Não especificado"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Passageiros:</span>
-                  <span>{booking.passengers}</span>
-                </div>
-              </div>
-            </div>
-
-            {passengerData.length > 0 && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-semibold flex items-center mb-2">
-                  <Users className="h-4 w-4 mr-2 text-primary" />
-                  Passageiros
-                </h3>
-                <div className="space-y-2">
-                  {passengerData.map((passenger: any, index: number) => (
-                    <div key={index} className="border border-gray-200 rounded p-2">
-                      <div className="font-medium">{passenger.name}</div>
-                      <a 
-                        href={`https://wa.me/${passenger.phone.replace(/\D/g, '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center text-xs text-green-600 hover:text-green-700 transition-colors"
-                      >
-                        <Phone className="h-3 w-3 mr-1" />
-                        {passenger.phone}
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-semibold flex items-center mb-2">
-                <CreditCard className="h-4 w-4 mr-2 text-primary" />
-                Pagamento
-              </h3>
-              <div className="text-sm space-y-1">
-                <div className="flex justify-between font-medium">
-                  <span>Valor Total:</span>
-                  <span className="text-primary">{formatCurrency(booking.total_price || 0)}</span>
-                </div>
-                {booking.status === 'pending' && (
-                  <div className="flex items-center mt-2 text-amber-600 text-xs">
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                    <span>Aguardando pagamento</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {booking.additional_notes && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-semibold mb-2">Observações</h3>
-                <p className="text-sm text-gray-700 whitespace-pre-line">{booking.additional_notes}</p>
-              </div>
-            )}
-          </div>
-        </div>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

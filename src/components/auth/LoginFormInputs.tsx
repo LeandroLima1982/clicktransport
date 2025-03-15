@@ -2,13 +2,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import CompanySelector from './CompanySelector';
 
 interface LoginFormInputsProps {
   email: string;
   setEmail: (email: string) => void;
   password: string;
   setPassword: (password: string) => void;
+  selectedCompanyId: string;
+  setSelectedCompanyId: (id: string) => void;
   accountType: string;
 }
 
@@ -17,20 +19,24 @@ const LoginFormInputs: React.FC<LoginFormInputsProps> = ({
   setEmail,
   password,
   setPassword,
-  accountType,
+  selectedCompanyId,
+  setSelectedCompanyId,
+  accountType
 }) => {
-  // Only show admin default email in development
-  React.useEffect(() => {
-    if (accountType === 'admin') {
-      setEmail('admin@clicktransfer.com');
-      setPassword('Admin@123');
-    }
-  }, [accountType]);
-
   return (
     <div className="space-y-4">
+      {/* Show company selection for driver and company logins */}
+      {(accountType === 'driver' || accountType === 'company') && (
+        <CompanySelector 
+          selectedCompanyId={selectedCompanyId}
+          setSelectedCompanyId={setSelectedCompanyId}
+        />
+      )}
+      
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <label htmlFor="email" className="text-sm font-medium">
+          Email
+        </label>
         <Input 
           id="email" 
           type="email" 
@@ -43,7 +49,9 @@ const LoginFormInputs: React.FC<LoginFormInputsProps> = ({
       
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor="password">Senha</Label>
+          <label htmlFor="password" className="text-sm font-medium">
+            Senha
+          </label>
           <Link to="/forgot-password" className="text-sm text-primary hover:underline">
             Esqueceu a senha?
           </Link>

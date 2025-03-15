@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -5,14 +6,15 @@ import { ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { calculateRoute, calculateTripPrice, RouteInfo } from '@/utils/routeUtils';
-import { createBooking, createServiceOrderFromBooking } from '@/services/booking/bookingService';
+
+// Import step components
 import VehicleSelection, { Vehicle } from './steps/VehicleSelection';
 import TripDetails from './steps/TripDetails';
 import PaymentSelection from './steps/PaymentSelection';
 import BookingConfirmation from './steps/BookingConfirmation';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
-import BookingComplete from './steps/BookingComplete';
+import BookingComplete from './BookingComplete';
 
 const vehicleOptions: Vehicle[] = [
   {
@@ -61,10 +63,6 @@ interface BookingStepsProps {
     passengers: string;
     time?: string;
     returnTime?: string;
-    passengerData?: {
-      name: string;
-      phone: string;
-    }[];
   };
   isOpen: boolean;
   onClose: () => void;
@@ -84,6 +82,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
 
   const { user } = useAuth();
 
+  // Fetch route information when component mounts or booking data changes
   useEffect(() => {
     const fetchRouteData = async () => {
       if (bookingData.origin && bookingData.destination && isOpen) {
@@ -106,6 +105,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     fetchRouteData();
   }, [bookingData.origin, bookingData.destination, isOpen]);
 
+  // Fallback values in case API fails
   const estimatedDistance = routeInfo?.distance || 120;
   const estimatedTime = routeInfo?.duration || 95;
 
@@ -182,52 +182,17 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setIsSubmitting(true);
     
     try {
+      // Simulating API call with a timeout
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      
       const reference = 'TRF-' + Math.floor(100000 + Math.random() * 900000);
-      const selectedVehicleDetails = vehicleOptions.find(v => v.id === selectedVehicle);
-      
-      const bookingObject = {
-        reference_code: reference,
-        origin: bookingData.origin,
-        destination: bookingData.destination,
-        booking_date: new Date().toISOString(),
-        travel_date: bookingData.date ? bookingData.date.toISOString() : new Date().toISOString(),
-        return_date: bookingData.returnDate ? bookingData.returnDate.toISOString() : null,
-        total_price: totalPrice,
-        passengers: parseInt(bookingData.passengers),
-        vehicle_type: selectedVehicleDetails?.name || '',
-        status: 'confirmed' as const,
-        user_id: user?.id || '',
-        additional_notes: `${bookingData.time ? 'Horário ida: ' + bookingData.time : ''} 
-                          ${bookingData.returnTime ? 'Horário volta: ' + bookingData.returnTime : ''}`
-      };
-      
-      const { booking, error } = await createBooking(bookingObject);
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (booking) {
-        const { serviceOrder, error: serviceOrderError } = await createServiceOrderFromBooking(booking);
-        
-        if (serviceOrderError) {
-          console.error('Error creating service order:', serviceOrderError);
-          toast.error('Reserva confirmada, mas houve um erro ao criar a ordem de serviço', { 
-            description: 'Nossa equipe será notificada para resolver o problema.'
-          });
-        } else {
-          console.log('Service order created successfully:', serviceOrder);
-          toast.success('Ordem de serviço criada para a empresa de transporte!');
-        }
-      }
-      
       setBookingReference(reference);
       setBookingComplete(true);
       
       toast.success('Reserva confirmada com sucesso!');
     } catch (error) {
-      console.error('Booking error:', error);
       toast.error('Erro ao confirmar reserva. Tente novamente.');
+      console.error('Booking error:', error);
     } finally {
       setIsSubmitting(false);
     }

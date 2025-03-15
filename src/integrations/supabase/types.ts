@@ -65,9 +65,7 @@ export type Database = {
           cnpj: string | null
           created_at: string | null
           id: string
-          last_order_assigned: string | null
           name: string
-          queue_position: number | null
           status: string | null
           user_id: string | null
         }
@@ -75,9 +73,7 @@ export type Database = {
           cnpj?: string | null
           created_at?: string | null
           id?: string
-          last_order_assigned?: string | null
           name: string
-          queue_position?: number | null
           status?: string | null
           user_id?: string | null
         }
@@ -85,9 +81,7 @@ export type Database = {
           cnpj?: string | null
           created_at?: string | null
           id?: string
-          last_order_assigned?: string | null
           name?: string
-          queue_position?: number | null
           status?: string | null
           user_id?: string | null
         }
@@ -97,10 +91,7 @@ export type Database = {
         Row: {
           company_id: string | null
           created_at: string | null
-          email: string | null
           id: string
-          is_password_changed: boolean | null
-          last_login: string | null
           license_number: string | null
           name: string
           phone: string | null
@@ -111,10 +102,7 @@ export type Database = {
         Insert: {
           company_id?: string | null
           created_at?: string | null
-          email?: string | null
           id?: string
-          is_password_changed?: boolean | null
-          last_login?: string | null
           license_number?: string | null
           name: string
           phone?: string | null
@@ -125,10 +113,7 @@ export type Database = {
         Update: {
           company_id?: string | null
           created_at?: string | null
-          email?: string | null
           id?: string
-          is_password_changed?: boolean | null
-          last_login?: string | null
           license_number?: string | null
           name?: string
           phone?: string | null
@@ -244,62 +229,6 @@ export type Database = {
           },
         ]
       }
-      service_requests: {
-        Row: {
-          additional_info: string | null
-          company_id: string | null
-          created_at: string | null
-          destination: string
-          email: string
-          id: string
-          name: string
-          origin: string
-          passengers: string
-          phone: string
-          request_date: string | null
-          service_type: string
-          status: string | null
-        }
-        Insert: {
-          additional_info?: string | null
-          company_id?: string | null
-          created_at?: string | null
-          destination: string
-          email: string
-          id?: string
-          name: string
-          origin: string
-          passengers: string
-          phone: string
-          request_date?: string | null
-          service_type: string
-          status?: string | null
-        }
-        Update: {
-          additional_info?: string | null
-          company_id?: string | null
-          created_at?: string | null
-          destination?: string
-          email?: string
-          id?: string
-          name?: string
-          origin?: string
-          passengers?: string
-          phone?: string
-          request_date?: string | null
-          service_type?: string
-          status?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "service_requests_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       vehicles: {
         Row: {
           company_id: string
@@ -343,12 +272,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      increment_queue_position: {
-        Args: {
-          row_id: string
-        }
-        Returns: number
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

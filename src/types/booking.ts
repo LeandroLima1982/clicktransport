@@ -6,13 +6,11 @@ export interface Booking {
   destination: string;
   booking_date: string;
   travel_date: string;
-  return_date?: string | null;
-  vehicle_type?: string | null;
+  return_date?: string;
+  vehicle_type?: string;
   status: 'confirmed' | 'pending' | 'completed' | 'cancelled';
   total_price: number;
-  passengers?: number | null;
-  additional_notes?: string | null;
+  passengers?: number;
+  additional_notes?: string;
   created_at: string;
-  user_id: string;
-  passenger_data?: any;
 }

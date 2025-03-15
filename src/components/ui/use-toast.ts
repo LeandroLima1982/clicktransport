@@ -1,7 +1,3 @@
+import { useToast, toast } from "@/hooks/use-toast";
 
-// Re-export from the proper location
-export {
-  toast,
-  useToast,
-  type ToastProps
-} from "@/hooks/use-toast";
+export { useToast, toast };

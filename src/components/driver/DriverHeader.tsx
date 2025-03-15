@@ -1,26 +1,18 @@
 
 import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import DriverUserMenu from './header/DriverUserMenu';
-import NotificationBell from './header/NotificationBell';
+import { useIsMobile } from '@/hooks/use-mobile';
 import HeaderTitle from './header/HeaderTitle';
-import { Building2 } from 'lucide-react';
+import NotificationBell from './header/NotificationBell';
+import DriverUserMenu from './header/DriverUserMenu';
 
 const DriverHeader: React.FC = () => {
-  const { companyContext } = useAuth();
+  const isMobile = useIsMobile();
   
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
-      <HeaderTitle title="Driver Dashboard" />
+    <header className="h-16 border-b bg-white flex items-center justify-between px-4 md:px-6 sticky top-0 z-10 shadow-sm transition-all duration-300 hover-card">
+      <HeaderTitle title="Painel do Motorista" />
       
-      <div className="ml-auto flex items-center gap-4">
-        {companyContext && (
-          <div className="hidden md:flex items-center text-sm">
-            <Building2 className="h-4 w-4 text-muted-foreground mr-2" />
-            <span className="text-muted-foreground mr-1">Empresa:</span>
-            <span className="font-medium">{companyContext.name}</span>
-          </div>
-        )}
+      <div className="flex items-center space-x-2 md:space-x-4">
         <NotificationBell />
         <DriverUserMenu />
       </div>

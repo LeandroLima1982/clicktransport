@@ -3,11 +3,6 @@ import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { fetchAddressSuggestions } from '@/utils/mapbox';
 
-export interface PassengerInfo {
-  name: string;
-  phone: string;
-}
-
 export interface BookingFormData {
   originValue: string;
   destinationValue: string;
@@ -17,7 +12,6 @@ export interface BookingFormData {
   passengers: string;
   time: string;
   returnTime: string;
-  passengerData: PassengerInfo[];
 }
 
 export const useBookingForm = () => {
@@ -27,7 +21,6 @@ export const useBookingForm = () => {
   const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
   const [tripType, setTripType] = useState<'oneway' | 'roundtrip'>('oneway');
   const [passengers, setPassengers] = useState('1');
-  const [passengerData, setPassengerData] = useState<PassengerInfo[]>([{ name: '', phone: '' }]);
   const [showBookingSteps, setShowBookingSteps] = useState(false);
   const [time, setTime] = useState<string>('');
   const [returnTime, setReturnTime] = useState<string>('');
@@ -69,20 +62,6 @@ export const useBookingForm = () => {
       return;
     }
     
-    // Validate passenger information
-    const passengerCount = parseInt(passengers, 10);
-    for (let i = 0; i < passengerCount; i++) {
-      if (!passengerData[i]?.name) {
-        toast.error(`Por favor, informe o nome do passageiro ${i + 1}.`);
-        return;
-      }
-      
-      if (!passengerData[i]?.phone) {
-        toast.error(`Por favor, informe o WhatsApp do passageiro ${i + 1}.`);
-        return;
-      }
-    }
-    
     setShowBookingSteps(true);
   };
 
@@ -94,16 +73,12 @@ export const useBookingForm = () => {
       clearTimeout(originTimeoutRef.current);
     }
     
-    if (value.length >= 3) {
-      originTimeoutRef.current = setTimeout(async () => {
-        setIsLoadingSuggestions(true);
-        const suggestions = await fetchAddressSuggestions(value);
-        setOriginSuggestions(suggestions);
-        setIsLoadingSuggestions(false);
-      }, 500);
-    } else {
-      setOriginSuggestions([]);
-    }
+    originTimeoutRef.current = setTimeout(async () => {
+      setIsLoadingSuggestions(true);
+      const suggestions = await fetchAddressSuggestions(value);
+      setOriginSuggestions(suggestions);
+      setIsLoadingSuggestions(false);
+    }, 500);
   };
 
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,16 +89,12 @@ export const useBookingForm = () => {
       clearTimeout(destinationTimeoutRef.current);
     }
     
-    if (value.length >= 3) {
-      destinationTimeoutRef.current = setTimeout(async () => {
-        setIsLoadingSuggestions(true);
-        const suggestions = await fetchAddressSuggestions(value);
-        setDestinationSuggestions(suggestions);
-        setIsLoadingSuggestions(false);
-      }, 500);
-    } else {
-      setDestinationSuggestions([]);
-    }
+    destinationTimeoutRef.current = setTimeout(async () => {
+      setIsLoadingSuggestions(true);
+      const suggestions = await fetchAddressSuggestions(value);
+      setDestinationSuggestions(suggestions);
+      setIsLoadingSuggestions(false);
+    }, 500);
   };
 
   const selectSuggestion = (suggestion: any, isOrigin: boolean) => {
@@ -137,16 +108,6 @@ export const useBookingForm = () => {
     }
   };
 
-  const clearOrigin = () => {
-    setOriginValue('');
-    setOriginSuggestions([]);
-  };
-
-  const clearDestination = () => {
-    setDestinationValue('');
-    setDestinationSuggestions([]);
-  };
-
   const bookingData: BookingFormData = {
     originValue,
     destinationValue,
@@ -155,8 +116,7 @@ export const useBookingForm = () => {
     tripType,
     passengers,
     time,
-    returnTime,
-    passengerData
+    returnTime
   };
 
   return {
@@ -166,7 +126,6 @@ export const useBookingForm = () => {
     returnDate,
     tripType,
     passengers,
-    passengerData,
     time,
     returnTime,
     originSuggestions,
@@ -176,8 +135,6 @@ export const useBookingForm = () => {
     setTripType,
     setDate,
     setReturnDate,
-    setPassengers,
-    setPassengerData,
     setTime,
     setReturnTime,
     handleOriginChange,
@@ -185,8 +142,6 @@ export const useBookingForm = () => {
     selectSuggestion,
     handleBooking,
     setShowBookingSteps,
-    bookingData,
-    clearOrigin,
-    clearDestination
+    bookingData
   };
 };

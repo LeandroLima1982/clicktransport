@@ -6,10 +6,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ClipboardList, Bell } from 'lucide-react';
+import { ClipboardList } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { supabase } from '@/main';
 import OrderForm from './orders/OrderForm';
 import OrderTable from './orders/OrderTable';
 import SearchBar from './orders/SearchBar';
@@ -17,7 +16,6 @@ import OrderDetailSheet from './OrderDetailSheet';
 import OrderTracking from './orders/OrderTracking';
 import { ServiceOrder, Driver, Vehicle } from './orders/types';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { playNotificationSound } from '@/services/notifications/notificationService';
 
 interface ServiceOrderListProps {
   companyId: string;
@@ -41,7 +39,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
     if (companyId) {
       fetchData();
       
-      // Subscribe to real-time updates with notification handling
+      // Subscribe to real-time updates
       const channel = supabase
         .channel('service_orders_changes')
         .on(
@@ -54,28 +52,6 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
           },
           (payload) => {
             console.log('Service order change detected:', payload);
-            
-            // New order notification
-            if (payload.eventType === 'INSERT') {
-              toast.success('Nova ordem de serviço recebida!', {
-                description: `Origem: ${payload.new.origin}, Destino: ${payload.new.destination}`,
-                duration: 8000,
-                action: {
-                  label: 'Ver',
-                  onClick: () => handleViewOrderDetails(payload.new as ServiceOrder)
-                }
-              });
-              playNotificationSound();
-            }
-            
-            // Update notification (when booking status changes)
-            if (payload.eventType === 'UPDATE' && payload.old.status !== payload.new.status) {
-              toast.info('Status de ordem atualizado!', {
-                description: `Ordem #${payload.new.id.substring(0, 8)}: ${payload.old.status} → ${payload.new.status}`,
-                duration: 5000
-              });
-            }
-            
             fetchData();
           }
         )
@@ -112,13 +88,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
       if (driversResponse.error) throw driversResponse.error;
       if (vehiclesResponse.error) throw vehiclesResponse.error;
       
-      // Ensure the correct typing of status by using type assertion
-      const typedOrders = (ordersResponse.data || []).map(order => ({
-        ...order,
-        status: order.status as ServiceOrder['status'] 
-      }));
-      
-      setOrders(typedOrders);
+      setOrders(ordersResponse.data || []);
       setDrivers(driversResponse.data || []);
       setVehicles(vehiclesResponse.data || []);
     } catch (error) {
