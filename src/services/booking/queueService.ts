@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -9,7 +10,7 @@ export const getNextCompanyInQueue = async () => {
   try {
     console.log('Finding next company in queue for assignment');
     
-    // Start a transaction for getting and updating queue position
+    // Call the RPC function to get the next company
     const { data, error } = await supabase.rpc('get_next_company_in_queue');
     
     if (error) {
@@ -17,7 +18,7 @@ export const getNextCompanyInQueue = async () => {
       throw error;
     }
     
-    if (!data || !data.company_id) {
+    if (!data || !data.success || !data.company_id) {
       console.error('No active companies found to assign the order');
       return { company: null, error: new Error('No active companies found') };
     }

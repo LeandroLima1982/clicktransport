@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, AlertTriangle, CheckCircle, RotateCcw, Tool } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle, RotateCcw, Wrench } from 'lucide-react';
 import { useQueueDiagnostics } from '@/hooks/useQueueDiagnostics';
 
 const QueueHealthWidget = () => {
@@ -154,7 +154,7 @@ const QueueHealthWidget = () => {
                 </>
               ) : (
                 <>
-                  <Tool className="mr-2 h-4 w-4" />
+                  <Wrench className="mr-2 h-4 w-4" />
                   Corrigir posições
                 </>
               )}
