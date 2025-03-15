@@ -8,7 +8,7 @@ import TransitionEffect from '@/components/TransitionEffect';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanyManagement from '@/components/admin/CompanyManagement';
 import ServiceOrderMonitoring from '@/components/admin/ServiceOrderMonitoring';
-import { FileText, Settings, UserCheck, ChartBar, Loader2, AlertTriangle, Users, Car, CalendarCheck } from 'lucide-react';
+import { FileText, Settings, UserCheck, ChartBar, Loader2, AlertTriangle, Users, Car, CalendarCheck, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueueDiagnostics } from '@/hooks/useQueueDiagnostics';
