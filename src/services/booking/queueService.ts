@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -183,6 +182,73 @@ export const resetCompanyQueuePositions = async () => {
 };
 
 /**
+ * NEW: Fix invalid queue positions (0 or null) for companies
+ * This is a targeted fix for companies with problematic queue positions
+ */
+export const fixInvalidQueuePositions = async () => {
+  try {
+    console.log('Fixing invalid queue positions for companies');
+    
+    // Get the maximum queue position currently in use
+    const { data: maxPositionResult, error: maxError } = await supabase
+      .from('companies')
+      .select('queue_position')
+      .order('queue_position', { ascending: false })
+      .limit(1)
+      .single();
+    
+    if (maxError) {
+      console.error('Error fetching max queue position:', maxError);
+      return { success: false, error: maxError, fixed: 0 };
+    }
+    
+    const maxPosition = maxPositionResult?.queue_position || 0;
+    let nextPosition = maxPosition + 1;
+    
+    // Find companies with null or 0 queue positions
+    const { data: invalidCompanies, error: fetchError } = await supabase
+      .from('companies')
+      .select('id, name')
+      .or('queue_position.is.null,queue_position.eq.0')
+      .eq('status', 'active');
+      
+    if (fetchError) {
+      console.error('Error fetching companies with invalid queue positions:', fetchError);
+      return { success: false, error: fetchError, fixed: 0 };
+    }
+    
+    if (!invalidCompanies || invalidCompanies.length === 0) {
+      console.log('No companies with invalid queue positions found');
+      return { success: true, error: null, fixed: 0 };
+    }
+    
+    console.log(`Found ${invalidCompanies.length} companies with invalid queue positions`);
+    
+    // Fix each invalid company with an incremental position
+    let fixed = 0;
+    for (const company of invalidCompanies) {
+      const { error } = await supabase
+        .from('companies')
+        .update({ queue_position: nextPosition })
+        .eq('id', company.id);
+        
+      if (error) {
+        console.error(`Error fixing queue position for company ${company.id}:`, error);
+      } else {
+        console.log(`Fixed queue position for company ${company.name} to ${nextPosition}`);
+        fixed++;
+        nextPosition++;
+      }
+    }
+    
+    return { success: true, error: null, fixed };
+  } catch (error) {
+    console.error('Error fixing invalid queue positions:', error);
+    return { success: false, error, fixed: 0 };
+  }
+};
+
+/**
  * Gets queue diagnostic information
  * Shows details about company queue positions, last assignments, etc.
  */
@@ -256,5 +322,6 @@ export default {
   updateCompanyQueuePosition,
   getCompanyQueueStatus,
   resetCompanyQueuePositions,
+  fixInvalidQueuePositions,
   getQueueDiagnostics
 };

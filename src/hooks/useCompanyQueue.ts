@@ -2,12 +2,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getCompanyQueueStatus } from '@/services/booking/queueService';
+import { getCompanyQueueStatus, fixInvalidQueuePositions } from '@/services/booking/queueService';
 import { reconcilePendingBookings, resetCompanyQueuePositions } from '@/services/booking/bookingService';
 
 export const useCompanyQueue = () => {
   const [resetting, setResetting] = useState(false);
   const [isReconciling, setIsReconciling] = useState(false);
+  const [isFixingPositions, setIsFixingPositions] = useState(false);
   
   const { 
     data: queueStatus = [], 
@@ -44,6 +45,7 @@ export const useCompanyQueue = () => {
     }
   });
   
+  // Mutation for reconciling bookings
   const reconcileBookingsMutation = useMutation({
     mutationFn: async () => {
       setIsReconciling(true);
@@ -69,12 +71,39 @@ export const useCompanyQueue = () => {
     }
   });
   
+  // NEW: Mutation for fixing invalid queue positions
+  const fixPositionsMutation = useMutation({
+    mutationFn: async () => {
+      setIsFixingPositions(true);
+      try {
+        return await fixInvalidQueuePositions();
+      } finally {
+        setIsFixingPositions(false);
+      }
+    },
+    onSuccess: (data) => {
+      if (data.fixed > 0) {
+        toast.success(`Corrigidas ${data.fixed} posições de fila inválidas`);
+      } else {
+        toast.info('Nenhuma posição de fila inválida encontrada');
+      }
+      refetch();
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao corrigir posições de fila: ${error?.message || 'Erro desconhecido'}`);
+    }
+  });
+  
   const resetQueue = () => {
     resetQueueMutation.mutate();
   };
   
   const reconcileBookings = () => {
     reconcileBookingsMutation.mutate();
+  };
+  
+  const fixQueuePositions = () => {
+    fixPositionsMutation.mutate();
   };
   
   return {
@@ -85,6 +114,8 @@ export const useCompanyQueue = () => {
     resetting,
     reconcileBookings,
     isReconciling,
+    fixQueuePositions,
+    isFixingPositions,
     refetch
   };
 };

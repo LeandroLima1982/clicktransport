@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useBookingAssignmentDiagnostics } from '@/hooks/useBookingAssignmentDiagnostics';
 import {
@@ -69,7 +68,9 @@ const BookingAssignmentDiagnostics: React.FC = () => {
     runReconcile,
     isReconciling,
     
-    refreshAllData
+    refreshAllData,
+    fixQueuePositions,
+    isFixingPositions
   } = useBookingAssignmentDiagnostics();
 
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
@@ -503,6 +504,41 @@ const BookingAssignmentDiagnostics: React.FC = () => {
                                   <>
                                     <PackageCheck className="h-4 w-4 mr-2" />
                                     Reconciliar Todas as Reservas
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                        
+                        <AccordionItem value="fix-positions">
+                          <AccordionTrigger>
+                            <div className="flex items-center text-sm">
+                              <AlertTriangle className="h-4 w-4 mr-2" />
+                              Corrigir Posições de Fila Inválidas
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-4 py-2">
+                              <p className="text-sm text-muted-foreground">
+                                Esta ação corrigirá apenas as empresas com posições de fila nulas ou zero,
+                                sem afetar outras empresas na fila. É mais seguro que resetar a fila inteira.
+                              </p>
+                              <Button 
+                                onClick={fixQueuePositions} 
+                                disabled={isFixingPositions}
+                                variant="outline"
+                                className="w-full"
+                              >
+                                {isFixingPositions ? (
+                                  <>
+                                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                    Corrigindo...
+                                  </>
+                                ) : (
+                                  <>
+                                    <AlertTriangle className="h-4 w-4 mr-2" />
+                                    Corrigir Posições Inválidas
                                   </>
                                 )}
                               </Button>
