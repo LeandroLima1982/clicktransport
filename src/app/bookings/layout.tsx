@@ -1,6 +1,6 @@
 
 import React from 'react';
-import Link from 'next-link'; // Changed from 'next/link' to 'next-link'
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ShieldPlus, Clock, Calendar, BarChart, Building, Clipboard } from 'lucide-react';
 
