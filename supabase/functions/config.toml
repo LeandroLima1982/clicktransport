@@ -2,6 +2,6 @@
 # A string specifying the project ID
 project_id = "ofctyafulvkwaldondsj"
 
+# Function-specific settings
 [functions.check_queue_health]
-  # Other function-specific settings go here
-  verify_jwt = false
+verify_jwt = false
