@@ -19,6 +19,9 @@ const defaultHealthMetrics = {
   booking_processing_score: 0,
   overall_health_score: 0,
   last_checked_booking_id: '',
+  driver_count: 0,
+  vehicle_count: 0,
+  booking_count: 0,
   error: null
 }
 
@@ -139,6 +142,31 @@ serve(async (req) => {
     const unlinkedCount = unlinkedOrders?.length || 0
     console.log(`Found ${unlinkedCount} service orders without booking references`)
     
+    // Get total counts for drivers, vehicles, and bookings
+    const { count: driverCount, error: driversCountError } = await supabaseClient
+      .from('drivers')
+      .select('id', { count: 'exact', head: true })
+    
+    if (driversCountError) {
+      console.error('Error counting drivers:', driversCountError)
+    }
+    
+    const { count: vehicleCount, error: vehiclesCountError } = await supabaseClient
+      .from('vehicles')
+      .select('id', { count: 'exact', head: true })
+    
+    if (vehiclesCountError) {
+      console.error('Error counting vehicles:', vehiclesCountError)
+    }
+    
+    const { count: bookingCount, error: bookingsCountError } = await supabaseClient
+      .from('bookings')
+      .select('id', { count: 'exact', head: true })
+    
+    if (bookingsCountError) {
+      console.error('Error counting bookings:', bookingsCountError)
+    }
+    
     // Combine all health metrics
     const healthMetrics = {
       ...healthData,
@@ -156,7 +184,10 @@ serve(async (req) => {
              (100 * (1 - Math.min(1, unlinkedCount / 100)))
             ) / 3
           )
-        : 0
+        : 0,
+      driver_count: driverCount || 0,
+      vehicle_count: vehicleCount || 0,
+      booking_count: bookingCount || 0
     }
 
     console.log('Queue health check completed:', healthMetrics)

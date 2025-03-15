@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Card, 
@@ -18,14 +18,30 @@ import {
   Building,
   UserCheck,
   Car,
-  CalendarCheck
+  CalendarCheck,
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { useQueueDiagnostics } from '@/hooks/useQueueDiagnostics';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const HomePage = () => {
-  const { getQueueHealthScore, queueHealth } = useQueueDiagnostics();
+  const { 
+    getQueueHealthScore, 
+    queueHealth, 
+    isLoadingHealth, 
+    healthError,
+    refreshDiagnostics 
+  } = useQueueDiagnostics();
   const healthScore = getQueueHealthScore();
+  const [refreshing, setRefreshing] = useState(false);
+  
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refreshDiagnostics();
+    setRefreshing(false);
+  };
   
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -36,17 +52,43 @@ const HomePage = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="col-span-full md:col-span-1">
-          <CardHeader className="bg-muted/50">
-            <CardTitle className="flex items-center">
-              <BarChart className="h-5 w-5 mr-2 text-primary" />
-              Saúde do Sistema
-            </CardTitle>
-            <CardDescription>
-              Estado atual do sistema de filas
-            </CardDescription>
+          <CardHeader className="bg-muted/50 flex flex-row justify-between items-start">
+            <div>
+              <CardTitle className="flex items-center">
+                <BarChart className="h-5 w-5 mr-2 text-primary" />
+                Saúde do Sistema
+              </CardTitle>
+              <CardDescription>
+                Estado atual do sistema de filas
+              </CardDescription>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleRefresh}
+              disabled={refreshing || isLoadingHealth}
+            >
+              {refreshing || isLoadingHealth ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+            </Button>
           </CardHeader>
           <CardContent className="pt-6">
-            {healthScore ? (
+            {isLoadingHealth ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 mr-2 animate-spin text-primary" />
+                <p>Carregando dados...</p>
+              </div>
+            ) : healthError ? (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                <AlertDescription>
+                  Erro ao verificar saúde do sistema. Tente novamente.
+                </AlertDescription>
+              </Alert>
+            ) : healthScore ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Saúde do Sistema:</span>
@@ -110,12 +152,18 @@ const HomePage = () => {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="text-center">
-              <span className="text-3xl font-bold">
-                {healthScore?.activeCompanies || 0}
-              </span>
-              <p className="text-sm text-muted-foreground mt-1">
-                Empresas ativas no sistema
-              </p>
+              {isLoadingHealth ? (
+                <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+              ) : (
+                <>
+                  <span className="text-3xl font-bold">
+                    {queueHealth?.active_companies || 0}
+                  </span>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Empresas ativas no sistema
+                  </p>
+                </>
+              )}
             </div>
           </CardContent>
           <CardFooter className="border-t pt-4">
@@ -136,12 +184,18 @@ const HomePage = () => {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="text-center">
-              <span className="text-3xl font-bold">
-                {queueHealth?.driver_count || 0}
-              </span>
-              <p className="text-sm text-muted-foreground mt-1">
-                Motoristas cadastrados
-              </p>
+              {isLoadingHealth ? (
+                <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+              ) : (
+                <>
+                  <span className="text-3xl font-bold">
+                    {queueHealth?.driver_count || 0}
+                  </span>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Motoristas cadastrados
+                  </p>
+                </>
+              )}
             </div>
           </CardContent>
           <CardFooter className="border-t pt-4">
@@ -162,12 +216,18 @@ const HomePage = () => {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="text-center">
-              <span className="text-3xl font-bold">
-                {queueHealth?.vehicle_count || 0}
-              </span>
-              <p className="text-sm text-muted-foreground mt-1">
-                Veículos cadastrados
-              </p>
+              {isLoadingHealth ? (
+                <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+              ) : (
+                <>
+                  <span className="text-3xl font-bold">
+                    {queueHealth?.vehicle_count || 0}
+                  </span>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Veículos cadastrados
+                  </p>
+                </>
+              )}
             </div>
           </CardContent>
           <CardFooter className="border-t pt-4">
@@ -188,12 +248,18 @@ const HomePage = () => {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="text-center">
-              <span className="text-3xl font-bold">
-                {queueHealth?.booking_count || 0}
-              </span>
-              <p className="text-sm text-muted-foreground mt-1">
-                Reservas realizadas
-              </p>
+              {isLoadingHealth ? (
+                <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+              ) : (
+                <>
+                  <span className="text-3xl font-bold">
+                    {queueHealth?.booking_count || 0}
+                  </span>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Reservas realizadas
+                  </p>
+                </>
+              )}
             </div>
           </CardContent>
           <CardFooter className="border-t pt-4">
