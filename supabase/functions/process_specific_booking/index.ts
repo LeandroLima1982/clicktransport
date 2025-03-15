@@ -99,36 +99,79 @@ serve(async (req) => {
     
     console.log('No existing service order, continuing with processing')
     
-    // Get the next company in the queue
-    const companyResponse = await supabaseClient.functions.invoke('get_next_company_in_queue', {
-      method: 'POST',
-      body: {}
-    })
+    let companyId
+    let companyName
     
-    if (companyResponse.error) {
-      console.error('Error getting next company in queue:', companyResponse.error)
-      throw companyResponse.error
+    // Check if a specific company ID was provided for direct assignment
+    if (body.company_id) {
+      console.log(`Direct company assignment requested with company ID: ${body.company_id}`)
+      
+      // Verify the company exists and is active
+      const { data: company, error: companyError } = await supabaseClient
+        .from('companies')
+        .select('id, name, status')
+        .eq('id', body.company_id)
+        .single()
+        
+      if (companyError) {
+        console.error('Error fetching specified company:', companyError)
+        throw new Error(`Specified company not found: ${companyError.message}`)
+      }
+      
+      if (company.status !== 'active') {
+        console.error(`Specified company ${company.id} is not active (status: ${company.status})`)
+        return new Response(
+          JSON.stringify({
+            success: false,
+            message: `Specified company is not active (status: ${company.status})`
+          }),
+          { 
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json' 
+            } 
+          }
+        )
+      }
+      
+      companyId = company.id
+      companyName = company.name
+      console.log(`Using directly assigned company: ${companyId} (${companyName})`)
+    } else {
+      // If no company ID was provided, use the queue system
+      console.log('No company ID provided, using queue system')
+      
+      // Get the next company in the queue
+      const companyResponse = await supabaseClient.functions.invoke('get_next_company_in_queue', {
+        method: 'POST',
+        body: {}
+      })
+      
+      if (companyResponse.error) {
+        console.error('Error getting next company in queue:', companyResponse.error)
+        throw companyResponse.error
+      }
+      
+      if (!companyResponse.data.success || !companyResponse.data.company_id) {
+        console.error('No company found in queue:', companyResponse.data)
+        return new Response(
+          JSON.stringify({
+            success: false,
+            message: 'No active company found in the queue'
+          }),
+          { 
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json' 
+            } 
+          }
+        )
+      }
+      
+      companyId = companyResponse.data.company_id
+      companyName = companyResponse.data.company_name || 'Empresa não identificada'
+      console.log(`Found company from queue to assign order: ${companyId} (${companyName})`)
     }
-    
-    if (!companyResponse.data.success || !companyResponse.data.company_id) {
-      console.error('No company found in queue:', companyResponse.data)
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: 'No active company found in the queue'
-        }),
-        { 
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json' 
-          } 
-        }
-      )
-    }
-    
-    const companyId = companyResponse.data.company_id
-    const companyName = companyResponse.data.company_name || 'Empresa não identificada'
-    console.log(`Found company to assign order: ${companyId} (${companyName})`)
     
     // Create service order with booking details
     const serviceOrderData = {

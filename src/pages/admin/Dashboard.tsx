@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueueDiagnostics } from '@/hooks/useQueueDiagnostics';
 import AdminDashboardStats from '@/components/admin/AdminDashboardStats';
+import DirectBookingAssignment from '@/components/admin/DirectBookingAssignment';
 
 const AdminDashboard: React.FC = () => {
   const { user, userRole } = useAuth();
@@ -33,28 +33,24 @@ const AdminDashboard: React.FC = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      // Fetch companies count
       const { count: companiesCount, error: companiesError } = await supabase
         .from('companies')
         .select('*', { count: 'exact', head: true });
       
       if (companiesError) throw companiesError;
       
-      // Fetch drivers count
       const { count: driversCount, error: driversError } = await supabase
         .from('drivers')
         .select('*', { count: 'exact', head: true });
       
       if (driversError) throw driversError;
       
-      // Fetch orders count
       const { count: ordersCount, error: ordersError } = await supabase
         .from('service_orders')
         .select('*', { count: 'exact', head: true });
       
       if (ordersError) throw ordersError;
       
-      // Fetch vehicles count
       const { count: vehiclesCount, error: vehiclesError } = await supabase
         .from('vehicles')
         .select('*', { count: 'exact', head: true });
@@ -111,7 +107,6 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* System Health Overview */}
         <div className="mb-8">
           <Card>
             <CardHeader className="bg-muted/30">
@@ -186,7 +181,10 @@ const AdminDashboard: React.FC = () => {
           </Card>
         </div>
 
-        {/* Key Statistics Cards */}
+        <div className="mb-8">
+          <DirectBookingAssignment />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="pb-2">
