@@ -1,11 +1,13 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ServiceOrder } from '@/types/serviceOrder';
 import { Booking } from '@/types/booking';
-import { getNextCompanyInQueue, updateCompanyQueuePosition } from './queueService';
+import { getNextCompanyInQueue, updateCompanyQueuePosition, validateCompanyForAssignment } from './queueService';
 
 /**
  * Creates a service order from a booking
+ * Now with improved error handling and queue validation
  */
 export const createServiceOrderFromBooking = async (booking: Booking) => {
   try {
@@ -17,7 +19,25 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       return { serviceOrder: null, error: new Error(`Invalid booking status: ${booking.status}`) };
     }
     
-    // Get the next company in the queue
+    // Check if a service order already exists for this booking to prevent duplicates
+    const { data: existingOrders, error: checkError } = await supabase
+      .from('service_orders')
+      .select('id')
+      .ilike('notes', `%Reserva #${booking.reference_code}%`)
+      .limit(1);
+      
+    if (checkError) {
+      console.error('Error checking for existing service order:', checkError);
+      // We continue despite this error as it's a check, not a blocker
+    } else if (existingOrders && existingOrders.length > 0) {
+      console.log(`Service order already exists for booking ${booking.reference_code}: ${existingOrders[0].id}`);
+      return { 
+        serviceOrder: null, 
+        error: new Error(`Order already exists for booking: ${booking.reference_code}`) 
+      };
+    }
+    
+    // Get the next company in the queue - updated to use transactional queue
     const { company, error: companyError } = await getNextCompanyInQueue();
     
     if (companyError || !company) {
@@ -28,6 +48,14 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     
     const companyId = company.id;
     console.log(`Found company to assign order: ${companyId} (${company.name})`);
+    
+    // Validate company before proceeding with assignment
+    const { valid, error: validationError } = await validateCompanyForAssignment(companyId);
+    
+    if (!valid) {
+      console.error('Company validation failed:', validationError);
+      return { serviceOrder: null, error: validationError || new Error('Company validation failed') };
+    }
     
     // Create service order with booking details
     const serviceOrderData = {
@@ -67,7 +95,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     }
     
     // Update the company's queue position and last order timestamp
-    // This is critical for round-robin assignment to work properly
+    // Using the new transaction-safe method
     const { success: queueUpdated, error: queueError } = await updateCompanyQueuePosition(companyId);
     
     if (!queueUpdated) {
@@ -119,6 +147,7 @@ const notifyCompanyAboutNewOrder = async (companyId: string, serviceOrder: Servi
 
 /**
  * Assigns a service order to a driver
+ * Now with improved validation
  */
 export const assignServiceOrderToDriver = async (orderId: string, driverId: string) => {
   try {
@@ -127,7 +156,7 @@ export const assignServiceOrderToDriver = async (orderId: string, driverId: stri
     // First verify the driver exists and is available
     const { data: driver, error: driverError } = await supabase
       .from('drivers')
-      .select('id, status')
+      .select('id, status, company_id')
       .eq('id', driverId)
       .single();
       
@@ -139,6 +168,30 @@ export const assignServiceOrderToDriver = async (orderId: string, driverId: stri
     if (driver.status !== 'active') {
       console.error(`Driver ${driverId} is not active (status: ${driver.status})`);
       throw new Error(`Driver is not active (${driver.status})`);
+    }
+    
+    // Next verify the service order exists and belongs to the driver's company
+    const { data: order, error: orderError } = await supabase
+      .from('service_orders')
+      .select('id, company_id, status')
+      .eq('id', orderId)
+      .single();
+      
+    if (orderError || !order) {
+      console.error('Error fetching order:', orderError);
+      throw new Error('Service order not found');
+    }
+    
+    // Verify the driver belongs to the company that owns this order
+    if (order.company_id !== driver.company_id) {
+      console.error(`Driver ${driverId} belongs to company ${driver.company_id} but order ${orderId} belongs to company ${order.company_id}`);
+      throw new Error('Driver does not belong to the company assigned to this order');
+    }
+    
+    // Verify the order is in a state that can be assigned
+    if (order.status !== 'pending') {
+      console.error(`Order ${orderId} is in state ${order.status}, cannot be assigned`);
+      throw new Error(`Order is already ${order.status}`);
     }
     
     // Assign the order to the driver
