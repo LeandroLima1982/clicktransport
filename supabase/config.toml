@@ -72,4 +72,5 @@ url = ""
 [functions]
 # Port to serve Edge Functions on.
 port = 54321
+# Directory to serve Edge Functions from.
 serve_dir = "supabase/functions"
