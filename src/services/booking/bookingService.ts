@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Booking } from '@/types/booking';
@@ -449,7 +448,18 @@ export const reconcilePendingBookings = async () => {
       // If no service order exists, create one
       if (!existingOrders || existingOrders.length === 0) {
         console.log(`Creating missing service order for booking ${booking.id} (${booking.reference_code})`);
-        const { serviceOrder, error } = await createServiceOrderFromBooking(booking);
+        
+        // Ensure the booking has the correct status type
+        const typedBooking: Booking = {
+          ...booking,
+          status: booking.status as 'confirmed' | 'pending' | 'completed' | 'cancelled',
+          passengers: booking.passengers || 1,
+          return_date: booking.return_date || null,
+          vehicle_type: booking.vehicle_type || null,
+          additional_notes: booking.additional_notes || null
+        };
+        
+        const { serviceOrder, error } = await createServiceOrderFromBooking(typedBooking);
         
         if (error || !serviceOrder) {
           console.error(`Error creating service order for booking ${booking.id}:`, error);
