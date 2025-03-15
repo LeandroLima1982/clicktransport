@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Booking } from '@/types/booking';
@@ -131,6 +132,9 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       toast.warning('Reserva criada, mas houve um erro ao atualizar o status');
     }
     
+    // Update the company's queue position and last order timestamp
+    await updateCompanyQueuePosition(companyId);
+    
     // Notify company about the new order (this will be picked up by real-time subscriptions)
     await notifyCompanyAboutNewOrder(companyId, data as ServiceOrder);
     
@@ -139,6 +143,35 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     console.error('Error creating service order from booking:', error);
     toast.error('Erro ao criar ordem de serviço. Por favor, tente novamente.');
     return { serviceOrder: null, error };
+  }
+};
+
+/**
+ * Updates a company's queue position and last order timestamp
+ */
+export const updateCompanyQueuePosition = async (companyId: string) => {
+  try {
+    console.log(`Updating queue position for company ${companyId}`);
+    
+    // Update the company's queue position and last order timestamp
+    const { error } = await supabase
+      .from('companies')
+      .update({ 
+        queue_position: supabase.rpc('increment_queue_position', { row_id: companyId }),
+        last_order_assigned: new Date().toISOString()
+      })
+      .eq('id', companyId);
+    
+    if (error) {
+      console.error('Error updating company queue position:', error);
+      return { success: false, error };
+    }
+    
+    console.log(`Company ${companyId} queue position updated successfully`);
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Error updating company queue position:', error);
+    return { success: false, error };
   }
 };
 
