@@ -71,6 +71,7 @@ redirect_uri = ""
 # or any other third-party OIDC providers.
 url = ""
 
+# Properly structured functions section
 [functions]
 # Port to use for the Functions URL.
 port = 54321
@@ -80,4 +81,3 @@ serve_dir = "supabase/functions"
 # Configure function settings individually
 [functions.check_queue_health]
 verify_jwt = false
-
