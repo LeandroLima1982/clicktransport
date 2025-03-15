@@ -1,13 +1,14 @@
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { TabsContent } from '@/components/ui/tabs';
 import { CardContent, CardFooter } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import LoginFormInputs from './LoginFormInputs';
+import LoginLinks from './LoginLinks';
 
 interface LoginFormProps {
   handleLogin: (e: React.FormEvent) => Promise<void>;
@@ -23,30 +24,60 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { signIn } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  const searchParams = new URLSearchParams(location.search);
+  const accountType = searchParams.get('type') || 'client';
+  
+  // Set default email for admin for easier access during development
+  useEffect(() => {
+    if (accountType === 'admin') {
+      setEmail('admin@clicktransfer.com');
+      setPassword('Admin@123');
+    }
+  }, [accountType]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      // Use the parent handleLogin if provided, otherwise use local logic
+      if (!email || !password) {
+        toast.error('Por favor, preencha email e senha');
+        return;
+      }
+      
+      console.log(`Login attempt: ${accountType}`);
+      
       if (handleLogin) {
         await handleLogin(e);
       } else {
-        if (!email || !password) {
-          toast.error('Please enter both email and password');
-          return;
-        }
-        
         const { error } = await signIn(email, password);
         if (error) {
-          toast.error('Login failed', { description: error.message });
+          console.error('Login error:', error);
+          if (error.message === 'You are not registered as a driver for this company') {
+            toast.error('Acesso negado', { 
+              description: 'Você não está registrado como motorista para esta empresa'
+            });
+          } else if (error.message === 'You are not registered as a company admin') {
+            toast.error('Acesso negado', { 
+              description: 'Você não está registrado como administrador desta empresa'
+            });
+          } else {
+            toast.error('Falha no login', { description: error.message });
+          }
+          
+          // Maintain the account type in URL when redirecting after error
+          navigate(`/auth?type=${accountType}`);
         } else {
-          toast.success('Login successful!');
+          toast.success('Login realizado com sucesso!');
         }
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('An unexpected error occurred');
+      toast.error('Ocorreu um erro inesperado');
+      // Maintain the account type in URL when redirecting after error
+      navigate(`/auth?type=${accountType}`);
     }
   };
   
@@ -54,61 +85,35 @@ const LoginForm: React.FC<LoginFormProps> = ({
     <TabsContent value="login">
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4 pt-6">
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
-            <Input 
-              id="email" 
-              type="email" 
-              placeholder="name@example.com" 
-              required 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label htmlFor="password" className="text-sm font-medium">
-                Password
-              </label>
-              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                Forgot password?
-              </Link>
-            </div>
-            <Input 
-              id="password" 
-              type="password" 
-              required 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+          <LoginFormInputs 
+            email={email}
+            setEmail={setEmail}
+            password={password}
+            setPassword={setPassword}
+            accountType={accountType}
+          />
         </CardContent>
         
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full rounded-full" disabled={loading}>
+          <Button 
+            type="submit" 
+            className="w-full rounded-full" 
+            disabled={loading}
+          >
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Signing in...
+                Entrando...
               </>
             ) : (
-              'Sign In'
+              'Entrar'
             )}
           </Button>
           
-          <div className="text-sm text-center text-foreground/70">
-            Don't have an account?{' '}
-            <button
-              type="button"
-              onClick={() => setActiveTab('register')}
-              className="text-primary hover:underline"
-            >
-              Register
-            </button>
-          </div>
+          <LoginLinks
+            accountType={accountType}
+            setActiveTab={setActiveTab}
+          />
         </CardFooter>
       </form>
     </TabsContent>

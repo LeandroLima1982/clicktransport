@@ -57,13 +57,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               <Select
                 value={accountType}
                 onValueChange={setAccountType}
+                defaultValue="company"
               >
                 <SelectTrigger id="reg-account-type">
                   <SelectValue placeholder="Select account type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="company">Transport Company</SelectItem>
-                  <SelectItem value="driver">Driver</SelectItem>
                 </SelectContent>
               </Select>
             </div>

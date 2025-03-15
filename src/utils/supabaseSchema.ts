@@ -86,6 +86,7 @@ export const createTables = async () => {
           delivery_date TIMESTAMP WITH TIME ZONE,
           status TEXT CHECK (status IN ('pending', 'assigned', 'in_progress', 'completed', 'cancelled')) DEFAULT 'pending',
           notes TEXT,
+          notification_sent BOOLEAN DEFAULT false,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
           updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
         );

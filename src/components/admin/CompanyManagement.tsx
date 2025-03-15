@@ -1,226 +1,235 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Building2, RefreshCw, PlusCircle } from 'lucide-react';
 import { supabase } from '@/main';
 import { toast } from 'sonner';
-import { CheckSquare, Search, UserCheck, XSquare } from 'lucide-react';
+import CompanyManagementList from './CompanyManagementList';
+import { Badge } from '@/components/ui/badge';
 
 interface Company {
   id: string;
   name: string;
-  cnpj: string;
-  phone: string;
-  status: 'active' | 'inactive' | 'pending';
+  cnpj: string | null;
+  status: string;
   created_at: string;
+  user_id: string | null;
+}
+
+interface CompanyStats {
+  totalCompanies: number;
+  byStatus: {
+    active: number;
+    pending: number;
+    inactive: number;
+    suspended: number;
+  };
 }
 
 const CompanyManagement: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [stats, setStats] = useState<CompanyStats>({
+    totalCompanies: 0,
+    byStatus: {
+      active: 0,
+      pending: 0,
+      inactive: 0,
+      suspended: 0
+    }
+  });
 
   useEffect(() => {
     fetchCompanies();
   }, []);
 
+  useEffect(() => {
+    applyFilters();
+  }, [searchTerm, statusFilter, companies]);
+
+  const applyFilters = () => {
+    let filtered = [...companies];
+    
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(company =>
+        company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (company.cnpj && company.cnpj.includes(searchTerm))
+      );
+    }
+    
+    // Apply status filter
+    if (statusFilter) {
+      filtered = filtered.filter(company => company.status === statusFilter);
+    }
+    
+    setFilteredCompanies(filtered);
+  };
+
   const fetchCompanies = async () => {
     setIsLoading(true);
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('companies')
         .select('*')
         .order('created_at', { ascending: false });
-
-      if (statusFilter) {
-        query = query.eq('status', statusFilter);
-      }
-
-      const { data, error } = await query;
       
       if (error) throw error;
       
-      setCompanies(data || []);
+      const companiesData = data || [];
+      setCompanies(companiesData);
+      setFilteredCompanies(companiesData);
+      
+      // Calculate statistics
+      const statsData: CompanyStats = {
+        totalCompanies: companiesData.length,
+        byStatus: {
+          active: companiesData.filter(c => c.status === 'active').length,
+          pending: companiesData.filter(c => c.status === 'pending').length,
+          inactive: companiesData.filter(c => c.status === 'inactive').length,
+          suspended: companiesData.filter(c => c.status === 'suspended').length
+        }
+      };
+      
+      setStats(statsData);
     } catch (error) {
       console.error('Error fetching companies:', error);
-      toast.error('Erro ao carregar empresas');
+      toast.error('Falha ao carregar lista de empresas');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleStatusChange = async (companyId: string, newStatus: 'active' | 'inactive' | 'pending') => {
-    try {
-      const { error } = await supabase
-        .from('companies')
-        .update({ status: newStatus })
-        .eq('id', companyId);
-      
-      if (error) throw error;
-      
-      setCompanies(companies.map(company => 
-        company.id === companyId ? { ...company, status: newStatus } : company
-      ));
-      
-      toast.success(`Status da empresa atualizado para ${translateStatus(newStatus)}`);
-    } catch (error) {
-      console.error('Error updating company status:', error);
-      toast.error('Erro ao atualizar status da empresa');
+  const handleRefresh = () => {
+    fetchCompanies();
+  };
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+  };
+
+  const getStatusBadge = (status: keyof typeof stats.byStatus) => {
+    const count = stats.byStatus[status];
+    let className = '';
+    
+    switch (status) {
+      case 'active':
+        className = 'bg-green-100 text-green-800';
+        break;
+      case 'pending':
+        className = 'bg-yellow-100 text-yellow-800';
+        break;
+      case 'inactive':
+        className = 'bg-gray-100 text-gray-800';
+        break;
+      case 'suspended':
+        className = 'bg-red-100 text-red-800';
+        break;
     }
+    
+    return <Badge className={className}>{translateStatus(status)}: {count}</Badge>;
   };
 
   const translateStatus = (status: string) => {
-    const statusMap: {[key: string]: string} = {
-      'active': 'Ativo',
-      'inactive': 'Inativo',
-      'pending': 'Pendente'
+    const statusNames: Record<string, string> = {
+      'active': 'Ativas',
+      'pending': 'Pendentes',
+      'inactive': 'Inativas',
+      'suspended': 'Suspensas'
     };
-    return statusMap[status] || status;
+    
+    return statusNames[status] || status;
   };
-
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-red-100 text-red-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const filteredCompanies = companies.filter(company => 
-    (company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    company.cnpj.includes(searchTerm)) &&
-    (!statusFilter || company.status === statusFilter)
-  );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl flex items-center">
-          <UserCheck className="mr-2 h-5 w-5" />
-          Gerenciamento de Empresas
-        </CardTitle>
-        <CardDescription>
-          Aprove, rejeite ou monitore empresas cadastradas na plataforma
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar por nome ou CNPJ..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-xl flex items-center">
+            <Building2 className="mr-2 h-5 w-5" />
+            Gestão de Empresas
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              (Total: {stats.totalCompanies})
+            </span>
+          </CardTitle>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {Object.keys(stats.byStatus).map((status) => (
+              <div key={status} onClick={() => setStatusFilter(status)} className="cursor-pointer">
+                {getStatusBadge(status as keyof typeof stats.byStatus)}
+              </div>
+            ))}
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
-              <SelectItem value="active">Ativos</SelectItem>
-              <SelectItem value="pending">Pendentes</SelectItem>
-              <SelectItem value="inactive">Inativos</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={fetchCompanies} variant="outline">
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>
+          <Button 
+            variant="default" 
+            size="sm"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Nova Empresa
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-grow">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Buscar por nome ou CNPJ..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="md:w-64">
+              <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="active">Ativas</SelectItem>
+                  <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="inactive">Inativas</SelectItem>
+                  <SelectItem value="suspended">Suspensas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {(searchTerm || statusFilter) && (
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                Limpar Filtros
+              </Button>
+            )}
+          </div>
         </div>
         
-        {isLoading ? (
-          <div className="h-40 flex items-center justify-center">
-            <p>Carregando...</p>
-          </div>
-        ) : filteredCompanies.length === 0 ? (
-          <div className="h-40 flex items-center justify-center">
-            <p className="text-muted-foreground">Nenhuma empresa encontrada</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Empresa</TableHead>
-                  <TableHead>CNPJ</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCompanies.map((company) => (
-                  <TableRow key={company.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{company.name}</p>
-                        <p className="text-muted-foreground text-sm">{company.phone || 'Telefone não informado'}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{company.cnpj}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadgeClass(company.status)}`}>
-                        {translateStatus(company.status)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        {company.status !== 'active' && (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="flex items-center text-green-600"
-                            onClick={() => handleStatusChange(company.id, 'active')}
-                          >
-                            <CheckSquare className="h-4 w-4 mr-1" />
-                            Aprovar
-                          </Button>
-                        )}
-                        {company.status !== 'inactive' && (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="flex items-center text-red-600"
-                            onClick={() => handleStatusChange(company.id, 'inactive')}
-                          >
-                            <XSquare className="h-4 w-4 mr-1" />
-                            Rejeitar
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+        <CompanyManagementList 
+          companies={filteredCompanies} 
+          isLoading={isLoading}
+          onRefreshData={handleRefresh}
+        />
       </CardContent>
     </Card>
   );

@@ -1,194 +1,138 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format, addDays } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, ArrowRight, MapPin, Calendar as CalendarIcon2, Clock, Users } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BookingSteps } from './booking';
+import { useBookingForm } from '@/hooks/useBookingForm';
+import LocationInput from './booking/LocationInput';
+import DateSelector from './booking/DateSelector';
+import TripTypeTabs from './booking/TripTypeTabs';
+import TimeSelector from './TimeSelector';
+import PassengerSelector from './booking/PassengerSelector';
+import PassengerInfoFields from './booking/PassengerInfoFields';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const BookingForm: React.FC = () => {
-  const [originValue, setOriginValue] = useState('');
-  const [destinationValue, setDestinationValue] = useState('');
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
-  const [tripType, setTripType] = useState<'oneway' | 'roundtrip'>('oneway');
-  const [passengers, setPassengers] = useState('1');
-  const [showBookingSteps, setShowBookingSteps] = useState(false);
-  
-  const handleBooking = () => {
-    if (!originValue) {
-      alert('Por favor, informe o local de origem.');
-      return;
-    }
-    
-    if (!destinationValue) {
-      alert('Por favor, informe o local de destino.');
-      return;
-    }
-    
-    if (!date) {
-      alert('Por favor, selecione a data da viagem.');
-      return;
-    }
-    
-    if (tripType === 'roundtrip' && !returnDate) {
-      alert('Por favor, selecione a data de retorno.');
-      return;
-    }
-    
-    setShowBookingSteps(true);
-  };
+  const {
+    originValue,
+    destinationValue,
+    date,
+    returnDate,
+    tripType,
+    time,
+    returnTime,
+    passengers,
+    passengerData,
+    setPassengers,
+    setPassengerData,
+    originSuggestions,
+    destinationSuggestions,
+    showBookingSteps,
+    setTripType,
+    setDate,
+    setReturnDate,
+    setTime,
+    setReturnTime,
+    handleOriginChange,
+    handleDestinationChange,
+    selectSuggestion,
+    handleBooking,
+    setShowBookingSteps,
+    bookingData,
+    clearOrigin,
+    clearDestination
+  } = useBookingForm();
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold text-white">Agende seu Transfer</h3>
-        <Tabs defaultValue="oneway" className="w-[260px]" onValueChange={(value) => setTripType(value as 'oneway' | 'roundtrip')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="oneway">Ida</TabsTrigger>
-            <TabsTrigger value="roundtrip">Ida e Volta</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+  const isMobile = useIsMobile();
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="origin" className="text-white flex items-center">
-            <MapPin className="w-4 h-4 mr-1" /> De onde vai sair?
-          </Label>
-          <div className="relative">
-            <Input
-              id="origin"
-              placeholder="Endereço de origem"
-              value={originValue}
-              onChange={(e) => setOriginValue(e.target.value)}
-              className="bg-white/20 border-white/10 text-white placeholder:text-white/60 focus:ring-primary focus:border-primary"
+  return <div className="w-full bg-[#FEF7E4] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
+      <div className="px-4 md:px-8 pt-5 md:pt-7 pb-6 md:pb-8 bg-amber-300">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 space-y-3 md:space-y-0">
+          <h3 className="text-gray-800 font-extrabold text-2xl">Agendar tranfer executivo</h3>
+          <TripTypeTabs value={tripType} onChange={setTripType} />
+        </div>
+
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <LocationInput 
+              id="origin" 
+              label="De onde vai sair?" 
+              placeholder="Endereço origem" 
+              value={originValue} 
+              onChange={handleOriginChange} 
+              suggestions={originSuggestions} 
+              onSelectSuggestion={suggestion => selectSuggestion(suggestion, true)}
+              onClear={clearOrigin}
+            />
+            
+            <LocationInput 
+              id="destination" 
+              label="Para onde vai?" 
+              placeholder="Endereço destino" 
+              value={destinationValue} 
+              onChange={handleDestinationChange} 
+              suggestions={destinationSuggestions} 
+              onSelectSuggestion={suggestion => selectSuggestion(suggestion, false)}
+              onClear={clearDestination}
             />
           </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="destination" className="text-white flex items-center">
-            <MapPin className="w-4 h-4 mr-1" /> Para onde vai?
-          </Label>
-          <div className="relative">
-            <Input
-              id="destination"
-              placeholder="Endereço de destino"
-              value={destinationValue}
-              onChange={(e) => setDestinationValue(e.target.value)}
-              className="bg-white/20 border-white/10 text-white placeholder:text-white/60 focus:ring-primary focus:border-primary"
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <DateSelector label="Vai quando?" date={date} onSelect={setDate} disabledDates={date => date < new Date()} />
+
+            <div className="space-y-2">
+              <label className="text-gray-700 block text-sm font-medium">
+                Horário de ida
+              </label>
+              <TimeSelector value={time} onChange={setTime} />
+            </div>
+
+            <PassengerSelector value={passengers} onChange={setPassengers} />
+          </div>
+
+          {tripType === 'roundtrip' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 mt-1 border-t border-amber-200">
+              <DateSelector label="Volta quando?" date={returnDate} onSelect={setReturnDate} disabledDates={currentDate => currentDate < (date || new Date())} />
+              
+              <div className="space-y-2">
+                <label className="text-gray-700 block text-sm font-medium">
+                  Horário de volta
+                </label>
+                <TimeSelector value={returnTime} onChange={setReturnTime} />
+              </div>
+            </div>}
+          
+          {passengers && parseInt(passengers) > 0 && 
+            <PassengerInfoFields 
+              passengerCount={parseInt(passengers)} 
+              passengerData={passengerData} 
+              onPassengerDataChange={setPassengerData} 
             />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="space-y-2">
-          <Label className="text-white flex items-center">
-            <CalendarIcon2 className="w-4 h-4 mr-1" /> Vai quando?
-          </Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-left font-normal bg-white/20 border-white/10 text-white hover:bg-white/30"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-                disabled={(date) => date < new Date()}
-              />
-            </PopoverContent>
-          </Popover>
+          }
         </div>
 
-        {tripType === 'roundtrip' && (
-          <div className="space-y-2">
-            <Label className="text-white flex items-center">
-              <CalendarIcon2 className="w-4 h-4 mr-1" /> Volta quando?
-            </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal bg-white/20 border-white/10 text-white hover:bg-white/30"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {returnDate ? format(returnDate, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={returnDate}
-                  onSelect={setReturnDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                  disabled={(currentDate) => currentDate < (date || new Date())}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+        <Button onClick={handleBooking} className="w-full rounded-lg mt-7 text-black text-lg font-medium h-14 bg-amber-400 hover:bg-amber-500 transition-all duration-300">
+          <span className="relative z-10 flex items-center justify-center">
+            Buscar
+          </span>
+        </Button>
+
+        {bookingData && showBookingSteps && (
+          <BookingSteps 
+            bookingData={{
+              origin: originValue,
+              destination: destinationValue,
+              date: date,
+              returnDate: returnDate,
+              tripType: tripType,
+              passengers: passengers,
+              time: time,
+              returnTime: returnTime,
+              passengerData: passengerData
+            }} 
+            isOpen={showBookingSteps} 
+            onClose={() => setShowBookingSteps(false)} 
+          />
         )}
-        
-        <div className="space-y-2">
-          <Label htmlFor="passengers" className="text-white flex items-center">
-            <Users className="w-4 h-4 mr-1" /> Passageiros
-          </Label>
-          <Select value={passengers} onValueChange={setPassengers}>
-            <SelectTrigger className="bg-white/20 border-white/10 text-white focus:ring-primary focus:border-primary">
-              <SelectValue placeholder="Número de passageiros" />
-            </SelectTrigger>
-            <SelectContent>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((num) => (
-                <SelectItem key={num} value={num.toString()}>
-                  {num} {num === 1 ? 'passageiro' : 'passageiros'}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
-
-      <Button 
-        onClick={handleBooking} 
-        className="w-full py-6 rounded-md mt-4 relative overflow-hidden group bg-gradient-to-r from-primary to-yellow-500"
-      >
-        <span className="relative z-10 flex items-center justify-center text-base font-bold">
-          Buscar <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-        </span>
-        <span className="absolute inset-0 bg-primary scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></span>
-      </Button>
-
-      <BookingSteps
-        bookingData={{
-          origin: originValue,
-          destination: destinationValue,
-          date,
-          returnDate,
-          tripType,
-          passengers
-        }}
-        isOpen={showBookingSteps}
-        onClose={() => setShowBookingSteps(false)}
-      />
-    </div>
-  );
+    </div>;
 };
 
 export default BookingForm;

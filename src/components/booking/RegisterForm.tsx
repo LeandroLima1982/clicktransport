@@ -3,9 +3,9 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/useAuth';
 
 interface RegisterFormProps {
   onRegisterSuccess: () => void;
@@ -13,115 +13,80 @@ interface RegisterFormProps {
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLogin }) => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  const { signUp, signIn } = useAuth();
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     
-    if (!email || !password || !firstName || !lastName) {
-      setError('Por favor, preencha todos os campos obrigatórios');
-      setIsLoading(false);
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem');
-      setIsLoading(false);
-      return;
-    }
-    
     try {
-      // Always register as client when from booking flow
-      const userData = {
-        accountType: 'client', // Force client role
-        firstName,
-        lastName,
-        phone
-      };
-      
-      console.log('Registering client account with data:', userData);
-      
-      const { error: signUpError } = await signUp(email, password, userData);
-      
-      if (signUpError) {
-        setError(signUpError.message);
-      } else {
-        toast.success('Cadastro realizado com sucesso!');
-        const { error: loginError } = await signIn(email, password);
-        
-        if (!loginError) {
-          onRegisterSuccess();
-        } else {
-          toast.info('Por favor, faça login com suas credenciais');
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+            role: 'client'
+          }
         }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.session) {
+        toast.success('Cadastro realizado com sucesso!');
+        onRegisterSuccess();
+      } else {
+        // No session yet, but registration in progress
+        toast.info('Verifique seu email para confirmar o cadastro');
+        onShowLogin();
       }
-    } catch (err: any) {
-      setError(err.message || 'Erro ao criar conta');
+    } catch (error: any) {
+      console.error('Register error:', error);
+      setError(error.message || 'Erro ao fazer cadastro. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
-          <UserPlus className="w-8 h-8" />
-        </div>
-        <h3 className="text-xl font-bold">Crie sua conta de cliente</h3>
-        <p className="text-gray-500 mt-2">
-          Registre-se como cliente para finalizar sua reserva
+    <div className="space-y-4 py-2 pb-4">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">Criar uma conta</h2>
+        <p className="text-sm text-muted-foreground">
+          Cadastre-se para concluir sua reserva
         </p>
       </div>
       
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       
-      <form onSubmit={handleRegister} className="space-y-4 max-h-[55vh] overflow-y-auto pr-2">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="first-name">Nome</Label>
-            <Input
-              id="first-name"
-              placeholder="Seu nome"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="last-name">Sobrenome</Label>
-            <Input
-              id="last-name"
-              placeholder="Seu sobrenome"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              required
-            />
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Nome completo</Label>
+          <Input
+            id="name"
+            placeholder="Seu nome completo"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="register-email">Email</Label>
+          <Label htmlFor="email">Email</Label>
           <Input
-            id="register-email"
-            type="email"
-            placeholder="seu@email.com"
+            id="email"
+            type="email" 
+            placeholder="seu-email@exemplo.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -129,64 +94,34 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="phone">Telefone</Label>
+          <Label htmlFor="password">Senha</Label>
           <Input
-            id="phone"
-            placeholder="Seu telefone"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="register-password">Senha</Label>
-          <Input
-            id="register-password"
+            id="password"
             type="password"
-            placeholder="********"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            minLength={6}
             required
           />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="confirm-password">Confirmar Senha</Label>
-          <Input
-            id="confirm-password"
-            type="password"
-            placeholder="********"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
+          <p className="text-xs text-muted-foreground">
+            Mínimo de 6 caracteres
+          </p>
         </div>
         
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Criando conta...
-            </>
-          ) : (
-            'Criar Conta de Cliente'
-          )}
+          {isLoading ? 'Processando...' : 'Cadastrar'}
         </Button>
-        
-        <div className="text-center text-sm text-gray-500 mt-4">
-          <p>
-            Já tem uma conta?{' '}
-            <button
-              type="button"
-              onClick={onShowLogin}
-              className="text-primary hover:underline"
-            >
-              Faça login
-            </button>
-          </p>
-        </div>
       </form>
+      
+      <div className="mt-4 text-center text-sm">
+        Já tem uma conta?{' '}
+        <button 
+          className="font-semibold text-primary hover:underline" 
+          onClick={onShowLogin}
+        >
+          Faça login
+        </button>
+      </div>
     </div>
   );
 };

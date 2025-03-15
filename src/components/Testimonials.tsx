@@ -29,8 +29,8 @@ const testimonials = [
 
 const Testimonials: React.FC = () => {
   return (
-    <section className="py-16 bg-gray-50">
-      <div className="container mx-auto px-6">
+    <section className="py-16 bg-gray-50 w-full">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-6 w-full">
         <div className="text-center mb-12">
           <h2 className="section-title mb-6">O Que Nossos Clientes Dizem</h2>
           <p className="text-foreground/70 max-w-2xl mx-auto">

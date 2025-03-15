@@ -1,82 +1,11 @@
 
-/* Glass morphism effects */
-.glass-morphism {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-/* Shadows and hover effects */
-.smooth-shadow {
-  box-shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s ease-in-out;
-}
-
-.smooth-shadow:hover {
-  box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.15);
-}
-
-.blur-load {
-  background-size: cover;
-  background-position: center;
-  transition: background-image 0.3s ease-in-out;
-}
-
-/* Section and heading styles */
-.section-title {
-  @apply text-2xl md:text-3xl font-bold mb-2 text-center;
-  position: relative;
-  display: inline-block;
-}
-
-.section-title::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 3px;
-  background-color: hsl(var(--primary));
-}
-
-/* Cards and containers */
-.card {
-  padding: 2em;
-}
-
-.hover-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.hover-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-
-.read-the-docs {
-  color: #888;
-}
+/* Import individual component style files */
+@import './components/glass.css';
+@import './components/sections.css';
+@import './components/cards.css';
+@import './components/buttons.css';
+@import './components/mobile-ui.css';
+@import './components/navigation.css';
+@import './components/status.css';
+@import './components/vehicle.css';
+@import './components/misc.css';

@@ -1,19 +1,18 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-
-// Import step components
+import { calculateRoute, calculateTripPrice, RouteInfo } from '@/utils/routeUtils';
+import { createBooking, createServiceOrderFromBooking } from '@/services/booking/bookingService';
 import VehicleSelection, { Vehicle } from './steps/VehicleSelection';
 import TripDetails from './steps/TripDetails';
 import PaymentSelection from './steps/PaymentSelection';
 import BookingConfirmation from './steps/BookingConfirmation';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
-import BookingComplete from './BookingComplete';
+import BookingComplete from './steps/BookingComplete';
 
 const vehicleOptions: Vehicle[] = [
   {
@@ -22,7 +21,7 @@ const vehicleOptions: Vehicle[] = [
     image: '/lovable-uploads/sedan-exec.jpg',
     description: 'Conforto para até 4 passageiros',
     capacity: 4,
-    pricePerKm: 3.5,
+    pricePerKm: 2.49,
     basePrice: 120,
   },
   {
@@ -31,7 +30,7 @@ const vehicleOptions: Vehicle[] = [
     image: '/lovable-uploads/suv-premium.jpg',
     description: 'Espaço e conforto para até 6 passageiros',
     capacity: 6,
-    pricePerKm: 4.2,
+    pricePerKm: 2.49,
     basePrice: 180,
   },
   {
@@ -40,7 +39,7 @@ const vehicleOptions: Vehicle[] = [
     image: '/lovable-uploads/van-exec.jpg',
     description: 'Ideal para grupos de até 10 passageiros',
     capacity: 10,
-    pricePerKm: 5.8,
+    pricePerKm: 2.49,
     basePrice: 250,
   },
 ];
@@ -60,6 +59,12 @@ interface BookingStepsProps {
     returnDate: Date | undefined;
     tripType: 'oneway' | 'roundtrip';
     passengers: string;
+    time?: string;
+    returnTime?: string;
+    passengerData?: {
+      name: string;
+      phone: string;
+    }[];
   };
   isOpen: boolean;
   onClose: () => void;
@@ -74,21 +79,47 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [bookingReference, setBookingReference] = useState<string>('');
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
+  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
 
   const { user } = useAuth();
 
-  const estimatedDistance = 120;
-  const estimatedTime = 95;
+  useEffect(() => {
+    const fetchRouteData = async () => {
+      if (bookingData.origin && bookingData.destination && isOpen) {
+        setIsCalculatingRoute(true);
+        try {
+          const result = await calculateRoute(bookingData.origin, bookingData.destination);
+          setRouteInfo(result);
+          if (!result) {
+            toast.error('Não foi possível calcular a rota. Usando estimativas padrão.');
+          }
+        } catch (error) {
+          console.error('Error fetching route data:', error);
+          toast.error('Erro ao calcular rota. Usando estimativas padrão.');
+        } finally {
+          setIsCalculatingRoute(false);
+        }
+      }
+    };
+
+    fetchRouteData();
+  }, [bookingData.origin, bookingData.destination, isOpen]);
+
+  const estimatedDistance = routeInfo?.distance || 120;
+  const estimatedTime = routeInfo?.duration || 95;
 
   const calculatePrice = () => {
     if (!selectedVehicle) return 0;
     const vehicle = vehicleOptions.find(v => v.id === selectedVehicle);
     if (!vehicle) return 0;
     
-    const distancePrice = vehicle.pricePerKm * estimatedDistance;
-    const totalPrice = vehicle.basePrice + distancePrice;
-    
-    return bookingData.tripType === 'roundtrip' ? totalPrice * 2 : totalPrice;
+    return calculateTripPrice(
+      estimatedDistance,
+      vehicle.basePrice,
+      vehicle.pricePerKm,
+      bookingData.tripType === 'roundtrip'
+    );
   };
 
   const totalPrice = calculatePrice();
@@ -151,17 +182,52 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setIsSubmitting(true);
     
     try {
-      // Simulating API call with a timeout
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
       const reference = 'TRF-' + Math.floor(100000 + Math.random() * 900000);
+      const selectedVehicleDetails = vehicleOptions.find(v => v.id === selectedVehicle);
+      
+      const bookingObject = {
+        reference_code: reference,
+        origin: bookingData.origin,
+        destination: bookingData.destination,
+        booking_date: new Date().toISOString(),
+        travel_date: bookingData.date ? bookingData.date.toISOString() : new Date().toISOString(),
+        return_date: bookingData.returnDate ? bookingData.returnDate.toISOString() : null,
+        total_price: totalPrice,
+        passengers: parseInt(bookingData.passengers),
+        vehicle_type: selectedVehicleDetails?.name || '',
+        status: 'confirmed' as const,
+        user_id: user?.id || '',
+        additional_notes: `${bookingData.time ? 'Horário ida: ' + bookingData.time : ''} 
+                          ${bookingData.returnTime ? 'Horário volta: ' + bookingData.returnTime : ''}`
+      };
+      
+      const { booking, error } = await createBooking(bookingObject);
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (booking) {
+        const { serviceOrder, error: serviceOrderError } = await createServiceOrderFromBooking(booking);
+        
+        if (serviceOrderError) {
+          console.error('Error creating service order:', serviceOrderError);
+          toast.error('Reserva confirmada, mas houve um erro ao criar a ordem de serviço', { 
+            description: 'Nossa equipe será notificada para resolver o problema.'
+          });
+        } else {
+          console.log('Service order created successfully:', serviceOrder);
+          toast.success('Ordem de serviço criada para a empresa de transporte!');
+        }
+      }
+      
       setBookingReference(reference);
       setBookingComplete(true);
       
       toast.success('Reserva confirmada com sucesso!');
     } catch (error) {
-      toast.error('Erro ao confirmar reserva. Tente novamente.');
       console.error('Booking error:', error);
+      toast.error('Erro ao confirmar reserva. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -200,6 +266,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
             estimatedTime={estimatedTime}
             totalPrice={totalPrice}
             formatCurrency={formatCurrency}
+            isCalculatingRoute={isCalculatingRoute}
           />
         );
       case 3:
@@ -224,6 +291,8 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
             bookingData={bookingData}
             totalPrice={totalPrice}
             formatCurrency={formatCurrency}
+            estimatedDistance={estimatedDistance}
+            estimatedTime={estimatedTime}
           />
         );
       default:

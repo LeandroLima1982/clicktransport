@@ -1,0 +1,122 @@
+
+/* Mobile-friendly button styles */
+.mobile-btn {
+  @apply rounded-full py-3 px-6 font-medium;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s, background 0.3s;
+}
+
+.mobile-btn:active {
+  transform: scale(0.97);
+}
+
+/* Action buttons in yellow */
+.action-btn {
+  background-color: #F8D748;
+  color: #000;
+  border-radius: 50px;
+  font-weight: 600;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn-secondary {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 50px;
+  font-weight: 600;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Native app-specific enhancements */
+.app-btn {
+  @apply rounded-full py-3 px-6 font-medium flex items-center justify-center;
+  transition: transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  background-color: #F8D748;
+  color: #000;
+}
+
+.app-btn:active {
+  transform: scale(0.97);
+}
+
+/* Modern booking button */
+.booking-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #F8D748;
+  color: #000;
+  font-weight: 600;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(248, 215, 72, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.booking-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 4px rgba(248, 215, 72, 0.2);
+}
+
+/* Alternative button styles */
+.outline-btn {
+  background-color: transparent;
+  border: 1px solid #F8D748;
+  color: #F8D748;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.outline-btn:active {
+  background-color: rgba(248, 215, 72, 0.1);
+}
+
+/* Floating action button */
+.fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background-color: #F8D748;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10;
+  transition: transform 0.2s;
+}
+
+.fab:active {
+  transform: scale(0.92);
+}
+
+/* Icon buttons */
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  transition: background-color 0.2s;
+}
+
+.icon-btn:active {
+  background-color: rgba(255, 255, 255, 0.2);
+}

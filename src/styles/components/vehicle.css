@@ -1,0 +1,109 @@
+
+/* Vehicle cards - mobile optimized */
+.vehicle-card {
+  background-color: #262626;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.vehicle-header {
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vehicle-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: white;
+}
+
+.journey-info {
+  padding: 16px;
+}
+
+.journey-location {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.location-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 6px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.location-dot.origin {
+  background-color: #F8D748;
+}
+
+.location-dot.destination {
+  background-color: #FF4B4B;
+}
+
+.location-text {
+  flex: 1;
+}
+
+.location-name {
+  color: white;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.location-time {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+}
+
+.route-line {
+  position: absolute;
+  left: 5px;
+  top: 16px;
+  bottom: 16px;
+  width: 1px;
+  background-color: rgba(255, 255, 255, 0.2);
+  z-index: 0;
+}
+
+.journey-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-value {
+  color: white;
+  font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .vehicle-card {
+    display: none; /* Hide mobile cards on desktop */
+  }
+}
+
+@media (max-width: 767px) {
+  .desktop-card {
+    display: none; /* Hide desktop cards on mobile */
+  }
+}

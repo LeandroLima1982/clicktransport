@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          additional_notes: string | null
+          booking_date: string
+          created_at: string
+          destination: string
+          id: string
+          origin: string
+          passengers: number | null
+          reference_code: string
+          return_date: string | null
+          status: string
+          total_price: number
+          travel_date: string
+          user_id: string
+          vehicle_type: string | null
+        }
+        Insert: {
+          additional_notes?: string | null
+          booking_date: string
+          created_at?: string
+          destination: string
+          id?: string
+          origin: string
+          passengers?: number | null
+          reference_code: string
+          return_date?: string | null
+          status?: string
+          total_price: number
+          travel_date: string
+          user_id: string
+          vehicle_type?: string | null
+        }
+        Update: {
+          additional_notes?: string | null
+          booking_date?: string
+          created_at?: string
+          destination?: string
+          id?: string
+          origin?: string
+          passengers?: number | null
+          reference_code?: string
+          return_date?: string | null
+          status?: string
+          total_price?: number
+          travel_date?: string
+          user_id?: string
+          vehicle_type?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           cnpj: string | null
@@ -38,30 +89,63 @@ export type Database = {
       }
       drivers: {
         Row: {
+          company_id: string | null
           created_at: string | null
+          email: string | null
           id: string
+          is_password_changed: boolean | null
+          last_login: string | null
+          license_number: string | null
           name: string
           phone: string | null
           status: string | null
           user_id: string | null
+          vehicle_id: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
+          email?: string | null
           id?: string
+          is_password_changed?: boolean | null
+          last_login?: string | null
+          license_number?: string | null
           name: string
           phone?: string | null
           status?: string | null
           user_id?: string | null
+          vehicle_id?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
+          email?: string | null
           id?: string
+          is_password_changed?: boolean | null
+          last_login?: string | null
+          license_number?: string | null
           name?: string
           phone?: string | null
           status?: string | null
           user_id?: string | null
+          vehicle_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "drivers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drivers_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -89,6 +173,108 @@ export type Database = {
           role?: string | null
         }
         Relationships: []
+      }
+      service_orders: {
+        Row: {
+          company_id: string
+          created_at: string
+          delivery_date: string | null
+          destination: string
+          driver_id: string | null
+          id: string
+          notes: string | null
+          origin: string
+          pickup_date: string
+          status: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          delivery_date?: string | null
+          destination: string
+          driver_id?: string | null
+          id?: string
+          notes?: string | null
+          origin: string
+          pickup_date: string
+          status?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          delivery_date?: string | null
+          destination?: string
+          driver_id?: string | null
+          id?: string
+          notes?: string | null
+          origin?: string
+          pickup_date?: string
+          status?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          license_plate: string
+          model: string
+          status: string
+          year: number | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          license_plate: string
+          model: string
+          status?: string
+          year?: number | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          license_plate?: string
+          model?: string
+          status?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

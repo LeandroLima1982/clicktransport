@@ -21,11 +21,12 @@ const Navbar: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
+      console.log('Navbar logging out...');
       await signOut();
-      navigate('/');
+      navigate('/', { replace: true });
+      setMobileMenuOpen(false);
     } catch (error) {
       console.error('Logout error:', error);
-      // Error toast will be displayed by the AuthProvider
     }
   };
 
@@ -47,25 +48,30 @@ const Navbar: React.FC = () => {
     <>
       <NavbarContainer scrolled={scrolled}>
         <NavbarLogo />
-        <NavbarLinks />
         
-        <div className="hidden md:flex items-center space-x-4 animate-fade-in" style={{animationDelay: '0.2s'}}>
-          <UserMenu 
-            user={user} 
-            userRole={userRole} 
-            handleSignOut={handleSignOut} 
-            isAuthenticating={isAuthenticating} 
-          />
+        <div className="hidden md:flex items-center space-x-4">
+          <NavbarLinks />
         </div>
+        
+        <div className="flex items-center space-x-4 animate-fade-in" style={{animationDelay: '0.2s'}}>
+          <div className="hidden md:block">
+            <UserMenu 
+              user={user} 
+              userRole={userRole} 
+              handleSignOut={handleSignOut} 
+              isAuthenticating={isAuthenticating} 
+            />
+          </div>
 
-        {/* Mobile menu button */}
-        <button 
-          className="md:hidden text-foreground focus:outline-none" 
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
-        >
-          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+          {/* Mobile menu button */}
+          <button 
+            className="md:hidden text-foreground focus:outline-none" 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </NavbarContainer>
 
       {/* Mobile menu */}

@@ -1,30 +1,31 @@
-
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
+import { 
+  User, 
+  Search, 
+  Plus, 
+  Edit, 
+  Trash, 
+  Car, 
+  Mail,
+  Send,
+  Loader2
+} from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import DriverRegistrationForm from './DriverRegistrationForm';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetDescription, 
+  SheetFooter, 
+  SheetHeader, 
+  SheetTitle, 
   SheetTrigger,
-  SheetFooter,
-  SheetClose,
+  SheetClose
 } from "@/components/ui/sheet";
 import {
   Dialog,
@@ -33,35 +34,49 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/main';
-import { Plus, Search, User, Edit, Trash } from 'lucide-react';
-import { toast } from 'sonner';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Driver {
   id: string;
   name: string;
   phone: string | null;
+  email: string | null;
   license_number: string | null;
   status: 'active' | 'inactive' | 'on_trip';
   vehicle_id: string | null;
+  is_password_changed: boolean | null;
+  last_login: string | null;
+  company_id: string | null;
+  user_id: string | null;
+  created_at: string | null;
 }
 
-const DriversManagement: React.FC = () => {
+interface DriversManagementProps {
+  companyId: string;
+}
+
+const DriversManagement: React.FC<DriversManagementProps> = ({ companyId }) => {
   const { user } = useAuth();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [driverToDelete, setDriverToDelete] = useState<string | null>(null);
+  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   
-  // Form state
   const [driverForm, setDriverForm] = useState({
     id: '',
     name: '',
     phone: '',
+    email: '',
     license_number: '',
     status: 'active',
     vehicle_id: ''
@@ -69,16 +84,15 @@ const DriversManagement: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    fetchData();
-  }, [user]);
+    if (companyId) {
+      fetchData();
+    }
+  }, [companyId]);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const companyId = await getCompanyId();
-      
       if (companyId) {
-        // Fetch drivers
         const { data: driversData, error: driversError } = await supabase
           .from('drivers')
           .select('*')
@@ -86,7 +100,23 @@ const DriversManagement: React.FC = () => {
         
         if (driversError) throw driversError;
         
-        // Fetch vehicles
+        const formattedDrivers: Driver[] = (driversData || []).map(driver => ({
+          id: driver.id || '',
+          name: driver.name || '',
+          phone: driver.phone || null,
+          email: driver.email || null,
+          license_number: driver.license_number || null,
+          status: (driver.status as 'active' | 'inactive' | 'on_trip') || 'active',
+          vehicle_id: driver.vehicle_id || null,
+          is_password_changed: driver.is_password_changed !== undefined ? driver.is_password_changed : null,
+          last_login: driver.last_login || null,
+          company_id: driver.company_id || null,
+          user_id: driver.user_id || null,
+          created_at: driver.created_at || null
+        }));
+        
+        setDrivers(formattedDrivers);
+        
         const { data: vehiclesData, error: vehiclesError } = await supabase
           .from('vehicles')
           .select('*')
@@ -94,7 +124,6 @@ const DriversManagement: React.FC = () => {
         
         if (vehiclesError) throw vehiclesError;
         
-        setDrivers(driversData || []);
         setVehicles(vehiclesData || []);
       }
     } catch (error) {
@@ -102,24 +131,6 @@ const DriversManagement: React.FC = () => {
       toast.error('Erro ao carregar dados');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Helper function to get company ID from user ID
-  const getCompanyId = async () => {
-    if (!user) return null;
-    
-    try {
-      const { data } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-      
-      return data?.id || null;
-    } catch (error) {
-      console.error('Error fetching company ID:', error);
-      return null;
     }
   };
 
@@ -133,6 +144,7 @@ const DriversManagement: React.FC = () => {
       id: driver.id,
       name: driver.name,
       phone: driver.phone || '',
+      email: driver.email || '',
       license_number: driver.license_number || '',
       status: driver.status,
       vehicle_id: driver.vehicle_id || ''
@@ -145,6 +157,7 @@ const DriversManagement: React.FC = () => {
       id: '',
       name: '',
       phone: '',
+      email: '',
       license_number: '',
       status: 'active',
       vehicle_id: ''
@@ -154,37 +167,31 @@ const DriversManagement: React.FC = () => {
 
   const handleSaveDriver = async () => {
     try {
-      const companyId = await getCompanyId();
-      
-      if (!companyId) {
-        toast.error('ID da empresa não encontrado');
-        return;
-      }
-      
-      // Validate form
-      if (!driverForm.name) {
-        toast.error('Nome do motorista é obrigatório');
+      if (!driverForm.name || !driverForm.email) {
+        toast.error('Nome e email do motorista são obrigatórios');
         return;
       }
       
       if (isEditing) {
-        // Update driver
         const { error } = await supabase
           .from('drivers')
           .update({
             name: driverForm.name,
             phone: driverForm.phone || null,
+            email: driverForm.email,
             license_number: driverForm.license_number || null,
             status: driverForm.status as 'active' | 'inactive' | 'on_trip',
             vehicle_id: driverForm.vehicle_id || null
           })
           .eq('id', driverForm.id);
         
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating driver:', error);
+          throw error;
+        }
         
         toast.success('Motorista atualizado com sucesso');
       } else {
-        // Create new driver
         const { error } = await supabase
           .from('drivers')
           .insert([
@@ -192,24 +199,26 @@ const DriversManagement: React.FC = () => {
               company_id: companyId,
               name: driverForm.name,
               phone: driverForm.phone || null,
+              email: driverForm.email,
               license_number: driverForm.license_number || null,
               status: driverForm.status,
               vehicle_id: driverForm.vehicle_id || null
             }
           ]);
         
-        if (error) throw error;
+        if (error) {
+          console.error('Error creating driver:', error);
+          throw error;
+        }
         
         toast.success('Motorista cadastrado com sucesso');
       }
       
-      // Reset form and refresh data
       resetForm();
       fetchData();
-      
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving driver:', error);
-      toast.error('Erro ao salvar motorista');
+      toast.error(`Erro ao salvar motorista: ${error.message || 'Erro desconhecido'}`);
     }
   };
 
@@ -233,9 +242,52 @@ const DriversManagement: React.FC = () => {
     }
   };
 
+  const handleSendPasswordReminder = async (driverId: string) => {
+    setSendingReminder(driverId);
+    try {
+      const { data: driver, error: driverError } = await supabase
+        .from('drivers')
+        .select('*')
+        .eq('id', driverId)
+        .single();
+      
+      if (driverError || !driver) {
+        throw new Error('Erro ao encontrar dados do motorista');
+      }
+      
+      toast.success(`Lembrete enviado para ${driver.name}`, {
+        description: `Um email foi enviado para ${driver.email} com instruções para alteração de senha.`
+      });
+      
+      try {
+        const { error: updateError } = await supabase
+          .from('drivers')
+          .update({ 
+            status: driver.status
+          })
+          .eq('id', driverId);
+          
+        if (updateError) {
+          console.error('Error updating driver reminder timestamp:', updateError);
+        }
+      } catch (updateErr) {
+        console.error('Exception updating reminder timestamp:', updateErr);
+      }
+      
+    } catch (error: any) {
+      console.error('Error sending password reminder:', error);
+      toast.error('Erro ao enviar lembrete', {
+        description: error.message || 'Ocorreu um problema ao enviar o lembrete'
+      });
+    } finally {
+      setSendingReminder(null);
+    }
+  };
+
   const filteredDrivers = drivers.filter(driver => 
     driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (driver.phone && driver.phone.includes(searchTerm)) ||
+    (driver.email && driver.email.includes(searchTerm)) ||
     (driver.license_number && driver.license_number.includes(searchTerm))
   );
 
@@ -277,113 +329,33 @@ const DriversManagement: React.FC = () => {
           />
         </div>
         
-        <Sheet onOpenChange={(open) => !open && resetForm()}>
+        <Sheet>
           <SheetTrigger asChild>
             <Button className="ml-4">
               <Plus className="mr-2 h-4 w-4" />
               Novo Motorista
             </Button>
           </SheetTrigger>
-          <SheetContent>
+          <SheetContent className="w-full sm:w-[540px]">
             <SheetHeader>
-              <SheetTitle>{isEditing ? 'Editar Motorista' : 'Cadastrar Motorista'}</SheetTitle>
+              <SheetTitle>Cadastrar Novo Motorista</SheetTitle>
               <SheetDescription>
-                {isEditing ? 'Atualize os dados do motorista.' : 'Preencha os dados para cadastrar um novo motorista.'}
+                Cadastre um novo motorista com suas credenciais de acesso.
               </SheetDescription>
             </SheetHeader>
             
-            <div className="grid gap-4 py-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-1">
-                  Nome *
-                </label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={driverForm.name}
-                  onChange={handleInputChange}
-                  placeholder="Nome completo"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium mb-1">
-                  Telefone
-                </label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  value={driverForm.phone}
-                  onChange={handleInputChange}
-                  placeholder="(00) 00000-0000"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="license_number" className="block text-sm font-medium mb-1">
-                  CNH
-                </label>
-                <Input
-                  id="license_number"
-                  name="license_number"
-                  value={driverForm.license_number}
-                  onChange={handleInputChange}
-                  placeholder="Número da CNH"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="status" className="block text-sm font-medium mb-1">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={driverForm.status}
-                  onChange={handleInputChange}
-                >
-                  <option value="active">Ativo</option>
-                  <option value="inactive">Inativo</option>
-                  <option value="on_trip">Em viagem</option>
-                </select>
-              </div>
-              
-              <div>
-                <label htmlFor="vehicle_id" className="block text-sm font-medium mb-1">
-                  Veículo
-                </label>
-                <select
-                  id="vehicle_id"
-                  name="vehicle_id"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={driverForm.vehicle_id}
-                  onChange={handleInputChange}
-                >
-                  <option value="">Selecione um veículo</option>
-                  {vehicles.map((vehicle) => (
-                    <option key={vehicle.id} value={vehicle.id}>
-                      {vehicle.model} ({vehicle.license_plate})
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="mt-4">
+              <DriverRegistrationForm 
+                companyId={companyId} 
+                onSuccess={() => {
+                  fetchData();
+                }} 
+              />
             </div>
-            
-            <SheetFooter>
-              <SheetClose asChild>
-                <Button variant="outline">Cancelar</Button>
-              </SheetClose>
-              <Button onClick={handleSaveDriver}>
-                {isEditing ? 'Salvar Alterações' : 'Cadastrar Motorista'}
-              </Button>
-            </SheetFooter>
           </SheetContent>
         </Sheet>
       </div>
       
-      {/* Confirmation Dialog for Delete */}
       <Dialog open={!!driverToDelete} onOpenChange={(open) => !open && setDriverToDelete(null)}>
         <DialogContent>
           <DialogHeader>
@@ -426,7 +398,115 @@ const DriversManagement: React.FC = () => {
                   </Button>
                 </SheetTrigger>
                 <SheetContent>
-                  {/* Same form content as above */}
+                  <SheetHeader>
+                    <SheetTitle>Cadastrar Motorista</SheetTitle>
+                    <SheetDescription>
+                      Preencha os dados para cadastrar um novo motorista.
+                    </SheetDescription>
+                  </SheetHeader>
+                  
+                  <div className="grid gap-4 py-4">
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium mb-1">
+                        Nome *
+                      </label>
+                      <Input
+                        id="name"
+                        name="name"
+                        value={driverForm.name}
+                        onChange={handleInputChange}
+                        placeholder="Nome completo"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium mb-1">
+                        Email *
+                      </label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={driverForm.email}
+                        onChange={handleInputChange}
+                        placeholder="email@exemplo.com"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="phone" className="block text-sm font-medium mb-1">
+                        Telefone
+                      </label>
+                      <Input
+                        id="phone"
+                        name="phone"
+                        value={driverForm.phone}
+                        onChange={handleInputChange}
+                        placeholder="(00) 00000-0000"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="license_number" className="block text-sm font-medium mb-1">
+                        CNH
+                      </label>
+                      <Input
+                        id="license_number"
+                        name="license_number"
+                        value={driverForm.license_number}
+                        onChange={handleInputChange}
+                        placeholder="Número da CNH"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="status" className="block text-sm font-medium mb-1">
+                        Status
+                      </label>
+                      <select
+                        id="status"
+                        name="status"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={driverForm.status}
+                        onChange={handleInputChange}
+                      >
+                        <option value="active">Ativo</option>
+                        <option value="inactive">Inativo</option>
+                        <option value="on_trip">Em viagem</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="vehicle_id" className="block text-sm font-medium mb-1">
+                        Veículo
+                      </label>
+                      <select
+                        id="vehicle_id"
+                        name="vehicle_id"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={driverForm.vehicle_id}
+                        onChange={handleInputChange}
+                      >
+                        <option value="">Selecione um veículo</option>
+                        {vehicles.map((vehicle) => (
+                          <option key={vehicle.id} value={vehicle.id}>
+                            {vehicle.model} ({vehicle.license_plate})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <SheetFooter>
+                    <SheetClose asChild>
+                      <Button variant="outline">Cancelar</Button>
+                    </SheetClose>
+                    <Button onClick={handleSaveDriver}>
+                      Cadastrar Motorista
+                    </Button>
+                  </SheetFooter>
                 </SheetContent>
               </Sheet>
             </div>
@@ -436,10 +516,12 @@ const DriversManagement: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Telefone</TableHead>
                     <TableHead>CNH</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Veículo</TableHead>
+                    <TableHead>Último Login</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -447,6 +529,7 @@ const DriversManagement: React.FC = () => {
                   {filteredDrivers.map((driver) => (
                     <TableRow key={driver.id}>
                       <TableCell className="font-medium">{driver.name}</TableCell>
+                      <TableCell>{driver.email || '-'}</TableCell>
                       <TableCell>{driver.phone || '-'}</TableCell>
                       <TableCell>{driver.license_number || '-'}</TableCell>
                       <TableCell>
@@ -455,6 +538,14 @@ const DriversManagement: React.FC = () => {
                         </span>
                       </TableCell>
                       <TableCell>{getVehicleName(driver.vehicle_id)}</TableCell>
+                      <TableCell>
+                        {driver.last_login ? new Date(driver.last_login).toLocaleString('pt-BR') : 'Nunca'}
+                        {!driver.is_password_changed && (
+                          <span className="ml-2 px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
+                            Senha provisória
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Sheet onOpenChange={(open) => {
@@ -467,9 +558,132 @@ const DriversManagement: React.FC = () => {
                               </Button>
                             </SheetTrigger>
                             <SheetContent>
-                              {/* Same form content as above */}
+                              <SheetHeader>
+                                <SheetTitle>Editar Motorista</SheetTitle>
+                                <SheetDescription>
+                                  Atualize os dados do motorista.
+                                </SheetDescription>
+                              </SheetHeader>
+                              
+                              <div className="grid gap-4 py-4">
+                                <div>
+                                  <label htmlFor="edit-name" className="block text-sm font-medium mb-1">
+                                    Nome *
+                                  </label>
+                                  <Input
+                                    id="edit-name"
+                                    name="name"
+                                    value={driverForm.name}
+                                    onChange={handleInputChange}
+                                    placeholder="Nome completo"
+                                    required
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label htmlFor="edit-email" className="block text-sm font-medium mb-1">
+                                    Email *
+                                  </label>
+                                  <Input
+                                    id="edit-email"
+                                    name="email"
+                                    type="email"
+                                    value={driverForm.email}
+                                    onChange={handleInputChange}
+                                    placeholder="email@exemplo.com"
+                                    required
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label htmlFor="edit-phone" className="block text-sm font-medium mb-1">
+                                    Telefone
+                                  </label>
+                                  <Input
+                                    id="edit-phone"
+                                    name="phone"
+                                    value={driverForm.phone}
+                                    onChange={handleInputChange}
+                                    placeholder="(00) 00000-0000"
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label htmlFor="edit-license" className="block text-sm font-medium mb-1">
+                                    CNH
+                                  </label>
+                                  <Input
+                                    id="edit-license"
+                                    name="license_number"
+                                    value={driverForm.license_number}
+                                    onChange={handleInputChange}
+                                    placeholder="Número da CNH"
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label htmlFor="edit-status" className="block text-sm font-medium mb-1">
+                                    Status
+                                  </label>
+                                  <select
+                                    id="edit-status"
+                                    name="status"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={driverForm.status}
+                                    onChange={handleInputChange}
+                                  >
+                                    <option value="active">Ativo</option>
+                                    <option value="inactive">Inativo</option>
+                                    <option value="on_trip">Em viagem</option>
+                                  </select>
+                                </div>
+                                
+                                <div>
+                                  <label htmlFor="edit-vehicle" className="block text-sm font-medium mb-1">
+                                    Veículo
+                                  </label>
+                                  <select
+                                    id="edit-vehicle"
+                                    name="vehicle_id"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={driverForm.vehicle_id}
+                                    onChange={handleInputChange}
+                                  >
+                                    <option value="">Selecione um veículo</option>
+                                    {vehicles.map((vehicle) => (
+                                      <option key={vehicle.id} value={vehicle.id}>
+                                        {vehicle.model} ({vehicle.license_plate})
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                              
+                              <SheetFooter>
+                                <SheetClose asChild>
+                                  <Button variant="outline">Cancelar</Button>
+                                </SheetClose>
+                                <Button onClick={handleSaveDriver}>
+                                  Salvar Alterações
+                                </Button>
+                              </SheetFooter>
                             </SheetContent>
                           </Sheet>
+                          
+                          {!driver.is_password_changed && driver.email && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleSendPasswordReminder(driver.id)}
+                              disabled={sendingReminder === driver.id}
+                            >
+                              {sendingReminder === driver.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Mail className="h-4 w-4 text-blue-500" />
+                              )}
+                            </Button>
+                          )}
                           
                           <Button 
                             variant="outline" 

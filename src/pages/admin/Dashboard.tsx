@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -9,11 +9,59 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanyManagement from '@/components/admin/CompanyManagement';
 import ServiceOrderMonitoring from '@/components/admin/ServiceOrderMonitoring';
 import PerformanceReports from '@/components/admin/PerformanceReports';
-import { FileText, Settings, UserCheck, ChartBar } from 'lucide-react';
+import { FileText, Settings, UserCheck, ChartBar, Loader2 } from 'lucide-react';
+import { supabase } from '@/main';
+import { toast } from 'sonner';
 
 const AdminDashboard: React.FC = () => {
   const { user, userRole } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
+  const [dashboardStats, setDashboardStats] = useState({
+    companies: 0,
+    drivers: 0,
+    orders: 0,
+    loading: true
+  });
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      // Fetch companies count
+      const { count: companiesCount, error: companiesError } = await supabase
+        .from('companies')
+        .select('*', { count: 'exact', head: true });
+      
+      if (companiesError) throw companiesError;
+      
+      // Fetch drivers count
+      const { count: driversCount, error: driversError } = await supabase
+        .from('drivers')
+        .select('*', { count: 'exact', head: true });
+      
+      if (driversError) throw driversError;
+      
+      // Fetch orders count
+      const { count: ordersCount, error: ordersError } = await supabase
+        .from('service_orders')
+        .select('*', { count: 'exact', head: true });
+      
+      if (ordersError) throw ordersError;
+      
+      setDashboardStats({
+        companies: companiesCount || 0,
+        drivers: driversCount || 0,
+        orders: ordersCount || 0,
+        loading: false
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      toast.error('Falha ao carregar estatísticas do dashboard');
+      setDashboardStats(prev => ({ ...prev, loading: false }));
+    }
+  };
 
   if (!user || userRole !== 'admin') {
     return (
@@ -73,14 +121,23 @@ const AdminDashboard: React.FC = () => {
                   <CardDescription>Gerenciar empresas de transporte</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">55</p>
-                  <p className="text-sm text-muted-foreground">Total de empresas registradas</p>
-                  <Button 
-                    className="mt-4 w-full"
-                    onClick={() => setActiveTab("companies")}
-                  >
-                    Ver Empresas
-                  </Button>
+                  {dashboardStats.loading ? (
+                    <div className="flex items-center">
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <p>Carregando...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold">{dashboardStats.companies}</p>
+                      <p className="text-sm text-muted-foreground">Total de empresas registradas</p>
+                      <Button 
+                        className="mt-4 w-full"
+                        onClick={() => setActiveTab("companies")}
+                      >
+                        Ver Empresas
+                      </Button>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -90,14 +147,23 @@ const AdminDashboard: React.FC = () => {
                   <CardDescription>Gerenciar motoristas registrados</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">128</p>
-                  <p className="text-sm text-muted-foreground">Total de motoristas registrados</p>
-                  <Button 
-                    className="mt-4 w-full"
-                    onClick={() => setActiveTab("orders")}
-                  >
-                    Ver Motoristas
-                  </Button>
+                  {dashboardStats.loading ? (
+                    <div className="flex items-center">
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <p>Carregando...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold">{dashboardStats.drivers}</p>
+                      <p className="text-sm text-muted-foreground">Total de motoristas registrados</p>
+                      <Button 
+                        className="mt-4 w-full"
+                        onClick={() => setActiveTab("orders")}
+                      >
+                        Ver Motoristas
+                      </Button>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -107,14 +173,23 @@ const AdminDashboard: React.FC = () => {
                   <CardDescription>Acompanhar ordens de transporte</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">342</p>
-                  <p className="text-sm text-muted-foreground">Total de ordens de serviço</p>
-                  <Button 
-                    className="mt-4 w-full"
-                    onClick={() => setActiveTab("orders")}
-                  >
-                    Ver Ordens
-                  </Button>
+                  {dashboardStats.loading ? (
+                    <div className="flex items-center">
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <p>Carregando...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold">{dashboardStats.orders}</p>
+                      <p className="text-sm text-muted-foreground">Total de ordens de serviço</p>
+                      <Button 
+                        className="mt-4 w-full"
+                        onClick={() => setActiveTab("orders")}
+                      >
+                        Ver Ordens
+                      </Button>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </div>

@@ -1,121 +1,203 @@
-
-import { useState, useEffect, createContext, ReactNode } from 'react';
-import { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
-import { supabase } from '../../main';
-import { AuthContextType, UserRole } from './types';
+import React, { createContext, useEffect, useState, useCallback } from 'react';
+import { Session, User, AuthError } from '@supabase/supabase-js';
+import { supabase } from '../../integrations/supabase/client';
 import { signIn, signInWithGoogle, signUp, signOut, resetPassword } from './authFunctions';
 import { fetchUserRole } from './userProfile';
+import { AuthContextType, UserRole } from './types';
 import { toast } from 'sonner';
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType>({
+  session: null,
+  user: null,
+  isLoading: true,
+  isAuthenticating: false,
+  signIn: async () => ({ error: null }),
+  signInWithGoogle: async () => ({ error: null }),
+  signUp: async () => ({ error: null }),
+  signOut: async () => ({ error: null }),
+  resetPassword: async () => ({ error: null }),
+  userRole: null,
+});
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole>(null);
-  const [logoutInProgress, setLogoutInProgress] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [companyContext, setCompanyContext] = useState<{id: string, name: string} | null>(null);
 
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session);
-      setSession(session);
-      setUser(session?.user ?? null);
+  // Update driver company context from localStorage
+  const updateDriverCompanyContext = useCallback(() => {
+    const companyId = localStorage.getItem('driverCompanyId');
+    const companyName = localStorage.getItem('driverCompanyName');
+    
+    if (companyId && companyName && userRole === 'driver') {
+      setCompanyContext({
+        id: companyId,
+        name: companyName
+      });
+      console.log('Driver company context loaded:', companyId, companyName);
+    } else {
+      setCompanyContext(null);
+    }
+  }, [userRole]);
+
+  // Function to get user role from database
+  const getUserRole = useCallback(async (userId: string) => {
+    try {
+      const role = await fetchUserRole(userId);
+      console.log('User role fetched:', role);
+      setUserRole(role);
       
-      // Fetch user role from profiles table if user exists
-      if (session?.user) {
-        fetchUserRole(session.user.id).then(role => {
-          console.log('User role fetched:', role);
-          setUserRole(role);
-        });
+      // Update driver company context after role is set
+      if (role === 'driver') {
+        updateDriverCompanyContext();
       }
       
-      setIsLoading(false);
-    });
+      return role;
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      setUserRole(null);
+      return null;
+    }
+  }, [updateDriverCompanyContext]);
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, currentSession: Session | null) => {
-        console.log('Auth state changed:', event);
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
+  // Initialize and set up auth state listener
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        setIsLoading(true);
         
-        // Update user role when auth state changes
+        // Get current session
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        setSession(currentSession);
+        setUser(currentSession?.user || null);
+        
         if (currentSession?.user) {
-          const role = await fetchUserRole(currentSession.user.id);
-          console.log('User role updated on auth change:', role);
-          setUserRole(role);
-          
-          if (event === 'SIGNED_IN') {
-            toast.success('Login realizado com sucesso!');
-          }
-        } else {
-          setUserRole(null);
-          
-          if (event === 'SIGNED_OUT') {
-            toast.success('Logout realizado com sucesso!');
-            // Reset logout in progress state if we get a successful sign out event
-            setLogoutInProgress(false);
-          }
+          await getUserRole(currentSession.user.id);
         }
         
+        // Subscribe to auth changes
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+          async (event, updatedSession) => {
+            console.log('Auth state changed:', event);
+            
+            setSession(updatedSession);
+            setUser(updatedSession?.user || null);
+            
+            if (event === 'SIGNED_IN' && updatedSession?.user) {
+              await getUserRole(updatedSession.user.id);
+            } else if (event === 'SIGNED_OUT') {
+              setUserRole(null);
+              localStorage.removeItem('driverCompanyId');
+              localStorage.removeItem('driverCompanyName');
+              setCompanyContext(null);
+            }
+          }
+        );
+        
+        return () => {
+          authListener.subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
         setIsLoading(false);
       }
-    );
-
-    return () => {
-      subscription.unsubscribe();
     };
-  }, []);
-
-  // Enhanced signOut function that clears user state and handles errors
-  const handleSignOut = async () => {
+    
+    initializeAuth();
+  }, [getUserRole]);
+  
+  // Handle sign-in with wrapper function to manage loading state
+  const handleSignIn = async (email: string, password: string) => {
     try {
-      setLogoutInProgress(true);
+      setIsAuthenticating(true);
+      const result = await signIn(email, password);
       
-      const result = await signOut();
-      
-      if (result.error) {
-        console.error('Error signing out:', result.error);
-        toast.error('Erro ao fazer logout', {
-          description: 'Ocorreu um erro ao encerrar sua sessão. Tente novamente.'
-        });
-        setLogoutInProgress(false);
-        return result;
+      if (!result.error) {
+        toast.success('Login realizado com sucesso');
       }
-      
-      // Clear local state - don't wait for the auth state change event
-      setUser(null);
-      setSession(null);
-      setUserRole(null);
-      
-      // We'll set logoutInProgress to false when the SIGNED_OUT event is triggered
-      // This prevents weird UI states if the event takes time
       
       return result;
     } catch (error) {
-      console.error('Unexpected error during sign out:', error);
-      toast.error('Erro ao fazer logout', {
-        description: 'Ocorreu um erro inesperado. Tente novamente mais tarde.'
-      });
-      setLogoutInProgress(false);
+      toast.error('Erro inesperado ao fazer login');
+      return { error: error as AuthError };
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+  
+  // Handle sign-in with Google
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsAuthenticating(true);
+      return await signInWithGoogle();
+    } catch (error) {
+      return { error: error as AuthError };
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+  
+  // Handle sign-up
+  const handleSignUp = async (email: string, password: string, userData?: any) => {
+    try {
+      setIsAuthenticating(true);
+      return await signUp(email, password, userData);
+    } catch (error) {
+      return { error: error as AuthError };
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+  
+  // Handle sign-out
+  const handleSignOut = async () => {
+    try {
+      setIsAuthenticating(true);
+      localStorage.removeItem('driverCompanyId');
+      localStorage.removeItem('driverCompanyName');
+      setCompanyContext(null);
+      return await signOut();
+    } catch (error) {
       return { error: error as Error };
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+  
+  // Handle password reset
+  const handleResetPassword = async (email: string) => {
+    try {
+      setIsAuthenticating(true);
+      return await resetPassword(email);
+    } catch (error) {
+      return { error: error as AuthError };
+    } finally {
+      setIsAuthenticating(false);
     }
   };
 
-  const value = {
+  // Context value to be provided
+  const contextValue = {
     session,
     user,
     isLoading,
-    isAuthenticating: logoutInProgress,
-    signIn,
-    signInWithGoogle,
-    signUp,
+    isAuthenticating,
+    signIn: handleSignIn,
+    signInWithGoogle: handleGoogleSignIn,
+    signUp: handleSignUp,
     signOut: handleSignOut,
-    resetPassword,
+    resetPassword: handleResetPassword,
     userRole,
+    companyContext
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
