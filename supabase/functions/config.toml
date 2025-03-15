@@ -1,3 +1,8 @@
 
-# A string used as a secret for authentication
+# A string specifying the project ID
 project_id = "ofctyafulvkwaldondsj"
+
+[functions]
+  # The functions object specifies configuration for each function
+  [functions.check_queue_health]
+    # Other function-specific settings go here
