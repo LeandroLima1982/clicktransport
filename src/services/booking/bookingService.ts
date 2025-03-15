@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Booking } from '@/types/booking';
@@ -43,32 +42,58 @@ export const createBooking = async (bookingData: Omit<Booking, 'id' | 'created_a
 };
 
 /**
+ * Gets the next company in the queue for service order assignment
+ */
+export const getNextCompanyInQueue = async () => {
+  try {
+    console.log('Finding next company in queue for assignment');
+    
+    // Busca a empresa com menor posição na fila (próxima a receber uma ordem)
+    // Em caso de empate, seleciona a que não recebeu ordens há mais tempo
+    const { data: companies, error } = await supabase
+      .from('companies')
+      .select('id, name, queue_position, last_order_assigned')
+      .eq('status', 'active')
+      .order('queue_position', { ascending: true })
+      .order('last_order_assigned', { ascending: true, nullsFirst: true })
+      .limit(1);
+      
+    if (error) {
+      console.error('Error finding next company in queue:', error);
+      throw error;
+    }
+    
+    if (!companies || companies.length === 0) {
+      console.error('No active companies found to assign the order');
+      return { company: null, error: new Error('No active companies found') };
+    }
+    
+    console.log('Found next company in queue:', companies[0]);
+    return { company: companies[0], error: null };
+  } catch (error) {
+    console.error('Error finding next company in queue:', error);
+    return { company: null, error };
+  }
+};
+
+/**
  * Creates a service order from a booking
  */
 export const createServiceOrderFromBooking = async (booking: Booking) => {
   try {
     console.log('Creating service order from booking:', booking);
     
-    // First, find an available company to assign the order to
-    const { data: companies, error: companiesError } = await supabase
-      .from('companies')
-      .select('id, name')
-      .eq('status', 'active')
-      .limit(1);
+    // Obter a próxima empresa na fila
+    const { company, error: companyError } = await getNextCompanyInQueue();
     
-    if (companiesError) {
-      console.error('Error fetching companies:', companiesError);
-      throw companiesError;
-    }
-    
-    if (!companies || companies.length === 0) {
-      console.error('No active companies found to assign the order');
+    if (companyError || !company) {
+      console.error('Error finding company for assignment:', companyError);
       toast.error('Não foi possível encontrar uma empresa disponível para atribuir o pedido');
-      return { serviceOrder: null, error: new Error('No active companies found') };
+      return { serviceOrder: null, error: companyError || new Error('No company found') };
     }
     
-    const companyId = companies[0].id;
-    console.log('Found company to assign order:', companyId);
+    const companyId = company.id;
+    console.log(`Found company to assign order: ${companyId} (${company.name})`);
     
     // Create service order with booking details
     const serviceOrderData = {
@@ -190,5 +215,55 @@ export const getCompanyServiceOrders = async (companyId: string) => {
   } catch (error) {
     console.error('Error fetching company service orders:', error);
     return { orders: [], error };
+  }
+};
+
+/**
+ * Resets the queue position for all companies
+ * Useful for administrative purposes or in case of system reset
+ */
+export const resetCompanyQueuePositions = async () => {
+  try {
+    console.log('Resetting queue positions for all companies');
+    
+    const { error } = await supabase
+      .from('companies')
+      .update({ queue_position: 0 })
+      .eq('status', 'active');
+      
+    if (error) {
+      console.error('Error resetting company queue positions:', error);
+      return { success: false, error };
+    }
+    
+    console.log('Company queue positions reset successfully');
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Error resetting company queue positions:', error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Gets the current queue status for all companies
+ * Shows the queue position and last order time for each company
+ */
+export const getCompanyQueueStatus = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('companies')
+      .select('id, name, queue_position, last_order_assigned, status')
+      .order('queue_position', { ascending: true })
+      .order('last_order_assigned', { ascending: true, nullsFirst: true });
+      
+    if (error) {
+      console.error('Error fetching company queue status:', error);
+      return { companies: [], error };
+    }
+    
+    return { companies: data, error: null };
+  } catch (error) {
+    console.error('Error fetching company queue status:', error);
+    return { companies: [], error };
   }
 };

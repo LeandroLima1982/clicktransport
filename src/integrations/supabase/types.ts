@@ -65,7 +65,9 @@ export type Database = {
           cnpj: string | null
           created_at: string | null
           id: string
+          last_order_assigned: string | null
           name: string
+          queue_position: number | null
           status: string | null
           user_id: string | null
         }
@@ -73,7 +75,9 @@ export type Database = {
           cnpj?: string | null
           created_at?: string | null
           id?: string
+          last_order_assigned?: string | null
           name: string
+          queue_position?: number | null
           status?: string | null
           user_id?: string | null
         }
@@ -81,7 +85,9 @@ export type Database = {
           cnpj?: string | null
           created_at?: string | null
           id?: string
+          last_order_assigned?: string | null
           name?: string
+          queue_position?: number | null
           status?: string | null
           user_id?: string | null
         }
