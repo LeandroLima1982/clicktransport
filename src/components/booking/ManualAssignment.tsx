@@ -31,8 +31,8 @@ import {
 import { Loader2, Building, AlertCircle } from 'lucide-react';
 
 const ManualAssignment = () => {
-  const [selectedBooking, setSelectedBooking] = useState(null);
-  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [selectedBooking, setSelectedBooking] = useState<string | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   // Fetch unprocessed bookings
@@ -87,7 +87,7 @@ const ManualAssignment = () => {
         .from('companies')
         .select('id, name, queue_position')
         .eq('status', 'active')
-        .order('queue_position', { ascending: true, nullsLast: true })
+        .order('queue_position', { ascending: true })
         .order('name', { ascending: true });
         
       if (error) throw error;
@@ -97,7 +97,7 @@ const ManualAssignment = () => {
   
   // Mutation for manually assigning a booking to a company
   const assignMutation = useMutation({
-    mutationFn: async ({ bookingId, companyId }) => {
+    mutationFn: async ({ bookingId, companyId }: { bookingId: string, companyId: string }) => {
       // Get booking details
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
@@ -228,7 +228,7 @@ const ManualAssignment = () => {
                   </label>
                   <Select 
                     onValueChange={(value) => setSelectedBooking(value)}
-                    value={selectedBooking}
+                    value={selectedBooking || ""}
                   >
                     <SelectTrigger id="booking">
                       <SelectValue placeholder="Selecione uma reserva" />
@@ -249,13 +249,13 @@ const ManualAssignment = () => {
                   </label>
                   <Select 
                     onValueChange={(value) => setSelectedCompany(value)}
-                    value={selectedCompany}
+                    value={selectedCompany || ""}
                   >
                     <SelectTrigger id="company">
                       <SelectValue placeholder="Selecione uma empresa" />
                     </SelectTrigger>
                     <SelectContent>
-                      {companies.map((company) => (
+                      {companies && companies.map((company) => (
                         <SelectItem key={company.id} value={company.id}>
                           {getCompanyLabel(company)}
                         </SelectItem>
