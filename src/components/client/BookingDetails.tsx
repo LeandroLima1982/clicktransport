@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, parseISO, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -48,7 +47,6 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
   const [estimatedDuration, setEstimatedDuration] = useState<number | null>(null);
   const isMobile = useIsMobile();
   
-  // Calculate route and estimated times when booking details are opened
   useEffect(() => {
     if (isOpen && booking.origin && booking.destination) {
       const fetchRouteData = async () => {
@@ -166,7 +164,20 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
   const handleShareViaWhatsApp = () => {
     vibrate(feedbackPatterns.success);
     
-    const bookingData = {
+    const bookingData: {
+      origin: string;
+      destination: string;
+      date: string;
+      time: string;
+      arrivalTime: string;
+      duration: number | null;
+      tripType: string;
+      passengerData: any[];
+      creationDate: string;
+      returnDate?: string;
+      returnTime?: string;
+      returnArrivalTime?: string;
+    } = {
       origin: booking.origin,
       destination: booking.destination,
       date: formatDate(booking.travel_date),
