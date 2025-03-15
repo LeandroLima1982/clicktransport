@@ -1,11 +1,15 @@
 
 import React from 'react';
-import { Metadata } from 'next';
-import Link from 'next/link';
+import Link from 'next-link'; // Changed from 'next/link' to 'next-link'
 import { Button } from '@/components/ui/button';
 import { ShieldPlus, Clock, Calendar, BarChart, Building, Clipboard } from 'lucide-react';
 
-export const metadata: Metadata = {
+export interface LayoutMetadata {
+  title: string;
+  description: string;
+}
+
+export const metadata: LayoutMetadata = {
   title: 'Reservas | Sistema de Administração',
   description: 'Gerenciamento de reservas e agendamentos',
 };

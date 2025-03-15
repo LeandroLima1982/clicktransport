@@ -183,7 +183,7 @@ const BookingAssignments = () => {
                   <TableCell>
                     <Badge
                       variant={
-                        assignment.serviceOrder?.status === 'completed' ? 'success' :
+                        assignment.serviceOrder?.status === 'completed' ? 'secondary' :
                         assignment.serviceOrder?.status === 'in_progress' ? 'default' :
                         assignment.serviceOrder?.status === 'cancelled' ? 'destructive' :
                         assignment.serviceOrder ? 'outline' : 'secondary'
