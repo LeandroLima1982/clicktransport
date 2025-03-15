@@ -27,11 +27,14 @@ const ServiceForm: React.FC = () => {
     passengers: '',
     additionalInfo: ''
   });
+  
   const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   const {
     submitServiceRequest,
     isSubmitting
@@ -46,12 +49,13 @@ const ServiceForm: React.FC = () => {
       ...prev,
       [name]: value
     }));
-
+    
     // Trigger address suggestions for origin and destination fields
     if (name === 'origin') {
       if (originTimeoutRef.current) {
         clearTimeout(originTimeoutRef.current);
       }
+      
       originTimeoutRef.current = setTimeout(async () => {
         setIsLoadingSuggestions(true);
         const suggestions = await fetchAddressSuggestions(value);
@@ -59,10 +63,12 @@ const ServiceForm: React.FC = () => {
         setIsLoadingSuggestions(false);
       }, 500);
     }
+    
     if (name === 'destination') {
       if (destinationTimeoutRef.current) {
         clearTimeout(destinationTimeoutRef.current);
       }
+      
       destinationTimeoutRef.current = setTimeout(async () => {
         setIsLoadingSuggestions(true);
         const suggestions = await fetchAddressSuggestions(value);
@@ -75,16 +81,10 @@ const ServiceForm: React.FC = () => {
   const selectSuggestion = (suggestion: any, isOrigin: boolean) => {
     const placeName = suggestion.place_name;
     if (isOrigin) {
-      setFormData(prev => ({
-        ...prev,
-        origin: placeName
-      }));
+      setFormData(prev => ({ ...prev, origin: placeName }));
       setOriginSuggestions([]);
     } else {
-      setFormData(prev => ({
-        ...prev,
-        destination: placeName
-      }));
+      setFormData(prev => ({ ...prev, destination: placeName }));
       setDestinationSuggestions([]);
     }
   };
@@ -119,205 +119,222 @@ const ServiceForm: React.FC = () => {
     }
   };
   
-  // Fixed: Return JSX instead of void
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h3 className="text-xl font-bold mb-4">Solicitar Serviço</h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Name field */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Nome</label>
-          <Input
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Seu nome completo"
-            required
-          />
+    <section id="contact" className="py-16 bg-gradient-to-b from-slate-900 to-slate-800 text-white">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold">Solicite um Serviço</h2>
+          <p className="mt-2 text-slate-300">Preencha o formulário abaixo para solicitar nossos serviços de transporte</p>
         </div>
         
-        {/* Basic contact info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
-            <Input
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="seu@email.com"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Telefone</label>
-            <Input
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="(00) 00000-0000"
-              required
-            />
-          </div>
-        </div>
-        
-        {/* Service type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Tipo de Serviço</label>
-          <Select 
-            value={formData.serviceType} 
-            onValueChange={(value) => setFormData(prev => ({ ...prev, serviceType: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o tipo de serviço" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tourism">Turismo</SelectItem>
-              <SelectItem value="airport">Translado Aeroporto</SelectItem>
-              <SelectItem value="event">Eventos</SelectItem>
-              <SelectItem value="corporate">Corporativo</SelectItem>
-              <SelectItem value="other">Outro</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {/* Origin and destination */}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Origem</label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                name="origin"
-                value={formData.origin}
-                onChange={handleChange}
-                className="pl-10"
-                placeholder="Endereço de origem"
-              />
-              {originSuggestions.length > 0 && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto">
-                  {originSuggestions.map((suggestion, index) => (
-                    <div 
-                      key={index} 
-                      className="p-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => selectSuggestion(suggestion, true)}
-                    >
-                      {suggestion.place_name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Destino</label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                name="destination"
-                value={formData.destination}
-                onChange={handleChange}
-                className="pl-10"
-                placeholder="Endereço de destino"
-              />
-              {destinationSuggestions.length > 0 && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto">
-                  {destinationSuggestions.map((suggestion, index) => (
-                    <div 
-                      key={index} 
-                      className="p-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => selectSuggestion(suggestion, false)}
-                    >
-                      {suggestion.place_name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        {/* Date and time selection */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Data</label>
-            <div className="relative">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left pl-10 py-6 font-normal"
-                  >
-                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    {date ? (
-                      format(date, 'PPP', { locale: ptBR })
-                    ) : (
-                      <span className="text-gray-500">Selecione a data</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                    disabled={(date) => date < new Date()}
-                    className="pointer-events-auto"
+        <div className="max-w-3xl mx-auto bg-slate-800/50 p-8 rounded-lg shadow-lg backdrop-blur-sm">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label htmlFor="name" className="block text-sm font-medium">Nome Completo</label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className="bg-white/10 border-white/10 text-white focus:ring-primary focus:border-primary"
+                  placeholder="Seu nome completo"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="email" className="block text-sm font-medium">Email</label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="bg-white/10 border-white/10 text-white focus:ring-primary focus:border-primary"
+                  placeholder="seu.email@exemplo.com"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="phone" className="block text-sm font-medium">Telefone</label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                  className="bg-white/10 border-white/10 text-white focus:ring-primary focus:border-primary"
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="serviceType" className="block text-sm font-medium">Tipo de Serviço</label>
+                <Select 
+                  value={formData.serviceType} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, serviceType: value }))}
+                >
+                  <SelectTrigger className="bg-white/10 border-white/10 text-white focus:ring-primary focus:border-primary">
+                    <SelectValue placeholder="Selecione o tipo de serviço" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="transfer">Transfer Aeroporto</SelectItem>
+                    <SelectItem value="tourism">Turismo</SelectItem>
+                    <SelectItem value="event">Evento</SelectItem>
+                    <SelectItem value="corporate">Corporativo</SelectItem>
+                    <SelectItem value="wedding">Casamento</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="origin" className="block text-sm font-medium">Origem</label>
+                <div className="relative">
+                  <Input
+                    id="origin"
+                    name="origin"
+                    value={formData.origin}
+                    onChange={handleChange}
+                    required
+                    className="bg-white/10 border-white/10 text-white focus:ring-primary focus:border-primary pl-10"
+                    placeholder="Endereço de origem ou ponto de interesse"
                   />
-                </PopoverContent>
-              </Popover>
+                  <MapPin className="absolute top-1/2 left-3 transform -translate-y-1/2 text-white/60 h-4 w-4" />
+                  
+                  {originSuggestions.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-full bg-slate-800 border border-slate-700 rounded-md shadow-lg">
+                      <ul className="py-1 max-h-60 overflow-auto">
+                        {originSuggestions.map((suggestion) => (
+                          <li
+                            key={suggestion.id}
+                            className="px-3 py-2 text-sm hover:bg-slate-700 cursor-pointer"
+                            onClick={() => selectSuggestion(suggestion, true)}
+                          >
+                            <div className="flex items-center gap-2">
+                              {getPlaceIcon(suggestion)}
+                              {formatPlaceName(suggestion)}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="destination" className="block text-sm font-medium">Destino</label>
+                <div className="relative">
+                  <Input
+                    id="destination"
+                    name="destination"
+                    value={formData.destination}
+                    onChange={handleChange}
+                    required
+                    className="bg-white/10 border-white/10 text-white focus:ring-primary focus:border-primary pl-10"
+                    placeholder="Endereço de destino ou ponto de interesse"
+                  />
+                  <MapPin className="absolute top-1/2 left-3 transform -translate-y-1/2 text-white/60 h-4 w-4" />
+                  
+                  {destinationSuggestions.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-full bg-slate-800 border border-slate-700 rounded-md shadow-lg">
+                      <ul className="py-1 max-h-60 overflow-auto">
+                        {destinationSuggestions.map((suggestion) => (
+                          <li
+                            key={suggestion.id}
+                            className="px-3 py-2 text-sm hover:bg-slate-700 cursor-pointer"
+                            onClick={() => selectSuggestion(suggestion, false)}
+                          >
+                            <div className="flex items-center gap-2">
+                              {getPlaceIcon(suggestion)}
+                              {formatPlaceName(suggestion)}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Data</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="bg-white/10 border-white/10 text-white hover:bg-white/20 w-full justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 opacity-60" />
+                      {date ? format(date, 'PPP', { locale: ptBR }) : <span className="text-white/60">Selecione uma data</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      initialFocus
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Horário</label>
+                <TimeSelector 
+                  value={time} 
+                  onChange={setTime} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="passengers" className="block text-sm font-medium">Número de Passageiros</label>
+                <div className="relative">
+                  <Input
+                    id="passengers"
+                    name="passengers"
+                    type="number"
+                    min="1"
+                    value={formData.passengers}
+                    onChange={handleChange}
+                    required
+                    className="bg-white/10 border-white/10 text-white focus:ring-primary focus:border-primary pl-10"
+                    placeholder="Quantidade de passageiros"
+                  />
+                  <Users className="absolute top-1/2 left-3 transform -translate-y-1/2 text-white/60 h-4 w-4" />
+                </div>
+              </div>
             </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Horário</label>
-            <TimeSelector
-              value={time}
-              onChange={setTime}
-            />
-          </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="additionalInfo" className="block text-sm font-medium">Informações Adicionais</label>
+              <Textarea
+                id="additionalInfo"
+                name="additionalInfo"
+                value={formData.additionalInfo}
+                onChange={handleChange}
+                className="bg-white/10 border-white/10 text-white focus:ring-primary focus:border-primary h-32"
+                placeholder="Forneça detalhes adicionais sobre o serviço desejado"
+              />
+            </div>
+            
+            <div className="flex justify-center">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-8 py-2 bg-primary hover:bg-primary/90 text-white font-medium rounded-md"
+              >
+                {isSubmitting ? 'Enviando...' : 'Enviar Solicitação'}
+              </Button>
+            </div>
+          </form>
         </div>
-        
-        {/* Passenger count */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Número de Passageiros</label>
-          <div className="relative">
-            <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input
-              name="passengers"
-              type="number"
-              min="1"
-              value={formData.passengers}
-              onChange={handleChange}
-              className="pl-10"
-              placeholder="Quantidade de passageiros"
-            />
-          </div>
-        </div>
-        
-        {/* Additional information */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Informações Adicionais</label>
-          <Textarea
-            name="additionalInfo"
-            value={formData.additionalInfo}
-            onChange={handleChange}
-            placeholder="Descreva detalhes adicionais sobre o serviço..."
-            rows={4}
-          />
-        </div>
-        
-        <Button 
-          type="submit" 
-          disabled={isSubmitting}
-          className="w-full py-6 bg-[#F8D748] hover:bg-[#F8D748]/90 text-black font-medium"
-        >
-          {isSubmitting ? 'Enviando...' : 'Solicitar Orçamento'}
-        </Button>
-      </form>
-    </div>
+      </div>
+    </section>
   );
 };
 

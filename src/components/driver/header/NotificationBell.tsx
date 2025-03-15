@@ -48,14 +48,14 @@ const NotificationBell: React.FC = () => {
       <PopoverTrigger asChild>
         <button 
           id="notification-bell"
-          className="relative p-2 rounded-full hover:bg-gray-100 transition-colors tap-highlight mobile-press-effect"
+          className="relative p-2 rounded-full hover:bg-gray-100 transition-colors tap-highlight"
           aria-label={`${notifications} notificações não lidas`}
         >
           <Bell className="h-5 w-5 text-gray-600" />
           
           {notifications > 0 && (
             <Badge 
-              className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 p-0 text-[10px] animate-badge-pulse bg-primary text-white" 
+              className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 p-0 text-[10px] animate-scale-in bg-primary text-white" 
               variant="default"
             >
               {notifications}
@@ -64,7 +64,7 @@ const NotificationBell: React.FC = () => {
         </button>
       </PopoverTrigger>
       
-      <PopoverContent className="w-80 mt-2 p-0 animate-slide-up rounded-xl shadow-lg">
+      <PopoverContent className="w-80 mt-2 p-0 animate-slide-up rounded-xl">
         <div className="p-3 border-b">
           <h3 className="font-medium">Notificações</h3>
         </div>

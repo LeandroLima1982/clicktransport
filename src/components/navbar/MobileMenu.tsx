@@ -18,23 +18,29 @@ import { Button } from '@/components/ui/button';
 import { UserRole } from '@/hooks/auth/types';
 import { Separator } from '@/components/ui/separator';
 
-interface MobileVerticalMenuProps {
+interface MobileMenuProps {
+  isOpen: boolean;
+  onClose: () => void;
   user: any;
   userRole: UserRole;
   handleSignOut: () => Promise<void>;
   isAuthenticating: boolean;
-  onClose: () => void;
 }
 
-const MobileVerticalMenu: React.FC<MobileVerticalMenuProps> = ({
+const MobileMenu: React.FC<MobileMenuProps> = ({
+  isOpen,
+  onClose,
   user,
   userRole,
   handleSignOut,
-  isAuthenticating,
-  onClose
+  isAuthenticating
 }) => {
+  if (!isOpen) return null;
+
   return (
-    <div className="md:hidden transition-all duration-300 ease-in-out overflow-hidden max-h-screen opacity-100">
+    <div 
+      className="md:hidden transition-all duration-300 ease-in-out overflow-hidden max-h-screen opacity-100"
+    >
       <div className="container mx-auto px-4 py-4 bg-white/95 backdrop-blur-md shadow-sm">
         <nav className="flex flex-col space-y-3">
           <Link 
@@ -215,4 +221,4 @@ const MobileVerticalMenu: React.FC<MobileVerticalMenuProps> = ({
   );
 };
 
-export default MobileVerticalMenu;
+export default MobileMenu;

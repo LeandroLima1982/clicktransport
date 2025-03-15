@@ -1,10 +1,10 @@
+
 import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Car, MapPin, Calendar, Clock, Users } from 'lucide-react';
 import { Vehicle } from './VehicleSelection';
-import { formatTravelTime } from '@/utils/routeUtils';
 
 interface TripDetailsProps {
   selectedVehicle: Vehicle | undefined;
@@ -15,14 +15,11 @@ interface TripDetailsProps {
     returnDate: Date | undefined;
     tripType: 'oneway' | 'roundtrip';
     passengers: string;
-    time?: string;
-    returnTime?: string;
   };
   estimatedDistance: number;
   estimatedTime: number;
   totalPrice: number;
   formatCurrency: (value: number) => string;
-  isCalculatingRoute?: boolean;
 }
 
 const TripDetails: React.FC<TripDetailsProps> = ({
@@ -31,8 +28,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({
   estimatedDistance,
   estimatedTime,
   totalPrice,
-  formatCurrency,
-  isCalculatingRoute = false
+  formatCurrency
 }) => {
   return (
     <div className="space-y-6">
@@ -79,16 +75,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({
               </div>
               <div>
                 <div className="text-sm text-gray-500">Distância estimada:</div>
-                <div className="font-medium">
-                  {isCalculatingRoute ? (
-                    <span className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
-                      Calculando...
-                    </span>
-                  ) : (
-                    `${estimatedDistance} km`
-                  )}
-                </div>
+                <div className="font-medium">{estimatedDistance} km</div>
               </div>
             </div>
           </CardContent>
@@ -109,27 +96,13 @@ const TripDetails: React.FC<TripDetailsProps> = ({
                   {bookingData.date ? format(bookingData.date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : 'Não especificado'}
                 </div>
               </div>
-              {bookingData.time && (
-                <div>
-                  <div className="text-sm text-gray-500">Horário de ida:</div>
-                  <div className="font-medium">{bookingData.time}</div>
-                </div>
-              )}
               {bookingData.tripType === 'roundtrip' && (
-                <>
-                  <div>
-                    <div className="text-sm text-gray-500">Data de volta:</div>
-                    <div className="font-medium">
-                      {bookingData.returnDate ? format(bookingData.returnDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : 'Não especificado'}
-                    </div>
+                <div>
+                  <div className="text-sm text-gray-500">Data de volta:</div>
+                  <div className="font-medium">
+                    {bookingData.returnDate ? format(bookingData.returnDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : 'Não especificado'}
                   </div>
-                  {bookingData.returnTime && (
-                    <div>
-                      <div className="text-sm text-gray-500">Horário de volta:</div>
-                      <div className="font-medium">{bookingData.returnTime}</div>
-                    </div>
-                  )}
-                </>
+                </div>
               )}
               <div>
                 <div className="text-sm text-gray-500">Tipo de viagem:</div>
@@ -152,16 +125,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({
             <div className="space-y-2">
               <div>
                 <div className="text-sm text-gray-500">Tempo estimado:</div>
-                <div className="font-medium">
-                  {isCalculatingRoute ? (
-                    <span className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
-                      Calculando...
-                    </span>
-                  ) : (
-                    formatTravelTime(estimatedTime)
-                  )}
-                </div>
+                <div className="font-medium">{Math.floor(estimatedTime / 60)}h {estimatedTime % 60}min</div>
               </div>
               <div>
                 <div className="text-sm text-gray-500">Passageiros:</div>
@@ -169,16 +133,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({
               </div>
               <div>
                 <div className="text-sm text-gray-500">Valor estimado:</div>
-                <div className="font-bold text-lg text-primary">
-                  {isCalculatingRoute ? (
-                    <span className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
-                      Calculando...
-                    </span>
-                  ) : (
-                    formatCurrency(totalPrice)
-                  )}
-                </div>
+                <div className="font-bold text-lg text-primary">{formatCurrency(totalPrice)}</div>
                 <div className="text-xs text-gray-500">
                   {bookingData.tripType === 'roundtrip' ? '(Inclui ida e volta)' : ''}
                 </div>

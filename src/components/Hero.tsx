@@ -2,36 +2,35 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import BookingForm from './BookingForm';
-import { useIsMobile } from '@/hooks/use-mobile';
 const Hero: React.FC = () => {
-  const isMobile = useIsMobile();
-  return <section className="">
-      <div className="absolute inset-0 bg-[#F8D748] -z-10" />
+  return <section className="relative min-h-screen flex items-center">
+      <div className="absolute inset-0 bg-secondary -z-10" />
+      <div className="absolute inset-0 bg-[url('/lovable-uploads/f60df9db-ef10-4c22-a8e1-d6b0299c9342.png')] bg-center bg-no-repeat bg-cover opacity-20 -z-10" style={{
+      backgroundPosition: 'center 33%'
+    }} />
       
-      <div className="w-full py-4 my-8 md:my-12 lg:my-16">
-        <div className="max-w-3xl mx-auto text-center mb-8 px-4">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 animate-fade-in text-black">
-            <span className="block mb-2 text-zinc-700">Transporte executivo</span>
-            <span className="block text-amber-500">para empresas e seus colaboradores</span>
+      <div className="container mx-auto px-[17px] py-[150px]">
+        <div className="max-w-3xl mx-auto text-center text-white mb-12">
+          <span className="inline-block text-primary font-bold px-4 py-1 rounded-full bg-primary/10 mb-4 animate-fade-in">
+            TRASLADOS EXECUTIVOS | TRANSFER OFFSHORE
+          </span>
+          
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 animate-slide-in">
+            <span className="block mb-2">Transfers para empresas </span>
+            <span className="text-primary">com rapidez e pontualidade</span>
           </h1>
           
-          <p style={{
+          <p className="text-lg md:text-xl mb-8 text-gray-300 animate-fade-in" style={{
           animationDelay: '0.2s'
-        }} className="text-base md:text-lg mb-8 animate-fade-in text-gray-700 max-w-2xl mx-auto">
-            São mais de 20 anos de experiência oferecendo serviços
-            de locação de vans, ônibus e microônibus com motorista,
-            proporcionando segurança e conforto para sua viagem.
-          </p>
+        }}>Transfer para colaboradores da sua empresa com conforto e pontualidade</p>
         </div>
         
-        <div className="w-full px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-          <div className="rounded-xl p-4 md:p-6 lg:p-8 shadow-xl bg-white animate-scale-in">
+        <div className="max-w-4xl mx-auto">
+          <div className="glass-morphism rounded-xl p-6 md:p-8 shadow-lg bg-white/10 backdrop-blur-md border border-white/20 transform transition-all duration-500 hover:shadow-xl">
             <BookingForm />
           </div>
         </div>
       </div>
-
-      <div className="absolute bottom-0 left-0 right-0 h-[60px] bg-white -z-5"></div>
     </section>;
 };
 export default Hero;

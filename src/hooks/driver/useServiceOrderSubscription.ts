@@ -6,7 +6,7 @@ import { ServiceOrder } from '@/types/serviceOrder';
 
 export const useServiceOrderSubscription = (
   driverId: string | null,
-  onNotification: (payload?: any) => void
+  onNotification: () => void
 ) => {
   useEffect(() => {
     if (!driverId) return;
@@ -29,7 +29,7 @@ export const useServiceOrderSubscription = (
               (payload.new.status === 'assigned' || payload.new.driver_id === driverId)) {
             playNotificationSound();
             showAssignmentNotification(payload.new);
-            onNotification(payload);
+            onNotification();
           }
           
           // Case 2: Existing order updated to assign this driver
@@ -38,7 +38,7 @@ export const useServiceOrderSubscription = (
               payload.new.driver_id === driverId) {
             playNotificationSound();
             showAssignmentNotification(payload.new);
-            onNotification(payload);
+            onNotification();
           }
           
           // Case 3: Order status changed to assigned
@@ -47,7 +47,7 @@ export const useServiceOrderSubscription = (
               payload.new.status === 'assigned') {
             playNotificationSound();
             showAssignmentNotification(payload.new);
-            onNotification(payload);
+            onNotification();
           }
         }
       )

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -11,9 +12,7 @@ import {
   Book,
   Home,
   Settings,
-  Users,
-  Calendar,
-  CreditCard
+  Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/hooks/auth/types';
@@ -88,29 +87,12 @@ const UserMenu: React.FC<UserMenuProps> = ({
         <Button variant="outline" className="rounded-full px-4 btn-hover-slide flex items-center gap-2">
           <User className="h-4 w-4" />
           <span className="hidden md:inline">{user.email?.split('@')[0]}</span>
-          {userRole && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-              {userRole === 'client' && 'Cliente'}
-              {userRole === 'company' && 'Empresa'}
-              {userRole === 'driver' && 'Motorista'}
-              {userRole === 'admin' && 'Admin'}
-            </span>
-          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>
-          Olá, {user.email?.split('@')[0]}
-          {userRole && (
-            <span className="block text-xs text-muted-foreground mt-1">
-              Tipo de conta: {userRole === 'client' ? 'Cliente' : 
-                             userRole === 'company' ? 'Empresa' : 
-                             userRole === 'driver' ? 'Motorista' : 
-                             userRole === 'admin' ? 'Admin' : 'Usuário'}
-            </span>
-          )}
-        </DropdownMenuLabel>
+        <DropdownMenuLabel>Olá, {user.email?.split('@')[0]}</DropdownMenuLabel>
         
+        {/* Common navigation option for all users */}
         <DropdownMenuItem asChild>
           <Link to="/" className="w-full">
             <Home className="h-4 w-4 mr-2" />
@@ -118,11 +100,12 @@ const UserMenu: React.FC<UserMenuProps> = ({
           </Link>
         </DropdownMenuItem>
         
+        {/* Role-specific navigation options */}
         {userRole === 'client' && (
           <>
             <DropdownMenuItem asChild>
               <Link to="/bookings" className="w-full">
-                <Calendar className="h-4 w-4 mr-2" />
+                <Book className="h-4 w-4 mr-2" />
                 Minhas Reservas
               </Link>
             </DropdownMenuItem>
@@ -130,12 +113,6 @@ const UserMenu: React.FC<UserMenuProps> = ({
               <Link to="/profile" className="w-full">
                 <User className="h-4 w-4 mr-2" />
                 Meu Perfil
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/payment-methods" className="w-full">
-                <CreditCard className="h-4 w-4 mr-2" />
-                Métodos de Pagamento
               </Link>
             </DropdownMenuItem>
           </>

@@ -1,11 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { calculateRoute, calculateTripPrice, RouteInfo } from '@/utils/routeUtils';
 
 // Import step components
 import VehicleSelection, { Vehicle } from './steps/VehicleSelection';
@@ -23,7 +22,7 @@ const vehicleOptions: Vehicle[] = [
     image: '/lovable-uploads/sedan-exec.jpg',
     description: 'Conforto para até 4 passageiros',
     capacity: 4,
-    pricePerKm: 2.49,
+    pricePerKm: 3.5,
     basePrice: 120,
   },
   {
@@ -32,7 +31,7 @@ const vehicleOptions: Vehicle[] = [
     image: '/lovable-uploads/suv-premium.jpg',
     description: 'Espaço e conforto para até 6 passageiros',
     capacity: 6,
-    pricePerKm: 2.49,
+    pricePerKm: 4.2,
     basePrice: 180,
   },
   {
@@ -41,7 +40,7 @@ const vehicleOptions: Vehicle[] = [
     image: '/lovable-uploads/van-exec.jpg',
     description: 'Ideal para grupos de até 10 passageiros',
     capacity: 10,
-    pricePerKm: 2.49,
+    pricePerKm: 5.8,
     basePrice: 250,
   },
 ];
@@ -77,49 +76,21 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [bookingReference, setBookingReference] = useState<string>('');
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [showRegisterForm, setShowRegisterForm] = useState(false);
-  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
-  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
 
   const { user } = useAuth();
 
-  // Fetch route information when component mounts or booking data changes
-  useEffect(() => {
-    const fetchRouteData = async () => {
-      if (bookingData.origin && bookingData.destination && isOpen) {
-        setIsCalculatingRoute(true);
-        try {
-          const result = await calculateRoute(bookingData.origin, bookingData.destination);
-          setRouteInfo(result);
-          if (!result) {
-            toast.error('Não foi possível calcular a rota. Usando estimativas padrão.');
-          }
-        } catch (error) {
-          console.error('Error fetching route data:', error);
-          toast.error('Erro ao calcular rota. Usando estimativas padrão.');
-        } finally {
-          setIsCalculatingRoute(false);
-        }
-      }
-    };
-
-    fetchRouteData();
-  }, [bookingData.origin, bookingData.destination, isOpen]);
-
-  // Fallback values in case API fails
-  const estimatedDistance = routeInfo?.distance || 120;
-  const estimatedTime = routeInfo?.duration || 95;
+  const estimatedDistance = 120;
+  const estimatedTime = 95;
 
   const calculatePrice = () => {
     if (!selectedVehicle) return 0;
     const vehicle = vehicleOptions.find(v => v.id === selectedVehicle);
     if (!vehicle) return 0;
     
-    return calculateTripPrice(
-      estimatedDistance,
-      vehicle.basePrice,
-      vehicle.pricePerKm,
-      bookingData.tripType === 'roundtrip'
-    );
+    const distancePrice = vehicle.pricePerKm * estimatedDistance;
+    const totalPrice = vehicle.basePrice + distancePrice;
+    
+    return bookingData.tripType === 'roundtrip' ? totalPrice * 2 : totalPrice;
   };
 
   const totalPrice = calculatePrice();
@@ -231,7 +202,6 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
             estimatedTime={estimatedTime}
             totalPrice={totalPrice}
             formatCurrency={formatCurrency}
-            isCalculatingRoute={isCalculatingRoute}
           />
         );
       case 3:
@@ -256,8 +226,6 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
             bookingData={bookingData}
             totalPrice={totalPrice}
             formatCurrency={formatCurrency}
-            estimatedDistance={estimatedDistance}
-            estimatedTime={estimatedTime}
           />
         );
       default:

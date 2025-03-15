@@ -10,10 +10,10 @@ const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('login');
-  const [accountType, setAccountType] = useState('client');
+  const [accountType, setAccountType] = useState('company');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isBusinessUser, setIsBusinessUser] = useState(false);
+  const [isBusinessUser, setIsBusinessUser] = useState(true);
 
   const { signIn, signUp, user, userRole } = useAuth();
 
@@ -50,7 +50,7 @@ const Auth = () => {
       return;
     }
     
-    // Strict role-based redirections - each user type has own dashboard
+    // Always redirect company users to their dashboard, no matter what
     if (userRole === 'company') {
       navigate('/company/dashboard', { replace: true });
     } else if (userRole === 'driver') {
@@ -73,19 +73,8 @@ const Auth = () => {
     const email = (form.elements.namedItem('email') as HTMLInputElement).value;
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     
-    // Get company ID if applicable (required for driver and company logins)
-    const companyIdInput = form.elements.namedItem('company-id') as HTMLInputElement;
-    const companyId = companyIdInput ? companyIdInput.value : undefined;
-    
-    // Validate company selection for driver and company logins
-    if ((accountType === 'driver' || accountType === 'company') && !companyId) {
-      setError('Por favor, selecione uma empresa para fazer login');
-      setLoading(false);
-      return;
-    }
-    
     try {
-      const { error } = await signIn(email, password, companyId);
+      const { error } = await signIn(email, password);
       
       if (error) throw error;
       
@@ -172,10 +161,6 @@ const Auth = () => {
 
   const getDescription = () => {
     if (activeTab === 'login') {
-      if (accountType === 'client') return 'Digite suas credenciais para acessar sua conta de cliente';
-      if (accountType === 'driver') return 'Digite suas credenciais para acessar sua conta de motorista';
-      if (accountType === 'company') return 'Digite suas credenciais para acessar sua conta de empresa';
-      if (accountType === 'admin') return 'Digite suas credenciais para acessar sua conta de administrador';
       return 'Digite suas credenciais para acessar sua conta';
     }
     

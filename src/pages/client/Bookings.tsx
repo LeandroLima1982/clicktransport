@@ -1,45 +1,38 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  CheckCircle, 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  Car, 
-  Plus, 
-  ArrowLeft,
-  CreditCard,
-  Search,
-  Filter
-} from 'lucide-react';
-import { format, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import TransitionEffect from '@/components/TransitionEffect';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useBookings } from '@/hooks/useBookings';
-import BookingStatus from '@/components/client/BookingStatus';
-import BookingDetails from '@/components/client/BookingDetails';
-import { Booking } from '@/types/booking';
+import { Calendar, Clock, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Bookings: React.FC = () => {
   const { user, userRole } = useAuth();
   const navigate = useNavigate();
-  const { bookings, isLoading, cancelBooking } = useBookings();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  
+
+  // Mock data for bookings - in a real application, this would come from Supabase
+  const bookings = [
+    {
+      id: '1',
+      date: '2024-03-20',
+      time: '14:00',
+      origin: 'Aeroporto Internacional de Guarulhos',
+      destination: 'Hotel Maksoud Plaza',
+      status: 'confirmed',
+      price: 'R$ 150,00'
+    },
+    {
+      id: '2',
+      date: '2024-04-05',
+      time: '10:30',
+      origin: 'Hotel Maksoud Plaza',
+      destination: 'Aeroporto Internacional de Guarulhos',
+      status: 'pending',
+      price: 'R$ 150,00'
+    }
+  ];
+
   if (!user || userRole !== 'client') {
     return (
       <div className="container mx-auto p-8 text-center">
@@ -49,208 +42,83 @@ const Bookings: React.FC = () => {
       </div>
     );
   }
-  
-  const formatDate = (dateString: string) => {
-    try {
-      return format(parseISO(dateString), "dd 'de' MMMM, yyyy", { locale: ptBR });
-    } catch (e) {
-      return dateString;
-    }
-  };
-  
-  const formatTime = (dateString: string) => {
-    try {
-      return format(parseISO(dateString), "HH:mm", { locale: ptBR });
-    } catch (e) {
-      return "";
-    }
-  };
-  
-  const filteredBookings = bookings.filter(booking => {
-    // Filter by search term
-    const matchesSearch = 
-      booking.reference_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.destination.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Filter by status
-    const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-  
+
   return (
     <TransitionEffect>
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-          <div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mb-2"
-              onClick={() => navigate('/')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar
-            </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">Minhas Reservas</h1>
-            <p className="text-muted-foreground">Gerencie todas as suas viagens em um só lugar</p>
-          </div>
-          
-          <Button 
-            onClick={() => navigate('/')}
-            className="mt-4 md:mt-0"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Reserva
-          </Button>
-        </div>
+      <div className="container mx-auto p-4 md:p-8">
+        <h1 className="text-2xl md:text-3xl font-bold mb-8">Minhas Reservas</h1>
         
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Buscar reservas..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <div className="w-full md:w-40">
-            <Select
-              value={statusFilter}
-              onValueChange={setStatusFilter}
-            >
-              <SelectTrigger>
-                <div className="flex items-center">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filtrar" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="confirmed">Confirmadas</SelectItem>
-                <SelectItem value="pending">Pendentes</SelectItem>
-                <SelectItem value="completed">Concluídas</SelectItem>
-                <SelectItem value="cancelled">Canceladas</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        {isLoading ? (
-          <div className="h-40 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        ) : filteredBookings.length === 0 ? (
-          <Card className="p-8 text-center">
-            <div className="mb-4 text-gray-400">
-              {searchTerm || statusFilter !== 'all' ? (
-                // No results with filters
-                <>
-                  <Search className="h-12 w-12 mx-auto mb-2" />
-                  <p className="text-lg mb-2">Nenhuma reserva encontrada</p>
-                  <p className="text-sm text-muted-foreground">
-                    Tente ajustar seus filtros de busca
-                  </p>
-                </>
-              ) : (
-                // No bookings at all
-                <>
-                  <CheckCircle className="h-12 w-12 mx-auto mb-2" />
-                  <p className="text-lg mb-2">Você ainda não possui reservas</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Faça sua primeira reserva agora mesmo!
-                  </p>
-                  <Button onClick={() => navigate('/')}>Nova Reserva</Button>
-                </>
-              )}
-            </div>
+        {bookings.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-lg mb-4">Você ainda não possui reservas.</p>
+              <Button onClick={() => navigate('/')}>Fazer uma reserva</Button>
+            </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
-            {filteredBookings.map((booking) => (
-              <Card 
-                key={booking.id} 
-                className="p-4 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => setSelectedBooking(booking)}
-              >
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-3">
-                  <div className="mb-2 md:mb-0">
-                    <div className="flex items-center">
-                      <span className="font-semibold">{booking.reference_code}</span>
-                      <span className="mx-2 text-gray-400">•</span>
-                      <span className="text-sm text-muted-foreground">
-                        Reserva feita em {formatDate(booking.booking_date)}
-                      </span>
-                    </div>
+          <div className="grid gap-6">
+            {bookings.map((booking) => (
+              <Card key={booking.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                <CardHeader className="bg-primary/5 pb-4">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-lg">Reserva #{booking.id}</CardTitle>
+                    <span className={`px-3 py-1 text-sm rounded-full ${
+                      booking.status === 'confirmed' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {booking.status === 'confirmed' ? 'Confirmada' : 'Pendente'}
+                    </span>
                   </div>
-                  <BookingStatus status={booking.status} />
-                </div>
-                
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Data da Viagem
+                  <CardDescription>
+                    {booking.price}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <Calendar className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Data</p>
+                        <p className="text-sm text-muted-foreground">{booking.date}</p>
+                      </div>
                     </div>
-                    <div className="font-medium">{formatDate(booking.travel_date)}</div>
-                    <div className="flex items-center text-sm">
-                      <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {formatTime(booking.travel_date)}
+                    
+                    <div className="flex items-start gap-3">
+                      <Clock className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Horário</p>
+                        <p className="text-sm text-muted-foreground">{booking.time}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Origem</p>
+                        <p className="text-sm text-muted-foreground">{booking.origin}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Destino</p>
+                        <p className="text-sm text-muted-foreground">{booking.destination}</p>
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      Trajeto
-                    </div>
-                    <div className="font-medium truncate">{booking.origin}</div>
-                    <div className="flex items-center text-sm">
-                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span className="truncate">{booking.destination}</span>
-                    </div>
+                  <div className="flex justify-end mt-6 space-x-3">
+                    <Button variant="outline">Ver Detalhes</Button>
+                    {booking.status === 'pending' && (
+                      <Button>Confirmar Pagamento</Button>
+                    )}
                   </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Car className="h-4 w-4 mr-2" />
-                        {booking.vehicle_type || "Veículo"}
-                      </div>
-                      <div className="flex items-center text-sm font-medium">
-                        <CreditCard className="h-4 w-4 mr-1 text-muted-foreground" />
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(booking.total_price)}
-                      </div>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full mt-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedBooking(booking);
-                      }}
-                    >
-                      Ver Detalhes
-                    </Button>
-                  </div>
-                </div>
+                </CardContent>
               </Card>
             ))}
           </div>
-        )}
-        
-        {selectedBooking && (
-          <BookingDetails
-            booking={selectedBooking}
-            isOpen={!!selectedBooking}
-            onClose={() => setSelectedBooking(null)}
-            onCancel={cancelBooking}
-          />
         )}
       </div>
     </TransitionEffect>
