@@ -2,7 +2,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Booking } from '@/types/booking';
-import { createServiceOrderFromBooking, forceAssignBookingToCompany as forceAssign } from './serviceOrderService';
+import { 
+  createServiceOrderFromBooking,
+  assignServiceOrderToDriver,
+  forceAssignBookingToCompany as forceAssign,
+  updateServiceOrderStatus
+} from './serviceOrderService';
 import { 
   getCompanyQueueStatus as getQueueStatus, 
   resetCompanyQueuePositions as resetQueue,
@@ -290,6 +295,13 @@ export const resetCompanyQueuePositions = resetQueue;
 export const getQueueDiagnostics = getQueueDiags;
 export const forceAssignBookingToCompany = forceAssign;
 
+// Re-export the functions from serviceOrderService
+export { 
+  createServiceOrderFromBooking,
+  assignServiceOrderToDriver,
+  updateServiceOrderStatus
+};
+
 export default {
   createBooking,
   getLastAssignedBookingInfo,
@@ -298,5 +310,8 @@ export default {
   getCompanyQueueStatus,
   resetCompanyQueuePositions,
   getQueueDiagnostics,
-  forceAssignBookingToCompany
+  forceAssignBookingToCompany,
+  createServiceOrderFromBooking,
+  assignServiceOrderToDriver,
+  updateServiceOrderStatus
 };
