@@ -1,4 +1,4 @@
-import { supabase } from '../main';
+import { supabase } from '@/integrations/supabase/client';
 
 export const createTables = async () => {
   try {

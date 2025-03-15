@@ -1,5 +1,5 @@
 
-import { supabase } from '../../main';
+import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from './types';
 
 // Function to fetch user role from profiles table with timeout
