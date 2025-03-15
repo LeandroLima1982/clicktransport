@@ -70,5 +70,7 @@ redirect_uri = ""
 url = ""
 
 [functions]
+# Port to use for the Functions URL.
 port = 54321
+# Directory for Function definitions.
 serve_dir = "supabase/functions"
