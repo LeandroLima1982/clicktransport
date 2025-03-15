@@ -10,11 +10,10 @@ import FAQ from '@/components/FAQ';
 import ServiceForm from '@/components/ServiceForm';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
-import { useAuth } from '@/hooks/useAuth';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/hooks/auth';
 
 const Index = () => {
-  const { isLoading, user } = useAuth();
+  const { isLoading } = useAuth();
 
   // Show a brief loading indicator only during initial authentication check
   if (isLoading) {
