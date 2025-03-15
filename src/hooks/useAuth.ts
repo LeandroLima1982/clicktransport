@@ -16,6 +16,7 @@ export interface AuthContextType {
   signOut: () => Promise<void>;
   signUp: (email: string, password: string, role: UserRole, metadata?: any) => Promise<void>;
   isAuthenticating: boolean;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
 }
 
 // Create the auth context
@@ -195,6 +196,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Password reset function
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      return { error };
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      return { error };
+    }
+  };
+
   // The auth context value
   const value = {
     user,
@@ -204,6 +219,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signOut,
     signUp,
     isAuthenticating,
+    resetPassword,
   };
 
   // Provide the auth context
