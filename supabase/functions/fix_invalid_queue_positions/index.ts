@@ -14,73 +14,29 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Executing fix_invalid_queue_positions Edge Function')
+    
     // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { auth: { persistSession: false } }
     )
+    
+    console.log('Fixing invalid queue positions')
 
-    // Get max queue position
-    const { data: maxData, error: maxError } = await supabaseClient
-      .from('companies')
-      .select('queue_position')
-      .order('queue_position', { ascending: false })
-      .limit(1)
-      
-    if (maxError) throw maxError
+    // Call the database function to fix invalid queue positions
+    const { data, error } = await supabaseClient.rpc('fix_invalid_queue_positions')
     
-    // Calculate start position for new assignments
-    const maxPosition = maxData && maxData.length > 0 && maxData[0].queue_position 
-      ? maxData[0].queue_position 
-      : 0
-    let nextPosition = maxPosition + 1
-    
-    // Find companies with invalid positions
-    const { data: invalidCompanies, error: invalidError } = await supabaseClient
-      .from('companies')
-      .select('id')
-      .or('queue_position.is.null,queue_position.eq.0')
-      .eq('status', 'active')
-      
-    if (invalidError) throw invalidError
-    
-    if (!invalidCompanies || invalidCompanies.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          fixed_count: 0 
-        }),
-        { 
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json' 
-          } 
-        }
-      )
+    if (error) {
+      console.error('Error fixing invalid queue positions:', error)
+      throw error
     }
-    
-    // Prepare updates for each invalid company
-    const updates = invalidCompanies.map(company => {
-      const position = nextPosition++
-      return {
-        id: company.id,
-        queue_position: position
-      }
-    })
-    
-    // Update all invalid companies
-    const { error: updateError } = await supabaseClient
-      .from('companies')
-      .upsert(updates)
-      
-    if (updateError) throw updateError
+
+    console.log('Fixed invalid queue positions:', data)
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        fixed_count: invalidCompanies.length 
-      }),
+      JSON.stringify(data || { fixed_count: 0 }),
       { 
         headers: { 
           ...corsHeaders,
@@ -93,7 +49,10 @@ serve(async (req) => {
     console.error('Error in fix_invalid_queue_positions:', error)
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        fixed_count: 0
+      }),
       { 
         status: 400,
         headers: { 

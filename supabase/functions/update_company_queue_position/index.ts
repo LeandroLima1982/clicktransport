@@ -14,53 +14,44 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request body
-    const { company_id } = await req.json()
+    console.log('Executing update_company_queue_position Edge Function')
     
-    if (!company_id) {
-      throw new Error('Company ID is required')
+    // Parse the request body
+    let body = {}
+    try {
+      body = await req.json()
+    } catch (error) {
+      console.error('Error parsing request body:', error)
+      body = {}
     }
-
+    
+    if (!body.company_id) {
+      throw new Error('Missing required parameter: company_id')
+    }
+    
     // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { auth: { persistSession: false } }
     )
+    
+    console.log(`Updating queue position for company ${body.company_id}`)
 
-    // Get max queue position
-    const { data: maxData, error: maxError } = await supabaseClient
-      .from('companies')
-      .select('queue_position')
-      .order('queue_position', { ascending: false })
-      .limit(1)
-      
-    if (maxError) throw maxError
+    // Call the database function to update company queue position
+    const { data, error } = await supabaseClient.rpc('update_company_queue_position', {
+      company_id: body.company_id
+    })
     
-    // Calculate new position (max + 1, or 1 if no companies)
-    const maxPosition = maxData && maxData.length > 0 && maxData[0].queue_position 
-      ? maxData[0].queue_position 
-      : 0
-    const newPosition = maxPosition + 1
-    
-    // Update the company's queue position
-    const { data, error } = await supabaseClient
-      .from('companies')
-      .update({ 
-        queue_position: newPosition,
-        last_order_assigned: new Date().toISOString()
-      })
-      .eq('id', company_id)
-      .select('queue_position')
-      .single()
-      
-    if (error) throw error
+    if (error) {
+      console.error('Error updating company queue position:', error)
+      throw error
+    }
+
+    console.log('Updated company queue position:', data)
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        new_position: newPosition 
-      }),
+      JSON.stringify(data || { success: false, new_position: 0 }),
       { 
         headers: { 
           ...corsHeaders,
@@ -73,7 +64,10 @@ serve(async (req) => {
     console.error('Error in update_company_queue_position:', error)
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        success: false
+      }),
       { 
         status: 400,
         headers: { 

@@ -148,7 +148,7 @@ const AssignmentDiagnostics = () => {
                     </div>
                     
                     {(diagnostics.queueHealth.invalid_positions > 0 || 
-                       diagnostics.queueHealth.duplicate_positions > 0) && (
+                      diagnostics.queueHealth.duplicate_positions > 0) && (
                       <Button 
                         className="w-full mt-2" 
                         variant="secondary"
