@@ -11,7 +11,14 @@ import { supabase } from './integrations/supabase/client';
 export { supabase };
 
 // Create a client for React Query
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>

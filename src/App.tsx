@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import { useAuth } from './hooks/auth';
+import { useAuth } from './hooks/useAuth';
+import { Loader2 } from 'lucide-react';
 
 // Import pages and components
 import Index from './pages/Index';
@@ -33,6 +34,14 @@ import PaymentMethods from './pages/client/PaymentMethods';
 
 import './App.css';
 
+// Improved loading component
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center h-screen w-full">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <span className="ml-2 text-lg">Carregando...</span>
+  </div>
+);
+
 // Enhanced Protected Route component with strict role checking
 const ProtectedRoute = ({ 
   children, 
@@ -46,16 +55,17 @@ const ProtectedRoute = ({
   const { user, userRole, isLoading } = useAuth();
   const location = useLocation();
   
+  // Only show loading spinner during initial auth check
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+    return <LoadingSpinner />;
   }
   
-  // If no user is logged in, redirect to auth
+  // If no user is logged in, redirect to auth with return path
   if (!user) {
-    return <Navigate to={`/auth?return_to=${location.pathname}`} replace />;
+    return <Navigate to={`/auth?return_to=${encodeURIComponent(location.pathname)}`} replace />;
   }
   
-  // STRICT ROLE CHECK: If role is required and user doesn't have it, deny access
+  // If role is required and user doesn't have it, handle redirect
   if (requiredRole && userRole !== requiredRole) {
     console.log(`Access denied: User role ${userRole} doesn't match required role ${requiredRole}`);
     
@@ -82,77 +92,27 @@ const ProtectedRoute = ({
   return <>{children}</>;
 };
 
-// Component to redirect based on user role
-const RoleBasedRedirect = () => {
-  const { user, userRole, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
-  }
-  
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  // Strictly redirect based on user role
-  if (userRole === 'admin') {
-    return <Navigate to="/admin/dashboard" replace />;
-  } else if (userRole === 'company') {
-    return <Navigate to="/company/dashboard" replace />;
-  } else if (userRole === 'driver') {
-    return <Navigate to="/driver/dashboard" replace />;
-  } else if (userRole === 'client') {
-    return <Navigate to="/bookings" replace />;
-  }
-  
-  // Default for unknown roles
-  return <Navigate to="/" replace />;
-};
-
-// Special component to handle root path with role-based access
-const HomeRedirect = () => {
-  const { user, userRole, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen w-full text-primary">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F8D748]"></div>
-        <div className="ml-3 text-lg font-medium">Carregando...</div>
-      </div>
-    );
-  }
-  
-  // If user is logged in, redirect based on role
-  if (user) {
-    if (userRole === 'company') {
-      console.log("HomeRedirect: Redirecting company user to dashboard");
-      return <Navigate to="/company/dashboard" replace />;
-    } else if (userRole === 'driver') {
-      console.log("HomeRedirect: Redirecting driver user to dashboard");
-      return <Navigate to="/driver/dashboard" replace />;
-    } else if (userRole === 'admin') {
-      console.log("HomeRedirect: Redirecting admin user to dashboard");
-      return <Navigate to="/admin/dashboard" replace />;
-    }
-    // Clients can access the home page
-  }
-  
-  // Otherwise show the normal index page
-  return <Index />;
+// Simple component for public routes that don't need protection
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>;
 };
 
 function App() {
+  const { isLoading } = useAuth();
+  
+  // Show a full-page loading spinner during initial auth check
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <>
       <Routes>
-        {/* Public routes with special handling for logged in users */}
-        <Route path="/" element={<HomeRedirect />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/admin/create" element={<CreateAdmin />} />
-        
-        {/* Dashboard redirect based on role */}
-        <Route path="/dashboard" element={<RoleBasedRedirect />} />
+        {/* Public routes */}
+        <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />
+        <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="/admin/create" element={<PublicRoute><CreateAdmin /></PublicRoute>} />
         
         {/* Admin routes - strictly for admin users */}
         <Route path="/admin/dashboard" element={

@@ -11,6 +11,7 @@ import ServiceForm from '@/components/ServiceForm';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const { isLoading } = useAuth();
