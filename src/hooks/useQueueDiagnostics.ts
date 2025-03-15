@@ -9,6 +9,21 @@ import {
   resetCompanyQueuePositions
 } from '@/services/booking/queueService';
 
+// Define a more complete type for the health check response
+interface QueueHealthResponse {
+  health_score: number;
+  invalid_positions: number;
+  duplicate_positions: number;
+  active_companies: number;
+  unprocessed_bookings?: number;
+  unlinked_orders?: number;
+  booking_processing_score?: number;
+  overall_health_score?: number;
+  driver_count?: number;
+  vehicle_count?: number;
+  booking_count?: number;
+}
+
 /**
  * Hook for diagnosing and fixing queue system issues
  */
@@ -16,7 +31,7 @@ export const useQueueDiagnostics = () => {
   const [isFixingPositions, setIsFixingPositions] = useState(false);
   const [isResettingQueue, setIsResettingQueue] = useState(false);
   
-  // Get queue health diagnostics
+  // Get queue diagnostics
   const {
     data: queueDiagnostics,
     isLoading: isLoadingDiagnostics,
@@ -31,7 +46,7 @@ export const useQueueDiagnostics = () => {
     }
   });
   
-  // Get database-level queue health check
+  // Get database-level queue health check with properly typed response
   const {
     data: queueHealth,
     isLoading: isLoadingHealth,
@@ -47,14 +62,7 @@ export const useQueueDiagnostics = () => {
       });
       
       if (response.error) throw response.error;
-      const data = response.data as { 
-        health_score: number; 
-        invalid_positions: number; 
-        duplicate_positions: number; 
-        active_companies: number; 
-      };
-      
-      return data;
+      return response.data as QueueHealthResponse;
     }
   });
   

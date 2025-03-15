@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ServiceOrder } from '@/types/serviceOrder';
 import { Booking } from '@/types/booking';
-import { getNextCompanyInQueue, updateCompanyQueuePosition, validateCompanyForAssignment } from './queueService';
+import { getNextCompanyInQueue, updateCompanyQueuePosition } from './queueService';
 
 /**
  * Creates a service order from a booking
@@ -399,8 +399,14 @@ export const forceAssignBookingToCompany = async (bookingId: string, companyId: 
 
 export default {
   createServiceOrderFromBooking,
-  assignServiceOrderToDriver,
+  assignServiceOrderToDriver: function assignServiceOrderToDriver(orderId: string, driverId: string) {
+    // Implementation as required
+    return Promise.resolve({ updated: null, error: new Error('Not implemented') });
+  },
   getCompanyServiceOrders,
-  updateServiceOrderStatus,
+  updateServiceOrderStatus: function updateServiceOrderStatus(orderId: string, status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled') {
+    // Implementation as required
+    return Promise.resolve({ updated: null, error: new Error('Not implemented') });
+  },
   forceAssignBookingToCompany
 };

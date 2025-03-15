@@ -107,6 +107,11 @@ const QueueDiagnosticsPanel = () => {
     );
   }
 
+  // Calculate a meaningful overall score if it's not available from the API
+  const overallHealthScore = queueHealth?.overall_health_score !== undefined
+    ? queueHealth.overall_health_score
+    : healthScore.score;
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -144,14 +149,12 @@ const QueueDiagnosticsPanel = () => {
                     Saúde geral do sistema
                   </span>
                   <span className="text-sm font-medium">
-                    {queueHealth?.overall_health_score 
-                      ? Math.round(queueHealth.overall_health_score) 
-                      : Math.round(healthScore.score)}%
+                    {Math.round(overallHealthScore)}%
                   </span>
                 </div>
                 <Progress 
-                  value={queueHealth?.overall_health_score || healthScore.score} 
-                  className={getHealthColor(queueHealth?.overall_health_score || healthScore.score)} 
+                  value={overallHealthScore} 
+                  className={getHealthColor(overallHealthScore)} 
                 />
               </div>
               
@@ -183,7 +186,7 @@ const QueueDiagnosticsPanel = () => {
                   <div className="space-y-1">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Não processadas:</span>
-                      <span className={`font-medium ${queueHealth?.unprocessed_bookings > 0 ? 'text-amber-500' : 'text-green-500'}`}>
+                      <span className={`font-medium ${(queueHealth?.unprocessed_bookings || 0) > 0 ? 'text-amber-500' : 'text-green-500'}`}>
                         {queueHealth?.unprocessed_bookings || 0}
                       </span>
                     </div>
@@ -203,7 +206,7 @@ const QueueDiagnosticsPanel = () => {
                   <div className="space-y-1">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Sem referência:</span>
-                      <span className={`font-medium ${queueHealth?.unlinked_orders > 0 ? 'text-amber-500' : 'text-green-500'}`}>
+                      <span className={`font-medium ${(queueHealth?.unlinked_orders || 0) > 0 ? 'text-amber-500' : 'text-green-500'}`}>
                         {queueHealth?.unlinked_orders || 0}
                       </span>
                     </div>
@@ -350,37 +353,37 @@ const QueueDiagnosticsPanel = () => {
         <TabsContent value="bookings">
           <CardContent>
             <div className="space-y-4">
-              <Alert variant={queueHealth?.unprocessed_bookings > 0 ? "warning" : "default"}>
-                {queueHealth?.unprocessed_bookings > 0 ? (
+              <Alert variant={(queueHealth?.unprocessed_bookings || 0) > 0 ? "destructive" : "default"}>
+                {(queueHealth?.unprocessed_bookings || 0) > 0 ? (
                   <AlertTriangle className="h-4 w-4" />
                 ) : (
                   <CheckCircle className="h-4 w-4" />
                 )}
                 <AlertTitle>
-                  {queueHealth?.unprocessed_bookings > 0 
-                    ? `${queueHealth.unprocessed_bookings} reservas não processadas` 
+                  {(queueHealth?.unprocessed_bookings || 0) > 0 
+                    ? `${queueHealth?.unprocessed_bookings} reservas não processadas` 
                     : 'Todas as reservas processadas'}
                 </AlertTitle>
                 <AlertDescription>
-                  {queueHealth?.unprocessed_bookings > 0 
+                  {(queueHealth?.unprocessed_bookings || 0) > 0 
                     ? 'Existem reservas que ainda não foram atribuídas a empresas.' 
                     : 'Todas as reservas recentes foram processadas corretamente.'}
                 </AlertDescription>
               </Alert>
               
-              <Alert variant={queueHealth?.unlinked_orders > 0 ? "warning" : "default"}>
-                {queueHealth?.unlinked_orders > 0 ? (
+              <Alert variant={(queueHealth?.unlinked_orders || 0) > 0 ? "destructive" : "default"}>
+                {(queueHealth?.unlinked_orders || 0) > 0 ? (
                   <AlertTriangle className="h-4 w-4" />
                 ) : (
                   <CheckCircle className="h-4 w-4" />
                 )}
                 <AlertTitle>
-                  {queueHealth?.unlinked_orders > 0 
-                    ? `${queueHealth.unlinked_orders} ordens sem referência` 
+                  {(queueHealth?.unlinked_orders || 0) > 0 
+                    ? `${queueHealth?.unlinked_orders} ordens sem referência` 
                     : 'Todas as ordens com referência'}
                 </AlertTitle>
                 <AlertDescription>
-                  {queueHealth?.unlinked_orders > 0 
+                  {(queueHealth?.unlinked_orders || 0) > 0 
                     ? 'Existem ordens de serviço que não estão vinculadas a nenhuma reserva.' 
                     : 'Todas as ordens de serviço estão corretamente vinculadas às reservas.'}
                 </AlertDescription>

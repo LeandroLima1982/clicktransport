@@ -69,6 +69,7 @@ redirect_uri = ""
 # or any other third-party OIDC providers.
 url = ""
 
+# Correct format for functions section
 [functions]
 # Port to serve Edge Functions on.
 port = 54321
