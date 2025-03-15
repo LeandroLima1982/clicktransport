@@ -12,9 +12,10 @@ import { FileText, Settings, Building2, Users, Car, Loader2 } from 'lucide-react
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { UserMenu } from '@/components/navbar';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const AdminDashboard: React.FC = () => {
-  const { user, userRole, signOut, isAuthenticating } = useAuth();
+  const { user, userRole, signOut, isAuthenticating, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [dashboardStats, setDashboardStats] = useState({
     companies: 0,
@@ -24,12 +25,17 @@ const AdminDashboard: React.FC = () => {
     loading: true
   });
 
+  // Only fetch dashboard stats when user and userRole are available
   useEffect(() => {
-    fetchDashboardStats();
-  }, []);
+    if (user && userRole === 'admin') {
+      fetchDashboardStats();
+    }
+  }, [user, userRole]);
 
   const fetchDashboardStats = async () => {
     try {
+      setDashboardStats(prev => ({ ...prev, loading: true }));
+      
       // Use more robust queries without head:true parameter
       let companiesCount = 0;
       let driversCount = 0;
@@ -88,6 +94,18 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Show loading state when auth is still loading
+  if (authLoading) {
+    return (
+      <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <h2 className="text-xl font-medium">Carregando painel administrativo...</h2>
+        <p className="text-muted-foreground">Verificando permissões de acesso</p>
+      </div>
+    );
+  }
+
+  // Check access permissions after auth loading is complete
   if (!user || userRole !== 'admin') {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -127,6 +145,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Stats cards with loading state handling */}
           <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab("companies")}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center">
