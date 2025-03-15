@@ -24,12 +24,34 @@ interface QueueHealthResponse {
   booking_count?: number;
 }
 
+interface BookingDetails {
+  id: string;
+  reference_code: string;
+  status: string;
+  origin: string;
+  destination: string;
+  travel_date: string;
+  return_date?: string;
+  created_at: string;
+  additional_notes?: string;
+  service_order?: {
+    id: string;
+    company_id: string;
+    status: string;
+    created_at: string;
+    company_name?: string;
+  };
+}
+
 /**
  * Hook for diagnosing and fixing queue system issues
  */
 export const useQueueDiagnostics = () => {
   const [isFixingPositions, setIsFixingPositions] = useState(false);
   const [isResettingQueue, setIsResettingQueue] = useState(false);
+  const [searchBookingCode, setSearchBookingCode] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [isProcessingBooking, setIsProcessingBooking] = useState(false);
   
   // Get queue diagnostics
   const {
@@ -64,6 +86,73 @@ export const useQueueDiagnostics = () => {
       if (response.error) throw response.error;
       return response.data as QueueHealthResponse;
     }
+  });
+  
+  // Query for finding a specific booking by reference code
+  const {
+    data: bookingDetails,
+    isLoading: isLoadingBooking,
+    error: bookingError,
+    refetch: refetchBooking
+  } = useQuery({
+    queryKey: ['booking-details', searchBookingCode],
+    queryFn: async () => {
+      if (!searchBookingCode) return null;
+      
+      setIsSearching(true);
+      try {
+        // First find the booking
+        const { data: bookings, error: bookingError } = await supabase
+          .from('bookings')
+          .select('*')
+          .ilike('reference_code', `%${searchBookingCode}%`)
+          .limit(1);
+        
+        if (bookingError) throw bookingError;
+        if (!bookings || bookings.length === 0) {
+          return null;
+        }
+        
+        const booking = bookings[0];
+        
+        // Then check if there's a service order for this booking
+        const { data: serviceOrders, error: orderError } = await supabase
+          .from('service_orders')
+          .select('id, company_id, status, created_at')
+          .ilike('notes', `%Reserva #${booking.reference_code}%`)
+          .limit(1);
+        
+        if (orderError) throw orderError;
+        
+        let serviceOrder = null;
+        let companyName = null;
+        
+        if (serviceOrders && serviceOrders.length > 0) {
+          serviceOrder = serviceOrders[0];
+          
+          // Get company name
+          const { data: companies, error: companyError } = await supabase
+            .from('companies')
+            .select('name')
+            .eq('id', serviceOrder.company_id)
+            .limit(1);
+            
+          if (!companyError && companies && companies.length > 0) {
+            companyName = companies[0].name;
+          }
+          
+          serviceOrder.company_name = companyName;
+        }
+        
+        return {
+          ...booking,
+          service_order: serviceOrder
+        } as BookingDetails;
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    enabled: false // Don't run automatically, only when explicitly requested
   });
   
   // Mutation for fixing invalid queue positions
@@ -113,6 +202,35 @@ export const useQueueDiagnostics = () => {
       toast.error(`Erro ao reiniciar fila: ${error?.message || 'Erro desconhecido'}`);
     }
   });
+
+  // Mutation for processing a specific booking
+  const processBookingMutation = useMutation({
+    mutationFn: async (bookingId: string) => {
+      setIsProcessingBooking(true);
+      try {
+        const response = await supabase.functions.invoke('process_specific_booking', {
+          method: 'POST',
+          body: { booking_id: bookingId }
+        });
+        
+        if (response.error) throw response.error;
+        return response.data;
+      } finally {
+        setIsProcessingBooking(false);
+      }
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(`Reserva processada com sucesso. Ordem de serviço criada para ${data.company_name || 'uma empresa'}`);
+        searchBooking(searchBookingCode); // Refresh booking details
+      } else {
+        toast.error(`Não foi possível processar a reserva: ${data.message || 'Erro desconhecido'}`);
+      }
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao processar reserva: ${error?.message || 'Erro desconhecido'}`);
+    }
+  });
   
   const fixQueuePositions = () => {
     fixPositionsMutation.mutate();
@@ -125,6 +243,15 @@ export const useQueueDiagnostics = () => {
   const refreshDiagnostics = () => {
     refetchDiagnostics();
     refetchHealth();
+  };
+
+  const searchBooking = (code: string) => {
+    setSearchBookingCode(code);
+    refetchBooking();
+  };
+
+  const processBooking = (bookingId: string) => {
+    processBookingMutation.mutate(bookingId);
   };
   
   /**
@@ -154,6 +281,17 @@ export const useQueueDiagnostics = () => {
     isLoadingHealth,
     healthError,
     getQueueHealthScore,
+    
+    // Booking search
+    searchBooking,
+    bookingDetails,
+    isLoadingBooking,
+    isSearching,
+    bookingError,
+    
+    // Process booking
+    processBooking,
+    isProcessingBooking,
     
     // Actions
     fixQueuePositions,

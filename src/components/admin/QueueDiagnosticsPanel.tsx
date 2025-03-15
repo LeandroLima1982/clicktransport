@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   Loader2, 
   AlertTriangle, 
@@ -14,14 +14,20 @@ import {
   RotateCcw, 
   Wrench,
   RefreshCw,
-  ArrowUpDown
+  ArrowUpDown,
+  Search,
+  CalendarClock,
+  MapPin,
+  PackageCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueueDiagnostics } from '@/hooks/useQueueDiagnostics';
 import { autoFixQueueIssues } from '@/services/booking/queueService';
+import { format } from 'date-fns';
 
 const QueueDiagnosticsPanel = () => {
   const [isAutoFixing, setIsAutoFixing] = useState(false);
+  const [bookingCode, setBookingCode] = useState('');
   
   const {
     queueDiagnostics,
@@ -33,7 +39,13 @@ const QueueDiagnosticsPanel = () => {
     isFixingPositions,
     resetQueue,
     isResettingQueue,
-    refreshDiagnostics
+    refreshDiagnostics,
+    searchBooking,
+    bookingDetails,
+    isLoadingBooking,
+    isSearching,
+    processBooking,
+    isProcessingBooking
   } = useQueueDiagnostics();
 
   const healthScore = getQueueHealthScore();
@@ -61,6 +73,28 @@ const QueueDiagnosticsPanel = () => {
       toast.error('Erro ao realizar correções automáticas');
     } finally {
       setIsAutoFixing(false);
+    }
+  };
+
+  const handleSearchBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (bookingCode.trim()) {
+      searchBooking(bookingCode.trim());
+    }
+  };
+  
+  const handleProcessBooking = () => {
+    if (bookingDetails && !bookingDetails.service_order) {
+      processBooking(bookingDetails.id);
+    }
+  };
+
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'N/A';
+    try {
+      return format(new Date(dateString), 'dd/MM/yyyy HH:mm');
+    } catch (e) {
+      return dateString;
     }
   };
 
@@ -138,6 +172,7 @@ const QueueDiagnosticsPanel = () => {
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="companies">Empresas</TabsTrigger>
           <TabsTrigger value="bookings">Reservas</TabsTrigger>
+          <TabsTrigger value="search">Buscar Reserva</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview">
@@ -400,6 +435,176 @@ const QueueDiagnosticsPanel = () => {
                   Atualizar Diagnóstico
                 </Button>
               </div>
+            </div>
+          </CardContent>
+        </TabsContent>
+        
+        <TabsContent value="search">
+          <CardContent>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-medium mb-2">Buscar Reserva Específica</h3>
+                <form onSubmit={handleSearchBooking} className="flex space-x-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Digite o código da reserva (ex: TRF-691709)"
+                      className="pl-8"
+                      value={bookingCode}
+                      onChange={(e) => setBookingCode(e.target.value)}
+                    />
+                  </div>
+                  <Button type="submit" disabled={isSearching || !bookingCode.trim()}>
+                    {isSearching ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Buscando...
+                      </>
+                    ) : (
+                      'Buscar'
+                    )}
+                  </Button>
+                </form>
+              </div>
+              
+              {isLoadingBooking && (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              
+              {!isLoadingBooking && bookingDetails === null && bookingCode.trim() !== '' && (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Reserva não encontrada</AlertTitle>
+                  <AlertDescription>
+                    Não foi possível encontrar uma reserva com o código "{bookingCode}".
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {!isLoadingBooking && bookingDetails && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-1">{bookingDetails.reference_code}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Criada em {formatDate(bookingDetails.created_at)}
+                      </p>
+                    </div>
+                    <Badge className={`
+                      ${bookingDetails.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                        bookingDetails.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                        'bg-gray-100 text-gray-800'}
+                    `}>
+                      {bookingDetails.status === 'confirmed' ? 'Confirmada' : 
+                       bookingDetails.status === 'pending' ? 'Pendente' : 
+                       bookingDetails.status}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="border rounded-md p-4 space-y-3">
+                      <h4 className="font-medium text-sm flex items-center">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        Detalhes da Viagem
+                      </h4>
+                      <div className="space-y-2">
+                        <div>
+                          <div className="text-sm text-muted-foreground">Origem:</div>
+                          <div className="font-medium">{bookingDetails.origin}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Destino:</div>
+                          <div className="font-medium">{bookingDetails.destination}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Data da Viagem:</div>
+                          <div className="font-medium">{formatDate(bookingDetails.travel_date)}</div>
+                        </div>
+                        {bookingDetails.return_date && (
+                          <div>
+                            <div className="text-sm text-muted-foreground">Data de Retorno:</div>
+                            <div className="font-medium">{formatDate(bookingDetails.return_date)}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="border rounded-md p-4 space-y-3">
+                      <h4 className="font-medium text-sm flex items-center">
+                        <CalendarClock className="h-4 w-4 mr-1" />
+                        Status da Ordem de Serviço
+                      </h4>
+                      
+                      {bookingDetails.service_order ? (
+                        <div className="space-y-2">
+                          <div>
+                            <div className="text-sm text-muted-foreground">Empresa:</div>
+                            <div className="font-medium">{bookingDetails.service_order.company_name || 'Não identificada'}</div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-muted-foreground">Status:</div>
+                            <Badge className={`
+                              ${bookingDetails.service_order.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                                bookingDetails.service_order.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
+                                bookingDetails.service_order.status === 'assigned' ? 'bg-purple-100 text-purple-800' : 
+                                bookingDetails.service_order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                'bg-gray-100 text-gray-800'}
+                            `}>
+                              {bookingDetails.service_order.status === 'completed' ? 'Concluída' :
+                               bookingDetails.service_order.status === 'in_progress' ? 'Em Andamento' :
+                               bookingDetails.service_order.status === 'assigned' ? 'Atribuída' :
+                               bookingDetails.service_order.status === 'pending' ? 'Pendente' :
+                               bookingDetails.service_order.status}
+                            </Badge>
+                          </div>
+                          <div>
+                            <div className="text-sm text-muted-foreground">Criada em:</div>
+                            <div className="font-medium">{formatDate(bookingDetails.service_order.created_at)}</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Alert>
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Não processada</AlertTitle>
+                            <AlertDescription>
+                              Esta reserva ainda não possui uma ordem de serviço.
+                            </AlertDescription>
+                          </Alert>
+                          
+                          <Button
+                            onClick={handleProcessBooking}
+                            disabled={isProcessingBooking}
+                            className="w-full"
+                          >
+                            {isProcessingBooking ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Processando...
+                              </>
+                            ) : (
+                              <>
+                                <PackageCheck className="mr-2 h-4 w-4" />
+                                Processar Reserva
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {bookingDetails.additional_notes && (
+                    <div className="border rounded-md p-4">
+                      <h4 className="font-medium text-sm mb-2">Observações:</h4>
+                      <p className="text-sm">{bookingDetails.additional_notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </TabsContent>
