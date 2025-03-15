@@ -11,22 +11,8 @@ import FAQ from '@/components/FAQ';
 import ServiceForm from '@/components/ServiceForm';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
-import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
-  const { isLoading } = useAuth();
-
-  // Show a brief loading indicator only during initial authentication check
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        <div className="ml-3 text-lg font-medium">Carregando...</div>
-      </div>
-    );
-  }
-
-  // Always render the main home page content for all users
   return (
     <TransitionEffect>
       <Navbar />

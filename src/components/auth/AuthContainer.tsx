@@ -13,7 +13,6 @@ interface AuthContainerProps {
   description: string;
   error: string | null;
   children: ReactNode;
-  icon?: ReactNode;
 }
 
 const AuthContainer: React.FC<AuthContainerProps> = ({
@@ -22,8 +21,7 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
   title,
   description,
   error,
-  children,
-  icon
+  children
 }) => {
   return (
     <TransitionEffect>
@@ -40,7 +38,6 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
         <div className="flex-1 flex items-center justify-center px-6 py-12">
           <Card className="w-full max-w-md shadow-lg animate-fade-in">
             <div className="space-y-1 text-center p-6">
-              {icon && <div className="flex justify-center">{icon}</div>}
               <h2 className="text-2xl font-bold">{title}</h2>
               <p className="text-muted-foreground">{description}</p>
             </div>

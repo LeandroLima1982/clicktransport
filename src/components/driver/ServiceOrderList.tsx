@@ -7,21 +7,17 @@ import AssignedOrderList from './AssignedOrderList';
 import AvailableOrderList from './AvailableOrderList';
 import { useServiceOrders } from './hooks/useServiceOrders';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
 
 const ServiceOrderList: React.FC = () => {
   const { user } = useAuth();
   const [driverId, setDriverId] = useState<string | null>(null);
-  const [isLoadingDriver, setIsLoadingDriver] = useState(true);
   
   const { 
     orders, 
     isLoading, 
-    error,
     handleAcceptOrder, 
     handleRejectOrder, 
-    handleUpdateStatus,
-    refreshOrders
+    handleUpdateStatus 
   } = useServiceOrders(driverId);
 
   useEffect(() => {
@@ -31,7 +27,6 @@ const ServiceOrderList: React.FC = () => {
   }, [user]);
 
   const fetchDriverId = async () => {
-    setIsLoadingDriver(true);
     try {
       const { data, error } = await supabase
         .from('drivers')
@@ -41,7 +36,6 @@ const ServiceOrderList: React.FC = () => {
 
       if (error) {
         console.error('Erro ao buscar ID do motorista:', error);
-        toast.error('Erro ao buscar perfil do motorista');
         return;
       }
 
@@ -54,45 +48,15 @@ const ServiceOrderList: React.FC = () => {
     } catch (error) {
       console.error('Erro ao buscar ID do motorista:', error);
       toast.error('Erro ao carregar perfil do motorista');
-    } finally {
-      setIsLoadingDriver(false);
     }
   };
 
-  useEffect(() => {
-    if (error) {
-      toast.error(error);
-    }
-  }, [error]);
-
-  const isLoadingAny = isLoading || isLoadingDriver;
-
-  const handleRefresh = () => {
-    refreshOrders();
-    toast.success('Lista atualizada');
-  };
-
-  if (isLoadingAny) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Carregando ordens de serviço...</span>
-      </div>
-    );
+  if (isLoading) {
+    return <div className="p-4">Carregando ordens de serviço...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Ordens de Serviço</h2>
-        <button 
-          onClick={handleRefresh}
-          className="text-sm text-primary hover:underline"
-        >
-          Atualizar
-        </button>
-      </div>
-      
       <Tabs defaultValue="assigned">
         <TabsList>
           <TabsTrigger value="assigned">Minhas Corridas</TabsTrigger>

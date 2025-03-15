@@ -60,8 +60,6 @@ interface BookingStepsProps {
     returnDate: Date | undefined;
     tripType: 'oneway' | 'roundtrip';
     passengers: string;
-    time?: string;
-    returnTime?: string;
   };
   isOpen: boolean;
   onClose: () => void;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,9 +11,6 @@ import { CalendarIcon, ArrowRight, MapPin, Calendar as CalendarIcon2, Clock, Use
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BookingSteps } from './booking';
-import TimeSelector from './TimeSelector';
-import { toast } from 'sonner';
-import { fetchAddressSuggestions, getPlaceIcon, formatPlaceName } from '@/utils/mapbox';
 
 const BookingForm: React.FC = () => {
   const [originValue, setOriginValue] = useState('');
@@ -23,90 +20,29 @@ const BookingForm: React.FC = () => {
   const [tripType, setTripType] = useState<'oneway' | 'roundtrip'>('oneway');
   const [passengers, setPassengers] = useState('1');
   const [showBookingSteps, setShowBookingSteps] = useState(false);
-  const [time, setTime] = useState<string>('');
-  const [returnTime, setReturnTime] = useState<string>('');
-  const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
-  const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  
-  const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const handleBooking = () => {
     if (!originValue) {
-      toast.error('Por favor, informe o local de origem.');
+      alert('Por favor, informe o local de origem.');
       return;
     }
     
     if (!destinationValue) {
-      toast.error('Por favor, informe o local de destino.');
+      alert('Por favor, informe o local de destino.');
       return;
     }
     
     if (!date) {
-      toast.error('Por favor, selecione a data da viagem.');
-      return;
-    }
-    
-    if (!time) {
-      toast.error('Por favor, selecione a hora da viagem.');
+      alert('Por favor, selecione a data da viagem.');
       return;
     }
     
     if (tripType === 'roundtrip' && !returnDate) {
-      toast.error('Por favor, selecione a data de retorno.');
-      return;
-    }
-    
-    if (tripType === 'roundtrip' && !returnTime) {
-      toast.error('Por favor, selecione a hora de retorno.');
+      alert('Por favor, selecione a data de retorno.');
       return;
     }
     
     setShowBookingSteps(true);
-  };
-
-  const handleOriginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setOriginValue(value);
-    
-    if (originTimeoutRef.current) {
-      clearTimeout(originTimeoutRef.current);
-    }
-    
-    originTimeoutRef.current = setTimeout(async () => {
-      setIsLoadingSuggestions(true);
-      const suggestions = await fetchAddressSuggestions(value);
-      setOriginSuggestions(suggestions);
-      setIsLoadingSuggestions(false);
-    }, 500);
-  };
-
-  const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setDestinationValue(value);
-    
-    if (destinationTimeoutRef.current) {
-      clearTimeout(destinationTimeoutRef.current);
-    }
-    
-    destinationTimeoutRef.current = setTimeout(async () => {
-      setIsLoadingSuggestions(true);
-      const suggestions = await fetchAddressSuggestions(value);
-      setDestinationSuggestions(suggestions);
-      setIsLoadingSuggestions(false);
-    }, 500);
-  };
-
-  const selectSuggestion = (suggestion: any, isOrigin: boolean) => {
-    const placeName = suggestion.place_name;
-    if (isOrigin) {
-      setOriginValue(placeName);
-      setOriginSuggestions([]);
-    } else {
-      setDestinationValue(placeName);
-      setDestinationSuggestions([]);
-    }
   };
 
   return (
@@ -129,30 +65,11 @@ const BookingForm: React.FC = () => {
           <div className="relative">
             <Input
               id="origin"
-              placeholder="Endereço de origem ou ponto de interesse"
+              placeholder="Endereço de origem"
               value={originValue}
-              onChange={handleOriginChange}
+              onChange={(e) => setOriginValue(e.target.value)}
               className="bg-white/20 border-white/10 text-white placeholder:text-white/60 focus:ring-primary focus:border-primary"
             />
-            
-            {originSuggestions.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-background/90 backdrop-blur-sm border border-border rounded-md shadow-lg">
-                <ul className="py-1 max-h-60 overflow-auto">
-                  {originSuggestions.map((suggestion) => (
-                    <li
-                      key={suggestion.id}
-                      className="px-3 py-2 text-sm hover:bg-accent cursor-pointer"
-                      onClick={() => selectSuggestion(suggestion, true)}
-                    >
-                      <div className="flex items-center gap-2">
-                        {getPlaceIcon(suggestion)}
-                        {formatPlaceName(suggestion)}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         </div>
         
@@ -163,35 +80,16 @@ const BookingForm: React.FC = () => {
           <div className="relative">
             <Input
               id="destination"
-              placeholder="Endereço de destino ou ponto de interesse"
+              placeholder="Endereço de destino"
               value={destinationValue}
-              onChange={handleDestinationChange}
+              onChange={(e) => setDestinationValue(e.target.value)}
               className="bg-white/20 border-white/10 text-white placeholder:text-white/60 focus:ring-primary focus:border-primary"
             />
-            
-            {destinationSuggestions.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-background/90 backdrop-blur-sm border border-border rounded-md shadow-lg">
-                <ul className="py-1 max-h-60 overflow-auto">
-                  {destinationSuggestions.map((suggestion) => (
-                    <li
-                      key={suggestion.id}
-                      className="px-3 py-2 text-sm hover:bg-accent cursor-pointer"
-                      onClick={() => selectSuggestion(suggestion, false)}
-                    >
-                      <div className="flex items-center gap-2">
-                        {getPlaceIcon(suggestion)}
-                        {formatPlaceName(suggestion)}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-2">
           <Label className="text-white flex items-center">
             <CalendarIcon2 className="w-4 h-4 mr-1" /> Vai quando?
@@ -217,13 +115,6 @@ const BookingForm: React.FC = () => {
               />
             </PopoverContent>
           </Popover>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-white flex items-center">
-            <Clock className="w-4 h-4 mr-1" /> Horário de ida
-          </Label>
-          <TimeSelector value={time} onChange={setTime} />
         </div>
 
         {tripType === 'roundtrip' && (
@@ -252,15 +143,6 @@ const BookingForm: React.FC = () => {
                 />
               </PopoverContent>
             </Popover>
-          </div>
-        )}
-        
-        {tripType === 'roundtrip' && (
-          <div className="space-y-2">
-            <Label className="text-white flex items-center">
-              <Clock className="w-4 h-4 mr-1" /> Horário de volta
-            </Label>
-            <TimeSelector value={returnTime} onChange={setReturnTime} />
           </div>
         )}
         
@@ -300,9 +182,7 @@ const BookingForm: React.FC = () => {
           date,
           returnDate,
           tripType,
-          passengers,
-          time,
-          returnTime
+          passengers
         }}
         isOpen={showBookingSteps}
         onClose={() => setShowBookingSteps(false)}

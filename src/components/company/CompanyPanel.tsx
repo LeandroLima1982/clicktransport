@@ -1,63 +1,30 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Car, FileText, Users, ChartBar, LogOut, Loader2, AlertTriangle, Home } from 'lucide-react';
+import { Car, FileText, Users, ChartBar, LogOut, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import CompanyDashboard from './CompanyDashboard';
 import ServiceOrderList from './ServiceOrderList';
 import DriversManagement from './DriversManagement';
 import VehiclesManagement from './VehiclesManagement';
-import { supabase } from '@/main';
-import { toast } from 'sonner';
 
 const CompanyPanel: React.FC = () => {
   const { user, userRole, signOut, isAuthenticating } = useAuth();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
-  const [companyData, setCompanyData] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch company data
-  useEffect(() => {
+  // Redirect if not authenticated or not a company
+  React.useEffect(() => {
     if (!user || userRole !== 'company') {
       navigate('/auth');
-      return;
     }
-
-    const fetchCompanyData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const { data, error } = await supabase
-          .from('companies')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        if (error) throw error;
-        
-        if (!data) {
-          setError('Não foi possível localizar os dados da empresa. Por favor, contate o suporte.');
-          return;
-        }
-        
-        setCompanyData(data);
-      } catch (err: any) {
-        console.error('Error fetching company data:', err);
-        setError(`Erro ao carregar dados: ${err.message || 'Erro desconhecido'}`);
-        toast.error('Erro ao carregar dados da empresa', {
-          description: 'Não foi possível recuperar as informações da empresa.'
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCompanyData();
   }, [user, userRole, navigate]);
+
+  if (!user || userRole !== 'company') {
+    return <div className="flex items-center justify-center h-screen">Verificando acesso...</div>;
+  }
 
   const handleSignOut = async () => {
     try {
@@ -69,68 +36,23 @@ const CompanyPanel: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-        <p className="text-lg">Carregando dados da empresa...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen p-4">
-        <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
-        <h2 className="text-xl font-bold mb-2">Erro ao carregar</h2>
-        <p className="text-muted-foreground text-center mb-6">{error}</p>
-        <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
-        <Button variant="outline" onClick={handleSignOut} className="mt-4">Voltar para o início</Button>
-      </div>
-    );
-  }
-
-  if (!companyData) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen p-4">
-        <AlertTriangle className="h-12 w-12 text-yellow-500 mb-4" />
-        <h2 className="text-xl font-bold mb-2">Conta não configurada</h2>
-        <p className="text-muted-foreground text-center mb-6">
-          Sua conta de empresa não está completamente configurada. Por favor, contate o suporte.
-        </p>
-        <Button onClick={handleSignOut} variant="outline">Voltar para o início</Button>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{companyData.name || 'Painel da Empresa'}</h1>
-          <p className="text-muted-foreground">{companyData.status === 'active' ? 'Ativo' : 'Pendente'}</p>
-        </div>
-        <div className="flex gap-2">
-          <Link to="/">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Home className="h-4 w-4" />
-              Início
-            </Button>
-          </Link>
-          <Button variant="outline" onClick={handleSignOut} disabled={isAuthenticating} className="flex items-center gap-2">
-            {isAuthenticating ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Saindo...
-              </>
-            ) : (
-              <>
-                <LogOut className="h-4 w-4" />
-                Sair
-              </>
-            )}
-          </Button>
-        </div>
+        <h1 className="text-2xl font-bold">Painel da Empresa</h1>
+        <Button variant="outline" onClick={handleSignOut} disabled={isAuthenticating} className="flex items-center gap-2">
+          {isAuthenticating ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Saindo...
+            </>
+          ) : (
+            <>
+              <LogOut className="h-4 w-4" />
+              Sair
+            </>
+          )}
+        </Button>
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
@@ -154,19 +76,19 @@ const CompanyPanel: React.FC = () => {
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-4">
-          <CompanyDashboard company={companyData} />
+          <CompanyDashboard />
         </TabsContent>
         
         <TabsContent value="orders" className="space-y-4">
-          <ServiceOrderList companyId={companyData.id} />
+          <ServiceOrderList />
         </TabsContent>
         
         <TabsContent value="drivers" className="space-y-4">
-          <DriversManagement companyId={companyData.id} />
+          <DriversManagement />
         </TabsContent>
         
         <TabsContent value="vehicles" className="space-y-4">
-          <VehiclesManagement companyId={companyData.id} />
+          <VehiclesManagement />
         </TabsContent>
       </Tabs>
     </div>

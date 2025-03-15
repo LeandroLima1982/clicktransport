@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/main';
-import { Loader2 } from 'lucide-react';
 
 // Sample data (will be replaced with real data from API)
 const monthlyData = [
@@ -25,15 +24,7 @@ const orderStatusData = [
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-interface CompanyDashboardProps {
-  company: {
-    id: string;
-    name: string;
-    status: string;
-  };
-}
-
-const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company }) => {
+const CompanyDashboard: React.FC = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [drivers, setDrivers] = useState<any[]>([]);
@@ -44,8 +35,8 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company }) => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Use the company ID directly from props
-        const companyId = company.id;
+        // Fetch all necessary data from Supabase
+        const companyId = await getCompanyId();
         
         if (companyId) {
           const { data: ordersData } = await supabase
@@ -75,7 +66,25 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company }) => {
     };
 
     fetchData();
-  }, [company.id]);
+  }, [user]);
+
+  // Helper function to get company ID from user ID
+  const getCompanyId = async () => {
+    if (!user) return null;
+    
+    try {
+      const { data } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      return data?.id || null;
+    } catch (error) {
+      console.error('Error fetching company ID:', error);
+      return null;
+    }
+  };
   
   const getCompletedOrdersCount = () => {
     return orders.filter(order => order.status === 'completed').length;
@@ -89,14 +98,6 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company }) => {
     return drivers.filter(driver => driver.status === 'active').length;
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-60">
-        <Loader2 className="h-8 w-8 text-primary animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -105,7 +106,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company }) => {
             <CardTitle className="text-sm font-medium">Ordens Totais</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{orders.length}</div>
+            <div className="text-2xl font-bold">{isLoading ? '...' : orders.length}</div>
             <p className="text-xs text-muted-foreground">
               +{Math.floor(Math.random() * 10)}% desde o último mês
             </p>
@@ -117,7 +118,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company }) => {
             <CardTitle className="text-sm font-medium">Ordens Concluídas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getCompletedOrdersCount()}</div>
+            <div className="text-2xl font-bold">{isLoading ? '...' : getCompletedOrdersCount()}</div>
             <p className="text-xs text-muted-foreground">
               {orders.length > 0 ? `${Math.round((getCompletedOrdersCount() / orders.length) * 100)}% de conclusão` : '0% de conclusão'}
             </p>
@@ -129,7 +130,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company }) => {
             <CardTitle className="text-sm font-medium">Motoristas Ativos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getActiveDriversCount()}</div>
+            <div className="text-2xl font-bold">{isLoading ? '...' : getActiveDriversCount()}</div>
             <p className="text-xs text-muted-foreground">
               {drivers.length > 0 ? `${Math.round((getActiveDriversCount() / drivers.length) * 100)}% da equipe` : '0% da equipe'}
             </p>
@@ -141,7 +142,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company }) => {
             <CardTitle className="text-sm font-medium">Veículos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{vehicles.length}</div>
+            <div className="text-2xl font-bold">{isLoading ? '...' : vehicles.length}</div>
             <p className="text-xs text-muted-foreground">
               {vehicles.length > 0 ? `${vehicles.filter(v => v.status === 'active').length} ativos` : '0 ativos'}
             </p>

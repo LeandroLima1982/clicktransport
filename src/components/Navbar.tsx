@@ -21,12 +21,8 @@ const Navbar: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-      console.log('Navbar logging out...');
       await signOut();
-      // Navigate immediately after calling signOut
-      navigate('/', { replace: true });
-      // Close mobile menu if open
-      setMobileMenuOpen(false);
+      navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
       // Error toast will be displayed by the AuthProvider

@@ -1,3 +1,4 @@
+
 // Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
@@ -8,12 +9,10 @@ import { useAuth } from './hooks/useAuth';
 import Index from './pages/Index';
 import Auth from './pages/Auth';
 import NotFound from './pages/NotFound';
-import ForgotPassword from './pages/ForgotPassword';
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
 import DatabaseSetup from './pages/admin/DatabaseSetup';
-import CreateAdmin from './pages/admin/CreateAdmin';
 
 // Company pages
 import CompanyDashboard from './pages/company/Dashboard';
@@ -21,12 +20,9 @@ import CompanyDashboard from './pages/company/Dashboard';
 // Driver pages
 import DriverDashboard from './pages/driver/Dashboard';
 import DriverPanel from './pages/driver/Panel';
-import DriverAssignments from './pages/driver/Assignments';
-import DriverSchedule from './pages/driver/Schedule';
-import DriverNavigation from './pages/driver/Navigation';
-import DriverProfile from './pages/driver/Profile';
-import DriverSettings from './pages/driver/Settings';
-import DriverTrips from './pages/driver/Trips';
+
+// Client pages
+import Bookings from './pages/client/Bookings';
 
 import './App.css';
 
@@ -79,7 +75,7 @@ const ProtectedRoute = ({
   return <>{children}</>;
 };
 
-// Component to redirect based on user role, with special handling for company users
+// Component to redirect based on user role
 const RoleBasedRedirect = () => {
   const { user, userRole, isLoading } = useAuth();
   
@@ -105,39 +101,14 @@ const RoleBasedRedirect = () => {
   return <Navigate to="/" replace />;
 };
 
-// Special component to handle root path for company users and drivers
-const HomeRedirect = () => {
-  const { user, userRole, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
-  }
-  
-  // If user is logged in and is a company or driver, redirect to their respective dashboards
-  if (user) {
-    if (userRole === 'company') {
-      console.log("HomeRedirect: Redirecting company user to dashboard");
-      return <Navigate to="/company/dashboard" replace />;
-    } else if (userRole === 'driver') {
-      console.log("HomeRedirect: Redirecting driver user to dashboard");
-      return <Navigate to="/driver/dashboard" replace />;
-    }
-  }
-  
-  // Otherwise show the normal index page
-  return <Index />;
-};
-
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public routes with special handling for company users */}
-          <Route path="/" element={<HomeRedirect />} />
+          {/* Public routes */}
+          <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/admin/create" element={<CreateAdmin />} />
           
           {/* Dashboard redirect based on role */}
           <Route path="/dashboard" element={<RoleBasedRedirect />} />
@@ -167,44 +138,18 @@ function App() {
               <DriverDashboard />
             </ProtectedRoute>
           } />
-          <Route path="/driver/assignments" element={
+          <Route path="/driver/panel" element={
             <ProtectedRoute requiredRole="driver">
-              <DriverAssignments />
-            </ProtectedRoute>
-          } />
-          <Route path="/driver/trips" element={
-            <ProtectedRoute requiredRole="driver">
-              <DriverTrips />
-            </ProtectedRoute>
-          } />
-          <Route path="/driver/schedule" element={
-            <ProtectedRoute requiredRole="driver">
-              <DriverSchedule />
-            </ProtectedRoute>
-          } />
-          <Route path="/driver/navigation" element={
-            <ProtectedRoute requiredRole="driver">
-              <DriverNavigation />
-            </ProtectedRoute>
-          } />
-          <Route path="/driver/profile" element={
-            <ProtectedRoute requiredRole="driver">
-              <DriverProfile />
-            </ProtectedRoute>
-          } />
-          <Route path="/driver/settings" element={
-            <ProtectedRoute requiredRole="driver">
-              <DriverSettings />
+              <DriverPanel />
             </ProtectedRoute>
           } />
           
           {/* Client routes */}
-          {/* Temporarily commented out until Bookings component is implemented */}
-          {/* <Route path="/bookings" element={
+          <Route path="/bookings" element={
             <ProtectedRoute requiredRole="client">
               <Bookings />
             </ProtectedRoute>
-          } /> */}
+          } />
           
           {/* 404 route */}
           <Route path="*" element={<NotFound />} />

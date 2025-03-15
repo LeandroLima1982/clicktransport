@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { AuthContainer, LoginForm, RegisterForm } from '@/components/auth';
 import { useAuth } from '../hooks/useAuth';
-import { Car, Briefcase, Shield, User } from 'lucide-react';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -28,7 +27,7 @@ const Auth = () => {
     }
     
     const type = searchParams.get('type');
-    if (type && ['company', 'admin', 'client', 'driver'].includes(type)) {
+    if (type && ['company', 'driver', 'admin', 'client'].includes(type)) {
       setAccountType(type);
       setIsBusinessUser(type !== 'client');
     }
@@ -46,21 +45,22 @@ const Auth = () => {
     console.log('Redirecting user with role:', userRole);
     
     if (returnTo) {
-      navigate(returnTo, { replace: true });
+      navigate(returnTo);
       return;
     }
     
-    // Always redirect company users to their dashboard, no matter what
+    // Redirect based on user role
     if (userRole === 'company') {
-      navigate('/company/dashboard', { replace: true });
+      navigate('/company/dashboard');
     } else if (userRole === 'driver') {
-      navigate('/driver/dashboard', { replace: true });
+      navigate('/driver/dashboard');
     } else if (userRole === 'admin') {
-      navigate('/admin/dashboard', { replace: true });
+      navigate('/admin/dashboard');
     } else if (userRole === 'client') {
-      navigate('/bookings', { replace: true });
+      navigate('/'); // Clients are redirected to homepage for now
     } else {
-      navigate('/', { replace: true });
+      // Default fallback if role is not recognized
+      navigate('/');
     }
   };
 
@@ -143,40 +143,26 @@ const Auth = () => {
 
   const getTitle = () => {
     if (activeTab === 'login') {
-      if (accountType === 'client') return 'Login de Cliente';
-      if (accountType === 'driver') return 'Login de Motorista';
-      if (accountType === 'company') return 'Login de Empresa';
-      if (accountType === 'admin') return 'Login de Administrador';
-      return 'Login';
+      return 'Welcome back';
     }
     
     if (isBusinessUser) {
-      if (accountType === 'company') return 'Cadastro de Empresa';
-      if (accountType === 'admin') return 'Cadastro de Administrador';
-      return 'Cadastro de Conta Empresarial';
+      return 'Create a Business Account';
     }
     
-    return 'Cadastro de Cliente';
+    return 'Create a Client Account';
   };
 
   const getDescription = () => {
     if (activeTab === 'login') {
-      return 'Digite suas credenciais para acessar sua conta';
+      return 'Enter your credentials to access your account';
     }
     
     if (isBusinessUser) {
-      return 'Preencha o formulário abaixo para criar sua conta empresarial';
+      return 'Fill out the form below to create your business account';
     }
     
-    return 'Preencha o formulário abaixo para criar sua conta de cliente';
-  };
-
-  const getRoleIcon = () => {
-    if (accountType === 'client') return <User className="h-8 w-8 text-primary mb-2" />;
-    if (accountType === 'driver') return <Car className="h-8 w-8 text-primary mb-2" />;
-    if (accountType === 'company') return <Briefcase className="h-8 w-8 text-primary mb-2" />;
-    if (accountType === 'admin') return <Shield className="h-8 w-8 text-primary mb-2" />;
-    return null;
+    return 'Fill out the form below to create your client account';
   };
 
   return (
@@ -186,7 +172,6 @@ const Auth = () => {
       title={getTitle()}
       description={getDescription()}
       error={error}
-      icon={getRoleIcon()}
     >
       <LoginForm 
         handleLogin={handleLogin} 

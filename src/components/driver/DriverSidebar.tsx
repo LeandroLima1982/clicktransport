@@ -1,16 +1,7 @@
 
 import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  ListChecks, 
-  Map,
-  Calendar, 
-  Navigation, 
-  Settings, 
-  LogOut, 
-  User 
-} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Car, Calendar, Clock, MapPin, Settings, LogOut, User, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -25,26 +16,21 @@ import {
   SidebarMenuButton,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { cn } from '@/lib/utils';
 
 const DriverSidebar: React.FC = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   
   const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/', { replace: true });
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    await signOut();
+    navigate('/');
   };
   
   return (
     <Sidebar>
       <SidebarHeader>
         <Link to="/" className="flex items-center space-x-2">
+          <Car className="h-6 w-6 text-primary" />
           <span className="text-lg font-bold">ClickTransfer</span>
         </Link>
       </SidebarHeader>
@@ -55,34 +41,25 @@ const DriverSidebar: React.FC = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/dashboard' ? 'bg-primary/10 text-primary' : '')}>
+                <SidebarMenuButton asChild>
                   <Link to="/driver/dashboard">
-                    <LayoutDashboard className="h-5 w-5" />
+                    <Home className="h-5 w-5" />
                     <span>Dashboard</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/assignments' ? 'bg-primary/10 text-primary' : '')}>
+                <SidebarMenuButton asChild>
                   <Link to="/driver/assignments">
-                    <ListChecks className="h-5 w-5" />
+                    <Clock className="h-5 w-5" />
                     <span>Atribuições</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/trips' ? 'bg-primary/10 text-primary' : '')}>
-                  <Link to="/driver/trips">
-                    <Map className="h-5 w-5" />
-                    <span>Minhas Viagens</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/schedule' ? 'bg-primary/10 text-primary' : '')}>
+                <SidebarMenuButton asChild>
                   <Link to="/driver/schedule">
                     <Calendar className="h-5 w-5" />
                     <span>Agenda</span>
@@ -91,9 +68,9 @@ const DriverSidebar: React.FC = () => {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/navigation' ? 'bg-primary/10 text-primary' : '')}>
+                <SidebarMenuButton asChild>
                   <Link to="/driver/navigation">
-                    <Navigation className="h-5 w-5" />
+                    <MapPin className="h-5 w-5" />
                     <span>Navegação</span>
                   </Link>
                 </SidebarMenuButton>
@@ -107,7 +84,7 @@ const DriverSidebar: React.FC = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/profile' ? 'bg-primary/10 text-primary' : '')}>
+                <SidebarMenuButton asChild>
                   <Link to="/driver/profile">
                     <User className="h-5 w-5" />
                     <span>Perfil</span>
@@ -116,7 +93,7 @@ const DriverSidebar: React.FC = () => {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/settings' ? 'bg-primary/10 text-primary' : '')}>
+                <SidebarMenuButton asChild>
                   <Link to="/driver/settings">
                     <Settings className="h-5 w-5" />
                     <span>Configurações</span>

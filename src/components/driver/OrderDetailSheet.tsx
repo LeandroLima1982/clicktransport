@@ -9,10 +9,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Car, CheckCircle, XCircle } from 'lucide-react';
+import { Car, CheckCircle } from 'lucide-react';
 import { formatDate, getStatusBadge } from './utils/formatters';
 import { ServiceOrder } from './hooks/useServiceOrders';
-import { toast } from 'sonner';
 
 interface OrderDetailSheetProps {
   order: ServiceOrder;
@@ -23,23 +22,6 @@ const OrderDetailSheet: React.FC<OrderDetailSheetProps> = ({
   order, 
   handleUpdateStatus 
 }) => {
-  const onUpdateStatus = async (newStatus: string) => {
-    try {
-      await handleUpdateStatus(order.id, newStatus);
-      
-      const statusMessages = {
-        'in_progress': 'Corrida iniciada!',
-        'completed': 'Corrida finalizada com sucesso!',
-        'cancelled': 'Corrida cancelada'
-      };
-      
-      toast.success(statusMessages[newStatus as keyof typeof statusMessages] || 'Status atualizado');
-    } catch (error) {
-      console.error('Erro ao atualizar status:', error);
-      toast.error('Não foi possível atualizar o status');
-    }
-  };
-
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -103,7 +85,9 @@ const OrderDetailSheet: React.FC<OrderDetailSheetProps> = ({
               {order.status === 'assigned' && (
                 <Button 
                   className="w-full" 
-                  onClick={() => onUpdateStatus('in_progress')}
+                  onClick={() => {
+                    handleUpdateStatus(order.id, 'in_progress');
+                  }}
                 >
                   <Car className="mr-2 h-4 w-4" />
                   Iniciar Corrida
@@ -114,21 +98,12 @@ const OrderDetailSheet: React.FC<OrderDetailSheetProps> = ({
                 <Button 
                   className="w-full" 
                   variant="default" 
-                  onClick={() => onUpdateStatus('completed')}
+                  onClick={() => {
+                    handleUpdateStatus(order.id, 'completed');
+                  }}
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Finalizar Corrida
-                </Button>
-              )}
-              
-              {['assigned', 'in_progress'].includes(order.status) && (
-                <Button 
-                  className="w-full" 
-                  variant="destructive" 
-                  onClick={() => onUpdateStatus('cancelled')}
-                >
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Cancelar Corrida
                 </Button>
               )}
             </div>
