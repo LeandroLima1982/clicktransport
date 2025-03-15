@@ -30,7 +30,8 @@ export const getNextCompanyInQueue = async () => {
       return { company: null, error: new Error('No active companies found') };
     }
     
-    // Verify companies are actually available to take new orders
+    // Get the company with the lowest queue position
+    // This ensures we're implementing proper round-robin assignment
     const availableCompany = companies[0];
     
     console.log('Found next company in queue:', availableCompany);
@@ -50,22 +51,35 @@ export const updateCompanyQueuePosition = async (companyId: string) => {
   try {
     console.log(`Updating queue position for company ${companyId}`);
     
-    // First, get the current position to ensure we can increment it correctly
-    const { data: currentCompany, error: fetchError } = await supabase
+    // First, get the maximum queue position to ensure we're rotating correctly
+    const { data: maxPositionResult, error: maxError } = await supabase
       .from('companies')
       .select('queue_position')
-      .eq('id', companyId)
+      .order('queue_position', { ascending: false })
+      .limit(1)
       .single();
     
-    if (fetchError) {
-      console.error('Error fetching current company queue position:', fetchError);
-      return { success: false, error: fetchError };
+    if (maxError) {
+      console.error('Error fetching max queue position:', maxError);
+      // If we can't get the max, just increment by a large number to put at the end
+      return updateCompanyQueueWithValue(companyId, 1000);
     }
     
-    // Calculate the new position (increment by 1 or set to 1 if null)
-    const currentPosition = currentCompany?.queue_position || 0;
-    const newPosition = currentPosition + 1;
+    const maxPosition = maxPositionResult?.queue_position || 0;
+    const newPosition = maxPosition + 1;
     
+    return updateCompanyQueueWithValue(companyId, newPosition);
+  } catch (error) {
+    console.error('Error updating company queue position:', error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Helper function to update a company's queue position with a specific value
+ */
+const updateCompanyQueueWithValue = async (companyId: string, newPosition: number) => {
+  try {
     // Update the company's queue position and last order timestamp
     const { error } = await supabase
       .from('companies')
@@ -80,10 +94,10 @@ export const updateCompanyQueuePosition = async (companyId: string) => {
       return { success: false, error };
     }
     
-    console.log(`Company ${companyId} queue position updated successfully from ${currentPosition} to ${newPosition}`);
+    console.log(`Company ${companyId} queue position updated to ${newPosition}`);
     return { success: true, error: null };
   } catch (error) {
-    console.error('Error updating company queue position:', error);
+    console.error('Error in updateCompanyQueueWithValue:', error);
     return { success: false, error };
   }
 };
@@ -120,17 +134,37 @@ export const resetCompanyQueuePositions = async () => {
   try {
     console.log('Resetting queue positions for all companies');
     
-    const { error } = await supabase
+    // Get all active companies to set incremental queue positions
+    const { data: companies, error: fetchError } = await supabase
       .from('companies')
-      .update({ queue_position: 0 })
-      .eq('status', 'active');
+      .select('id')
+      .eq('status', 'active')
+      .order('name', { ascending: true });
       
-    if (error) {
-      console.error('Error resetting company queue positions:', error);
-      return { success: false, error };
+    if (fetchError) {
+      console.error('Error fetching companies for queue reset:', fetchError);
+      return { success: false, error: fetchError };
     }
     
-    console.log('Company queue positions reset successfully');
+    if (!companies || companies.length === 0) {
+      console.log('No active companies found for queue reset');
+      return { success: true, error: null };
+    }
+    
+    // Assign incremental queue positions to ensure proper rotation
+    for (let i = 0; i < companies.length; i++) {
+      const { error } = await supabase
+        .from('companies')
+        .update({ queue_position: i + 1 })
+        .eq('id', companies[i].id);
+        
+      if (error) {
+        console.error(`Error updating queue position for company ${companies[i].id}:`, error);
+        // Continue with other companies even if one fails
+      }
+    }
+    
+    console.log(`Queue positions reset for ${companies.length} companies`);
     return { success: true, error: null };
   } catch (error) {
     console.error('Error resetting company queue positions:', error);

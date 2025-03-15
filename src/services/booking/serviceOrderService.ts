@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ServiceOrder } from '@/types/serviceOrder';
@@ -41,8 +40,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       notes: `Reserva #${booking.reference_code} - ${booking.additional_notes || 'Sem observações'}`,
     };
     
-    // Use a transaction to ensure all database operations succeed or fail together
-    // This prevents partial state with an order created but queue not updated
+    // Create the service order
     const { data, error } = await supabase
       .from('service_orders')
       .insert(serviceOrderData)
@@ -69,14 +67,17 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     }
     
     // Update the company's queue position and last order timestamp
+    // This is critical for round-robin assignment to work properly
     const { success: queueUpdated, error: queueError } = await updateCompanyQueuePosition(companyId);
     
     if (!queueUpdated) {
       console.error('Error updating company queue position:', queueError);
       toast.warning('Ordem de serviço criada, mas houve um erro ao atualizar a fila de empresas');
+    } else {
+      console.log(`Successfully updated queue position for company ${companyId}`);
     }
     
-    // Notify company about the new order (this will be picked up by real-time subscriptions)
+    // Notify company about the new order
     await notifyCompanyAboutNewOrder(companyId, data as ServiceOrder);
     
     return { serviceOrder: data as ServiceOrder, error: null };

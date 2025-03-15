@@ -7,7 +7,8 @@ import {
   checkUnprocessedBookings, 
   getQueueDiagnostics,
   forceAssignBookingToCompany,
-  reconcilePendingBookings
+  reconcilePendingBookings,
+  resetCompanyQueuePositions
 } from '@/services/booking/bookingService';
 
 /**
@@ -15,6 +16,7 @@ import {
  */
 export const useBookingAssignmentDiagnostics = () => {
   const [isForceAssigning, setIsForceAssigning] = useState(false);
+  const [isResettingQueue, setIsResettingQueue] = useState(false);
   
   // Get information about the last assigned booking
   const {
@@ -114,12 +116,37 @@ export const useBookingAssignmentDiagnostics = () => {
     }
   });
   
+  // Mutation for resetting the queue
+  const resetQueueMutation = useMutation({
+    mutationFn: async () => {
+      setIsResettingQueue(true);
+      try {
+        const { success, error } = await resetCompanyQueuePositions();
+        if (!success) throw error;
+        return success;
+      } finally {
+        setIsResettingQueue(false);
+      }
+    },
+    onSuccess: () => {
+      toast.success('Fila de empresas redefinida com sucesso');
+      refetchQueueDiagnostics();
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao redefinir fila: ${error.message || 'Falha desconhecida'}`);
+    }
+  });
+  
   const runReconcile = () => {
     reconcileBookingsMutation.mutate();
   };
   
   const forceAssignBooking = (bookingId: string, companyId: string) => {
     forceAssignMutation.mutate({ bookingId, companyId });
+  };
+  
+  const resetQueue = () => {
+    resetQueueMutation.mutate();
   };
   
   const refreshAllData = () => {
@@ -150,6 +177,9 @@ export const useBookingAssignmentDiagnostics = () => {
     
     runReconcile,
     isReconciling,
+    
+    resetQueue,
+    isResettingQueue,
     
     refreshAllData
   };
