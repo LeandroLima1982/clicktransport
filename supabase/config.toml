@@ -71,11 +71,6 @@ redirect_uri = ""
 # or any other third-party OIDC providers.
 url = ""
 
-# Correct format for functions section
+# Functions configuration
 [functions]
-# Empty map for the root functions configuration
-port = 54321
-
-# Function-specific settings defined in separate sections
-[functions.check_queue_health]
-verify_jwt = false
+# This is now just an empty table/map as required by TOML format
