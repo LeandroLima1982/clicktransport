@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -19,7 +20,19 @@ type ResetQueueResponse = {
 
 type FixPositionsResponse = {
   success: boolean;
-  fixed_count: number;
+  fixed: number;
+  invalid_fixed: number;
+  duplicate_fixed: number;
+};
+
+type QueueHealthResponse = {
+  health_score: number;
+  invalid_positions: number;
+  duplicate_positions: number;
+  active_companies: number;
+  unprocessed_bookings: number;
+  unlinked_orders: number;
+  overall_health_score: number;
 };
 
 /**
@@ -72,14 +85,14 @@ export const getNextCompanyInQueue = async () => {
  * Updates a company's queue position and last order timestamp
  * This now uses a secure database transaction to ensure proper queue rotation
  */
-export const updateCompanyQueuePosition = async (companyId: string) => {
+export const updateCompanyQueuePosition = async (companyId: string, bookingId?: string) => {
   try {
     console.log(`Updating queue position for company ${companyId}`);
     
     // Use a secure RPC function to update the queue position atomically
     const response = await supabase.functions.invoke('update_company_queue_position', {
       method: 'POST',
-      body: { company_id: companyId }
+      body: { company_id: companyId, booking_id: bookingId }
     });
     
     if (response.error) {
@@ -160,13 +173,13 @@ export const resetCompanyQueuePositions = async () => {
 
 /**
  * Fixes invalid queue positions (0 or null) for companies
- * Now uses a database function to ensure consistency
+ * Now includes handling for duplicate positions
  */
 export const fixInvalidQueuePositions = async () => {
   try {
-    console.log('Fixing invalid queue positions for companies');
+    console.log('Fixing invalid queue positions');
     
-    // Use a secure RPC function to fix invalid queue positions atomically
+    // Call the Edge Function that handles both invalid and duplicate positions
     const response = await supabase.functions.invoke('fix_invalid_queue_positions', {
       method: 'POST',
       body: {}
@@ -183,8 +196,14 @@ export const fixInvalidQueuePositions = async () => {
       return { success: false, error: new Error('No response from fix function'), fixed: 0 };
     }
     
-    console.log(`Fixed ${data.fixed_count} companies with invalid queue positions`);
-    return { success: true, error: null, fixed: data.fixed_count };
+    console.log(`Fixed ${data.fixed} invalid queue positions (${data.invalid_fixed} nulls/zeros, ${data.duplicate_fixed} duplicates)`);
+    return { 
+      success: true, 
+      error: null, 
+      fixed: data.fixed,
+      invalid_fixed: data.invalid_fixed,
+      duplicate_fixed: data.duplicate_fixed
+    };
   } catch (error) {
     console.error('Error fixing invalid queue positions:', error);
     return { success: false, error, fixed: 0 };
@@ -192,132 +211,141 @@ export const fixInvalidQueuePositions = async () => {
 };
 
 /**
- * Gets queue diagnostic information
- * Shows details about company queue positions, last assignments, etc.
+ * Gets comprehensive queue health metrics
  */
-export const getQueueDiagnostics = async () => {
+export const getQueueHealthMetrics = async () => {
   try {
-    console.log('Running queue diagnostics');
+    console.log('Getting queue health metrics');
     
-    // Get all companies with their queue information
-    const { data: companies, error: companiesError } = await supabase
-      .from('companies')
-      .select('id, name, queue_position, last_order_assigned, status')
-      .order('queue_position', { ascending: true });
-      
-    if (companiesError) throw companiesError;
+    const response = await supabase.functions.invoke('check_queue_health', {
+      method: 'POST',
+      body: {}
+    });
     
-    // Get the last 5 service orders to check assignment pattern
-    const { data: recentOrders, error: ordersError } = await supabase
-      .from('service_orders')
-      .select('id, company_id, created_at, notes')
-      .order('created_at', { ascending: false })
-      .limit(5);
-      
-    if (ordersError) throw ordersError;
-    
-    // Enhanced diagnostic info for each company
-    const companyDiagnostics = await Promise.all((companies || []).map(async (company) => {
-      // Count orders assigned to this company
-      const { count: orderCount, error: countError } = await supabase
-        .from('service_orders')
-        .select('id', { count: 'exact', head: true })
-        .eq('company_id', company.id);
-      
-      // Get most recent order for this company
-      const { data: latestOrder, error: latestError } = await supabase
-        .from('service_orders')
-        .select('id, created_at, notes')
-        .eq('company_id', company.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      
-      return {
-        ...company,
-        order_count: countError ? 'error' : orderCount,
-        latest_order: (latestError || !latestOrder || latestOrder.length === 0) ? null : latestOrder[0]
+    if (response.error) {
+      console.error('Error getting queue health metrics:', response.error);
+      return { 
+        success: false, 
+        error: response.error,
+        health: null
       };
-    }));
+    }
+    
+    const health = response.data as QueueHealthResponse;
     
     return { 
       success: true, 
-      data: {
-        companies: companyDiagnostics,
-        recentOrders: recentOrders || [],
-        queue_status: {
-          active_companies: (companies || []).filter(c => c.status === 'active').length,
-          total_companies: (companies || []).length,
-          zero_queue_position_count: (companies || []).filter(c => c.queue_position === 0).length,
-          null_queue_position_count: (companies || []).filter(c => c.queue_position === null).length,
-        }
-      },
-      error: null 
+      error: null, 
+      health
     };
-    
   } catch (error) {
-    console.error('Error running queue diagnostics:', error);
-    return { success: false, data: null, error };
+    console.error('Error getting queue health metrics:', error);
+    return { success: false, error, health: null };
   }
 };
 
 /**
- * Ensures a company has valid queue position before assignment
- * Validates and fixes queue position if needed
+ * Diagnoses and automatically fixes queue issues
  */
-export const validateCompanyForAssignment = async (companyId: string) => {
+export const autoFixQueueIssues = async () => {
   try {
-    console.log(`Validating company ${companyId} for assignment`);
+    // Step 1: Get current health metrics
+    const { success: healthSuccess, health, error: healthError } = await getQueueHealthMetrics();
     
-    // Get company current queue position
-    const { data: company, error: companyError } = await supabase
-      .from('companies')
-      .select('queue_position, last_order_assigned, status')
-      .eq('id', companyId)
-      .single();
-      
-    if (companyError) {
-      console.error('Error fetching company for validation:', companyError);
-      return { valid: false, error: companyError };
+    if (!healthSuccess || !health) {
+      toast.error('Falha ao verificar métricas de saúde da fila');
+      return { success: false, error: healthError };
     }
     
-    if (company.status !== 'active') {
-      console.log(`Company ${companyId} is not active (status: ${company.status})`);
-      return { valid: false, error: new Error(`Company is not active: ${company.status}`) };
-    }
+    let actionsPerformed = [];
+    let needsFixes = false;
     
-    const hasValidPosition = company.queue_position !== null && company.queue_position > 0;
-    
-    // If position is invalid, fix it directly
-    if (!hasValidPosition) {
-      console.log(`Company ${companyId} has invalid queue position: ${company.queue_position}`);
+    // Step 2: Check if we need to fix invalid or duplicate positions
+    if (health.invalid_positions > 0 || health.duplicate_positions > 0) {
+      needsFixes = true;
+      const { success: fixSuccess, fixed, error: fixError } = await fixInvalidQueuePositions();
       
-      // Call directly to fix just this company
-      const response = await supabase.functions.invoke('fix_company_queue_position', {
-        method: 'POST',
-        body: { company_id: companyId }
-      });
-      
-      if (response.error) {
-        console.error('Error fixing company queue position:', response.error);
-        return { valid: false, error: response.error };
+      if (!fixSuccess) {
+        toast.error('Falha ao corrigir posições de fila inválidas');
+        return { success: false, error: fixError };
       }
       
-      return { valid: true, fixed: true, error: null };
+      actionsPerformed.push(`Corrigidas ${fixed} posições de fila`);
     }
     
-    return { valid: true, fixed: false, error: null };
+    // Step 3: If overall health is still below 70, consider resetting the queue
+    if (health.overall_health_score < 70 && health.active_companies > 0) {
+      needsFixes = true;
+      const { success: resetSuccess, companies_updated, error: resetError } = await resetCompanyQueuePositions();
+      
+      if (!resetSuccess) {
+        toast.error('Falha ao reiniciar posições de fila');
+        return { success: false, error: resetError };
+      }
+      
+      actionsPerformed.push(`Fila reiniciada para ${companies_updated} empresas`);
+    }
+    
+    if (!needsFixes) {
+      toast.info('Não foram encontrados problemas na fila');
+      return { success: true, actions: ['Nenhuma ação necessária'] };
+    }
+    
+    // Verify improvements
+    const { success: verifySuccess, health: updatedHealth } = await getQueueHealthMetrics();
+    
+    if (verifySuccess && updatedHealth) {
+      const improvement = updatedHealth.overall_health_score - health.overall_health_score;
+      
+      if (improvement > 0) {
+        toast.success(`Saúde da fila melhorada em ${improvement.toFixed(1)}%`);
+      } else {
+        toast.warning('Ações realizadas, mas sem melhoria significativa na saúde da fila');
+      }
+    }
+    
+    return { success: true, actions: actionsPerformed };
   } catch (error) {
-    console.error('Error validating company for assignment:', error);
-    return { valid: false, error };
+    console.error('Error in autoFixQueueIssues:', error);
+    toast.error('Erro ao tentar corrigir problemas de fila');
+    return { success: false, error, actions: [] };
   }
 };
 
-export default {
-  getNextCompanyInQueue,
-  updateCompanyQueuePosition,
-  getCompanyQueueStatus,
-  resetCompanyQueuePositions,
-  fixInvalidQueuePositions,
-  getQueueDiagnostics,
-  validateCompanyForAssignment
+export const getQueueDiagnostics = async () => {
+  try {
+    // Get queue health metrics
+    const { success: healthSuccess, health, error: healthError } = await getQueueHealthMetrics();
+    
+    if (!healthSuccess || !health) {
+      return { success: false, data: null, error: healthError || new Error('Failed to get queue health metrics') };
+    }
+    
+    // Get queue status for companies
+    const { companies, error: companiesError } = await getCompanyQueueStatus();
+    
+    if (companiesError) {
+      return { success: false, data: null, error: companiesError };
+    }
+    
+    // Combine data
+    const diagnosticsData = {
+      health,
+      companies: companies.map(company => ({
+        ...company,
+        hasValidPosition: company.queue_position !== null && company.queue_position > 0,
+        lastAssignedFormatted: company.last_order_assigned 
+          ? new Date(company.last_order_assigned).toLocaleString() 
+          : 'Nunca'
+      })),
+      problemCompanies: companies.filter(c => 
+        c.status === 'active' && (c.queue_position === null || c.queue_position === 0)
+      ).length
+    };
+    
+    return { success: true, data: diagnosticsData, error: null };
+  } catch (error) {
+    console.error('Error getting queue diagnostics:', error);
+    return { success: false, data: null, error };
+  }
 };
