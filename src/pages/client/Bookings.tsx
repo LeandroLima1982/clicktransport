@@ -12,7 +12,9 @@ import {
   CreditCard,
   Search,
   Filter,
-  Users
+  Users,
+  Phone,
+  Clock3
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -28,6 +30,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { 
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useBookings } from '@/hooks/useBookings';
 import BookingStatus from '@/components/client/BookingStatus';
 import BookingDetails from '@/components/client/BookingDetails';
@@ -100,6 +107,32 @@ const Bookings: React.FC = () => {
       }
     }
     return booking.passengers || 1;
+  };
+  
+  // Helper to get parsed passenger data
+  const getPassengerData = (booking: Booking) => {
+    if (booking.passenger_data) {
+      try {
+        return typeof booking.passenger_data === 'string' 
+          ? JSON.parse(booking.passenger_data) 
+          : booking.passenger_data;
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  };
+  
+  // Helper to format creation date and time
+  const formatCreationDateTime = (dateString: string) => {
+    try {
+      const date = parseISO(dateString);
+      const formattedDate = format(date, "dd/MM/yyyy", { locale: ptBR });
+      const formattedTime = format(date, "HH:mm", { locale: ptBR });
+      return { date: formattedDate, time: formattedTime };
+    } catch (e) {
+      return { date: "", time: "" };
+    }
   };
   
   // Helper to calculate price breakdown
@@ -207,6 +240,8 @@ const Bookings: React.FC = () => {
             {filteredBookings.map((booking) => {
               const { totalPrice, oneWayPrice, returnPrice, isRoundTrip } = getPriceInfo(booking);
               const passengerCount = getPassengerCount(booking);
+              const passengerData = getPassengerData(booking);
+              const creationDateTime = formatCreationDateTime(booking.booking_date);
               
               return (
                 <Card 
@@ -219,9 +254,12 @@ const Bookings: React.FC = () => {
                       <div className="flex items-center">
                         <span className="font-semibold">{booking.reference_code}</span>
                         <span className="mx-2 text-gray-400">•</span>
-                        <span className="text-sm text-muted-foreground">
-                          Reserva feita em {formatDate(booking.booking_date)}
-                        </span>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Clock3 className="h-3.5 w-3.5 mr-1" />
+                          <span>
+                            Reserva em {creationDateTime.date} às {creationDateTime.time}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <BookingStatus status={booking.status} />
@@ -293,6 +331,34 @@ const Bookings: React.FC = () => {
                           </div>
                         )}
                       </div>
+                      
+                      {passengerData.length > 0 && (
+                        <Collapsible className="w-full">
+                          <CollapsibleTrigger className="w-full">
+                            <div className="flex items-center justify-between text-sm text-primary hover:underline">
+                              <span>Ver passageiros</span>
+                              <Users className="h-3.5 w-3.5 ml-1" />
+                            </div>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="mt-2 space-y-2">
+                            {passengerData.map((passenger: any, index: number) => (
+                              <div key={index} className="bg-gray-50 p-2 rounded-md text-sm">
+                                <div className="font-medium">{passenger.name}</div>
+                                <a 
+                                  href={`https://wa.me/${passenger.phone.replace(/\D/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center text-xs text-green-600 hover:text-green-700 transition-colors"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Phone className="h-3 w-3 mr-1" />
+                                  {passenger.phone}
+                                </a>
+                              </div>
+                            ))}
+                          </CollapsibleContent>
+                        </Collapsible>
+                      )}
                       
                       <Button 
                         variant="outline" 
