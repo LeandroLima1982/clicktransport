@@ -1,12 +1,14 @@
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getCompanyQueueStatus, resetCompanyQueuePositions, reconcilePendingBookings } from '@/services/booking/bookingService';
+import { getCompanyQueueStatus, fixInvalidQueuePositions } from '@/services/booking/queueService';
+import { reconcilePendingBookings, resetCompanyQueuePositions } from '@/services/booking/bookingService';
 
 export const useCompanyQueue = () => {
   const [resetting, setResetting] = useState(false);
   const [isReconciling, setIsReconciling] = useState(false);
+  const [isFixingPositions, setIsFixingPositions] = useState(false);
   
   const { 
     data: queueStatus = [], 
@@ -22,43 +24,86 @@ export const useCompanyQueue = () => {
     },
   });
   
-  const resetQueue = async () => {
-    try {
+  // Mutation for resetting the queue
+  const resetQueueMutation = useMutation({
+    mutationFn: async () => {
       setResetting(true);
-      const { success, error } = await resetCompanyQueuePositions();
-      
-      if (!success) throw error;
-      
+      try {
+        const { success, error } = await resetCompanyQueuePositions();
+        if (!success) throw error;
+        return success;
+      } finally {
+        setResetting(false);
+      }
+    },
+    onSuccess: () => {
       toast.success('Fila de empresas reiniciada com sucesso');
       refetch();
-    } catch (error) {
-      console.error('Error resetting queue:', error);
-      toast.error('Erro ao reiniciar fila de empresas');
-    } finally {
-      setResetting(false);
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao reiniciar fila de empresas: ${error?.message || 'Erro desconhecido'}`);
     }
-  };
+  });
   
-  const reconcileBookings = async () => {
-    try {
+  // Mutation for reconciling bookings
+  const reconcileBookingsMutation = useMutation({
+    mutationFn: async () => {
       setIsReconciling(true);
-      const { processed, errors } = await reconcilePendingBookings();
-      
-      if (errors > 0) {
-        toast.warning(`Reconciliação concluída com ${errors} erros. ${processed} reservas processadas.`);
-      } else if (processed > 0) {
-        toast.success(`${processed} ordens de serviço criadas com sucesso.`);
+      try {
+        return await reconcilePendingBookings();
+      } finally {
+        setIsReconciling(false);
+      }
+    },
+    onSuccess: (data) => {
+      if (data.errors > 0) {
+        toast.warning(`Reconciliação concluída com ${data.errors} erros. ${data.processed} reservas processadas.`);
+      } else if (data.processed > 0) {
+        toast.success(`${data.processed} ordens de serviço criadas com sucesso.`);
       } else {
         toast.info('Nenhuma reserva pendente encontrada para processamento.');
       }
       
       refetch();
-    } catch (error) {
-      console.error('Error reconciling bookings:', error);
-      toast.error('Erro ao reconciliar reservas pendentes');
-    } finally {
-      setIsReconciling(false);
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao reconciliar reservas: ${error?.message || 'Erro desconhecido'}`);
     }
+  });
+  
+  // NEW: Mutation for fixing invalid queue positions
+  const fixPositionsMutation = useMutation({
+    mutationFn: async () => {
+      setIsFixingPositions(true);
+      try {
+        return await fixInvalidQueuePositions();
+      } finally {
+        setIsFixingPositions(false);
+      }
+    },
+    onSuccess: (data) => {
+      if (data.fixed > 0) {
+        toast.success(`Corrigidas ${data.fixed} posições de fila inválidas`);
+      } else {
+        toast.info('Nenhuma posição de fila inválida encontrada');
+      }
+      refetch();
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao corrigir posições de fila: ${error?.message || 'Erro desconhecido'}`);
+    }
+  });
+  
+  const resetQueue = () => {
+    resetQueueMutation.mutate();
+  };
+  
+  const reconcileBookings = () => {
+    reconcileBookingsMutation.mutate();
+  };
+  
+  const fixQueuePositions = () => {
+    fixPositionsMutation.mutate();
   };
   
   return {
@@ -69,6 +114,8 @@ export const useCompanyQueue = () => {
     resetting,
     reconcileBookings,
     isReconciling,
+    fixQueuePositions,
+    isFixingPositions,
     refetch
   };
 };

@@ -7,14 +7,18 @@ import {
   checkUnprocessedBookings, 
   getQueueDiagnostics,
   forceAssignBookingToCompany,
-  reconcilePendingBookings
+  reconcilePendingBookings,
+  resetCompanyQueuePositions
 } from '@/services/booking/bookingService';
+import { fixInvalidQueuePositions } from '@/services/booking/queueService';
 
 /**
  * Hook for diagnosing and fixing booking assignment issues
  */
 export const useBookingAssignmentDiagnostics = () => {
   const [isForceAssigning, setIsForceAssigning] = useState(false);
+  const [isResettingQueue, setIsResettingQueue] = useState(false);
+  const [isFixingPositions, setIsFixingPositions] = useState(false);
   
   // Get information about the last assigned booking
   const {
@@ -114,12 +118,66 @@ export const useBookingAssignmentDiagnostics = () => {
     }
   });
   
+  // Mutation for resetting the queue
+  const resetQueueMutation = useMutation({
+    mutationFn: async () => {
+      setIsResettingQueue(true);
+      try {
+        const { success, error } = await resetCompanyQueuePositions();
+        if (!success) throw error;
+        return success;
+      } finally {
+        setIsResettingQueue(false);
+      }
+    },
+    onSuccess: () => {
+      toast.success('Fila de empresas redefinida com sucesso');
+      refetchQueueDiagnostics();
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao redefinir fila: ${error.message || 'Falha desconhecida'}`);
+    }
+  });
+  
+  // NEW: Mutation for fixing invalid queue positions
+  const fixQueuePositionsMutation = useMutation({
+    mutationFn: async () => {
+      setIsFixingPositions(true);
+      try {
+        const result = await fixInvalidQueuePositions();
+        if (!result.success) throw result.error;
+        return result;
+      } finally {
+        setIsFixingPositions(false);
+      }
+    },
+    onSuccess: (data) => {
+      if (data.fixed > 0) {
+        toast.success(`Corrigidas ${data.fixed} posições de fila inválidas`);
+      } else {
+        toast.info('Nenhuma posição de fila inválida encontrada');
+      }
+      refetchQueueDiagnostics();
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao corrigir posições de fila: ${error.message || 'Falha desconhecida'}`);
+    }
+  });
+  
   const runReconcile = () => {
     reconcileBookingsMutation.mutate();
   };
   
   const forceAssignBooking = (bookingId: string, companyId: string) => {
     forceAssignMutation.mutate({ bookingId, companyId });
+  };
+  
+  const resetQueue = () => {
+    resetQueueMutation.mutate();
+  };
+  
+  const fixQueuePositions = () => {
+    fixQueuePositionsMutation.mutate();
   };
   
   const refreshAllData = () => {
@@ -150,6 +208,12 @@ export const useBookingAssignmentDiagnostics = () => {
     
     runReconcile,
     isReconciling,
+    
+    resetQueue,
+    isResettingQueue,
+    
+    fixQueuePositions,
+    isFixingPositions,
     
     refreshAllData
   };
