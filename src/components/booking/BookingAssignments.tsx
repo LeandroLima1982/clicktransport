@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +24,10 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Search, Calendar, Building } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AssignmentStatus from './AssignmentStatus';
+import AssignmentDiagnostics from './AssignmentDiagnostics';
+import ManualAssignment from './ManualAssignment';
 
 const BookingAssignments = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -87,11 +92,11 @@ const BookingAssignments = () => {
     );
   });
   
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString('pt-BR');
   };
   
-  const extractCompanyFromNotes = (notes?: string) => {
+  const extractCompanyFromNotes = (notes) => {
     if (!notes) return 'N/A';
     
     const match = notes.match(/Empresa: ([^-]+) -/);
@@ -99,115 +104,135 @@ const BookingAssignments = () => {
   };
   
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Atribuições de Reservas</CardTitle>
-            <CardDescription>
-              Acompanhe quais empresas foram atribuídas para cada reserva
-            </CardDescription>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => refetch()}
-            disabled={isLoading}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center space-x-2 mb-4">
-          <Search className="w-4 h-4 text-gray-400" />
-          <Input
-            placeholder="Buscar por referência, origem, destino ou empresa..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1"
-          />
-        </div>
+    <Tabs defaultValue="assignments" className="w-full">
+      <TabsList className="mb-4">
+        <TabsTrigger value="assignments">Atribuições</TabsTrigger>
+        <TabsTrigger value="tools">Ferramentas</TabsTrigger>
+        <TabsTrigger value="diagnostics">Diagnóstico</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="assignments" className="space-y-4">
+        <Card className="w-full">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Atribuições de Reservas</CardTitle>
+                <CardDescription>
+                  Acompanhe quais empresas foram atribuídas para cada reserva
+                </CardDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => refetch()}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2 mb-4">
+              <Search className="w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Buscar por referência, origem, destino ou empresa..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1"
+              />
+            </div>
+            
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : filteredAssignments && filteredAssignments.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Referência</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Origem/Destino</TableHead>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAssignments.map((assignment) => (
+                    <TableRow key={assignment.booking.id}>
+                      <TableCell className="font-medium">
+                        {assignment.booking.reference_code}
+                      </TableCell>
+                      <TableCell>
+                        {formatDate(assignment.booking.created_at)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div className="font-medium">{assignment.booking.origin}</div>
+                          <div className="text-muted-foreground">→ {assignment.booking.destination}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {assignment.serviceOrder ? (
+                          <div className="flex items-center">
+                            <Building className="h-4 w-4 mr-1 text-blue-500" />
+                            {assignment.company?.name || extractCompanyFromNotes(assignment.serviceOrder.notes)}
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="text-amber-500 border-amber-200 bg-amber-50">
+                            Não atribuída
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            assignment.serviceOrder?.status === 'completed' ? 'secondary' :
+                            assignment.serviceOrder?.status === 'in_progress' ? 'default' :
+                            assignment.serviceOrder?.status === 'cancelled' ? 'destructive' :
+                            assignment.serviceOrder ? 'outline' : 'secondary'
+                          }
+                        >
+                          {assignment.serviceOrder?.status || 'Pendente'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                {searchTerm 
+                  ? 'Nenhuma atribuição encontrada para a busca realizada.' 
+                  : 'Nenhuma atribuição de reserva encontrada.'}
+              </div>
+            )}
+          </CardContent>
+          <CardFooter className="flex justify-between border-t pt-4">
+            <div className="text-xs text-muted-foreground">
+              {filteredAssignments?.length || 0} atribuições encontradas
+            </div>
+            <div className="flex items-center text-xs text-muted-foreground">
+              <Calendar className="h-3 w-3 mr-1" />
+              Atualizado em: {new Date().toLocaleString('pt-BR')}
+            </div>
+          </CardFooter>
+        </Card>
         
-        {isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        ) : filteredAssignments && filteredAssignments.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Referência</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Origem/Destino</TableHead>
-                <TableHead>Empresa</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAssignments.map((assignment) => (
-                <TableRow key={assignment.booking.id}>
-                  <TableCell className="font-medium">
-                    {assignment.booking.reference_code}
-                  </TableCell>
-                  <TableCell>
-                    {formatDate(assignment.booking.created_at)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div className="font-medium">{assignment.booking.origin}</div>
-                      <div className="text-muted-foreground">→ {assignment.booking.destination}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {assignment.serviceOrder ? (
-                      <div className="flex items-center">
-                        <Building className="h-4 w-4 mr-1 text-blue-500" />
-                        {assignment.company?.name || extractCompanyFromNotes(assignment.serviceOrder.notes)}
-                      </div>
-                    ) : (
-                      <Badge variant="outline" className="text-amber-500 border-amber-200 bg-amber-50">
-                        Não atribuída
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        assignment.serviceOrder?.status === 'completed' ? 'secondary' :
-                        assignment.serviceOrder?.status === 'in_progress' ? 'default' :
-                        assignment.serviceOrder?.status === 'cancelled' ? 'destructive' :
-                        assignment.serviceOrder ? 'outline' : 'secondary'
-                      }
-                    >
-                      {assignment.serviceOrder?.status || 'Pendente'}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <div className="text-center py-6 text-muted-foreground">
-            {searchTerm 
-              ? 'Nenhuma atribuição encontrada para a busca realizada.' 
-              : 'Nenhuma atribuição de reserva encontrada.'}
-          </div>
-        )}
-      </CardContent>
-      <CardFooter className="flex justify-between border-t pt-4">
-        <div className="text-xs text-muted-foreground">
-          {filteredAssignments?.length || 0} atribuições encontradas
-        </div>
-        <div className="flex items-center text-xs text-muted-foreground">
-          <Calendar className="h-3 w-3 mr-1" />
-          Atualizado em: {new Date().toLocaleString('pt-BR')}
-        </div>
-      </CardFooter>
-    </Card>
+        <AssignmentStatus />
+      </TabsContent>
+      
+      <TabsContent value="tools" className="space-y-4">
+        <ManualAssignment />
+      </TabsContent>
+      
+      <TabsContent value="diagnostics">
+        <AssignmentDiagnostics />
+      </TabsContent>
+    </Tabs>
   );
 };
 
