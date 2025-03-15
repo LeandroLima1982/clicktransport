@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Check, CalendarCheck, Copy, Download, Users, WhatsApp, Share2 } from 'lucide-react';
+import { Check, CalendarCheck, Copy, Download, Users, Phone, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -88,7 +88,7 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
         className="w-full flex items-center justify-center"
         onClick={handleShareViaWhatsApp}
       >
-        <WhatsApp className="h-4 w-4 mr-2 text-green-600" />
+        <Phone className="h-4 w-4 mr-2 text-green-600" />
         Compartilhar via WhatsApp
       </Button>
       
@@ -121,7 +121,7 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
                 <div key={index} className="text-sm">
                   <div>{passenger.name}</div>
                   <div className="flex items-center text-gray-500">
-                    <WhatsApp className="h-3 w-3 mr-1 text-green-600" />
+                    <Phone className="h-3 w-3 mr-1 text-green-600" />
                     {passenger.phone}
                   </div>
                 </div>

@@ -76,7 +76,7 @@ export const formatBookingShareMessage = (
     totalPrice?: number;
   } = {}
 ) => {
-  const { simplified = false, includePassengers = true, referenceCode, totalPrice } = options;
+  const { simplified = false, includePassengers = true, includePrice = false, referenceCode, totalPrice } = options;
   
   // Format date if it exists
   let dateStr = '';

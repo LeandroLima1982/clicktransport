@@ -12,7 +12,7 @@ import {
   User,
   Users,
   Share2,
-  WhatsApp
+  Phone
 } from 'lucide-react';
 import { 
   Sheet,
@@ -151,7 +151,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
               onClick={handleShareViaWhatsApp}
               className="mt-2 w-full flex items-center justify-center"
             >
-              <WhatsApp className="h-4 w-4 mr-2 text-green-600" />
+              <Phone className="h-4 w-4 mr-2 text-green-600" />
               <span>Compartilhar via WhatsApp</span>
             </Button>
           </div>
@@ -231,7 +231,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
                     <div key={index} className="bg-gray-50 p-3 rounded-md">
                       <div className="font-medium">{passenger.name}</div>
                       <div className="flex items-center text-sm text-muted-foreground">
-                        <WhatsApp className="h-3 w-3 mr-1 text-green-600" />
+                        <Phone className="h-3 w-3 mr-1 text-green-600" />
                         {passenger.phone}
                       </div>
                     </div>
