@@ -31,16 +31,6 @@ export const useServiceRequests = () => {
       // Generate a booking reference
       const reference = 'TRF-' + Math.floor(100000 + Math.random() * 900000);
       
-      // Format travel date with time if provided
-      let travelDate = new Date();
-      if (requestData.requestDate) {
-        if (requestData.requestTime) {
-          travelDate = new Date(`${requestData.requestDate} ${requestData.requestTime}`);
-        } else {
-          travelDate = new Date(requestData.requestDate);
-        }
-      }
-      
       // Prepare booking data
       const bookingData = {
         reference_code: reference,
@@ -48,7 +38,9 @@ export const useServiceRequests = () => {
         origin: requestData.origin,
         destination: requestData.destination,
         booking_date: new Date().toISOString(),
-        travel_date: travelDate.toISOString(),
+        travel_date: requestData.requestDate 
+          ? new Date(requestData.requestDate + (requestData.requestTime ? ' ' + requestData.requestTime : '')).toISOString() 
+          : new Date().toISOString(),
         return_date: null,
         total_price: calculateEstimatedPrice(requestData),
         passengers: parseInt(requestData.passengers) || 1,
@@ -80,7 +72,6 @@ export const useServiceRequests = () => {
           });
         } else {
           console.log('Service order created successfully:', serviceOrder);
-          toast.success('Ordem de serviço criada com sucesso!');
         }
         
         toast.success('Solicitação enviada com sucesso!', {

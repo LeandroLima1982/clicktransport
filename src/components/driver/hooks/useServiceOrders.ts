@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { playNotificationSound } from '@/services/notifications/notificationService';
-import { updateServiceOrderStatus } from '@/services/booking/bookingService';
 
 export interface ServiceOrder {
   id: string;
@@ -145,19 +144,8 @@ export const useServiceOrders = (driverId: string | null) => {
         .single();
 
       if (updateError) throw updateError;
-      
-      // Update driver status to on_trip
-      const { error: driverUpdateError } = await supabase
-        .from('drivers')
-        .update({ status: 'on_trip' })
-        .eq('id', driverId);
-        
-      if (driverUpdateError) {
-        console.error('Warning: Failed to update driver status:', driverUpdateError);
-      }
 
       await fetchOrders();
-      toast.success('Você aceitou esta corrida com sucesso!');
       return Promise.resolve();
     } catch (err: any) {
       console.error('Error accepting order:', err);
@@ -172,7 +160,6 @@ export const useServiceOrders = (driverId: string | null) => {
       // In this implementation, rejection just means the driver will not see the order anymore
       // We're not actually changing the order status, just filtering it out locally
       setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
-      toast.info('Corrida ignorada');
       return Promise.resolve();
     } catch (err: any) {
       console.error('Error rejecting order:', err);
@@ -182,22 +169,16 @@ export const useServiceOrders = (driverId: string | null) => {
   };
 
   // Function to update order status
-  const handleUpdateStatus = async (orderId: string, newStatus: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled') => {
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
-      const { updated, error } = await updateServiceOrderStatus(orderId, newStatus);
-      
-      if (error) throw error;
-      
-      // Show appropriate toast based on the new status
-      const statusMessages = {
-        'in_progress': 'Corrida iniciada com sucesso!',
-        'completed': 'Corrida finalizada com sucesso!',
-        'cancelled': 'Corrida foi cancelada'
-      };
-      
-      if (statusMessages[newStatus]) {
-        toast.success(statusMessages[newStatus]);
-      }
+      const { data, error: updateError } = await supabase
+        .from('service_orders')
+        .update({ status: newStatus as ServiceOrder['status'] })
+        .eq('id', orderId)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
 
       await fetchOrders();
       return Promise.resolve();

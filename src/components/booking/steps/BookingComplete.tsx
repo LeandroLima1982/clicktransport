@@ -1,13 +1,12 @@
 
-import React, { useEffect, useState } from 'react';
-import { Check, CalendarCheck, Copy, Download, Users, Phone, ArrowRight, Clock } from 'lucide-react';
+import React from 'react';
+import { Check, CalendarCheck, Copy, Download, Users, Phone, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { format, addMinutes } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Vehicle } from './VehicleSelection';
 import { toast } from 'sonner';
 import { shareViaWhatsApp, formatBookingShareMessage } from '@/services/notifications/notificationService';
-import { calculateRoute } from '@/utils/routeUtils';
 
 interface BookingCompleteProps {
   bookingReference: string;
@@ -17,9 +16,6 @@ interface BookingCompleteProps {
     destination: string;
     date: Date | undefined;
     tripType: string;
-    time?: string;
-    returnDate?: Date;
-    returnTime?: string;
     passengerData?: {
       name: string;
       phone: string;
@@ -38,71 +34,13 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
   formatCurrency,
   onClose
 }) => {
-  const [estimatedDuration, setEstimatedDuration] = useState<number | null>(null);
-  
-  useEffect(() => {
-    // Calculate route and duration when component mounts
-    const fetchRouteData = async () => {
-      if (bookingData.origin && bookingData.destination) {
-        try {
-          const routeInfo = await calculateRoute(bookingData.origin, bookingData.destination);
-          if (routeInfo) {
-            setEstimatedDuration(routeInfo.duration);
-          }
-        } catch (error) {
-          console.error('Error calculating route:', error);
-        }
-      }
-    };
-    
-    fetchRouteData();
-  }, [bookingData.origin, bookingData.destination]);
-  
   const formatDate = (date: Date | undefined) => {
     if (!date) return '';
     return format(date, 'dd/MM/yyyy', { locale: ptBR });
   };
-  
-  const calculateArrivalTime = (date: Date | undefined, time: string | undefined, durationMinutes: number | null) => {
-    if (!date || !time || !durationMinutes) return '';
-    
-    try {
-      // Parse the time string and create a new date with hours and minutes
-      const [hours, minutes] = time.split(':').map(Number);
-      const departure = new Date(date);
-      departure.setHours(hours, minutes);
-      
-      // Add duration to get arrival time
-      const arrival = addMinutes(departure, durationMinutes);
-      return format(arrival, 'HH:mm', { locale: ptBR });
-    } catch (e) {
-      return '';
-    }
-  };
-  
-  const formatTravelTime = (minutes: number | null) => {
-    if (!minutes) return '';
-    
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    
-    if (hours === 0) {
-      return `${mins} min`;
-    } else if (mins === 0) {
-      return `${hours}h`;
-    } else {
-      return `${hours}h ${mins}min`;
-    }
-  };
 
   const oneWayPrice = bookingData.tripType === 'roundtrip' ? totalPrice / 2 : totalPrice;
   const returnPrice = bookingData.tripType === 'roundtrip' ? totalPrice / 2 : 0;
-  
-  const departureTime = bookingData.time || '';
-  const returnDepartureTime = bookingData.returnTime || '';
-  
-  const arrivalTime = calculateArrivalTime(bookingData.date, departureTime, estimatedDuration);
-  const returnArrivalTime = calculateArrivalTime(bookingData.returnDate, returnDepartureTime, estimatedDuration);
 
   const handleCopyReference = () => {
     navigator.clipboard.writeText(bookingReference);
@@ -110,27 +48,10 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
   };
   
   const handleShareViaWhatsApp = () => {
-    const creationDate = format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-    
-    const message = formatBookingShareMessage({
-      origin: bookingData.origin,
-      destination: bookingData.destination,
-      date: bookingData.date ? formatDate(bookingData.date) : '',
-      time: departureTime,
-      arrivalTime: arrivalTime,
-      duration: estimatedDuration,
-      tripType: bookingData.tripType,
-      passengerData: bookingData.passengerData,
-      creationDate: creationDate,
-      returnDate: bookingData.returnDate ? formatDate(bookingData.returnDate) : '',
-      returnTime: returnDepartureTime,
-      returnArrivalTime: returnArrivalTime
-    }, {
+    const message = formatBookingShareMessage(bookingData, {
       simplified: true,
       referenceCode: bookingReference,
-      includePassengers: true,
-      includePrice: true,
-      totalPrice: totalPrice
+      includePassengers: true
     });
     
     shareViaWhatsApp(message);
@@ -160,9 +81,6 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
             <Copy className="h-4 w-4" />
           </button>
         </div>
-        <div className="text-xs text-gray-500 mt-1">
-          Criada em {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-        </div>
       </div>
       
       <Button 
@@ -187,74 +105,10 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
           <span className="text-gray-600">Destino:</span>
           <span className="font-medium">{bookingData.destination}</span>
         </div>
-        
-        <div className="border-t pt-2 mt-2">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Data de ida:</span>
-            <span className="font-medium">{formatDate(bookingData.date)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center mt-1">
-            <span className="text-gray-600">Horários:</span>
-            <div className="flex items-center gap-2">
-              <span className="flex items-center">
-                <Clock className="h-3 w-3 mr-1" />
-                {departureTime}
-              </span>
-              {arrivalTime && (
-                <>
-                  <ArrowRight className="h-3 w-3 text-gray-400" />
-                  <span className="flex items-center">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {arrivalTime}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-          
-          {estimatedDuration && (
-            <div className="flex justify-between mt-1">
-              <span className="text-gray-600">Duração est.:</span>
-              <span>{formatTravelTime(estimatedDuration)}</span>
-            </div>
-          )}
+        <div className="flex justify-between">
+          <span className="text-gray-600">Data:</span>
+          <span className="font-medium">{formatDate(bookingData.date)}</span>
         </div>
-        
-        {bookingData.tripType === 'roundtrip' && bookingData.returnDate && (
-          <div className="border-t pt-2 mt-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Data de volta:</span>
-              <span className="font-medium">{formatDate(bookingData.returnDate)}</span>
-            </div>
-            
-            <div className="flex justify-between items-center mt-1">
-              <span className="text-gray-600">Horários:</span>
-              <div className="flex items-center gap-2">
-                <span className="flex items-center">
-                  <Clock className="h-3 w-3 mr-1" />
-                  {returnDepartureTime}
-                </span>
-                {returnArrivalTime && (
-                  <>
-                    <ArrowRight className="h-3 w-3 text-gray-400" />
-                    <span className="flex items-center">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {returnArrivalTime}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-            
-            {estimatedDuration && (
-              <div className="flex justify-between mt-1">
-                <span className="text-gray-600">Duração est.:</span>
-                <span>{formatTravelTime(estimatedDuration)}</span>
-              </div>
-            )}
-          </div>
-        )}
         
         {bookingData.passengerData && bookingData.passengerData.length > 0 && (
           <div className="text-left border rounded p-3 mt-2">
@@ -266,15 +120,10 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
               {bookingData.passengerData.map((passenger, index) => (
                 <div key={index} className="text-sm">
                   <div>{passenger.name}</div>
-                  <a 
-                    href={`https://wa.me/${passenger.phone.replace(/\D/g, '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center text-gray-500 hover:text-green-600 transition-colors"
-                  >
+                  <div className="flex items-center text-gray-500">
                     <Phone className="h-3 w-3 mr-1 text-green-600" />
                     {passenger.phone}
-                  </a>
+                  </div>
                 </div>
               ))}
             </div>

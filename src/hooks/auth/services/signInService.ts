@@ -1,3 +1,4 @@
+
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../../integrations/supabase/client';
 import { toast } from 'sonner';
@@ -14,8 +15,19 @@ export const signIn = async (email: string, password: string) => {
     // Special handling for admin login
     const isAdminLogin = email.toLowerCase() === 'admin@clicktransfer.com';
     
+    // Check if the user exists before attempting to sign in
     if (isAdminLogin) {
-      console.log('Admin login attempt detected');
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('email', email)
+        .single();
+      
+      if (profileData && profileData.role === 'admin') {
+        console.log('Admin user found in profiles:', profileData);
+      } else {
+        console.warn('Admin user not found in profiles or does not have admin role');
+      }
     }
     
     // Authenticate the user
@@ -29,15 +41,13 @@ export const signIn = async (email: string, password: string) => {
       return { error: result.error };
     } 
     
-    console.log('Sign in successful, user authenticated');
+    console.log('Sign in successful');
     
     // If admin login, verify admin role
     if (isAdminLogin && result.data.user) {
-      console.log('Verifying admin privileges for user ID:', result.data.user.id);
       const { isAdmin, error: adminError } = await verifyAdminRole(result.data.user.id);
       
       if (adminError || !isAdmin) {
-        console.error('Admin verification failed:', adminError);
         await supabase.auth.signOut();
         return { error: adminError };
       }

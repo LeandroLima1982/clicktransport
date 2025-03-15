@@ -8,74 +8,52 @@ import TransitionEffect from '@/components/TransitionEffect';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanyManagement from '@/components/admin/CompanyManagement';
 import ServiceOrderMonitoring from '@/components/admin/ServiceOrderMonitoring';
-import { FileText, Settings, Building2, Users, Car, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import PerformanceReports from '@/components/admin/PerformanceReports';
+import { FileText, Settings, UserCheck, ChartBar, Loader2 } from 'lucide-react';
+import { supabase } from '@/main';
 import { toast } from 'sonner';
-import { UserMenu } from '@/components/navbar';
-import { Skeleton } from '@/components/ui/skeleton';
 
 const AdminDashboard: React.FC = () => {
-  const { user, userRole, signOut, isAuthenticating, isLoading: authLoading } = useAuth();
+  const { user, userRole } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [dashboardStats, setDashboardStats] = useState({
     companies: 0,
     drivers: 0,
     orders: 0,
-    vehicles: 0,
     loading: true
   });
 
-  // Only fetch dashboard stats when user and userRole are available
   useEffect(() => {
-    if (user && userRole === 'admin') {
-      fetchDashboardStats();
-    }
-  }, [user, userRole]);
+    fetchDashboardStats();
+  }, []);
 
   const fetchDashboardStats = async () => {
     try {
-      setDashboardStats(prev => ({ ...prev, loading: true }));
-      
-      // Use more robust queries without head:true parameter
-      let companiesCount = 0;
-      let driversCount = 0;
-      let ordersCount = 0;
-      let vehiclesCount = 0;
-
-      // Fetch all data counts
-      const { data: companies, error: companiesError } = await supabase
+      // Fetch companies count
+      const { count: companiesCount, error: companiesError } = await supabase
         .from('companies')
-        .select('id');
+        .select('*', { count: 'exact', head: true });
       
       if (companiesError) throw companiesError;
-      companiesCount = companies?.length || 0;
       
-      const { data: drivers, error: driversError } = await supabase
+      // Fetch drivers count
+      const { count: driversCount, error: driversError } = await supabase
         .from('drivers')
-        .select('id');
+        .select('*', { count: 'exact', head: true });
       
       if (driversError) throw driversError;
-      driversCount = drivers?.length || 0;
       
-      const { data: orders, error: ordersError } = await supabase
+      // Fetch orders count
+      const { count: ordersCount, error: ordersError } = await supabase
         .from('service_orders')
-        .select('id');
+        .select('*', { count: 'exact', head: true });
       
       if (ordersError) throw ordersError;
-      ordersCount = orders?.length || 0;
-      
-      const { data: vehicles, error: vehiclesError } = await supabase
-        .from('vehicles')
-        .select('id');
-      
-      if (vehiclesError) throw vehiclesError;
-      vehiclesCount = vehicles?.length || 0;
       
       setDashboardStats({
-        companies: companiesCount,
-        drivers: driversCount,
-        orders: ordersCount,
-        vehicles: vehiclesCount,
+        companies: companiesCount || 0,
+        drivers: driversCount || 0,
+        orders: ordersCount || 0,
         loading: false
       });
     } catch (error) {
@@ -85,27 +63,6 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Erro ao fazer logout');
-    }
-  };
-
-  // Show loading state when auth is still loading
-  if (authLoading) {
-    return (
-      <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <h2 className="text-xl font-medium">Carregando painel administrativo...</h2>
-        <p className="text-muted-foreground">Verificando permissões de acesso</p>
-      </div>
-    );
-  }
-
-  // Check access permissions after auth loading is complete
   if (!user || userRole !== 'admin') {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -124,184 +81,120 @@ const AdminDashboard: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold">Painel de Administração</h1>
-            <p className="text-muted-foreground">Gerencie empresas, ordens de serviço e mais</p>
+            <p className="text-muted-foreground">Gerencie todos os aspectos da plataforma em um único lugar</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline">
-              <Link to="/admin/settings">
+              <Link to="/admin/database-setup">
                 <Settings className="mr-2 h-4 w-4" />
-                Configurações
+                Configuração do Banco
               </Link>
             </Button>
-            <div>
-              <UserMenu 
-                user={user} 
-                userRole={userRole} 
-                handleSignOut={handleSignOut} 
-                isAuthenticating={isAuthenticating} 
-              />
-            </div>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Stats cards with loading state handling */}
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab("companies")}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <Building2 className="h-4 w-4 mr-2 text-blue-500" />
-                Empresas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {dashboardStats.loading ? (
-                <div className="flex items-center">
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  <p>Carregando...</p>
-                </div>
-              ) : (
-                <>
-                  <p className="text-2xl font-bold">{dashboardStats.companies}</p>
-                  <p className="text-sm text-muted-foreground">Total de empresas</p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab("orders")}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <FileText className="h-4 w-4 mr-2 text-purple-500" />
-                Ordens
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {dashboardStats.loading ? (
-                <div className="flex items-center">
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  <p>Carregando...</p>
-                </div>
-              ) : (
-                <>
-                  <p className="text-2xl font-bold">{dashboardStats.orders}</p>
-                  <p className="text-sm text-muted-foreground">Total de ordens de serviço</p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <Users className="h-4 w-4 mr-2 text-green-500" />
-                Motoristas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {dashboardStats.loading ? (
-                <div className="flex items-center">
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  <p>Carregando...</p>
-                </div>
-              ) : (
-                <>
-                  <p className="text-2xl font-bold">{dashboardStats.drivers}</p>
-                  <p className="text-sm text-muted-foreground">Total de motoristas</p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <Car className="h-4 w-4 mr-2 text-amber-500" />
-                Veículos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {dashboardStats.loading ? (
-                <div className="flex items-center">
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  <p>Carregando...</p>
-                </div>
-              ) : (
-                <>
-                  <p className="text-2xl font-bold">{dashboardStats.vehicles}</p>
-                  <p className="text-sm text-muted-foreground">Total de veículos</p>
-                </>
-              )}
-            </CardContent>
-          </Card>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-          <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 h-auto">
+          <TabsList className="grid w-full grid-cols-1 md:grid-cols-4 h-auto">
             <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Dashboard
+              <ChartBar className="h-4 w-4 mr-2" />
+              Visão Geral
             </TabsTrigger>
             <TabsTrigger value="companies" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <UserCheck className="h-4 w-4 mr-2" />
               Empresas
             </TabsTrigger>
             <TabsTrigger value="orders" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <FileText className="h-4 w-4 mr-2" />
               Ordens de Serviço
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <ChartBar className="h-4 w-4 mr-2" />
+              Relatórios
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Dashboard Administrativo</CardTitle>
-                <CardDescription>
-                  Visão geral da plataforma e métricas principais
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h3 className="font-semibold mb-2">Status Geral</h3>
-                    <ul className="space-y-2">
-                      <li className="flex justify-between">
-                        <span>Empresas ativas:</span>
-                        <span className="font-medium">{dashboardStats.companies}</span>
-                      </li>
-                      <li className="flex justify-between">
-                        <span>Ordens em andamento:</span>
-                        <span className="font-medium">-</span>
-                      </li>
-                      <li className="flex justify-between">
-                        <span>Motoristas disponíveis:</span>
-                        <span className="font-medium">-</span>
-                      </li>
-                    </ul>
-                  </div>
-                  
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h3 className="font-semibold mb-2">Ações Rápidas</h3>
-                    <div className="space-y-2">
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Empresas</CardTitle>
+                  <CardDescription>Gerenciar empresas de transporte</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {dashboardStats.loading ? (
+                    <div className="flex items-center">
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <p>Carregando...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold">{dashboardStats.companies}</p>
+                      <p className="text-sm text-muted-foreground">Total de empresas registradas</p>
                       <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full justify-start"
+                        className="mt-4 w-full"
                         onClick={() => setActiveTab("companies")}
                       >
-                        <Building2 className="mr-2 h-4 w-4" />
-                        Gerenciar Empresas
+                        Ver Empresas
                       </Button>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Motoristas</CardTitle>
+                  <CardDescription>Gerenciar motoristas registrados</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {dashboardStats.loading ? (
+                    <div className="flex items-center">
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <p>Carregando...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold">{dashboardStats.drivers}</p>
+                      <p className="text-sm text-muted-foreground">Total de motoristas registrados</p>
                       <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full justify-start"
+                        className="mt-4 w-full"
                         onClick={() => setActiveTab("orders")}
                       >
-                        <FileText className="mr-2 h-4 w-4" />
-                        Ordens de Serviço
+                        Ver Motoristas
                       </Button>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Ordens de Serviço</CardTitle>
+                  <CardDescription>Acompanhar ordens de transporte</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {dashboardStats.loading ? (
+                    <div className="flex items-center">
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <p>Carregando...</p>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold">{dashboardStats.orders}</p>
+                      <p className="text-sm text-muted-foreground">Total de ordens de serviço</p>
+                      <Button 
+                        className="mt-4 w-full"
+                        onClick={() => setActiveTab("orders")}
+                      >
+                        Ver Ordens
+                      </Button>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <PerformanceReports />
           </TabsContent>
 
           <TabsContent value="companies">
@@ -310,6 +203,10 @@ const AdminDashboard: React.FC = () => {
 
           <TabsContent value="orders">
             <ServiceOrderMonitoring />
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <PerformanceReports />
           </TabsContent>
         </Tabs>
       </div>

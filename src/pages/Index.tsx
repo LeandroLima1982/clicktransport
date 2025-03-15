@@ -11,10 +11,10 @@ import ServiceForm from '@/components/ServiceForm';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
-  const { isLoading } = useAuth();
+  const { isLoading, user } = useAuth();
 
   // Show a brief loading indicator only during initial authentication check
   if (isLoading) {
