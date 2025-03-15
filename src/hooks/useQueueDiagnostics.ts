@@ -41,19 +41,19 @@ export const useQueueDiagnostics = () => {
     queryKey: ['queue-health'],
     queryFn: async () => {
       // Use explicit typing for the Supabase RPC call
-      const { data, error } = await supabase.rpc('check_queue_health', {}, {
-        count: 'exact'
-      }) as unknown as { 
-        data: { 
-          health_score: number; 
-          invalid_positions: number; 
-          duplicate_positions: number; 
-          active_companies: number; 
-        } | null; 
-        error: any 
+      const response = await supabase.functions.invoke('check_queue_health', {
+        method: 'POST',
+        body: {}
+      });
+      
+      if (response.error) throw response.error;
+      const data = response.data as { 
+        health_score: number; 
+        invalid_positions: number; 
+        duplicate_positions: number; 
+        active_companies: number; 
       };
       
-      if (error) throw error;
       return data;
     }
   });

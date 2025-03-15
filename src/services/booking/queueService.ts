@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -31,18 +30,18 @@ export const getNextCompanyInQueue = async () => {
   try {
     console.log('Finding next company in queue for assignment');
     
-    // Call the RPC function to get the next company
-    const { data, error } = await supabase.rpc('get_next_company_in_queue', {}, {
-      count: 'exact'
-    }) as unknown as {
-      data: NextCompanyResponse | null;
-      error: any;
-    };
+    // Call the RPC function to get the next company using a generic type for correct typing
+    const response = await supabase.functions.invoke('get_next_company_in_queue', {
+      method: 'POST',
+      body: {}
+    });
     
-    if (error) {
-      console.error('Error finding next company in queue:', error);
-      throw error;
+    if (response.error) {
+      console.error('Error finding next company in queue:', response.error);
+      throw response.error;
     }
+    
+    const data = response.data as NextCompanyResponse;
     
     if (!data || !data.success || !data.company_id) {
       console.error('No active companies found to assign the order');
@@ -78,19 +77,17 @@ export const updateCompanyQueuePosition = async (companyId: string) => {
     console.log(`Updating queue position for company ${companyId}`);
     
     // Use a secure RPC function to update the queue position atomically
-    const { data, error } = await supabase.rpc('update_company_queue_position', {
-      company_id: companyId
-    }, {
-      count: 'exact'
-    }) as unknown as {
-      data: UpdatePositionResponse | null;
-      error: any;
-    };
+    const response = await supabase.functions.invoke('update_company_queue_position', {
+      method: 'POST',
+      body: { company_id: companyId }
+    });
     
-    if (error) {
-      console.error('Error updating company queue position:', error);
-      return { success: false, error };
+    if (response.error) {
+      console.error('Error updating company queue position:', response.error);
+      return { success: false, error: response.error };
     }
+    
+    const data = response.data as UpdatePositionResponse;
     
     if (!data) {
       return { success: false, error: new Error('No response from update function') };
@@ -137,17 +134,17 @@ export const resetCompanyQueuePositions = async () => {
     console.log('Resetting queue positions for all companies');
     
     // Use a secure RPC function to reset all queue positions atomically
-    const { data, error } = await supabase.rpc('reset_company_queue_positions', {}, {
-      count: 'exact'
-    }) as unknown as {
-      data: ResetQueueResponse | null;
-      error: any;
-    };
+    const response = await supabase.functions.invoke('reset_company_queue_positions', {
+      method: 'POST',
+      body: {}
+    });
     
-    if (error) {
-      console.error('Error resetting company queue positions:', error);
-      return { success: false, error };
+    if (response.error) {
+      console.error('Error resetting company queue positions:', response.error);
+      return { success: false, error: response.error };
     }
+    
+    const data = response.data as ResetQueueResponse;
     
     if (!data) {
       return { success: false, error: new Error('No response from reset function') };
@@ -170,17 +167,17 @@ export const fixInvalidQueuePositions = async () => {
     console.log('Fixing invalid queue positions for companies');
     
     // Use a secure RPC function to fix invalid queue positions atomically
-    const { data, error } = await supabase.rpc('fix_invalid_queue_positions', {}, {
-      count: 'exact'
-    }) as unknown as {
-      data: FixPositionsResponse | null;
-      error: any;
-    };
+    const response = await supabase.functions.invoke('fix_invalid_queue_positions', {
+      method: 'POST',
+      body: {}
+    });
     
-    if (error) {
-      console.error('Error fixing invalid queue positions:', error);
-      return { success: false, error, fixed: 0 };
+    if (response.error) {
+      console.error('Error fixing invalid queue positions:', response.error);
+      return { success: false, error: response.error, fixed: 0 };
     }
+    
+    const data = response.data as FixPositionsResponse;
     
     if (!data) {
       return { success: false, error: new Error('No response from fix function'), fixed: 0 };
@@ -295,18 +292,14 @@ export const validateCompanyForAssignment = async (companyId: string) => {
       console.log(`Company ${companyId} has invalid queue position: ${company.queue_position}`);
       
       // Call directly to fix just this company
-      const { data, error } = await supabase.rpc('fix_company_queue_position', {
-        company_id: companyId
-      }, {
-        count: 'exact'
-      }) as unknown as {
-        data: UpdatePositionResponse | null;
-        error: any;
-      };
+      const response = await supabase.functions.invoke('fix_company_queue_position', {
+        method: 'POST',
+        body: { company_id: companyId }
+      });
       
-      if (error) {
-        console.error('Error fixing company queue position:', error);
-        return { valid: false, error };
+      if (response.error) {
+        console.error('Error fixing company queue position:', response.error);
+        return { valid: false, error: response.error };
       }
       
       return { valid: true, fixed: true, error: null };
