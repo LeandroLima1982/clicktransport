@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export const createTables = async () => {
@@ -56,8 +57,15 @@ export const createTables = async () => {
       // You would need to create this via SQL editor
     }
     
-    // We'll remove the service_requests operations since the table doesn't exist yet in the Supabase schema
-    // If you need to use it, you should first create the table via SQL in the Supabase dashboard
+    // Check if service_requests table exists
+    const { count: serviceRequestsCount, error: serviceRequestsError } = await supabase
+      .from('service_requests')
+      .select('*', { count: 'exact', head: true });
+    
+    if (serviceRequestsError) {
+      console.log('Service requests table needs to be created');
+      // The table was just created via SQL migration
+    }
 
     console.log('Database setup completed');
     return { success: true, message: 'Database setup completed' };
@@ -115,15 +123,12 @@ export const supabaseServices = {
     delete: (id: string) => supabase.from('service_orders').delete().eq('id', id),
   },
   
-  // Service Requests - Only add this after creating the table in Supabase
+  // Service Requests - Now that the table has been created
   serviceRequests: {
-    // We'll add these back once the service_requests table is created
-    /*
     getAll: () => supabase.from('service_requests').select('*'),
     getById: (id: string) => supabase.from('service_requests').select('*').eq('id', id).single(),
     create: (data: any) => supabase.from('service_requests').insert(data),
     update: (id: string, data: any) => supabase.from('service_requests').update(data).eq('id', id),
     delete: (id: string) => supabase.from('service_requests').delete().eq('id', id),
-    */
   }
 };
