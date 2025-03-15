@@ -45,3 +45,51 @@ export const verifyAdminRole = async (userId: string) => {
     return { isAdmin: false, error: err as AuthError };
   }
 };
+
+// Get current admin stats for dashboard
+export const getAdminStats = async () => {
+  try {
+    // Fetch counts for different entities
+    const [
+      { count: companiesCount, error: companiesError },
+      { count: driversCount, error: driversError },
+      { count: ordersCount, error: ordersError },
+      { count: vehiclesCount, error: vehiclesError }
+    ] = await Promise.all([
+      supabase.from('companies').select('*', { count: 'exact', head: true }),
+      supabase.from('drivers').select('*', { count: 'exact', head: true }),
+      supabase.from('service_orders').select('*', { count: 'exact', head: true }),
+      supabase.from('vehicles').select('*', { count: 'exact', head: true })
+    ]);
+    
+    if (companiesError || driversError || ordersError || vehiclesError) {
+      console.error('Error fetching admin stats:', { 
+        companiesError, driversError, ordersError, vehiclesError 
+      });
+      throw new Error('Failed to fetch admin statistics');
+    }
+    
+    return {
+      success: true,
+      stats: {
+        companies: companiesCount || 0,
+        drivers: driversCount || 0,
+        orders: ordersCount || 0,
+        vehicles: vehiclesCount || 0
+      }
+    };
+  } catch (error) {
+    console.error('Error in getAdminStats:', error);
+    return {
+      success: false,
+      error,
+      stats: {
+        companies: 0,
+        drivers: 0,
+        orders: 0,
+        vehicles: 0
+      }
+    };
+  }
+};
+
