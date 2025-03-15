@@ -5,6 +5,8 @@ export interface Vehicle {
   license_plate: string;
   year: number | null;
   status: 'active' | 'maintenance' | 'inactive';
+  company_id: string;
+  created_at: string;
 }
 
 export interface VehicleForm {

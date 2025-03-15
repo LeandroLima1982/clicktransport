@@ -46,7 +46,7 @@ export const useBookings = () => {
     enabled: !!user,
   });
   
-  const cancelBooking = async (bookingId: string) => {
+  const cancelBooking = async (bookingId: string): Promise<void> => {
     try {
       const { error } = await supabase
         .from('bookings')
@@ -58,13 +58,13 @@ export const useBookings = () => {
       
       toast.success('Reserva cancelada com sucesso');
       refetch();
-      return true;
+      return;
     } catch (error) {
       console.error('Error cancelling booking:', error);
       toast.error('Erro ao cancelar reserva', {
         description: 'Não foi possível cancelar sua reserva. Tente novamente.'
       });
-      return false;
+      throw error;
     }
   };
   

@@ -2,7 +2,17 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Booking } from '@/types/booking';
-import { ServiceOrder } from '@/types/serviceOrder';
+import { 
+  createServiceOrderFromBooking,
+  assignServiceOrderToDriver,
+  forceAssignBookingToCompany as forceAssign,
+  updateServiceOrderStatus
+} from './serviceOrderService';
+import { 
+  getCompanyQueueStatus as getQueueStatus, 
+  resetCompanyQueuePositions as resetQueue,
+  getQueueDiagnostics as getQueueDiags
+} from './queueService';
 
 /**
  * Creates a new booking in the database
@@ -43,152 +53,265 @@ export const createBooking = async (bookingData: Omit<Booking, 'id' | 'created_a
 };
 
 /**
- * Creates a service order from a booking
+ * Gets information about the last assigned booking and service order
+ * Useful for debugging assignment issues
  */
-export const createServiceOrderFromBooking = async (booking: Booking) => {
+export const getLastAssignedBookingInfo = async () => {
   try {
-    console.log('Creating service order from booking:', booking);
+    console.log('Checking last assigned booking');
     
-    // First, find an available company to assign the order to
-    const { data: companies, error: companiesError } = await supabase
-      .from('companies')
-      .select('id, name')
-      .eq('status', 'active')
+    // Get the most recent service order
+    const { data: latestOrders, error: ordersError } = await supabase
+      .from('service_orders')
+      .select('id, company_id, created_at, notes, status')
+      .order('created_at', { ascending: false })
       .limit(1);
+      
+    if (ordersError) throw ordersError;
     
-    if (companiesError) {
-      console.error('Error fetching companies:', companiesError);
-      throw companiesError;
+    if (!latestOrders || latestOrders.length === 0) {
+      return { 
+        success: true, 
+        data: { message: 'No service orders found in the system' },
+        error: null 
+      };
     }
     
-    if (!companies || companies.length === 0) {
-      console.error('No active companies found to assign the order');
-      toast.error('Não foi possível encontrar uma empresa disponível para atribuir o pedido');
-      return { serviceOrder: null, error: new Error('No active companies found') };
+    const latestOrder = latestOrders[0];
+    
+    // Extract booking reference from the order notes
+    let bookingRef = null;
+    if (latestOrder.notes) {
+      const match = latestOrder.notes.match(/Reserva #([A-Z0-9-]+)/);
+      if (match && match[1]) {
+        bookingRef = match[1];
+      }
     }
     
-    const companyId = companies[0].id;
-    console.log('Found company to assign order:', companyId);
+    // Get company info
+    const { data: company, error: companyError } = await supabase
+      .from('companies')
+      .select('id, name, queue_position, last_order_assigned')
+      .eq('id', latestOrder.company_id)
+      .single();
+      
+    if (companyError) {
+      console.error('Error fetching company details:', companyError);
+    }
     
-    // Create service order with booking details
-    const serviceOrderData = {
-      company_id: companyId,
-      origin: booking.origin,
-      destination: booking.destination,
-      pickup_date: booking.travel_date,
-      delivery_date: booking.return_date || null,
-      status: 'pending' as 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled',
-      notes: `Reserva #${booking.reference_code} - ${booking.additional_notes || 'Sem observações'}`,
+    // Get the booking if we extracted a reference
+    let booking = null;
+    if (bookingRef) {
+      const { data: bookingData, error: bookingError } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('reference_code', bookingRef)
+        .single();
+        
+      if (!bookingError) {
+        booking = bookingData;
+      } else {
+        console.error('Error fetching booking details:', bookingError);
+      }
+    }
+    
+    return { 
+      success: true, 
+      data: {
+        lastServiceOrder: latestOrder,
+        company: company || null,
+        booking: booking,
+      },
+      error: null 
     };
     
-    const { data, error } = await supabase
-      .from('service_orders')
-      .insert(serviceOrderData)
-      .select()
-      .single();
+  } catch (error) {
+    console.error('Error getting last assigned booking info:', error);
+    return { success: false, data: null, error };
+  }
+};
+
+/**
+ * Checks if we have unprocessed bookings that need service orders
+ * Finds bookings that don't have service orders and summarizes them
+ */
+export const checkUnprocessedBookings = async () => {
+  try {
+    console.log('Checking for unprocessed bookings');
     
-    if (error) {
-      console.error('Error creating service order:', error);
-      throw error;
-    }
-    
-    console.log('Service order created successfully:', data);
-    
-    // Update the booking status to confirmed after service order is created
-    const { error: updateError } = await supabase
+    // Get the last 10 bookings
+    const { data: recentBookings, error: bookingsError } = await supabase
       .from('bookings')
-      .update({ status: 'confirmed' })
-      .eq('id', booking.id);
-      
-    if (updateError) {
-      console.error('Error updating booking status:', updateError);
-      // We don't throw here because the service order was created successfully
-      toast.warning('Reserva criada, mas houve um erro ao atualizar o status');
-    }
-    
-    // Notify company about the new order (this will be picked up by real-time subscriptions)
-    await notifyCompanyAboutNewOrder(companyId, data as ServiceOrder);
-    
-    return { serviceOrder: data as ServiceOrder, error: null };
-  } catch (error) {
-    console.error('Error creating service order from booking:', error);
-    toast.error('Erro ao criar ordem de serviço. Por favor, tente novamente.');
-    return { serviceOrder: null, error };
-  }
-};
-
-/**
- * Notifies company about a new service order (via database update)
- * This works with realtime subscriptions
- */
-const notifyCompanyAboutNewOrder = async (companyId: string, serviceOrder: ServiceOrder) => {
-  try {
-    // We're using a database update to trigger realtime notifications
-    // Companies listening to service_orders table changes will be notified
-    const { error } = await supabase
-      .from('service_orders')
-      .update({ 
-        // Update something innocuous to trigger the update event
-        notes: serviceOrder.notes ? serviceOrder.notes + " [Notificação enviada]" : "Notificação enviada"
-      })
-      .eq('id', serviceOrder.id);
-    
-    if (error) {
-      console.error('Error notifying company:', error);
-      throw error;
-    }
-    
-    console.log('Company notification sent for new order');
-    return { success: true, error: null };
-  } catch (error) {
-    console.error('Error notifying company about new order:', error);
-    return { success: false, error };
-  }
-};
-
-/**
- * Assigns a service order to a driver
- */
-export const assignServiceOrderToDriver = async (orderId: string, driverId: string) => {
-  try {
-    console.log(`Assigning order ${orderId} to driver ${driverId}`);
-    
-    const { data, error } = await supabase
-      .from('service_orders')
-      .update({ 
-        driver_id: driverId,
-        status: 'assigned' as 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled'
-      })
-      .eq('id', orderId)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    console.log('Service order assigned successfully:', data);
-    return { updated: data as ServiceOrder, error: null };
-  } catch (error) {
-    console.error('Error assigning service order to driver:', error);
-    return { updated: null, error };
-  }
-};
-
-/**
- * Gets all service orders for a company
- */
-export const getCompanyServiceOrders = async (companyId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('service_orders')
       .select('*')
-      .eq('company_id', companyId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(10);
+      
+    if (bookingsError) throw bookingsError;
     
-    if (error) throw error;
+    if (!recentBookings || recentBookings.length === 0) {
+      return { 
+        success: true, 
+        data: { message: 'No recent bookings found in the system' },
+        error: null 
+      };
+    }
     
-    return { orders: data as ServiceOrder[], error: null };
+    const unprocessedBookings = [];
+    const processedBookings = [];
+    
+    // Check each booking to see if it has a service order
+    for (const booking of recentBookings) {
+      const { data: relatedOrders, error: checkError } = await supabase
+        .from('service_orders')
+        .select('id, status, created_at')
+        .ilike('notes', `%Reserva #${booking.reference_code}%`)
+        .limit(1);
+        
+      if (checkError) {
+        console.error(`Error checking for service order for booking ${booking.id}:`, checkError);
+        continue;
+      }
+      
+      const bookingInfo = {
+        id: booking.id,
+        reference_code: booking.reference_code,
+        status: booking.status,
+        created_at: booking.created_at,
+        has_service_order: (relatedOrders && relatedOrders.length > 0),
+        service_order: (relatedOrders && relatedOrders.length > 0) ? relatedOrders[0] : null
+      };
+      
+      if (bookingInfo.has_service_order) {
+        processedBookings.push(bookingInfo);
+      } else {
+        unprocessedBookings.push(bookingInfo);
+      }
+    }
+    
+    return { 
+      success: true, 
+      data: {
+        unprocessedBookings,
+        processedBookings,
+        totalUnprocessed: unprocessedBookings.length,
+        totalProcessed: processedBookings.length
+      },
+      error: null 
+    };
+    
   } catch (error) {
-    console.error('Error fetching company service orders:', error);
-    return { orders: [], error };
+    console.error('Error checking unprocessed bookings:', error);
+    return { success: false, data: null, error };
   }
+};
+
+/**
+ * Checks for pending bookings without service orders and creates them
+ * This is a recovery mechanism for when the system fails to create service orders
+ */
+export const reconcilePendingBookings = async () => {
+  try {
+    // Get all confirmed bookings that might not have service orders
+    const { data: bookings, error: bookingsError } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('status', 'confirmed');
+      
+    if (bookingsError) throw bookingsError;
+    
+    if (!bookings || bookings.length === 0) {
+      console.log('No confirmed bookings found for reconciliation');
+      return { processed: 0, errors: 0 };
+    }
+    
+    console.log(`Found ${bookings.length} confirmed bookings to check for service orders`);
+    
+    let processed = 0;
+    let errors = 0;
+    
+    // Process each booking to ensure it has a service order
+    for (const booking of bookings) {
+      // Check if this booking already has a service order
+      const { data: existingOrders, error: checkError } = await supabase
+        .from('service_orders')
+        .select('id')
+        .ilike('notes', `%Reserva #${booking.reference_code}%`)
+        .limit(1);
+        
+      if (checkError) {
+        console.error(`Error checking for existing service order for booking ${booking.id}:`, checkError);
+        errors++;
+        continue;
+      }
+      
+      // If no service order exists, create one
+      if (!existingOrders || existingOrders.length === 0) {
+        console.log(`Creating missing service order for booking ${booking.id} (${booking.reference_code})`);
+        
+        // Create a properly typed booking object with strict type for status
+        const typedBooking: Booking = {
+          id: booking.id,
+          reference_code: booking.reference_code,
+          user_id: booking.user_id,
+          origin: booking.origin,
+          destination: booking.destination,
+          booking_date: booking.booking_date,
+          travel_date: booking.travel_date,
+          created_at: booking.created_at,
+          // Explicit type casting for the status field
+          status: booking.status as 'confirmed' | 'pending' | 'completed' | 'cancelled',
+          total_price: booking.total_price,
+          // Handle optional fields with fallbacks
+          return_date: booking.return_date || null,
+          vehicle_type: booking.vehicle_type || null,
+          passengers: booking.passengers || 1,
+          additional_notes: booking.additional_notes || null
+        };
+        
+        const { serviceOrder, error } = await createServiceOrderFromBooking(typedBooking);
+        
+        if (error || !serviceOrder) {
+          console.error(`Error creating service order for booking ${booking.id}:`, error);
+          errors++;
+        } else {
+          console.log(`Successfully created service order for booking ${booking.id}`);
+          processed++;
+        }
+      } else {
+        console.log(`Booking ${booking.id} (${booking.reference_code}) already has service order ${existingOrders[0].id}`);
+      }
+    }
+    
+    return { processed, errors };
+  } catch (error) {
+    console.error('Error reconciling pending bookings:', error);
+    return { processed: 0, errors: 1, error };
+  }
+};
+
+// Export the functions directly from the service modules for convenience
+export const getCompanyQueueStatus = getQueueStatus;
+export const resetCompanyQueuePositions = resetQueue;
+export const getQueueDiagnostics = getQueueDiags;
+export const forceAssignBookingToCompany = forceAssign;
+
+// Re-export the functions from serviceOrderService
+export { 
+  createServiceOrderFromBooking,
+  assignServiceOrderToDriver,
+  updateServiceOrderStatus
+};
+
+export default {
+  createBooking,
+  getLastAssignedBookingInfo,
+  checkUnprocessedBookings,
+  reconcilePendingBookings,
+  getCompanyQueueStatus,
+  resetCompanyQueuePositions,
+  getQueueDiagnostics,
+  forceAssignBookingToCompany,
+  createServiceOrderFromBooking,
+  assignServiceOrderToDriver,
+  updateServiceOrderStatus
 };

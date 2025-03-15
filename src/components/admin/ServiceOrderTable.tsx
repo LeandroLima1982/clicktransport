@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Table,
@@ -18,8 +19,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { toast } from 'sonner';
-import { supabase } from '@/main';
+import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import OrderDetailModal from './OrderDetailModal';
 
 export interface ServiceOrder {
   id: string;
@@ -52,12 +54,12 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
   onRefreshData
 }) => {
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const handleViewDetails = (order: ServiceOrder) => {
     setSelectedOrder(order);
-    // In the future, this could open a modal with detailed information
-    toast.info(`Detalhes da ordem: ${order.id}`);
+    setDetailOpen(true);
   };
 
   const handleStatusChange = async (order: ServiceOrder, newStatus: string) => {
@@ -70,11 +72,18 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
       
       if (error) throw error;
       
-      toast.success(`Status da ordem atualizado para: ${translateStatus(newStatus)}`);
+      toast({
+        title: "Status atualizado",
+        description: `Status da ordem atualizado para: ${translateStatus(newStatus)}`,
+      });
       onRefreshData();
     } catch (error) {
       console.error('Error updating order status:', error);
-      toast.error('Falha ao atualizar status da ordem');
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar status da ordem",
+        variant: "destructive",
+      });
     } finally {
       setUpdatingStatus(false);
     }
@@ -132,92 +141,103 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
   }
 
   return (
-    <div className="rounded-md border overflow-hidden overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Empresa</TableHead>
-            <TableHead>Origem</TableHead>
-            <TableHead>Destino</TableHead>
-            <TableHead>Data Coleta</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {orders.map(order => (
-            <TableRow key={order.id}>
-              <TableCell className="font-medium">{order.company_name || '-'}</TableCell>
-              <TableCell>
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-1 text-gray-500" />
-                  {truncateText(order.origin)}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-1 text-gray-500" />
-                  {truncateText(order.destination)}
-                </div>
-              </TableCell>
-              <TableCell>{formatDate(order.pickup_date)}</TableCell>
-              <TableCell>{getStatusBadge(order.status)}</TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleViewDetails(order)}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      Ver Detalhes
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
-                    {order.status !== 'pending' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(order, 'pending')}
-                        disabled={updatingStatus}
-                      >
-                        <Badge className="bg-yellow-100 text-yellow-800 mr-2">Pendente</Badge>
-                      </DropdownMenuItem>
-                    )}
-                    {order.status !== 'in_progress' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(order, 'in_progress')}
-                        disabled={updatingStatus}
-                      >
-                        <Badge className="bg-blue-100 text-blue-800 mr-2">Em Progresso</Badge>
-                      </DropdownMenuItem>
-                    )}
-                    {order.status !== 'completed' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(order, 'completed')}
-                        disabled={updatingStatus}
-                      >
-                        <Badge className="bg-green-100 text-green-800 mr-2">Concluído</Badge>
-                      </DropdownMenuItem>
-                    )}
-                    {order.status !== 'cancelled' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(order, 'cancelled')}
-                        disabled={updatingStatus}
-                      >
-                        <Badge className="bg-red-100 text-red-800 mr-2">Cancelado</Badge>
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
+    <>
+      <div className="rounded-md border overflow-hidden overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Empresa</TableHead>
+              <TableHead>Origem</TableHead>
+              <TableHead>Destino</TableHead>
+              <TableHead>Data Coleta</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Ações</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {orders.map(order => (
+              <TableRow key={order.id}>
+                <TableCell className="font-medium">{order.company_name || '-'}</TableCell>
+                <TableCell>
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-1 text-gray-500" />
+                    {truncateText(order.origin)}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-1 text-gray-500" />
+                    {truncateText(order.destination)}
+                  </div>
+                </TableCell>
+                <TableCell>{formatDate(order.pickup_date)}</TableCell>
+                <TableCell>{getStatusBadge(order.status)}</TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleViewDetails(order)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Ver Detalhes
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
+                      {order.status !== 'pending' && (
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(order, 'pending')}
+                          disabled={updatingStatus}
+                        >
+                          <Badge className="bg-yellow-100 text-yellow-800 mr-2">Pendente</Badge>
+                        </DropdownMenuItem>
+                      )}
+                      {order.status !== 'in_progress' && (
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(order, 'in_progress')}
+                          disabled={updatingStatus}
+                        >
+                          <Badge className="bg-blue-100 text-blue-800 mr-2">Em Progresso</Badge>
+                        </DropdownMenuItem>
+                      )}
+                      {order.status !== 'completed' && (
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(order, 'completed')}
+                          disabled={updatingStatus}
+                        >
+                          <Badge className="bg-green-100 text-green-800 mr-2">Concluído</Badge>
+                        </DropdownMenuItem>
+                      )}
+                      {order.status !== 'cancelled' && (
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(order, 'cancelled')}
+                          disabled={updatingStatus}
+                        >
+                          <Badge className="bg-red-100 text-red-800 mr-2">Cancelado</Badge>
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      
+      {selectedOrder && (
+        <OrderDetailModal 
+          order={selectedOrder}
+          isOpen={detailOpen}
+          onClose={() => setDetailOpen(false)}
+          onStatusChange={onRefreshData}
+        />
+      )}
+    </>
   );
 };
 

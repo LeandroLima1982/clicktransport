@@ -1,15 +1,31 @@
 
 import { createRoot } from 'react-dom/client';
-import { createClient } from '@supabase/supabase-js';
+import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.tsx';
 import './index.css';
+import { AuthProvider } from './hooks/auth';
+import { supabase } from './integrations/supabase/client';
 
-// Initialize Supabase client with environment variables
-const supabaseUrl = 'https://ofctyafulvkwaldondsj.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mY3R5YWZ1bHZrd2FsZG9uZHNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE1NTc1NDksImV4cCI6MjA1NzEzMzU0OX0.tu9XJ07Y2HLDX5LKQDDL_Tjr_lPLcwypE0c0Zzrhggw';
+// Export the supabase client to be used throughout the application
+export { supabase };
 
-// Create the Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create a client for React Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-// Initialize the application
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
+  </QueryClientProvider>
+);

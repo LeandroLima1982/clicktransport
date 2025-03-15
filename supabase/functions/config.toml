@@ -1,0 +1,7 @@
+
+# A string specifying the project ID
+project_id = "ofctyafulvkwaldondsj"
+
+# Function-specific settings
+[functions.check_queue_health]
+verify_jwt = false

@@ -35,6 +35,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
     if (accountType === 'admin') {
       setEmail('admin@clicktransfer.com');
       setPassword('Admin@123');
+      console.log('Admin login form initialized with default credentials');
     }
   }, [accountType]);
   
@@ -47,21 +48,32 @@ const LoginForm: React.FC<LoginFormProps> = ({
         return;
       }
       
-      console.log(`Login attempt: ${accountType}`);
+      console.log(`Login attempt for account type: ${accountType}`);
       
       if (handleLogin) {
         await handleLogin(e);
       } else {
+        console.log(`Attempting direct login with email: ${email}`);
         const { error } = await signIn(email, password);
         if (error) {
           console.error('Login error:', error);
-          if (error.message === 'You are not registered as a driver for this company') {
+          
+          // Show specific error messages based on error type
+          if (error.message === 'You do not have administrator privileges') {
+            toast.error('Acesso negado', { 
+              description: 'Você não tem privilégios de administrador'
+            });
+          } else if (error.message === 'You are not registered as a driver for this company') {
             toast.error('Acesso negado', { 
               description: 'Você não está registrado como motorista para esta empresa'
             });
           } else if (error.message === 'You are not registered as a company admin') {
             toast.error('Acesso negado', { 
               description: 'Você não está registrado como administrador desta empresa'
+            });
+          } else if (error.message.includes('Invalid login credentials')) {
+            toast.error('Falha no login', { 
+              description: 'Email ou senha inválidos'
             });
           } else {
             toast.error('Falha no login', { description: error.message });
@@ -71,6 +83,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
           navigate(`/auth?type=${accountType}`);
         } else {
           toast.success('Login realizado com sucesso!');
+          // Let the AuthProvider handle the redirect based on user role
         }
       }
     } catch (error) {
