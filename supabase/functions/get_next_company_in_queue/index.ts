@@ -14,25 +14,33 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Executing get_next_company_in_queue Edge Function')
+    
     // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { auth: { persistSession: false } }
     )
+    
+    console.log('Checking for active companies in the queue')
 
     // Get companies ordered by queue position and last order assigned
     const { data: companies, error: companiesError } = await supabaseClient
       .from('companies')
-      .select('id, queue_position, last_order_assigned, status')
+      .select('id, name, queue_position, last_order_assigned, status')
       .eq('status', 'active')
       .order('queue_position', { ascending: true, nullsLast: true })
       .order('last_order_assigned', { ascending: true, nullsFirst: true })
       .limit(1)
 
-    if (companiesError) throw companiesError
+    if (companiesError) {
+      console.error('Error finding companies:', companiesError)
+      throw companiesError
+    }
 
     if (!companies || companies.length === 0) {
+      console.warn('No active companies found in the queue')
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -47,10 +55,16 @@ serve(async (req) => {
       )
     }
 
+    const nextCompany = companies[0]
+    console.log(`Found next company in queue: ${nextCompany.id} (${nextCompany.name}) with position ${nextCompany.queue_position}`)
+
     return new Response(
       JSON.stringify({ 
         success: true, 
-        company_id: companies[0].id 
+        company_id: nextCompany.id,
+        company_name: nextCompany.name,
+        queue_position: nextCompany.queue_position,
+        last_order_assigned: nextCompany.last_order_assigned
       }),
       { 
         headers: { 
@@ -64,7 +78,11 @@ serve(async (req) => {
     console.error('Error in get_next_company_in_queue:', error)
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        success: false, 
+        stack: error.stack 
+      }),
       { 
         status: 400,
         headers: { 

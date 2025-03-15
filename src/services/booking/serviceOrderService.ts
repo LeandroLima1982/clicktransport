@@ -37,78 +37,97 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // Get the next company in the queue - updated to use transactional queue
-    const { company, error: companyError } = await getNextCompanyInQueue();
-    
-    if (companyError || !company) {
-      console.error('Error finding company for assignment:', companyError);
-      toast.error('Não foi possível encontrar uma empresa disponível para atribuir o pedido');
-      return { serviceOrder: null, error: companyError || new Error('No company found') };
-    }
-    
-    const companyId = company.id;
-    console.log(`Found company to assign order: ${companyId} (${company.name})`);
-    
-    // Validate company before proceeding with assignment
-    const { valid, error: validationError } = await validateCompanyForAssignment(companyId);
-    
-    if (!valid) {
-      console.error('Company validation failed:', validationError);
-      return { serviceOrder: null, error: validationError || new Error('Company validation failed') };
-    }
-    
-    // Create service order with booking details
-    const serviceOrderData = {
-      company_id: companyId,
-      origin: booking.origin,
-      destination: booking.destination,
-      pickup_date: booking.travel_date,
-      delivery_date: booking.return_date || null,
-      status: 'pending' as 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled',
-      notes: `Reserva #${booking.reference_code} - ${booking.additional_notes || 'Sem observações'}`,
-    };
-    
-    // Create the service order
-    const { data, error } = await supabase
-      .from('service_orders')
-      .insert(serviceOrderData)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error creating service order:', error);
-      throw error;
-    }
-    
-    console.log('Service order created successfully:', data);
-    
-    // Update the booking status to confirmed after service order is created
-    const { error: updateError } = await supabase
-      .from('bookings')
-      .update({ status: 'confirmed' })
-      .eq('id', booking.id);
+    // Get the next company in the queue - call the Edge Function directly
+    console.log('Calling get_next_company_in_queue Edge Function');
+    try {
+      const response = await supabase.functions.invoke('get_next_company_in_queue', {
+        method: 'POST',
+        body: {}
+      });
       
-    if (updateError) {
-      console.error('Error updating booking status:', updateError);
-      // We don't throw here because the service order was created successfully
-      toast.warning('Reserva criada, mas houve um erro ao atualizar o status');
+      if (response.error) {
+        console.error('Edge Function error when finding company for assignment:', response.error);
+        toast.error('Erro na função Edge ao encontrar empresa para atribuição');
+        return { serviceOrder: null, error: new Error(response.error.message) };
+      }
+      
+      if (!response.data || !response.data.success || !response.data.company_id) {
+        console.error('No company found in queue response:', response.data);
+        toast.error('Não foi possível encontrar uma empresa disponível para atribuir o pedido');
+        return { 
+          serviceOrder: null, 
+          error: new Error('No company found in queue') 
+        };
+      }
+      
+      const companyId = response.data.company_id;
+      const companyName = response.data.company_name || 'Empresa não identificada';
+      console.log(`Found company to assign order: ${companyId} (${companyName})`);
+      
+      // Create service order with booking details
+      const serviceOrderData = {
+        company_id: companyId,
+        origin: booking.origin,
+        destination: booking.destination,
+        pickup_date: booking.travel_date,
+        delivery_date: booking.return_date || null,
+        status: 'pending' as 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled',
+        notes: `Reserva #${booking.reference_code} - Empresa: ${companyName} - ${booking.additional_notes || 'Sem observações'}`,
+      };
+      
+      // Create the service order
+      const { data, error } = await supabase
+        .from('service_orders')
+        .insert(serviceOrderData)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating service order:', error);
+        throw error;
+      }
+      
+      console.log('Service order created successfully:', data);
+      
+      // Update the booking status to confirmed after service order is created
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({ status: 'confirmed' })
+        .eq('id', booking.id);
+        
+      if (updateError) {
+        console.error('Error updating booking status:', updateError);
+        // We don't throw here because the service order was created successfully
+        toast.warning('Reserva criada, mas houve um erro ao atualizar o status');
+      }
+      
+      // Update the company's queue position and last order timestamp
+      try {
+        const updateResponse = await supabase.functions.invoke('update_company_queue_position', {
+          method: 'POST',
+          body: { company_id: companyId }
+        });
+        
+        if (updateResponse.error) {
+          console.error('Edge Function error updating company queue position:', updateResponse.error);
+          toast.warning('Ordem de serviço criada, mas houve um erro ao atualizar a fila de empresas');
+        } else {
+          console.log(`Successfully updated queue position for company ${companyId}:`, updateResponse.data);
+        }
+      } catch (queueError) {
+        console.error('Error calling update_company_queue_position Edge Function:', queueError);
+        toast.warning('Ordem de serviço criada, mas houve um erro ao atualizar a fila de empresas');
+      }
+      
+      // Return the created service order
+      toast.success(`Ordem de serviço criada para ${companyName}!`);
+      return { serviceOrder: data as ServiceOrder, error: null };
+      
+    } catch (companyError) {
+      console.error('Error in get_next_company_in_queue processing:', companyError);
+      return { serviceOrder: null, error: companyError };
     }
     
-    // Update the company's queue position and last order timestamp
-    // Using the new transaction-safe method
-    const { success: queueUpdated, error: queueError } = await updateCompanyQueuePosition(companyId);
-    
-    if (!queueUpdated) {
-      console.error('Error updating company queue position:', queueError);
-      toast.warning('Ordem de serviço criada, mas houve um erro ao atualizar a fila de empresas');
-    } else {
-      console.log(`Successfully updated queue position for company ${companyId}`);
-    }
-    
-    // Notify company about the new order
-    await notifyCompanyAboutNewOrder(companyId, data as ServiceOrder);
-    
-    return { serviceOrder: data as ServiceOrder, error: null };
   } catch (error) {
     console.error('Error creating service order from booking:', error);
     toast.error('Erro ao criar ordem de serviço. Por favor, tente novamente.');
