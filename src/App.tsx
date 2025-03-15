@@ -1,9 +1,8 @@
 
-// Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider } from './hooks/useAuth';
+import { AuthProvider } from './hooks/auth';
 import { Toaster } from 'sonner';
-import { useAuth } from './hooks/useAuth';
+import { useAuth } from './hooks/auth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Import pages and components
@@ -121,7 +120,12 @@ const HomeRedirect = () => {
   const { user, userRole, isLoading } = useAuth();
   
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen w-full text-primary">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F8D748]"></div>
+        <div className="ml-3 text-lg font-medium">Carregando...</div>
+      </div>
+    );
   }
   
   // If user is logged in, redirect based on role
