@@ -65,8 +65,14 @@ export const formatBookingShareMessage = (
     destination: string;
     date?: Date | string;
     time?: string;
+    arrivalTime?: string;
+    returnDate?: string;
+    returnTime?: string;
+    returnArrivalTime?: string;
+    duration?: number | null;
     tripType?: string;
     passengerData?: { name: string; phone: string }[];
+    creationDate?: string;
   },
   options: {
     includePassengers?: boolean;
@@ -76,7 +82,13 @@ export const formatBookingShareMessage = (
     totalPrice?: number;
   } = {}
 ) => {
-  const { simplified = false, includePassengers = true, includePrice = false, referenceCode, totalPrice } = options;
+  const { 
+    simplified = false, 
+    includePassengers = true, 
+    includePrice = false, 
+    referenceCode, 
+    totalPrice 
+  } = options;
   
   // Format date if it exists
   let dateStr = '';
@@ -89,6 +101,21 @@ export const formatBookingShareMessage = (
     }
   }
   
+  // Calculate travel time if duration exists
+  let travelTimeStr = '';
+  if (bookingData.duration) {
+    const hours = Math.floor(bookingData.duration / 60);
+    const mins = bookingData.duration % 60;
+    
+    if (hours === 0) {
+      travelTimeStr = `${mins} min`;
+    } else if (mins === 0) {
+      travelTimeStr = `${hours}h`;
+    } else {
+      travelTimeStr = `${hours}h ${mins}min`;
+    }
+  }
+  
   // Build message based on simplified or detailed format
   if (simplified) {
     let message = `🚗 *Reserva de Transporte*\n\n`;
@@ -97,11 +124,48 @@ export const formatBookingShareMessage = (
       message += `*Código:* ${referenceCode}\n`;
     }
     
-    message += `*Data:* ${dateStr}${bookingData.time ? ' às ' + bookingData.time : ''}\n`;
+    if (bookingData.creationDate) {
+      message += `*Reserva criada em:* ${bookingData.creationDate}\n\n`;
+    }
+    
     message += `*Trajeto:* ${bookingData.origin} → ${bookingData.destination}\n\n`;
     
+    message += `*Data de ida:* ${dateStr}\n`;
+    
+    if (bookingData.time) {
+      message += `*Saída:* ${bookingData.time}\n`;
+    }
+    
+    if (bookingData.arrivalTime) {
+      message += `*Chegada prevista:* ${bookingData.arrivalTime}\n`;
+    }
+    
+    if (travelTimeStr) {
+      message += `*Duração estimada:* ${travelTimeStr}\n`;
+    }
+    
+    if (bookingData.tripType === 'roundtrip' && bookingData.returnDate) {
+      message += `\n*Data de volta:* ${bookingData.returnDate}\n`;
+      
+      if (bookingData.returnTime) {
+        message += `*Saída:* ${bookingData.returnTime}\n`;
+      }
+      
+      if (bookingData.returnArrivalTime) {
+        message += `*Chegada prevista:* ${bookingData.returnArrivalTime}\n`;
+      }
+      
+      if (travelTimeStr) {
+        message += `*Duração estimada:* ${travelTimeStr}\n`;
+      }
+    }
+    
+    if (includePrice && totalPrice) {
+      message += `\n*Valor Total:* R$ ${totalPrice.toFixed(2)}\n`;
+    }
+    
     if (includePassengers && bookingData.passengerData && bookingData.passengerData.length > 0) {
-      message += `*Passageiros:*\n`;
+      message += `\n*Passageiros:*\n`;
       bookingData.passengerData.forEach((passenger, index) => {
         message += `${index + 1}. ${passenger.name} - ${passenger.phone}\n`;
       });
@@ -113,15 +177,48 @@ export const formatBookingShareMessage = (
     let message = `🚗 *Detalhes da Reserva de Transporte*\n\n`;
     
     if (referenceCode) {
-      message += `*Código da Reserva:* ${referenceCode}\n\n`;
+      message += `*Código da Reserva:* ${referenceCode}\n`;
     }
     
-    message += `*Data:* ${dateStr}${bookingData.time ? ' às ' + bookingData.time : ''}\n`;
+    if (bookingData.creationDate) {
+      message += `*Reserva criada em:* ${bookingData.creationDate}\n\n`;
+    }
+    
     message += `*Origem:* ${bookingData.origin}\n`;
-    message += `*Destino:* ${bookingData.destination}\n`;
+    message += `*Destino:* ${bookingData.destination}\n\n`;
+    
+    message += `*Data de ida:* ${dateStr}\n`;
+    
+    if (bookingData.time) {
+      message += `*Horário de saída:* ${bookingData.time}\n`;
+    }
+    
+    if (bookingData.arrivalTime) {
+      message += `*Horário de chegada previsto:* ${bookingData.arrivalTime}\n`;
+    }
+    
+    if (travelTimeStr) {
+      message += `*Duração estimada:* ${travelTimeStr}\n`;
+    }
+    
+    if (bookingData.tripType === 'roundtrip' && bookingData.returnDate) {
+      message += `\n*Data de volta:* ${bookingData.returnDate}\n`;
+      
+      if (bookingData.returnTime) {
+        message += `*Horário de saída:* ${bookingData.returnTime}\n`;
+      }
+      
+      if (bookingData.returnArrivalTime) {
+        message += `*Horário de chegada previsto:* ${bookingData.returnArrivalTime}\n`;
+      }
+      
+      if (travelTimeStr) {
+        message += `*Duração estimada:* ${travelTimeStr}\n`;
+      }
+    }
     
     if (bookingData.tripType) {
-      message += `*Tipo de Viagem:* ${bookingData.tripType === 'roundtrip' ? 'Ida e Volta' : 'Somente Ida'}\n`;
+      message += `\n*Tipo de Viagem:* ${bookingData.tripType === 'roundtrip' ? 'Ida e Volta' : 'Somente Ida'}\n`;
     }
     
     if (includePassengers && bookingData.passengerData && bookingData.passengerData.length > 0) {

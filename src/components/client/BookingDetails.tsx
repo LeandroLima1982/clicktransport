@@ -1,50 +1,44 @@
 
-import React, { useState } from 'react';
-import { format, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  Car, 
-  CreditCard,
-  X,
-  User,
-  Users,
-  Share2,
-  Phone
-} from 'lucide-react';
-import { 
+import React from 'react';
+import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetClose,
-  SheetFooter
-} from "@/components/ui/sheet";
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import BookingStatus from './BookingStatus';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Booking } from '@/types/booking';
-import { shareViaWhatsApp, formatBookingShareMessage, vibrate, feedbackPatterns } from '@/services/notifications/notificationService';
-import { useIsMobile } from '@/hooks/use-mobile';
+import BookingStatus from './BookingStatus';
+import ServiceOrderStatus from './ServiceOrderStatus';
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  Car,
+  CreditCard,
+  Phone,
+  AlertTriangle,
+} from 'lucide-react';
 
 interface BookingDetailsProps {
   booking: Booking;
   isOpen: boolean;
   onClose: () => void;
-  onCancel: (bookingId: string) => Promise<boolean>;
+  onCancel: (bookingId: string) => Promise<void>;
 }
 
 const BookingDetails: React.FC<BookingDetailsProps> = ({
   booking,
   isOpen,
   onClose,
-  onCancel
+  onCancel,
 }) => {
-  const [isCancelling, setIsCancelling] = useState(false);
-  const isMobile = useIsMobile();
-  
+  const [isCancelling, setIsCancelling] = React.useState(false);
+
   const formatDate = (dateString: string) => {
     try {
       return format(parseISO(dateString), "dd 'de' MMMM, yyyy", { locale: ptBR });
@@ -52,7 +46,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
       return dateString;
     }
   };
-  
+
   const formatTime = (dateString: string) => {
     try {
       return format(parseISO(dateString), "HH:mm", { locale: ptBR });
@@ -60,246 +54,190 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
       return "";
     }
   };
-  
-  const formatCurrency = (value: number = 0) => {
+
+  const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
   };
-  
-  const handleCancel = async () => {
-    if (booking.status === 'cancelled' || booking.status === 'completed') {
-      return;
-    }
-    
-    setIsCancelling(true);
-    try {
-      const success = await onCancel(booking.id);
-      if (success) {
+
+  const handleCancelBooking = async () => {
+    if (window.confirm('Tem certeza que deseja cancelar esta reserva?')) {
+      setIsCancelling(true);
+      try {
+        await onCancel(booking.id);
         onClose();
+      } catch (error) {
+        console.error('Error cancelling booking:', error);
+      } finally {
+        setIsCancelling(false);
       }
-    } finally {
-      setIsCancelling(false);
     }
   };
-  
-  // Parse passenger data if available
-  let passengerData = [];
-  try {
+
+  // Get passenger data from booking
+  const getPassengerData = () => {
     if (booking.passenger_data) {
-      passengerData = typeof booking.passenger_data === 'string' 
-        ? JSON.parse(booking.passenger_data) 
-        : booking.passenger_data;
+      try {
+        return typeof booking.passenger_data === 'string'
+          ? JSON.parse(booking.passenger_data)
+          : booking.passenger_data;
+      } catch (e) {
+        return [];
+      }
     }
-  } catch (e) {
-    console.error('Error parsing passenger data:', e);
-  }
-  
-  // Calculate one-way price and return price
-  const totalPrice = booking.total_price || 0;
-  const isRoundTrip = booking.return_date !== null;
-  const oneWayPrice = isRoundTrip ? totalPrice / 2 : totalPrice;
-  const returnPrice = isRoundTrip ? totalPrice / 2 : 0;
-  
-  const handleShareViaWhatsApp = () => {
-    vibrate(feedbackPatterns.success);
-    
-    const bookingData = {
-      origin: booking.origin,
-      destination: booking.destination,
-      date: formatDate(booking.travel_date),
-      time: formatTime(booking.travel_date),
-      tripType: isRoundTrip ? 'roundtrip' : 'oneway',
-      passengerData
-    };
-    
-    const message = formatBookingShareMessage(bookingData, {
-      simplified: true,
-      referenceCode: booking.reference_code,
-      includePassengers: true
-    });
-    
-    shareViaWhatsApp(message);
+    return [];
   };
-  
+
+  const passengerData = getPassengerData();
+  const isRoundTrip = booking.return_date !== null;
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader className="mb-4">
-          <SheetTitle className="text-xl">Detalhes da Reserva</SheetTitle>
-          <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-            <X className="h-4 w-4" />
-            <span className="sr-only">Fechar</span>
-          </SheetClose>
+      <SheetContent className="sm:max-w-lg overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Detalhes da Reserva</SheetTitle>
+          <SheetDescription>
+            Reserva #{booking.reference_code}
+          </SheetDescription>
         </SheetHeader>
-        
-        <div className="space-y-6">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-lg">Código</h3>
-              <BookingStatus status={booking.status} />
-            </div>
-            <p className="text-lg font-mono">{booking.reference_code}</p>
-            <p className="text-sm text-muted-foreground">
-              Reserva feita em {formatDate(booking.booking_date)}
-            </p>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleShareViaWhatsApp}
-              className="mt-2 w-full flex items-center justify-center"
-            >
-              <Phone className="h-4 w-4 mr-2 text-green-600" />
-              <span>Compartilhar via WhatsApp</span>
-            </Button>
+
+        <div className="py-4">
+          <div className="flex justify-between items-center mb-4">
+            <BookingStatus status={booking.status} className="py-1 px-3" />
+            {booking.status !== 'cancelled' && booking.status !== 'completed' && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleCancelBooking}
+                disabled={isCancelling}
+              >
+                {isCancelling ? 'Cancelando...' : 'Cancelar Reserva'}
+              </Button>
+            )}
           </div>
-          
-          <Separator />
-          
-          <div>
-            <h3 className="font-semibold mb-2 flex items-center">
-              <Calendar className="h-4 w-4 mr-2" />
-              Data e Hora
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Ida</p>
-                <p className="font-medium">{formatDate(booking.travel_date)}</p>
-                <p className="text-sm">{formatTime(booking.travel_date)}</p>
-              </div>
-              
-              {booking.return_date && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Volta</p>
-                  <p className="font-medium">{formatDate(booking.return_date)}</p>
-                  <p className="text-sm">{formatTime(booking.return_date)}</p>
+
+          {/* Service Order Status Flow */}
+          <ServiceOrderStatus status={booking.status} className="my-6" />
+
+          <div className="space-y-4 mt-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-semibold flex items-center mb-2">
+                <Calendar className="h-4 w-4 mr-2 text-primary" />
+                Data e Horário
+              </h3>
+              <div className="text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Data:</span>
+                  <span>{formatDate(booking.travel_date)}</span>
                 </div>
-              )}
-            </div>
-          </div>
-          
-          <Separator />
-          
-          <div>
-            <h3 className="font-semibold mb-2 flex items-center">
-              <MapPin className="h-4 w-4 mr-2" />
-              Trajeto
-            </h3>
-            <div className="space-y-2">
-              <div>
-                <p className="text-sm text-muted-foreground">Origem</p>
-                <p>{booking.origin}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Destino</p>
-                <p>{booking.destination}</p>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Horário:</span>
+                  <span>{formatTime(booking.travel_date)}</span>
+                </div>
+                {isRoundTrip && booking.return_date && (
+                  <>
+                    <div className="border-t border-gray-200 my-2"></div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Data de retorno:</span>
+                      <span>{formatDate(booking.return_date)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Horário de retorno:</span>
+                      <span>{formatTime(booking.return_date)}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-          </div>
-          
-          <Separator />
-          
-          <div>
-            <h3 className="font-semibold mb-2 flex items-center">
-              <Car className="h-4 w-4 mr-2" />
-              Detalhes do Serviço
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Tipo de Veículo</p>
-                <p>{booking.vehicle_type || "Não especificado"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Passageiros</p>
-                <p>{booking.passengers || passengerData.length || 1}</p>
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-semibold flex items-center mb-2">
+                <MapPin className="h-4 w-4 mr-2 text-primary" />
+                Trajeto
+              </h3>
+              <div className="text-sm space-y-1">
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground">Origem:</span>
+                  <span className="font-medium">{booking.origin}</span>
+                </div>
+                <div className="flex flex-col mt-2">
+                  <span className="text-muted-foreground">Destino:</span>
+                  <span className="font-medium">{booking.destination}</span>
+                </div>
               </div>
             </div>
-          </div>
-          
-          {passengerData && passengerData.length > 0 && (
-            <>
-              <Separator />
-              <div>
-                <h3 className="font-semibold mb-2 flex items-center">
-                  <Users className="h-4 w-4 mr-2" />
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-semibold flex items-center mb-2">
+                <Car className="h-4 w-4 mr-2 text-primary" />
+                Veículo
+              </h3>
+              <div className="text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tipo:</span>
+                  <span>{booking.vehicle_type || "Não especificado"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Passageiros:</span>
+                  <span>{booking.passengers}</span>
+                </div>
+              </div>
+            </div>
+
+            {passengerData.length > 0 && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-semibold flex items-center mb-2">
+                  <Users className="h-4 w-4 mr-2 text-primary" />
                   Passageiros
                 </h3>
                 <div className="space-y-2">
                   {passengerData.map((passenger: any, index: number) => (
-                    <div key={index} className="bg-gray-50 p-3 rounded-md">
+                    <div key={index} className="border border-gray-200 rounded p-2">
                       <div className="font-medium">{passenger.name}</div>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Phone className="h-3 w-3 mr-1 text-green-600" />
+                      <a 
+                        href={`https://wa.me/${passenger.phone.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center text-xs text-green-600 hover:text-green-700 transition-colors"
+                      >
+                        <Phone className="h-3 w-3 mr-1" />
                         {passenger.phone}
-                      </div>
+                      </a>
                     </div>
                   ))}
                 </div>
               </div>
-            </>
-          )}
-          
-          {booking.additional_notes && (
-            <>
-              <Separator />
-              <div>
-                <h3 className="font-semibold mb-2">Observações</h3>
-                <p className="text-sm">{booking.additional_notes}</p>
-              </div>
-            </>
-          )}
-          
-          <Separator />
-          
-          <div>
-            <h3 className="font-semibold mb-2 flex items-center">
-              <CreditCard className="h-4 w-4 mr-2" />
-              Pagamento
-            </h3>
-            <div className="space-y-2">
-              {isRoundTrip ? (
-                <>
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm text-muted-foreground">Valor da Ida</p>
-                    <p className="font-medium">{formatCurrency(oneWayPrice)}</p>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm text-muted-foreground">Valor da Volta</p>
-                    <p className="font-medium">{formatCurrency(returnPrice)}</p>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 mt-1 border-t">
-                    <p className="font-semibold">Total</p>
-                    <p className="text-lg font-semibold text-primary">
-                      {formatCurrency(booking.total_price)}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <div className="flex justify-between items-center">
-                  <p className="font-semibold">Valor Total</p>
-                  <p className="text-lg font-semibold text-primary">
-                    {formatCurrency(booking.total_price)}
-                  </p>
+            )}
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-semibold flex items-center mb-2">
+                <CreditCard className="h-4 w-4 mr-2 text-primary" />
+                Pagamento
+              </h3>
+              <div className="text-sm space-y-1">
+                <div className="flex justify-between font-medium">
+                  <span>Valor Total:</span>
+                  <span className="text-primary">{formatCurrency(booking.total_price || 0)}</span>
                 </div>
-              )}
+                {booking.status === 'pending' && (
+                  <div className="flex items-center mt-2 text-amber-600 text-xs">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    <span>Aguardando pagamento</span>
+                  </div>
+                )}
+              </div>
             </div>
+
+            {booking.additional_notes && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-semibold mb-2">Observações</h3>
+                <p className="text-sm text-gray-700 whitespace-pre-line">{booking.additional_notes}</p>
+              </div>
+            )}
           </div>
         </div>
-        
-        <SheetFooter className="mt-6">
-          {booking.status !== 'cancelled' && booking.status !== 'completed' && (
-            <Button 
-              variant="destructive" 
-              onClick={handleCancel}
-              disabled={isCancelling}
-              className="w-full"
-            >
-              {isCancelling ? "Cancelando..." : "Cancelar Reserva"}
-            </Button>
-          )}
-        </SheetFooter>
       </SheetContent>
     </Sheet>
   );
