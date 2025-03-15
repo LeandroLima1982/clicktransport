@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Button } from "@/components/ui/button";
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Badge } from "@/components/ui/badge";
@@ -42,71 +42,94 @@ const AdminDashboardStats: React.FC = () => {
   };
 
   const fetchOrderStats = async () => {
-    // Fetch service orders
-    const { data: orders, error } = await supabase
-      .from('service_orders')
-      .select('*');
-    
-    if (error) throw error;
-    
-    // Process data for status chart
-    const statusCounts: Record<string, number> = {};
-    orders?.forEach(order => {
-      statusCounts[order.status] = (statusCounts[order.status] || 0) + 1;
-    });
-    
-    const statusData = Object.keys(statusCounts).map(status => ({
-      name: translateOrderStatus(status),
-      value: statusCounts[status],
-      color: getOrderStatusColor(status)
-    }));
-    
-    // Process data for monthly chart
-    // Group by month using created_at field
-    const now = new Date();
-    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    const lastSixMonths = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date();
-      d.setMonth(now.getMonth() - i);
-      return { month: d.getMonth(), year: d.getFullYear() };
-    }).reverse();
-    
-    const ordersByMonthData = lastSixMonths.map(({ month, year }) => {
-      const count = orders?.filter(order => {
-        const orderDate = new Date(order.created_at);
-        return orderDate.getMonth() === month && orderDate.getFullYear() === year;
-      }).length || 0;
+    try {
+      // Fetch service orders
+      const { data: orders, error } = await supabase
+        .from('service_orders')
+        .select('*');
       
-      return {
-        name: `${monthNames[month]}/${year.toString().slice(2)}`,
-        value: count
-      };
-    });
-    
-    setOrdersByStatus(statusData);
-    setOrdersByMonth(ordersByMonthData);
+      if (error) throw error;
+      
+      if (!orders || orders.length === 0) {
+        setOrdersByStatus([]);
+        setOrdersByMonth([]);
+        return;
+      }
+      
+      // Process data for status chart
+      const statusCounts: Record<string, number> = {};
+      orders.forEach(order => {
+        statusCounts[order.status] = (statusCounts[order.status] || 0) + 1;
+      });
+      
+      const statusData = Object.keys(statusCounts).map(status => ({
+        name: translateOrderStatus(status),
+        value: statusCounts[status],
+        color: getOrderStatusColor(status)
+      }));
+      
+      // Process data for monthly chart
+      // Group by month using created_at field
+      const now = new Date();
+      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      const lastSixMonths = Array.from({ length: 6 }, (_, i) => {
+        const d = new Date();
+        d.setMonth(now.getMonth() - i);
+        return { month: d.getMonth(), year: d.getFullYear() };
+      }).reverse();
+      
+      const ordersByMonthData = lastSixMonths.map(({ month, year }) => {
+        const count = orders.filter(order => {
+          const orderDate = new Date(order.created_at);
+          return orderDate.getMonth() === month && orderDate.getFullYear() === year;
+        }).length || 0;
+        
+        return {
+          name: `${monthNames[month]}/${year.toString().slice(2)}`,
+          value: count
+        };
+      });
+      
+      setOrdersByStatus(statusData);
+      setOrdersByMonth(ordersByMonthData);
+    } catch (error) {
+      console.error('Error fetching order stats:', error);
+      toast.error('Falha ao carregar estatísticas de ordens');
+      throw error;
+    }
   };
 
   const fetchCompanyStats = async () => {
-    const { data: companies, error } = await supabase
-      .from('companies')
-      .select('*');
-    
-    if (error) throw error;
-    
-    // Process data for company status chart
-    const statusCounts: Record<string, number> = {};
-    companies?.forEach(company => {
-      statusCounts[company.status] = (statusCounts[company.status] || 0) + 1;
-    });
-    
-    const companyStatusData = Object.keys(statusCounts).map(status => ({
-      name: translateCompanyStatus(status),
-      value: statusCounts[status],
-      color: getCompanyStatusColor(status)
-    }));
-    
-    setCompaniesByStatus(companyStatusData);
+    try {
+      const { data: companies, error } = await supabase
+        .from('companies')
+        .select('*');
+      
+      if (error) throw error;
+      
+      if (!companies || companies.length === 0) {
+        setCompaniesByStatus([]);
+        return;
+      }
+      
+      // Process data for company status chart
+      const statusCounts: Record<string, number> = {};
+      companies.forEach(company => {
+        statusCounts[company.status] = (statusCounts[company.status] || 0) + 1;
+      });
+      
+      const companyStatusData = Object.keys(statusCounts).map(status => ({
+        name: translateCompanyStatus(status),
+        value: statusCounts[status],
+        color: getCompanyStatusColor(status)
+      }));
+      
+      setCompaniesByStatus(companyStatusData);
+    } catch (error) {
+      console.error('Error fetching company stats:', error);
+      toast.error('Falha ao carregar estatísticas de empresas');
+      throw error;
+    }
   };
 
   const fetchRecentActivity = async () => {
@@ -149,6 +172,7 @@ const AdminDashboardStats: React.FC = () => {
     } catch (error) {
       console.error('Error fetching recent activity:', error);
       // Don't throw here - we'll still show other stats even if this fails
+      setRecentActivity([]);
     }
   };
 
@@ -271,6 +295,7 @@ const AdminDashboardStats: React.FC = () => {
         <h3 className="text-lg font-medium">Estatísticas e Relatórios</h3>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="mr-2 h-4 w-4" />
             Atualizar
           </Button>
           <Button variant="outline" size="sm">
@@ -306,25 +331,31 @@ const AdminDashboardStats: React.FC = () => {
             <CardDescription>Distribuição por status</CardDescription>
           </CardHeader>
           <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={ordersByStatus}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {ordersByStatus.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {ordersByStatus.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-muted-foreground">Nenhuma ordem de serviço encontrada</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={ordersByStatus}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {ordersByStatus.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -334,25 +365,31 @@ const AdminDashboardStats: React.FC = () => {
             <CardDescription>Distribuição de empresas por status</CardDescription>
           </CardHeader>
           <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={companiesByStatus}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {companiesByStatus.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {companiesByStatus.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-muted-foreground">Nenhuma empresa encontrada</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={companiesByStatus}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {companiesByStatus.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 

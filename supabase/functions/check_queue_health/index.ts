@@ -25,13 +25,48 @@ serve(async (req) => {
     
     console.log('Checking queue health metrics')
 
-    // Run queue health check function
-    const { data: healthData, error: healthError } = await supabaseClient.rpc('check_queue_health')
-    
-    if (healthError) {
-      console.error('Error checking queue health:', healthError)
-      throw healthError
+    // Fetch active companies first
+    const { data: activeCompanies, error: companiesError } = await supabaseClient
+      .from('companies')
+      .select('id, queue_position, name')
+      .eq('status', 'active')
+      
+    if (companiesError) {
+      console.error('Error fetching active companies:', companiesError)
+      throw companiesError
     }
+    
+    // Calculate queue health metrics manually
+    const companyCount = activeCompanies?.length || 0
+    console.log(`Found ${companyCount} active companies`)
+    
+    // Check for invalid or duplicate positions
+    const positions = activeCompanies?.map(c => c.queue_position) || []
+    const invalidPositions = positions.filter(p => p === null || p === undefined || p < 0).length
+    
+    // Check for duplicate positions
+    const positionCounts: Record<number, number> = {}
+    positions.forEach(pos => {
+      if (pos !== null && pos !== undefined) {
+        positionCounts[pos] = (positionCounts[pos] || 0) + 1
+      }
+    })
+    
+    const duplicatePositions = Object.values(positionCounts).filter(count => count > 1).length
+    
+    // Calculate health score based on issues found
+    const healthScore = companyCount > 0 
+      ? 100 - (((invalidPositions + duplicatePositions) / companyCount) * 100)
+      : 100
+    
+    const healthData = {
+      active_companies: companyCount,
+      invalid_positions: invalidPositions,
+      duplicate_positions: duplicatePositions,
+      health_score: healthScore
+    }
+    
+    console.log('Base queue health data:', healthData)
 
     // Check for bookings without service orders
     const { data: bookings, error: bookingsError } = await supabaseClient
@@ -46,11 +81,13 @@ serve(async (req) => {
       throw bookingsError
     }
     
+    console.log(`Found ${bookings?.length || 0} pending/confirmed bookings`)
+    
     let unprocessedBookings = 0
     let lastCheckedBookingId = ''
     
     // Check the first 20 bookings for service orders
-    const bookingsToCheck = bookings.slice(0, 20)
+    const bookingsToCheck = bookings?.slice(0, 20) || []
     for (const booking of bookingsToCheck) {
       lastCheckedBookingId = booking.id
       
@@ -70,6 +107,8 @@ serve(async (req) => {
       }
     }
     
+    console.log(`Found ${unprocessedBookings} unprocessed bookings out of ${bookingsToCheck.length} checked`)
+    
     // Check for service orders without booking references
     const { data: unlinkedOrders, error: unlinkedError } = await supabaseClient
       .from('service_orders')
@@ -83,6 +122,7 @@ serve(async (req) => {
     }
     
     const unlinkedCount = unlinkedOrders?.length || 0
+    console.log(`Found ${unlinkedCount} service orders without booking references`)
     
     // Combine all health metrics
     const healthMetrics = {
@@ -94,9 +134,9 @@ serve(async (req) => {
       booking_processing_score: bookingsToCheck.length > 0 
         ? Math.round(100 * (1 - (unprocessedBookings / bookingsToCheck.length))) 
         : 100,
-      overall_health_score: healthData && healthData.active_companies > 0
+      overall_health_score: companyCount > 0
         ? Math.round(
-            (healthData.health_score + 
+            (healthScore + 
              (bookingsToCheck.length > 0 ? (100 * (1 - (unprocessedBookings / bookingsToCheck.length))) : 100) +
              (100 * (1 - Math.min(1, unlinkedCount / 100)))
             ) / 3

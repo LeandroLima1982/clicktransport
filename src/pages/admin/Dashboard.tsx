@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,35 +34,46 @@ const AdminDashboard: React.FC = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      const { count: companiesCount, error: companiesError } = await supabase
+      // Use more robust queries without head:true parameter which can cause issues
+      let companiesCount = 0;
+      let driversCount = 0;
+      let ordersCount = 0;
+      let vehiclesCount = 0;
+
+      // Fetch all data counts without using head:true option
+      const { data: companies, error: companiesError } = await supabase
         .from('companies')
-        .select('*', { count: 'exact', head: true });
+        .select('id');
       
       if (companiesError) throw companiesError;
+      companiesCount = companies?.length || 0;
       
-      const { count: driversCount, error: driversError } = await supabase
+      const { data: drivers, error: driversError } = await supabase
         .from('drivers')
-        .select('*', { count: 'exact', head: true });
+        .select('id');
       
       if (driversError) throw driversError;
+      driversCount = drivers?.length || 0;
       
-      const { count: ordersCount, error: ordersError } = await supabase
+      const { data: orders, error: ordersError } = await supabase
         .from('service_orders')
-        .select('*', { count: 'exact', head: true });
+        .select('id');
       
       if (ordersError) throw ordersError;
+      ordersCount = orders?.length || 0;
       
-      const { count: vehiclesCount, error: vehiclesError } = await supabase
+      const { data: vehicles, error: vehiclesError } = await supabase
         .from('vehicles')
-        .select('*', { count: 'exact', head: true });
+        .select('id');
       
       if (vehiclesError) throw vehiclesError;
+      vehiclesCount = vehicles?.length || 0;
       
       setDashboardStats({
-        companies: companiesCount || 0,
-        drivers: driversCount || 0,
-        orders: ordersCount || 0,
-        vehicles: vehiclesCount || 0,
+        companies: companiesCount,
+        drivers: driversCount,
+        orders: ordersCount,
+        vehicles: vehiclesCount,
         loading: false
       });
     } catch (error) {

@@ -27,32 +27,42 @@ const DirectBookingAssignment = () => {
   } = useQuery({
     queryKey: ['direct-unprocessed-bookings'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('id, reference_code, origin, destination, status')
-        .in('status', ['pending', 'confirmed'])
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      
-      // For each booking check if it has already been assigned
-      const filteredBookings = await Promise.all(data.map(async (booking) => {
-        const { data: serviceOrders, error: ordersError } = await supabase
-          .from('service_orders')
-          .select('id')
-          .ilike('notes', `%Reserva #${booking.reference_code}%`)
-          .limit(1);
+      try {
+        // First get all bookings that are pending or confirmed
+        const { data: bookings, error } = await supabase
+          .from('bookings')
+          .select('id, reference_code, origin, destination, status')
+          .in('status', ['pending', 'confirmed'])
+          .order('created_at', { ascending: false });
           
-        if (ordersError) throw ordersError;
+        if (error) throw error;
         
-        if (!serviceOrders || serviceOrders.length === 0) {
-          return booking;
+        if (!bookings || bookings.length === 0) {
+          return [];
         }
         
-        return null;
-      }));
-      
-      return filteredBookings.filter(Boolean);
+        // For each booking check if it has already been assigned
+        const filteredBookings = [];
+        
+        for (const booking of bookings) {
+          const { data: serviceOrders, error: ordersError } = await supabase
+            .from('service_orders')
+            .select('id')
+            .ilike('notes', `%Reserva #${booking.reference_code}%`)
+            .limit(1);
+            
+          if (ordersError) throw ordersError;
+          
+          if (!serviceOrders || serviceOrders.length === 0) {
+            filteredBookings.push(booking);
+          }
+        }
+        
+        return filteredBookings;
+      } catch (error) {
+        console.error('Error fetching unprocessed bookings:', error);
+        throw error;
+      }
     }
   });
   
