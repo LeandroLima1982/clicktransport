@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -31,7 +32,9 @@ export const getNextCompanyInQueue = async () => {
     console.log('Finding next company in queue for assignment');
     
     // Call the RPC function to get the next company
-    const { data, error } = await supabase.rpc('get_next_company_in_queue') as {
+    const { data, error } = await supabase.rpc('get_next_company_in_queue', {}, {
+      count: 'exact'
+    }) as unknown as {
       data: NextCompanyResponse | null;
       error: any;
     };
@@ -77,7 +80,9 @@ export const updateCompanyQueuePosition = async (companyId: string) => {
     // Use a secure RPC function to update the queue position atomically
     const { data, error } = await supabase.rpc('update_company_queue_position', {
       company_id: companyId
-    }) as {
+    }, {
+      count: 'exact'
+    }) as unknown as {
       data: UpdatePositionResponse | null;
       error: any;
     };
@@ -132,7 +137,9 @@ export const resetCompanyQueuePositions = async () => {
     console.log('Resetting queue positions for all companies');
     
     // Use a secure RPC function to reset all queue positions atomically
-    const { data, error } = await supabase.rpc('reset_company_queue_positions') as {
+    const { data, error } = await supabase.rpc('reset_company_queue_positions', {}, {
+      count: 'exact'
+    }) as unknown as {
       data: ResetQueueResponse | null;
       error: any;
     };
@@ -163,7 +170,9 @@ export const fixInvalidQueuePositions = async () => {
     console.log('Fixing invalid queue positions for companies');
     
     // Use a secure RPC function to fix invalid queue positions atomically
-    const { data, error } = await supabase.rpc('fix_invalid_queue_positions') as {
+    const { data, error } = await supabase.rpc('fix_invalid_queue_positions', {}, {
+      count: 'exact'
+    }) as unknown as {
       data: FixPositionsResponse | null;
       error: any;
     };
@@ -288,7 +297,9 @@ export const validateCompanyForAssignment = async (companyId: string) => {
       // Call directly to fix just this company
       const { data, error } = await supabase.rpc('fix_company_queue_position', {
         company_id: companyId
-      }) as {
+      }, {
+        count: 'exact'
+      }) as unknown as {
         data: UpdatePositionResponse | null;
         error: any;
       };
