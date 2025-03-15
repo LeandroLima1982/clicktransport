@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,11 +27,9 @@ import { RefreshCw, Search, Calendar, Building } from 'lucide-react';
 const BookingAssignments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Fetch the most recent bookings and their service orders
   const { data: recentAssignments, isLoading, refetch } = useQuery({
     queryKey: ['recent-booking-assignments'],
     queryFn: async () => {
-      // First get recent bookings
       const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
         .select('id, reference_code, origin, destination, created_at, status')
@@ -41,9 +38,7 @@ const BookingAssignments = () => {
         
       if (bookingsError) throw bookingsError;
       
-      // For each booking, check if there's a service order
       const assignmentsData = await Promise.all(bookings.map(async (booking) => {
-        // Find any service orders with this booking reference in the notes
         const { data: serviceOrders, error: ordersError } = await supabase
           .from('service_orders')
           .select('id, company_id, created_at, status, notes')
@@ -54,7 +49,6 @@ const BookingAssignments = () => {
         
         const serviceOrder = serviceOrders && serviceOrders.length > 0 ? serviceOrders[0] : null;
         
-        // If there's a service order, fetch the company details
         let company = null;
         if (serviceOrder?.company_id) {
           const { data: companyData, error: companyError } = await supabase
