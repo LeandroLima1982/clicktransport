@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 import TransitionEffect from '@/components/TransitionEffect';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanyManagement from '@/components/admin/CompanyManagement';
@@ -11,9 +11,10 @@ import ServiceOrderMonitoring from '@/components/admin/ServiceOrderMonitoring';
 import { FileText, Settings, Building2, Users, Car, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { UserMenu } from '@/components/navbar';
 
 const AdminDashboard: React.FC = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, signOut, isAuthenticating } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [dashboardStats, setDashboardStats] = useState({
     companies: 0,
@@ -78,6 +79,15 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Erro ao fazer logout');
+    }
+  };
+
   if (!user || userRole !== 'admin') {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -98,13 +108,21 @@ const AdminDashboard: React.FC = () => {
             <h1 className="text-3xl font-bold">Painel de Administração</h1>
             <p className="text-muted-foreground">Gerencie empresas, ordens de serviço e mais</p>
           </div>
-          <div>
+          <div className="flex items-center gap-4">
             <Button asChild variant="outline">
               <Link to="/admin/settings">
                 <Settings className="mr-2 h-4 w-4" />
                 Configurações
               </Link>
             </Button>
+            <div>
+              <UserMenu 
+                user={user} 
+                userRole={userRole} 
+                handleSignOut={handleSignOut} 
+                isAuthenticating={isAuthenticating} 
+              />
+            </div>
           </div>
         </div>
 
