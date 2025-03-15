@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Booking } from '@/types/booking';
@@ -157,7 +156,7 @@ export const updateCompanyQueuePosition = async (companyId: string) => {
     const { error } = await supabase
       .from('companies')
       .update({ 
-        queue_position: supabase.rpc('increment_queue_position', { row_id: companyId }),
+        queue_position: supabase.rpc('increment_queue_position', { row_id: companyId }) as unknown as number,
         last_order_assigned: new Date().toISOString()
       })
       .eq('id', companyId);
