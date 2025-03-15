@@ -4,17 +4,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 import { toast } from '@/components/ui/use-toast';
 
-// Define the user role type
-export type UserRole = 'admin' | 'company' | 'driver' | 'customer' | null;
+// Define the user role type to match the one in auth/types.ts
+export type UserRole = 'admin' | 'company' | 'driver' | 'client' | null;
 
-// Define the auth context type
+// Define the auth context type to include all required properties
 export interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: UserRole;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  signUp: (email: string, password: string, role: UserRole, metadata?: any) => Promise<void>;
+  isLoading: boolean;
+  companyContext?: {
+    id: string;
+    name: string;
+  } | null;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signOut: () => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, role: UserRole, metadata?: any) => Promise<{ error: Error | null }>;
   isAuthenticating: boolean;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
 }
@@ -29,6 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [companyContext, setCompanyContext] = useState<{id: string, name: string} | null>(null);
 
   useEffect(() => {
     // Set up the auth state listener
@@ -88,9 +94,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setUserRole(data?.role as UserRole || null);
       console.log(`User role set: ${data?.role}`);
+      
+      // Check if user is a driver and has company context
+      if (data?.role === 'driver') {
+        await fetchDriverCompanyContext(userId);
+      }
     } catch (error) {
       console.error('Error fetching user role:', error);
       setUserRole(null);
+    }
+  };
+  
+  // Fetch driver's company context if applicable
+  const fetchDriverCompanyContext = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('drivers')
+        .select('company_id, companies:company_id(id, name)')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching driver company context:', error);
+        return;
+      }
+      
+      if (data?.companies) {
+        const company = data.companies as {id: string, name: string};
+        setCompanyContext({
+          id: company.id,
+          name: company.name
+        });
+        
+        // Also store in localStorage for persistence
+        localStorage.setItem('driverCompanyId', company.id);
+        localStorage.setItem('driverCompanyName', company.name);
+      }
+    } catch (error) {
+      console.error('Error fetching driver company context:', error);
     }
   };
 
@@ -115,13 +156,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         title: "Login realizado com sucesso",
         description: "Bem-vindo de volta!",
       });
+      
+      return { error: null };
     } catch (error: any) {
       toast({
         title: "Erro ao fazer login",
         description: error.message || 'Verifique suas credenciais e tente novamente.',
         variant: "destructive",
       });
-      throw error;
+      return { error };
     } finally {
       setIsAuthenticating(false);
     }
@@ -140,17 +183,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(null);
       setUser(null);
       setUserRole(null);
+      setCompanyContext(null);
+      
+      // Clear company context from local storage
+      localStorage.removeItem('driverCompanyId');
+      localStorage.removeItem('driverCompanyName');
       
       toast({
         title: "Logout realizado com sucesso",
       });
+      
+      return { error: null };
     } catch (error: any) {
       toast({
         title: "Erro ao fazer logout",
         description: error.message,
         variant: "destructive",
       });
-      throw error;
+      return { error };
     } finally {
       setIsAuthenticating(false);
     }
@@ -183,14 +233,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "Verifique seu e-mail para confirmar o cadastro.",
       });
       
-      return data;
+      return { error: null };
     } catch (error: any) {
       toast({
         title: "Erro ao criar conta",
         description: error.message,
         variant: "destructive",
       });
-      throw error;
+      return { error };
     } finally {
       setIsAuthenticating(false);
     }
@@ -211,7 +261,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // The auth context value
-  const value = {
+  const value: AuthContextType = {
     user,
     session,
     userRole,
@@ -220,12 +270,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signUp,
     isAuthenticating,
     resetPassword,
+    isLoading,
+    companyContext
   };
 
   // Provide the auth context
   return (
     <AuthContext.Provider value={value}>
-      {!isLoading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
