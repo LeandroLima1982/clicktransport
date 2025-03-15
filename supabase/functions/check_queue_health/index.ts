@@ -7,6 +7,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Default health metrics when there's an error
+const defaultHealthMetrics = {
+  active_companies: 0,
+  invalid_positions: 0,
+  duplicate_positions: 0,
+  health_score: 0,
+  unprocessed_bookings: 0,
+  unlinked_orders: 0,
+  bookings_sample_size: 0,
+  booking_processing_score: 0,
+  overall_health_score: 0,
+  last_checked_booking_id: '',
+  error: null
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -147,15 +162,7 @@ serve(async (req) => {
     console.log('Queue health check completed:', healthMetrics)
 
     return new Response(
-      JSON.stringify(healthMetrics || {
-        active_companies: 0,
-        invalid_positions: 0,
-        duplicate_positions: 0,
-        health_score: 0,
-        unprocessed_bookings: 0,
-        unlinked_orders: 0,
-        overall_health_score: 0
-      }),
+      JSON.stringify(healthMetrics || defaultHealthMetrics),
       { 
         headers: { 
           ...corsHeaders,
@@ -169,14 +176,8 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        active_companies: 0,
-        invalid_positions: 0,
-        duplicate_positions: 0,
-        health_score: 0,
-        unprocessed_bookings: 0,
-        unlinked_orders: 0,
-        overall_health_score: 0
+        ...defaultHealthMetrics,
+        error: error.message 
       }),
       { 
         status: 400,
