@@ -4,8 +4,9 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Users } from 'lucide-react';
+import { CheckCircle, Users, Share2, WhatsApp } from 'lucide-react';
 import { Vehicle } from './steps/VehicleSelection';
+import { shareViaWhatsApp, formatBookingShareMessage } from '@/services/notifications/notificationService';
 
 interface BookingCompleteProps {
   bookingReference: string;
@@ -13,6 +14,8 @@ interface BookingCompleteProps {
   bookingData: {
     date: Date | undefined;
     tripType?: string;
+    origin?: string;
+    destination?: string;
     passengerData?: {
       name: string;
       phone: string;
@@ -34,6 +37,24 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
   const oneWayPrice = bookingData.tripType === 'roundtrip' ? totalPrice / 2 : totalPrice;
   const returnPrice = bookingData.tripType === 'roundtrip' ? totalPrice / 2 : 0;
 
+  const handleShareViaWhatsApp = () => {
+    const shareData = {
+      origin: bookingData.origin || '',
+      destination: bookingData.destination || '',
+      date: bookingData.date,
+      tripType: bookingData.tripType,
+      passengerData: bookingData.passengerData
+    };
+    
+    const message = formatBookingShareMessage(shareData, {
+      simplified: true,
+      referenceCode: bookingReference,
+      includePassengers: true
+    });
+    
+    shareViaWhatsApp(message);
+  };
+
   return (
     <div className="text-center py-6">
       <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 text-primary mb-4">
@@ -51,11 +72,35 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
             <div className="text-sm text-gray-500">Guarde este código para referência futura</div>
           </div>
           
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleShareViaWhatsApp}
+            className="mb-4 w-full flex items-center justify-center"
+          >
+            <WhatsApp className="h-4 w-4 mr-2 text-green-600" />
+            <span>Compartilhar via WhatsApp</span>
+          </Button>
+          
           <div className="border-t border-b py-4 space-y-3 text-left">
             <div className="flex justify-between">
               <span className="text-gray-500">Veículo:</span>
               <span className="font-medium">{selectedVehicle?.name}</span>
             </div>
+            
+            {bookingData.origin && bookingData.destination && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Origem:</span>
+                  <span className="font-medium">{bookingData.origin}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Destino:</span>
+                  <span className="font-medium">{bookingData.destination}</span>
+                </div>
+              </>
+            )}
+            
             <div className="flex justify-between">
               <span className="text-gray-500">Data:</span>
               <span className="font-medium">
@@ -73,7 +118,10 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
                   {bookingData.passengerData.map((passenger, index) => (
                     <div key={index} className="text-sm">
                       <div className="font-medium">{passenger.name}</div>
-                      <div className="text-gray-500">WhatsApp: {passenger.phone}</div>
+                      <div className="flex items-center text-gray-500">
+                        <WhatsApp className="h-3 w-3 mr-1 text-green-600" />
+                        {passenger.phone}
+                      </div>
                     </div>
                   ))}
                 </div>

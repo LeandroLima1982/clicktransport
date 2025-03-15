@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -10,7 +10,9 @@ import {
   CreditCard,
   X,
   User,
-  Users
+  Users,
+  Share2,
+  WhatsApp
 } from 'lucide-react';
 import { 
   Sheet,
@@ -24,6 +26,8 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import BookingStatus from './BookingStatus';
 import { Booking } from '@/types/booking';
+import { shareViaWhatsApp, formatBookingShareMessage, vibrate, feedbackPatterns } from '@/services/notifications/notificationService';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface BookingDetailsProps {
   booking: Booking;
@@ -38,7 +42,8 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
   onClose,
   onCancel
 }) => {
-  const [isCancelling, setIsCancelling] = React.useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const isMobile = useIsMobile();
   
   const formatDate = (dateString: string) => {
     try {
@@ -97,6 +102,27 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
   const oneWayPrice = isRoundTrip ? totalPrice / 2 : totalPrice;
   const returnPrice = isRoundTrip ? totalPrice / 2 : 0;
   
+  const handleShareViaWhatsApp = () => {
+    vibrate(feedbackPatterns.success);
+    
+    const bookingData = {
+      origin: booking.origin,
+      destination: booking.destination,
+      date: formatDate(booking.travel_date),
+      time: formatTime(booking.travel_date),
+      tripType: isRoundTrip ? 'roundtrip' : 'oneway',
+      passengerData
+    };
+    
+    const message = formatBookingShareMessage(bookingData, {
+      simplified: true,
+      referenceCode: booking.reference_code,
+      includePassengers: true
+    });
+    
+    shareViaWhatsApp(message);
+  };
+  
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
@@ -118,6 +144,16 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
             <p className="text-sm text-muted-foreground">
               Reserva feita em {formatDate(booking.booking_date)}
             </p>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleShareViaWhatsApp}
+              className="mt-2 w-full flex items-center justify-center"
+            >
+              <WhatsApp className="h-4 w-4 mr-2 text-green-600" />
+              <span>Compartilhar via WhatsApp</span>
+            </Button>
           </div>
           
           <Separator />
@@ -177,7 +213,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Passageiros</p>
-                <p>{booking.passengers || 1}</p>
+                <p>{booking.passengers || passengerData.length || 1}</p>
               </div>
             </div>
           </div>
@@ -194,7 +230,10 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
                   {passengerData.map((passenger: any, index: number) => (
                     <div key={index} className="bg-gray-50 p-3 rounded-md">
                       <div className="font-medium">{passenger.name}</div>
-                      <div className="text-sm text-muted-foreground">WhatsApp: {passenger.phone}</div>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <WhatsApp className="h-3 w-3 mr-1 text-green-600" />
+                        {passenger.phone}
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -1,11 +1,12 @@
 
 import React from 'react';
-import { Check, CalendarCheck, Copy, Download, Users } from 'lucide-react';
+import { Check, CalendarCheck, Copy, Download, Users, WhatsApp, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Vehicle } from './VehicleSelection';
 import { toast } from 'sonner';
+import { shareViaWhatsApp, formatBookingShareMessage } from '@/services/notifications/notificationService';
 
 interface BookingCompleteProps {
   bookingReference: string;
@@ -45,6 +46,16 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
     navigator.clipboard.writeText(bookingReference);
     toast.success('Código de reserva copiado para a área de transferência');
   };
+  
+  const handleShareViaWhatsApp = () => {
+    const message = formatBookingShareMessage(bookingData, {
+      simplified: true,
+      referenceCode: bookingReference,
+      includePassengers: true
+    });
+    
+    shareViaWhatsApp(message);
+  };
 
   return (
     <div className="space-y-6 max-w-md mx-auto text-center">
@@ -71,6 +82,15 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
           </button>
         </div>
       </div>
+      
+      <Button 
+        variant="outline" 
+        className="w-full flex items-center justify-center"
+        onClick={handleShareViaWhatsApp}
+      >
+        <WhatsApp className="h-4 w-4 mr-2 text-green-600" />
+        Compartilhar via WhatsApp
+      </Button>
       
       <div className="space-y-3">
         <div className="flex justify-between">
@@ -100,7 +120,10 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
               {bookingData.passengerData.map((passenger, index) => (
                 <div key={index} className="text-sm">
                   <div>{passenger.name}</div>
-                  <div className="text-gray-500">WhatsApp: {passenger.phone}</div>
+                  <div className="flex items-center text-gray-500">
+                    <WhatsApp className="h-3 w-3 mr-1 text-green-600" />
+                    {passenger.phone}
+                  </div>
                 </div>
               ))}
             </div>
