@@ -5,6 +5,8 @@ import { supabase } from '../../../../integrations/supabase/client';
 // Verify if a user has admin role
 export const verifyAdminRole = async (userId: string) => {
   try {
+    console.log('Verifying admin role for user ID:', userId);
+    
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('role')
@@ -23,10 +25,10 @@ export const verifyAdminRole = async (userId: string) => {
     }
     
     const userRole = profileData?.role;
-    console.log('Admin role verification:', userRole);
+    console.log('Admin role verification result:', userRole);
     
     if (userRole !== 'admin') {
-      console.error('User is not an admin');
+      console.error('User is not an admin, role found:', userRole);
       return { 
         isAdmin: false, 
         error: {
@@ -36,6 +38,7 @@ export const verifyAdminRole = async (userId: string) => {
       };
     }
     
+    console.log('Admin role verified successfully');
     return { isAdmin: true, error: null };
   } catch (err) {
     console.error('Error verifying admin role:', err);
