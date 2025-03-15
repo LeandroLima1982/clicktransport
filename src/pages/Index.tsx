@@ -10,7 +10,7 @@ import FAQ from '@/components/FAQ';
 import ServiceForm from '@/components/ServiceForm';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
   const { isLoading } = useAuth();
