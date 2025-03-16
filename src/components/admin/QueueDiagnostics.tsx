@@ -4,17 +4,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useCompanyQueue } from '@/hooks/useCompanyQueue';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 
 const QueueDiagnostics: React.FC = () => {
   const { 
     companies, 
     isLoading, 
+    error,
     fetchCompanies, 
     fixQueuePositions, 
     resetQueue, 
-    moveCompanyToEnd 
+    moveCompanyToEnd,
+    runDiagnostics
   } = useCompanyQueue();
   
   const [isFixing, setIsFixing] = useState(false);
@@ -61,6 +64,14 @@ const QueueDiagnostics: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {error && (
+          <Alert variant="error" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Erro</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
         <div className="flex justify-end space-x-2 mb-4">
           <Button variant="outline" size="sm" onClick={fetchCompanies} disabled={isLoading}>
             {isLoading ? (
@@ -94,6 +105,14 @@ const QueueDiagnostics: React.FC = () => {
             ) : (
               "Resetar Fila"
             )}
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={runDiagnostics} 
+            disabled={isLoading}
+          >
+            Executar Diagnóstico
           </Button>
         </div>
         
@@ -161,7 +180,7 @@ const QueueDiagnostics: React.FC = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-4">
-                    <p className="text-muted-foreground">Nenhuma empresa encontrada</p>
+                    <p className="text-muted-foreground">{error ? 'Erro ao carregar dados' : 'Nenhuma empresa encontrada'}</p>
                   </TableCell>
                 </TableRow>
               )}

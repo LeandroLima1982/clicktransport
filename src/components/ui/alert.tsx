@@ -18,6 +18,8 @@ const alertVariants = cva(
           "border-yellow-500/50 text-yellow-700 dark:border-yellow-500 [&>svg]:text-yellow-500",
         secondary:
           "border-secondary/50 text-secondary-foreground dark:border-secondary [&>svg]:text-secondary-foreground",
+        error:
+          "border-red-500/50 text-red-700 dark:border-red-500 bg-red-50 dark:bg-red-900/10 [&>svg]:text-red-500",
       },
     },
     defaultVariants: {

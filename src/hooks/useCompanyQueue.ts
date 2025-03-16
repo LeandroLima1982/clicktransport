@@ -25,12 +25,14 @@ type DiagnosticsData = {
 export const useCompanyQueue = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [diagnostics, setDiagnostics] = useState<DiagnosticsData | null>(null);
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
   
   const fetchCompanies = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError(null);
       
       const { data, error } = await supabase
         .from('companies')
@@ -39,10 +41,13 @@ export const useCompanyQueue = () => {
       
       if (error) throw error;
       
-      setCompanies(data);
-    } catch (error) {
+      setCompanies(data || []);
+    } catch (error: any) {
       console.error('Error fetching companies:', error);
-      toast.error('Falha ao carregar empresas');
+      setError(error.message || 'Falha ao carregar empresas');
+      toast.error('Falha ao carregar empresas', {
+        description: error.message
+      });
     } finally {
       setIsLoading(false);
     }
@@ -50,6 +55,7 @@ export const useCompanyQueue = () => {
   
   const fixQueuePositions = useCallback(async () => {
     try {
+      setError(null);
       // We need to reorganize the queue positions to be sequential
       const { data: activeCompanies, error: fetchError } = await supabase
         .from('companies')
@@ -71,14 +77,18 @@ export const useCompanyQueue = () => {
       
       toast.success('Posições da fila corrigidas com sucesso');
       await fetchCompanies();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fixing queue positions:', error);
-      toast.error('Falha ao corrigir posições da fila');
+      setError(error.message || 'Falha ao corrigir posições da fila');
+      toast.error('Falha ao corrigir posições da fila', {
+        description: error.message
+      });
     }
   }, [fetchCompanies]);
   
   const resetQueue = useCallback(async () => {
     try {
+      setError(null);
       // Reset all queue positions based on alphabetical company name
       const { data: activeCompanies, error: fetchError } = await supabase
         .from('companies')
@@ -103,14 +113,18 @@ export const useCompanyQueue = () => {
       
       toast.success('Fila resetada com sucesso');
       await fetchCompanies();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error resetting queue:', error);
-      toast.error('Falha ao resetar fila');
+      setError(error.message || 'Falha ao resetar fila');
+      toast.error('Falha ao resetar fila', {
+        description: error.message
+      });
     }
   }, [fetchCompanies]);
   
   const moveCompanyToEnd = useCallback(async (companyId: string) => {
     try {
+      setError(null);
       // Get current highest queue position
       const { data: maxResult, error: maxError } = await supabase
         .from('companies')
@@ -118,7 +132,7 @@ export const useCompanyQueue = () => {
         .eq('status', 'active')
         .order('queue_position', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();  // Usando maybeSingle em vez de single para evitar erros
         
       if (maxError) throw maxError;
       
@@ -134,15 +148,19 @@ export const useCompanyQueue = () => {
       
       toast.success('Empresa movida para o fim da fila');
       await fetchCompanies();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error moving company to end of queue:', error);
-      toast.error('Falha ao mover empresa para o fim da fila');
+      setError(error.message || 'Falha ao mover empresa para o fim da fila');
+      toast.error('Falha ao mover empresa para o fim da fila', {
+        description: error.message
+      });
     }
   }, [fetchCompanies]);
   
   const runDiagnostics = useCallback(async () => {
     try {
       setDiagnosticsLoading(true);
+      setError(null);
       
       // Get all companies with service order counts
       const { data: companiesWithOrders, error: companiesError } = await supabase
@@ -190,9 +208,12 @@ export const useCompanyQueue = () => {
         companies: companiesWithStats
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error running diagnostics:', error);
-      toast.error('Falha ao executar diagnóstico');
+      setError(error.message || 'Falha ao executar diagnóstico');
+      toast.error('Falha ao executar diagnóstico', {
+        description: error.message
+      });
     } finally {
       setDiagnosticsLoading(false);
     }
@@ -201,6 +222,7 @@ export const useCompanyQueue = () => {
   return {
     companies,
     isLoading,
+    error,
     fetchCompanies,
     fixQueuePositions,
     resetQueue,

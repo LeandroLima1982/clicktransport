@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from '@/main';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { AlertTriangle } from 'lucide-react';
 
 interface Company {
   id: string;
@@ -36,10 +38,16 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
   onClose,
   onStatusChange
 }) => {
+  const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  
   if (!company) return null;
 
   const handleStatusChange = async (newStatus: string) => {
     try {
+      setIsUpdating(true);
+      setError(null);
+      
       const { error } = await supabase
         .from('companies')
         .update({ status: newStatus })
@@ -49,9 +57,14 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
       
       toast.success(`Status da empresa atualizado para ${newStatus}`);
       onStatusChange();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating company status:', error);
-      toast.error('Erro ao atualizar status da empresa');
+      setError(error.message || 'Erro ao atualizar status da empresa');
+      toast.error('Erro ao atualizar status da empresa', {
+        description: error.message
+      });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -90,6 +103,14 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
           </SheetDescription>
         </SheetHeader>
         
+        {error && (
+          <Alert variant="error" className="my-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Erro</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
         <div className="py-6 space-y-4">
           <div>
             <h3 className="text-sm font-medium text-gray-500">Nome</h3>
@@ -125,6 +146,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
               variant={company.status === 'active' ? 'default' : 'outline'}
               onClick={() => handleStatusChange('active')}
               className="bg-green-100 text-green-800 hover:bg-green-200"
+              disabled={isUpdating}
             >
               Ativar
             </Button>
@@ -133,6 +155,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
               variant={company.status === 'pending' ? 'default' : 'outline'}
               onClick={() => handleStatusChange('pending')}
               className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+              disabled={isUpdating}
             >
               Pendente
             </Button>
@@ -141,6 +164,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
               variant={company.status === 'inactive' ? 'default' : 'outline'}
               onClick={() => handleStatusChange('inactive')}
               className="bg-gray-100 text-gray-800 hover:bg-gray-200"
+              disabled={isUpdating}
             >
               Inativar
             </Button>
@@ -149,6 +173,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
               variant={company.status === 'suspended' ? 'default' : 'outline'}
               onClick={() => handleStatusChange('suspended')}
               className="bg-red-100 text-red-800 hover:bg-red-200"
+              disabled={isUpdating}
             >
               Suspender
             </Button>
