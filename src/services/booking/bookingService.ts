@@ -25,12 +25,18 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
     
     // Create a valid booking object with defaults for required fields
     const validBookingData = {
-      ...bookingData,
+      user_id: bookingData.user_id,
+      origin: bookingData.origin,
+      destination: bookingData.destination,
       booking_date: bookingData.booking_date || new Date().toISOString(),
       travel_date: bookingData.travel_date || new Date().toISOString(),
       reference_code: bookingData.reference_code || `BK-${Date.now()}`,
       total_price: bookingData.total_price || 0,
-      status: bookingData.status || 'pending'
+      status: bookingData.status || 'pending',
+      return_date: bookingData.return_date,
+      passengers: bookingData.passengers,
+      vehicle_type: bookingData.vehicle_type,
+      additional_notes: bookingData.additional_notes
     };
     
     const { data, error } = await supabase
