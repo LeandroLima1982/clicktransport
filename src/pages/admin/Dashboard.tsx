@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import ServiceOrderMonitoring from '@/components/admin/ServiceOrderMonitoring';
 import PerformanceReports from '@/components/admin/PerformanceReports';
 import DashboardStats from '@/components/admin/DashboardStats';
 import QueueDiagnostics from '@/components/admin/QueueDiagnostics';
-import { FileText, Settings, UserCheck, ChartBar, Loader2, LogOut, RefreshCw } from 'lucide-react';
+import { FileText, Settings, UserCheck, ChartBar, Loader2, LogOut, RefreshCw, TestTube } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useCompanyQueue } from '@/hooks/useCompanyQueue';
@@ -35,21 +34,18 @@ const AdminDashboard: React.FC = () => {
   const fetchDashboardStats = async () => {
     try {
       setIsRefreshing(true);
-      // Fetch companies count
       const { count: companiesCount, error: companiesError } = await supabase
         .from('companies')
         .select('*', { count: 'exact', head: true });
       
       if (companiesError) throw companiesError;
       
-      // Fetch drivers count
       const { count: driversCount, error: driversError } = await supabase
         .from('drivers')
         .select('*', { count: 'exact', head: true });
       
       if (driversError) throw driversError;
       
-      // Fetch orders count
       const { count: ordersCount, error: ordersError } = await supabase
         .from('service_orders')
         .select('*', { count: 'exact', head: true });
@@ -118,6 +114,12 @@ const AdminDashboard: React.FC = () => {
                 Configuração do Banco
               </Link>
             </Button>
+            <Button asChild variant="outline">
+              <Link to="/admin/test-workflow">
+                <TestTube className="mr-2 h-4 w-4" />
+                Ambiente de Testes
+              </Link>
+            </Button>
             <Button variant="destructive" onClick={handleSignOut} disabled={isAuthenticating}>
               {isAuthenticating ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -150,7 +152,6 @@ const AdminDashboard: React.FC = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {/* Queue Diagnostics Component */}
             <QueueDiagnostics />
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

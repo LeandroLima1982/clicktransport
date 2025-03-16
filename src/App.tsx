@@ -16,6 +16,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import AdminDashboard from './pages/admin/Dashboard';
 import DatabaseSetup from './pages/admin/DatabaseSetup';
 import CreateAdmin from './pages/admin/CreateAdmin';
+import TestWorkflow from './pages/admin/TestWorkflow';
 
 // Company pages
 import CompanyDashboard from './pages/company/Dashboard';
@@ -167,6 +168,11 @@ function App() {
             <Route path="/admin/database-setup" element={
               <ProtectedRoute requiredRole="admin">
                 <DatabaseSetup />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/test-workflow" element={
+              <ProtectedRoute requiredRole="admin">
+                <TestWorkflow />
               </ProtectedRoute>
             } />
             

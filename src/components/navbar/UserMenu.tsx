@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, LogOut, Loader2, Car, Briefcase, Shield, LayoutDashboard, Book, Home, Settings, Users, Calendar, CreditCard } from 'lucide-react';
+import { User, LogOut, Loader2, Car, Briefcase, Shield, LayoutDashboard, Book, Home, Settings, Users, Calendar, CreditCard, TestTube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/hooks/auth/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
@@ -162,6 +162,12 @@ const UserMenu: React.FC<UserMenuProps> = ({
               <Link to="/admin/database-setup" className="w-full">
                 <Settings className="h-4 w-4 mr-2" />
                 Configuração do Banco
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/admin/test-workflow" className="w-full">
+                <TestTube className="h-4 w-4 mr-2" />
+                Ambiente de Testes
               </Link>
             </DropdownMenuItem>
           </>}
