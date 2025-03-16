@@ -1,128 +1,138 @@
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { 
-  getCompanyQueueStatus, 
-  fixInvalidQueuePositions, 
-  resetCompanyQueuePositions, 
-  getQueueDiagnostics 
-} from '@/services/booking/queueService';
 
-export const useCompanyQueue = () => {
-  const [resetting, setResetting] = useState(false);
-  const [isReconciling, setIsReconciling] = useState(false);
-  const [isFixingPositions, setIsFixingPositions] = useState(false);
-  const [isDiagnosing, setIsDiagnosing] = useState(false);
-  const queryClient = useQueryClient();
-  
-  const { 
-    data: queueStatus = [], 
-    isLoading, 
-    isError, 
-    refetch 
-  } = useQuery({
-    queryKey: ['company-queue-status'],
-    queryFn: async () => {
-      const { companies, error } = await getCompanyQueueStatus();
-      if (error) throw error;
-      return companies;
-    },
-  });
-  
-  const { 
-    data: diagnostics, 
-    isLoading: diagnosticsLoading, 
-    refetch: refetchDiagnostics 
-  } = useQuery({
-    queryKey: ['queue-diagnostics'],
-    queryFn: async () => {
-      setIsDiagnosing(true);
-      try {
-        const result = await getQueueDiagnostics();
-        if (!result.success) throw result.error;
-        return result.data;
-      } finally {
-        setIsDiagnosing(false);
-      }
-    },
-    enabled: false, // Only run when explicitly requested
-    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-  });
-  
-  // Mutation for resetting the queue
-  const resetQueueMutation = useMutation({
-    mutationFn: async () => {
-      setResetting(true);
-      try {
-        const { success, error } = await resetCompanyQueuePositions();
-        if (!success) throw error;
-        return success;
-      } finally {
-        setResetting(false);
-      }
-    },
-    onSuccess: () => {
-      toast.success('Fila de empresas reiniciada com sucesso');
-      queryClient.invalidateQueries({ queryKey: ['company-queue-status'] });
-      queryClient.invalidateQueries({ queryKey: ['queue-diagnostics'] });
-    },
-    onError: (error: any) => {
-      toast.error(`Erro ao reiniciar fila de empresas: ${error?.message || 'Erro desconhecido'}`);
-    }
-  });
-  
-  // Mutation for fixing invalid queue positions
-  const fixPositionsMutation = useMutation({
-    mutationFn: async () => {
-      setIsFixingPositions(true);
-      try {
-        return await fixInvalidQueuePositions();
-      } finally {
-        setIsFixingPositions(false);
-      }
-    },
-    onSuccess: (data) => {
-      if (data.fixed > 0) {
-        toast.success(`Corrigidas ${data.fixed} posições de fila inválidas`);
-      } else {
-        toast.info('Nenhuma posição de fila inválida encontrada');
-      }
-      queryClient.invalidateQueries({ queryKey: ['company-queue-status'] });
-      queryClient.invalidateQueries({ queryKey: ['queue-diagnostics'] });
-    },
-    onError: (error: any) => {
-      toast.error(`Erro ao corrigir posições de fila: ${error?.message || 'Erro desconhecido'}`);
-    }
-  });
-  
-  const resetQueue = () => {
-    resetQueueMutation.mutate();
-  };
-  
-  const fixQueuePositions = () => {
-    fixPositionsMutation.mutate();
-  };
-  
-  const runDiagnostics = () => {
-    refetchDiagnostics();
-  };
-  
-  return {
-    queueStatus,
-    isLoading,
-    isError,
-    resetQueue,
-    resetting,
-    isReconciling,
-    fixQueuePositions,
-    isFixingPositions,
-    refetch,
-    diagnostics,
-    diagnosticsLoading,
-    isDiagnosing,
-    runDiagnostics
-  };
+type Company = {
+  id: string;
+  name: string;
+  status: string;
+  queue_position: number | null;
+  last_order_assigned: string | null;
 };
 
-export default useCompanyQueue;
+export const useCompanyQueue = () => {
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const fetchCompanies = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase
+        .from('companies')
+        .select('*')
+        .order('queue_position', { ascending: true, nullsLast: true });
+      
+      if (error) throw error;
+      
+      setCompanies(data);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+      toast.error('Falha ao carregar empresas');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+  
+  const fixQueuePositions = useCallback(async () => {
+    try {
+      // We need to reorganize the queue positions to be sequential
+      const { data: activeCompanies, error: fetchError } = await supabase
+        .from('companies')
+        .select('id, status')
+        .eq('status', 'active')
+        .order('queue_position', { ascending: true, nullsLast: true });
+        
+      if (fetchError) throw fetchError;
+      
+      // Update each company's queue position
+      for (let i = 0; i < activeCompanies.length; i++) {
+        const { error: updateError } = await supabase
+          .from('companies')
+          .update({ queue_position: i + 1 })
+          .eq('id', activeCompanies[i].id);
+          
+        if (updateError) throw updateError;
+      }
+      
+      toast.success('Posições da fila corrigidas com sucesso');
+      await fetchCompanies();
+    } catch (error) {
+      console.error('Error fixing queue positions:', error);
+      toast.error('Falha ao corrigir posições da fila');
+    }
+  }, [fetchCompanies]);
+  
+  const resetQueue = useCallback(async () => {
+    try {
+      // Reset all queue positions based on alphabetical company name
+      const { data: activeCompanies, error: fetchError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('status', 'active')
+        .order('name', { ascending: true });
+        
+      if (fetchError) throw fetchError;
+      
+      // Update each company's queue position and clear last_order_assigned
+      for (let i = 0; i < activeCompanies.length; i++) {
+        const { error: updateError } = await supabase
+          .from('companies')
+          .update({ 
+            queue_position: i + 1,
+            last_order_assigned: null
+          })
+          .eq('id', activeCompanies[i].id);
+          
+        if (updateError) throw updateError;
+      }
+      
+      toast.success('Fila resetada com sucesso');
+      await fetchCompanies();
+    } catch (error) {
+      console.error('Error resetting queue:', error);
+      toast.error('Falha ao resetar fila');
+    }
+  }, [fetchCompanies]);
+  
+  const moveCompanyToEnd = useCallback(async (companyId: string) => {
+    try {
+      // Get current highest queue position
+      const { data: maxResult, error: maxError } = await supabase
+        .from('companies')
+        .select('queue_position')
+        .eq('status', 'active')
+        .order('queue_position', { ascending: false })
+        .limit(1)
+        .single();
+        
+      if (maxError) throw maxError;
+      
+      const maxPosition = maxResult?.queue_position || 0;
+      
+      // Move company to end of queue
+      const { error: updateError } = await supabase
+        .from('companies')
+        .update({ queue_position: maxPosition + 1 })
+        .eq('id', companyId);
+        
+      if (updateError) throw updateError;
+      
+      toast.success('Empresa movida para o fim da fila');
+      await fetchCompanies();
+    } catch (error) {
+      console.error('Error moving company to end of queue:', error);
+      toast.error('Falha ao mover empresa para o fim da fila');
+    }
+  }, [fetchCompanies]);
+  
+  return {
+    companies,
+    isLoading,
+    fetchCompanies,
+    fixQueuePositions,
+    resetQueue,
+    moveCompanyToEnd
+  };
+};
