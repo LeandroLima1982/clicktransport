@@ -63,7 +63,7 @@ const QueueDiagnostics: React.FC = () => {
                     <div key={company.id} className="flex items-center justify-between bg-secondary/20 p-3 rounded-md">
                       <div>
                         <span className="font-medium">{company.name}</span>
-                        <Badge variant={company.status === 'active' ? 'success' : 'secondary'} className="ml-2">
+                        <Badge variant={company.status === 'active' ? 'secondary' : 'outline'} className="ml-2">
                           {company.status === 'active' ? 'Ativa' : 'Inativa'}
                         </Badge>
                       </div>
