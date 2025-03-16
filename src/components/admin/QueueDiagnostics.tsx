@@ -124,7 +124,7 @@ const QueueDiagnostics: React.FC = () => {
                     <TableCell>
                       <Badge 
                         variant={
-                          company.status === 'active' ? 'success' : 
+                          company.status === 'active' ? 'default' : 
                           company.status === 'inactive' ? 'secondary' : 
                           'outline'
                         }

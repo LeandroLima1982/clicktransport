@@ -9,11 +9,24 @@ type Company = {
   status: string;
   queue_position: number | null;
   last_order_assigned: string | null;
+  order_count?: number;
+};
+
+type DiagnosticsData = {
+  queue_status: {
+    total_companies: number;
+    active_companies: number;
+    null_queue_position_count: number;
+    zero_queue_position_count: number;
+  };
+  companies: Company[];
 };
 
 export const useCompanyQueue = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<DiagnosticsData | null>(null);
+  const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
   
   const fetchCompanies = useCallback(async () => {
     try {
@@ -22,7 +35,7 @@ export const useCompanyQueue = () => {
       const { data, error } = await supabase
         .from('companies')
         .select('*')
-        .order('queue_position', { ascending: true, nullsLast: true });
+        .order('queue_position', { ascending: true });
       
       if (error) throw error;
       
@@ -42,7 +55,7 @@ export const useCompanyQueue = () => {
         .from('companies')
         .select('id, status')
         .eq('status', 'active')
-        .order('queue_position', { ascending: true, nullsLast: true });
+        .order('queue_position', { ascending: true });
         
       if (fetchError) throw fetchError;
       
@@ -127,12 +140,73 @@ export const useCompanyQueue = () => {
     }
   }, [fetchCompanies]);
   
+  const runDiagnostics = useCallback(async () => {
+    try {
+      setDiagnosticsLoading(true);
+      
+      // Get all companies with service order counts
+      const { data: companiesWithOrders, error: companiesError } = await supabase
+        .from('companies')
+        .select(`
+          id, 
+          name, 
+          status, 
+          queue_position, 
+          last_order_assigned
+        `);
+      
+      if (companiesError) throw companiesError;
+      
+      // Count orders for each company
+      const companyOrderCounts: Record<string, number> = {};
+      const { data: orders, error: ordersError } = await supabase
+        .from('service_orders')
+        .select('company_id');
+      
+      if (ordersError) throw ordersError;
+      
+      orders?.forEach(order => {
+        companyOrderCounts[order.company_id] = (companyOrderCounts[order.company_id] || 0) + 1;
+      });
+      
+      // Analyze queue positions
+      const nullQueueCount = companiesWithOrders.filter(c => c.queue_position === null).length;
+      const zeroQueueCount = companiesWithOrders.filter(c => c.queue_position === 0).length;
+      const activeCompanies = companiesWithOrders.filter(c => c.status === 'active').length;
+      
+      // Add order counts to companies
+      const companiesWithStats = companiesWithOrders.map(company => ({
+        ...company,
+        order_count: companyOrderCounts[company.id] || 0
+      }));
+      
+      setDiagnostics({
+        queue_status: {
+          total_companies: companiesWithOrders.length,
+          active_companies: activeCompanies,
+          null_queue_position_count: nullQueueCount,
+          zero_queue_position_count: zeroQueueCount
+        },
+        companies: companiesWithStats
+      });
+      
+    } catch (error) {
+      console.error('Error running diagnostics:', error);
+      toast.error('Falha ao executar diagnóstico');
+    } finally {
+      setDiagnosticsLoading(false);
+    }
+  }, []);
+  
   return {
     companies,
     isLoading,
     fetchCompanies,
     fixQueuePositions,
     resetQueue,
-    moveCompanyToEnd
+    moveCompanyToEnd,
+    diagnostics,
+    diagnosticsLoading,
+    runDiagnostics
   };
 };

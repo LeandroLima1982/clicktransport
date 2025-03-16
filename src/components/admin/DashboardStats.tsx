@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
@@ -21,7 +20,7 @@ const DashboardStats: React.FC = () => {
   });
   
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { runDiagnostics, diagnostics, diagnosticsLoading } = useCompanyQueue();
+  const { diagnostics, diagnosticsLoading, runDiagnostics } = useCompanyQueue();
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
