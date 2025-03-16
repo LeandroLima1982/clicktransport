@@ -10,7 +10,7 @@ import {
 } from '../monitoring/systemLogService';
 
 /**
- * Creates a new booking
+ * Creates a new booking with validation for required fields
  */
 export const createBooking = async (bookingData: Partial<Booking>) => {
   try {
@@ -23,9 +23,19 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
       return { booking: null, error: new Error('Origin and destination are required') };
     }
     
+    // Create a valid booking object with defaults for required fields
+    const validBookingData = {
+      ...bookingData,
+      booking_date: bookingData.booking_date || new Date().toISOString(),
+      travel_date: bookingData.travel_date || new Date().toISOString(),
+      reference_code: bookingData.reference_code || `BK-${Date.now()}`,
+      total_price: bookingData.total_price || 0,
+      status: bookingData.status || 'pending'
+    };
+    
     const { data, error } = await supabase
       .from('bookings')
-      .insert(bookingData)
+      .insert(validBookingData)
       .select('*')
       .single();
     
@@ -46,6 +56,75 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
       attempted_booking: bookingData
     });
     return { booking: null, error };
+  }
+};
+
+/**
+ * Assigns a service order to a driver
+ */
+export const assignServiceOrderToDriver = async (orderId: string, driverId: string) => {
+  try {
+    // First, check if the driver exists and is available
+    const { data: driver, error: driverError } = await supabase
+      .from('drivers')
+      .select('id, status')
+      .eq('id', driverId)
+      .single();
+    
+    if (driverError) throw driverError;
+    
+    if (!driver) {
+      return { updated: null, error: new Error('Driver not found') };
+    }
+    
+    if (driver.status !== 'active') {
+      return { updated: null, error: new Error('Driver is not available') };
+    }
+    
+    // Update the service order with the driver_id and change status to 'assigned'
+    const { data, error } = await supabase
+      .from('service_orders')
+      .update({ 
+        driver_id: driverId,
+        status: 'assigned',
+        assigned_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    // Update driver status to indicate they're assigned to an order
+    const { error: updateDriverError } = await supabase
+      .from('drivers')
+      .update({ status: 'assigned' })
+      .eq('id', driverId);
+    
+    if (updateDriverError) {
+      // Log warning but don't fail the operation
+      await logWarning('Falha ao atualizar status do motorista', 'driver', {
+        driver_id: driverId,
+        order_id: orderId,
+        error: updateDriverError
+      });
+    }
+    
+    // Log the assignment
+    await logInfo('Motorista atribuído à ordem de serviço', 'order', {
+      order_id: orderId,
+      driver_id: driverId
+    });
+    
+    return { updated: data as ServiceOrder, error: null };
+  } catch (error) {
+    console.error('Error assigning driver to service order:', error);
+    await logError('Erro ao atribuir motorista à ordem de serviço', 'order', {
+      order_id: orderId,
+      driver_id: driverId,
+      error
+    });
+    return { updated: null, error };
   }
 };
 

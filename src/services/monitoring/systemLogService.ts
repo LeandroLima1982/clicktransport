@@ -1,11 +1,14 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
-export type LogSeverity = 'info' | 'warning' | 'error' | 'critical';
-export type LogCategory = 'queue' | 'order' | 'driver' | 'company' | 'system';
+// Severity levels
+type LogSeverity = 'info' | 'warning' | 'error' | 'critical';
 
-export interface SystemLog {
+// Log categories
+type LogCategory = 'queue' | 'order' | 'driver' | 'company' | 'system';
+
+// Log entry interface
+interface SystemLog {
   id?: string;
   message: string;
   details?: any;
@@ -15,98 +18,136 @@ export interface SystemLog {
 }
 
 /**
- * Creates a system log entry
+ * Base logging function
  */
-export const createSystemLog = async (logData: Omit<SystemLog, 'id' | 'created_at'>) => {
+const logEntry = async (
+  message: string,
+  category: LogCategory,
+  severity: LogSeverity,
+  details?: any
+) => {
   try {
+    const logData = {
+      message,
+      category,
+      severity,
+      details: details ? JSON.stringify(details) : '{}'
+    };
+
     const { data, error } = await supabase
       .from('system_logs')
-      .insert({
-        message: logData.message,
-        details: logData.details || {},
-        category: logData.category,
-        severity: logData.severity,
-      })
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    // For critical errors, also trigger a toast notification for admins
-    if (logData.severity === 'critical') {
-      toast.error(`Sistema: ${logData.message}`, {
-        description: 'Um erro crítico foi registrado no log do sistema.',
-        duration: 6000,
-      });
+      .insert(logData);
+
+    if (error) {
+      console.error('Error logging to system_logs:', error);
     }
     
-    return { log: data, error: null };
+    return { success: !error, error };
   } catch (error) {
-    console.error('Error creating system log:', error);
-    return { log: null, error };
+    console.error('Exception logging to system_logs:', error);
+    return { success: false, error };
   }
 };
 
 /**
- * Gets system logs with optional filtering
+ * Log an info message
  */
-export const getSystemLogs = async (
-  options: {
-    category?: LogCategory;
-    severity?: LogSeverity;
-    limit?: number;
-    offset?: number;
-  } = {}
-) => {
+export const logInfo = (message: string, category: LogCategory, details?: any) => {
+  console.info(`[INFO][${category}] ${message}`, details);
+  return logEntry(message, category, 'info', details);
+};
+
+/**
+ * Log a warning message
+ */
+export const logWarning = (message: string, category: LogCategory, details?: any) => {
+  console.warn(`[WARNING][${category}] ${message}`, details);
+  return logEntry(message, category, 'warning', details);
+};
+
+/**
+ * Log an error message
+ */
+export const logError = (message: string, category: LogCategory, details?: any) => {
+  console.error(`[ERROR][${category}] ${message}`, details);
+  return logEntry(message, category, 'error', details);
+};
+
+/**
+ * Log a critical message
+ */
+export const logCritical = (message: string, category: LogCategory, details?: any) => {
+  console.error(`[CRITICAL][${category}] ${message}`, details);
+  return logEntry(message, category, 'critical', details);
+};
+
+/**
+ * Get system logs with filtering options
+ */
+export const getSystemLogs = async ({
+  category,
+  severity,
+  limit = 100,
+  offset = 0,
+  startDate,
+  endDate
+}: {
+  category?: LogCategory;
+  severity?: LogSeverity;
+  limit?: number;
+  offset?: number;
+  startDate?: string;
+  endDate?: string;
+}) => {
   try {
     let query = supabase
       .from('system_logs')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(limit)
+      .range(offset, offset + limit - 1);
     
-    if (options.category) {
-      query = query.eq('category', options.category);
+    if (category) {
+      query = query.eq('category', category);
     }
     
-    if (options.severity) {
-      query = query.eq('severity', options.severity);
+    if (severity) {
+      query = query.eq('severity', severity);
     }
     
-    if (options.limit) {
-      query = query.limit(options.limit);
+    if (startDate) {
+      query = query.gte('created_at', startDate);
     }
     
-    const { data, error } = await query;
+    if (endDate) {
+      query = query.lte('created_at', endDate);
+    }
+    
+    const { data, error, count } = await query;
     
     if (error) throw error;
     
-    return { logs: data, error: null };
+    // Parse JSON details
+    const logsWithParsedDetails = data?.map(log => ({
+      ...log,
+      details: typeof log.details === 'string' ? JSON.parse(log.details) : log.details
+    }));
+    
+    return { 
+      logs: logsWithParsedDetails || [],
+      count: count || 0,
+      error: null
+    };
   } catch (error) {
     console.error('Error fetching system logs:', error);
-    return { logs: [], error };
+    return { logs: [], count: 0, error };
   }
 };
 
-/**
- * Convenience methods for different log severities
- */
-export const logInfo = (message: string, category: LogCategory, details?: any) => 
-  createSystemLog({ message, category, severity: 'info', details });
-
-export const logWarning = (message: string, category: LogCategory, details?: any) => 
-  createSystemLog({ message, category, severity: 'warning', details });
-
-export const logError = (message: string, category: LogCategory, details?: any) => 
-  createSystemLog({ message, category, severity: 'error', details });
-
-export const logCritical = (message: string, category: LogCategory, details?: any) => 
-  createSystemLog({ message, category, severity: 'critical', details });
-
 export default {
-  createSystemLog,
-  getSystemLogs,
   logInfo,
   logWarning,
   logError,
-  logCritical
+  logCritical,
+  getSystemLogs
 };

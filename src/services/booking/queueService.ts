@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
-import { logInfo, logWarning, logError, getSystemLogs } from '../monitoring/systemLogService';
+import { logInfo, logWarning, logError } from '../monitoring/systemLogService';
+import { getSystemLogs } from '../monitoring/systemLogService';
 
 /**
  * Gets the status of all companies in the queue
