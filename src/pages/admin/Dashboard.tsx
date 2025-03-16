@@ -10,6 +10,7 @@ import CompanyManagement from '@/components/admin/CompanyManagement';
 import ServiceOrderMonitoring from '@/components/admin/ServiceOrderMonitoring';
 import PerformanceReports from '@/components/admin/PerformanceReports';
 import DashboardStats from '@/components/admin/DashboardStats';
+import QueueDiagnostics from '@/components/admin/QueueDiagnostics';
 import { FileText, Settings, UserCheck, ChartBar, Loader2, LogOut, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -149,6 +150,9 @@ const AdminDashboard: React.FC = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
+            {/* Queue Diagnostics Component */}
+            <QueueDiagnostics />
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <Card>
                 <CardHeader>

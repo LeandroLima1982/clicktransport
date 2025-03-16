@@ -30,7 +30,7 @@ export const useCompanyQueue = () => {
     },
   });
   
-  const { data: diagnostics, isLoading: diagnosticsLoading } = useQuery({
+  const { data: diagnostics, isLoading: diagnosticsLoading, refetch: refetchDiagnostics } = useQuery({
     queryKey: ['queue-diagnostics'],
     queryFn: async () => {
       setIsDiagnosing(true);
@@ -100,7 +100,7 @@ export const useCompanyQueue = () => {
   };
   
   const runDiagnostics = () => {
-    queryClient.invalidateQueries({ queryKey: ['queue-diagnostics'] });
+    refetchDiagnostics();
   };
   
   return {
