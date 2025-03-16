@@ -30,7 +30,11 @@ export const useCompanyQueue = () => {
     },
   });
   
-  const { data: diagnostics, isLoading: diagnosticsLoading, refetch: refetchDiagnostics } = useQuery({
+  const { 
+    data: diagnostics, 
+    isLoading: diagnosticsLoading, 
+    refetch: refetchDiagnostics 
+  } = useQuery({
     queryKey: ['queue-diagnostics'],
     queryFn: async () => {
       setIsDiagnosing(true);
@@ -42,7 +46,8 @@ export const useCompanyQueue = () => {
         setIsDiagnosing(false);
       }
     },
-    enabled: false,
+    enabled: false, // Only run when explicitly requested
+    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
   });
   
   // Mutation for resetting the queue
