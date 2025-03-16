@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -124,7 +125,7 @@ export const getCompanyQueueStatus = async () => {
       return { companies: [], error };
     }
     
-    return { companies: data, error: null };
+    return { companies: data || [], error: null };
   } catch (error) {
     console.error('Error fetching company queue status:', error);
     return { companies: [], error };
@@ -174,6 +175,7 @@ export const resetCompanyQueuePositions = async () => {
     }
     
     console.log(`Queue positions reset for ${companies.length} companies`);
+    toast.success(`Fila reiniciada para ${companies.length} empresas`);
     return { success: true, error: null };
   } catch (error) {
     console.error('Error resetting company queue positions:', error);
@@ -182,7 +184,7 @@ export const resetCompanyQueuePositions = async () => {
 };
 
 /**
- * NEW: Fix invalid queue positions (0 or null) for companies
+ * Fix invalid queue positions (0 or null) for companies
  * This is a targeted fix for companies with problematic queue positions
  */
 export const fixInvalidQueuePositions = async () => {
@@ -264,12 +266,12 @@ export const getQueueDiagnostics = async () => {
       
     if (companiesError) throw companiesError;
     
-    // Get the last 5 service orders to check assignment pattern
+    // Get the last 10 service orders to check assignment pattern
     const { data: recentOrders, error: ordersError } = await supabase
       .from('service_orders')
-      .select('id, company_id, created_at, notes')
+      .select('id, company_id, created_at, notes, status')
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(10);
       
     if (ordersError) throw ordersError;
     
@@ -284,23 +286,46 @@ export const getQueueDiagnostics = async () => {
       // Get most recent order for this company
       const { data: latestOrder, error: latestError } = await supabase
         .from('service_orders')
-        .select('id, created_at, notes')
+        .select('id, created_at, notes, status')
         .eq('company_id', company.id)
         .order('created_at', { ascending: false })
         .limit(1);
       
+      // Get unfinished orders count (pending or in progress)
+      const { count: unfinishedCount, error: unfinishedError } = await supabase
+        .from('service_orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('company_id', company.id)
+        .in('status', ['pending', 'in_progress']);
+      
       return {
         ...company,
         order_count: countError ? 'error' : orderCount,
-        latest_order: (latestError || !latestOrder || latestOrder.length === 0) ? null : latestOrder[0]
+        latest_order: (latestError || !latestOrder || latestOrder.length === 0) ? null : latestOrder[0],
+        unfinished_orders: unfinishedError ? 'error' : unfinishedCount
       };
     }));
+    
+    // Get overall statistics
+    const ordersByStatusQuery = await supabase
+      .from('service_orders')
+      .select('status')
+      .order('created_at', { ascending: false });
+      
+    const ordersByStatus = ordersByStatusQuery.data || [];
+    
+    // Calculate status distribution
+    const statusCounts = ordersByStatus.reduce((acc: {[key: string]: number}, order) => {
+      acc[order.status] = (acc[order.status] || 0) + 1;
+      return acc;
+    }, {});
     
     return { 
       success: true, 
       data: {
         companies: companyDiagnostics,
         recentOrders: recentOrders || [],
+        status_distribution: statusCounts,
         queue_status: {
           active_companies: (companies || []).filter(c => c.status === 'active').length,
           total_companies: (companies || []).length,

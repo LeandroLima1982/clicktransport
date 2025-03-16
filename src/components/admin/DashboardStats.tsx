@@ -2,40 +2,63 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { Loader2 } from 'lucide-react';
-import { supabase } from '@/main';
+import { Loader2, RefreshCw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { useCompanyQueue } from '@/hooks/useCompanyQueue';
 
 // Define chart colors
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 const DashboardStats: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [ordersByStatus, setOrdersByStatus] = useState<any[]>([]);
-  const [ordersByMonth, setOrdersByMonth] = useState<any[]>([]);
-  const [companiesByStatus, setCompaniesByStatus] = useState<any[]>([]);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const { data: stats, isLoading, refetch } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: fetchAllStats,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { runDiagnostics, diagnostics, diagnosticsLoading } = useCompanyQueue();
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
-    setIsLoading(true);
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
     try {
-      await Promise.all([
+      await refetch();
+      runDiagnostics();
+      toast.success('Dados atualizados com sucesso');
+    } catch (error) {
+      toast.error('Falha ao atualizar os dados');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  async function fetchAllStats() {
+    try {
+      // Fetch all needed data in parallel
+      const [ordersResult, companiesResult, driversResult, recentActivityResult] = await Promise.all([
         fetchOrderStats(),
         fetchCompanyStats(),
+        fetchDriverStats(),
         fetchRecentActivity()
       ]);
+      
+      return {
+        ordersByStatus: ordersResult.statusData || [],
+        ordersByMonth: ordersResult.monthlyData || [],
+        companiesByStatus: companiesResult || [],
+        driverStats: driversResult || {},
+        recentActivity: recentActivityResult || []
+      };
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
       toast.error('Falha ao carregar estatísticas');
-    } finally {
-      setIsLoading(false);
+      throw error;
     }
-  };
+  }
 
   const fetchOrderStats = async () => {
     // Fetch service orders
@@ -79,8 +102,7 @@ const DashboardStats: React.FC = () => {
       };
     });
     
-    setOrdersByStatus(statusData);
-    setOrdersByMonth(ordersByMonthData);
+    return { statusData, monthlyData: ordersByMonthData };
   };
 
   const fetchCompanyStats = async () => {
@@ -102,7 +124,42 @@ const DashboardStats: React.FC = () => {
       color: getCompanyStatusColor(status)
     }));
     
-    setCompaniesByStatus(companyStatusData);
+    return companyStatusData;
+  };
+  
+  const fetchDriverStats = async () => {
+    const { data: drivers, error } = await supabase
+      .from('drivers')
+      .select('*');
+    
+    if (error) throw error;
+    
+    // Process data for driver stats
+    const statusCounts: Record<string, number> = {};
+    drivers?.forEach(driver => {
+      statusCounts[driver.status] = (statusCounts[driver.status] || 0) + 1;
+    });
+    
+    // Orders completed by each driver
+    const { data: ordersByDriver } = await supabase
+      .from('service_orders')
+      .select('driver_id')
+      .eq('status', 'completed');
+    
+    // Count orders per driver
+    const driverOrderCounts: Record<string, number> = {};
+    ordersByDriver?.forEach(order => {
+      if (order.driver_id) {
+        driverOrderCounts[order.driver_id] = (driverOrderCounts[order.driver_id] || 0) + 1;
+      }
+    });
+    
+    return {
+      statusDistribution: statusCounts,
+      ordersByDriver: driverOrderCounts,
+      totalDrivers: drivers?.length || 0,
+      activeDrivers: drivers?.filter(d => d.status === 'active').length || 0
+    };
   };
 
   const fetchRecentActivity = async () => {
@@ -140,7 +197,7 @@ const DashboardStats: React.FC = () => {
       })) || [])
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
     
-    setRecentActivity(recentItems);
+    return recentItems;
   };
 
   const translateOrderStatus = (status: string) => {
@@ -235,7 +292,7 @@ const DashboardStats: React.FC = () => {
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  if (isLoading) {
+  if (isLoading || !stats) {
     return (
       <div className="flex justify-center items-center h-60">
         <Loader2 className="h-8 w-8 text-primary animate-spin" />
@@ -244,107 +301,173 @@ const DashboardStats: React.FC = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Ordens de Serviço Mensais</CardTitle>
-          <CardDescription>Número de ordens por mês</CardDescription>
-        </CardHeader>
-        <CardContent className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={ordersByMonth} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="value" name="Número de Ordens" stroke="#8884d8" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Estatísticas da Plataforma</h2>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          {isRefreshing ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4 mr-2" />
+          )}
+          Atualizar
+        </Button>
+      </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Status das Ordens</CardTitle>
-          <CardDescription>Distribuição por status</CardDescription>
-        </CardHeader>
-        <CardContent className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={ordersByStatus}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {ordersByStatus.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Ordens de Serviço Mensais</CardTitle>
+            <CardDescription>Número de ordens por mês</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats.ordersByMonth} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="value" name="Número de Ordens" stroke="#8884d8" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Status das Ordens</CardTitle>
+            <CardDescription>Distribuição por status</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={stats.ordersByStatus}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {stats.ordersByStatus.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Empresas por Status</CardTitle>
-          <CardDescription>Distribuição de empresas por status</CardDescription>
-        </CardHeader>
-        <CardContent className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={companiesByStatus}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {companiesByStatus.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Empresas por Status</CardTitle>
+            <CardDescription>Distribuição de empresas por status</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={stats.companiesByStatus}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {stats.companiesByStatus.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Atividade Recente</CardTitle>
-          <CardDescription>Últimas empresas e ordens cadastradas</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentActivity.length > 0 ? (
-              recentActivity.map((item, index) => (
-                <div key={index} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
-                  <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.type === 'company' ? 'Empresa' : 'Ordem'} • {formatDate(item.date)}
-                    </p>
+        <Card>
+          <CardHeader>
+            <CardTitle>Atividade Recente</CardTitle>
+            <CardDescription>Últimas empresas e ordens cadastradas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {stats.recentActivity.length > 0 ? (
+                stats.recentActivity.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
+                    <div>
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.type === 'company' ? 'Empresa' : 'Ordem'} • {formatDate(item.date)}
+                      </p>
+                    </div>
+                    {getActivityStatusBadge(item)}
                   </div>
-                  {getActivityStatusBadge(item)}
+                ))
+              ) : (
+                <p className="text-muted-foreground">Nenhuma atividade recente</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {diagnostics && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Diagnóstico da Fila de Empresas</CardTitle>
+            <CardDescription>Status da alocação de ordens entre empresas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium mb-1">Total de Empresas</h3>
+                  <p className="text-xl font-bold">{diagnostics?.queue_status?.total_companies || 0}</p>
                 </div>
-              ))
-            ) : (
-              <p className="text-muted-foreground">Nenhuma atividade recente</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium mb-1">Empresas Ativas</h3>
+                  <p className="text-xl font-bold">{diagnostics?.queue_status?.active_companies || 0}</p>
+                </div>
+                <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium mb-1">Posições Inválidas</h3>
+                  <p className="text-xl font-bold">{
+                    (diagnostics?.queue_status?.null_queue_position_count || 0) + 
+                    (diagnostics?.queue_status?.zero_queue_position_count || 0)
+                  }</p>
+                </div>
+              </div>
+              
+              <h3 className="text-lg font-semibold mb-2">Empresas com mais ordens:</h3>
+              {diagnostics?.companies?.slice(0, 5)
+                .sort((a, b) => (b.order_count as number || 0) - (a.order_count as number || 0))
+                .map((company, idx) => (
+                <div key={company.id} className="flex justify-between items-center border-b py-2">
+                  <div>
+                    <span className="font-medium">{company.name}</span>
+                    <div className="text-sm text-muted-foreground">
+                      Posição: {company.queue_position || 'N/A'} • Ordens: {company.order_count}
+                    </div>
+                  </div>
+                  <Badge variant={company.status === 'active' ? 'default' : 'secondary'}>
+                    {translateCompanyStatus(company.status)}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

@@ -9,12 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanyManagement from '@/components/admin/CompanyManagement';
 import ServiceOrderMonitoring from '@/components/admin/ServiceOrderMonitoring';
 import PerformanceReports from '@/components/admin/PerformanceReports';
-import { FileText, Settings, UserCheck, ChartBar, Loader2 } from 'lucide-react';
-import { supabase } from '@/main';
+import DashboardStats from '@/components/admin/DashboardStats';
+import { FileText, Settings, UserCheck, ChartBar, Loader2, LogOut, RefreshCw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useCompanyQueue } from '@/hooks/useCompanyQueue';
 
 const AdminDashboard: React.FC = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, signOut, isAuthenticating } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [dashboardStats, setDashboardStats] = useState({
     companies: 0,
@@ -22,6 +24,8 @@ const AdminDashboard: React.FC = () => {
     orders: 0,
     loading: true
   });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { fixQueuePositions, resetQueue } = useCompanyQueue();
 
   useEffect(() => {
     fetchDashboardStats();
@@ -29,6 +33,7 @@ const AdminDashboard: React.FC = () => {
 
   const fetchDashboardStats = async () => {
     try {
+      setIsRefreshing(true);
       // Fetch companies count
       const { count: companiesCount, error: companiesError } = await supabase
         .from('companies')
@@ -56,10 +61,24 @@ const AdminDashboard: React.FC = () => {
         orders: ordersCount || 0,
         loading: false
       });
+      
+      toast.success('Dados atualizados com sucesso');
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
       toast.error('Falha ao carregar estatísticas do dashboard');
+    } finally {
       setDashboardStats(prev => ({ ...prev, loading: false }));
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success('Logout realizado com sucesso');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      toast.error('Erro ao fazer logout');
     }
   };
 
@@ -84,11 +103,27 @@ const AdminDashboard: React.FC = () => {
             <p className="text-muted-foreground">Gerencie todos os aspectos da plataforma em um único lugar</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={fetchDashboardStats} disabled={isRefreshing}>
+              {isRefreshing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
+              Atualizar Dados
+            </Button>
             <Button asChild variant="outline">
               <Link to="/admin/database-setup">
                 <Settings className="mr-2 h-4 w-4" />
                 Configuração do Banco
               </Link>
+            </Button>
+            <Button variant="destructive" onClick={handleSignOut} disabled={isAuthenticating}>
+              {isAuthenticating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="mr-2 h-4 w-4" />
+              )}
+              Sair
             </Button>
           </div>
         </div>
@@ -130,12 +165,28 @@ const AdminDashboard: React.FC = () => {
                     <>
                       <p className="text-2xl font-bold">{dashboardStats.companies}</p>
                       <p className="text-sm text-muted-foreground">Total de empresas registradas</p>
-                      <Button 
-                        className="mt-4 w-full"
-                        onClick={() => setActiveTab("companies")}
-                      >
-                        Ver Empresas
-                      </Button>
+                      <div className="flex flex-col gap-2 mt-4">
+                        <Button 
+                          className="w-full"
+                          onClick={() => setActiveTab("companies")}
+                        >
+                          Ver Empresas
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={fixQueuePositions}
+                        >
+                          Corrigir Fila
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={resetQueue}
+                        >
+                          Resetar Fila
+                        </Button>
+                      </div>
                     </>
                   )}
                 </CardContent>
@@ -194,7 +245,7 @@ const AdminDashboard: React.FC = () => {
               </Card>
             </div>
 
-            <PerformanceReports />
+            <DashboardStats />
           </TabsContent>
 
           <TabsContent value="companies">
