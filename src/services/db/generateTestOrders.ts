@@ -20,10 +20,10 @@ export const createTestServiceOrder = async (booking?: Booking) => {
         .single();
         
       if (error) throw error;
-      booking = data;
+      booking = data as Booking;
     }
     
-    logInfo('Creating test service order from booking', 'test', {
+    logInfo('Creating test service order from booking', 'order', {
       booking_id: booking.id,
       booking_reference: booking.reference_code
     });
@@ -49,7 +49,7 @@ export const generateSampleBookingAndOrder = async () => {
     // Create booking
     const bookingData = {
       reference_code: `BK-${Math.floor(10000 + Math.random() * 90000)}`,
-      status: 'confirmed',
+      status: 'confirmed' as const,
       origin: 'Aeroporto Santos Dumont, Rio de Janeiro',
       destination: 'Ipanema Beach, Rio de Janeiro',
       travel_date: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // Day after tomorrow
@@ -71,7 +71,7 @@ export const generateSampleBookingAndOrder = async () => {
     toast.success('Reserva de teste criada', { duration: 2000 });
     
     // Create service order from the booking
-    const { serviceOrder, error: orderError } = await createServiceOrderFromBooking(booking);
+    const { serviceOrder, error: orderError } = await createServiceOrderFromBooking(booking as Booking);
     
     if (orderError) throw orderError;
     
