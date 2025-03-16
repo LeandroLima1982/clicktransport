@@ -19,7 +19,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from 'sonner';
-import { supabase } from '@/main';
+import { supabase } from '@/integrations/supabase/client';
+import { logInfo } from '@/services/monitoring/systemLogService';
 
 export interface ServiceOrder {
   id: string;
@@ -70,6 +71,13 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
       
       if (error) throw error;
       
+      // Log the status change
+      await logInfo(
+        `Status da ordem alterado: ${order.id} (${translateStatus(order.status)} → ${translateStatus(newStatus)})`,
+        'order',
+        { order_id: order.id, old_status: order.status, new_status: newStatus }
+      );
+      
       toast.success(`Status da ordem atualizado para: ${translateStatus(newStatus)}`);
       onRefreshData();
     } catch (error) {
@@ -110,7 +118,6 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
     }
   };
   
-  // Truncate long text to avoid layout issues
   const truncateText = (text: string, length = 20) => {
     return text.length > length ? text.substring(0, length) + '...' : text;
   };

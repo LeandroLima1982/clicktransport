@@ -300,6 +300,33 @@ export type Database = {
           },
         ]
       }
+      system_logs: {
+        Row: {
+          category: string
+          created_at: string
+          details: Json | null
+          id: string
+          message: string
+          severity: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          message: string
+          severity: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          message?: string
+          severity?: string
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
           company_id: string
