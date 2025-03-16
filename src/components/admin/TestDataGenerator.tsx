@@ -24,6 +24,7 @@ const TestDataGenerator: React.FC = () => {
     vehicles?: any[];
     bookings?: any[];
     serviceOrders?: any[];
+    companyUsers?: any[]; // Added the missing type definition
   } | null>(null);
   
   const [activeTab, setActiveTab] = useState<string>("overview");
