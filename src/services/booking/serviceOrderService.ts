@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ServiceOrder } from '@/types/serviceOrder';
@@ -6,7 +7,8 @@ import { getNextCompanyInQueue, updateCompanyQueuePosition } from './queueServic
 import { 
   notifyBookingConfirmed, 
   notifyCompanyNewOrder,
-  notifyDriverNewAssignment
+  notifyDriverNewAssignment,
+  notifyDriverAssigned
 } from '../notifications/workflowNotificationService';
 
 /**

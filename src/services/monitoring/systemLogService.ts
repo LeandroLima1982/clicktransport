@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 type LogSeverity = 'info' | 'warning' | 'error' | 'critical';
 
 // Log categories
-type LogCategory = 'queue' | 'order' | 'driver' | 'company' | 'system';
+type LogCategory = 'queue' | 'order' | 'driver' | 'company' | 'system' | 'notification';
 
 // Log entry interface
 interface SystemLog {

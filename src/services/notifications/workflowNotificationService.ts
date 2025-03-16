@@ -20,7 +20,7 @@ export const notifyBookingCreated = (booking: Booking) => {
   vibrate(feedbackPatterns.success);
   
   // Log notification
-  logInfo('Notificação enviada: reserva criada', 'notification', {
+  logInfo('Notificação enviada: reserva criada', 'system', {
     booking_id: booking.id,
     user_id: booking.user_id
   });
@@ -43,12 +43,13 @@ export const notifyBookingConfirmed = (booking: Booking) => {
   vibrate(feedbackPatterns.success);
   
   // Log notification
-  logInfo('Notificação enviada: reserva confirmada', 'notification', {
+  logInfo('Notificação enviada: reserva confirmada', 'system', {
     booking_id: booking.id,
     user_id: booking.user_id
   });
 };
 
+// This function was missing in the service but referenced elsewhere
 export const notifyDriverAssigned = (order: ServiceOrder, driverName: string) => {
   toast.success('Motorista atribuído!', {
     description: `${driverName} foi designado para sua viagem.`,
@@ -66,7 +67,7 @@ export const notifyDriverAssigned = (order: ServiceOrder, driverName: string) =>
   vibrate(feedbackPatterns.notification);
   
   // Log notification
-  logInfo('Notificação enviada: motorista atribuído', 'notification', {
+  logInfo('Notificação enviada: motorista atribuído', 'system', {
     order_id: order.id,
     driver_id: order.driver_id
   });
@@ -81,7 +82,7 @@ export const notifyTripStarted = (order: ServiceOrder) => {
   playNotificationSound();
   
   // Log notification
-  logInfo('Notificação enviada: viagem iniciada', 'notification', {
+  logInfo('Notificação enviada: viagem iniciada', 'system', {
     order_id: order.id
   });
 };
@@ -103,7 +104,7 @@ export const notifyTripCompleted = (order: ServiceOrder) => {
   vibrate(feedbackPatterns.success);
   
   // Log notification
-  logInfo('Notificação enviada: viagem concluída', 'notification', {
+  logInfo('Notificação enviada: viagem concluída', 'system', {
     order_id: order.id
   });
 };
@@ -126,7 +127,7 @@ export const notifyDriverNewAssignment = (order: ServiceOrder) => {
   vibrate(feedbackPatterns.notification);
   
   // Log notification
-  logInfo('Notificação enviada ao motorista: nova corrida', 'notification', {
+  logInfo('Notificação enviada ao motorista: nova corrida', 'system', {
     order_id: order.id,
     driver_id: order.driver_id
   });
@@ -149,7 +150,7 @@ export const notifyCompanyNewOrder = (order: ServiceOrder) => {
   playNotificationSound();
   
   // Log notification
-  logInfo('Notificação enviada à empresa: nova ordem', 'notification', {
+  logInfo('Notificação enviada à empresa: nova ordem', 'system', {
     order_id: order.id,
     company_id: order.company_id
   });
@@ -169,7 +170,7 @@ export const notifyCompanyOrderStatusChange = (order: ServiceOrder, previousStat
   });
   
   // Log notification
-  logInfo('Notificação enviada à empresa: atualização de status', 'notification', {
+  logInfo('Notificação enviada à empresa: atualização de status', 'system', {
     order_id: order.id,
     company_id: order.company_id,
     previous_status: previousStatus,
