@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { createBooking, createServiceOrderFromBooking } from '@/services/booking/bookingService';
+import { notifyBookingCreated } from '@/services/notifications/workflowNotificationService';
 
 export const useServiceRequests = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,12 +80,7 @@ export const useServiceRequests = () => {
           });
         } else {
           console.log('Service order created successfully:', serviceOrder);
-          toast.success('Ordem de serviço criada com sucesso!');
         }
-        
-        toast.success('Solicitação enviada com sucesso!', {
-          description: 'Em breve entraremos em contato para confirmação.'
-        });
         
         return true;
       }

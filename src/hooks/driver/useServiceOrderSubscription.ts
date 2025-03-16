@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { playNotificationSound, showAssignmentNotification } from '@/services/notifications/notificationService';
+import { notifyDriverNewAssignment } from '@/services/notifications/workflowNotificationService';
 import { ServiceOrder } from '@/types/serviceOrder';
 
 export const useServiceOrderSubscription = (
@@ -27,8 +27,7 @@ export const useServiceOrderSubscription = (
           // Case 1: New order inserted with this driver assigned
           if (payload.eventType === 'INSERT' && 
               (payload.new.status === 'assigned' || payload.new.driver_id === driverId)) {
-            playNotificationSound();
-            showAssignmentNotification(payload.new as ServiceOrder);
+            notifyDriverNewAssignment(payload.new as ServiceOrder);
             onNotification(payload);
           }
           
@@ -36,8 +35,7 @@ export const useServiceOrderSubscription = (
           if (payload.eventType === 'UPDATE' && 
               payload.old.driver_id !== payload.new.driver_id && 
               payload.new.driver_id === driverId) {
-            playNotificationSound();
-            showAssignmentNotification(payload.new as ServiceOrder);
+            notifyDriverNewAssignment(payload.new as ServiceOrder);
             onNotification(payload);
           }
           
@@ -45,8 +43,7 @@ export const useServiceOrderSubscription = (
           if (payload.eventType === 'UPDATE' && 
               payload.old.status !== 'assigned' && 
               payload.new.status === 'assigned') {
-            playNotificationSound();
-            showAssignmentNotification(payload.new as ServiceOrder);
+            notifyDriverNewAssignment(payload.new as ServiceOrder);
             onNotification(payload);
           }
         }

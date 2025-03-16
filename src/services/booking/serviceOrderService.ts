@@ -3,6 +3,11 @@ import { toast } from 'sonner';
 import { ServiceOrder } from '@/types/serviceOrder';
 import { Booking } from '@/types/booking';
 import { getNextCompanyInQueue, updateCompanyQueuePosition } from './queueService';
+import { 
+  notifyBookingConfirmed, 
+  notifyCompanyNewOrder,
+  notifyDriverNewAssignment
+} from '../notifications/workflowNotificationService';
 
 /**
  * Creates a service order from a booking
@@ -64,6 +69,9 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       console.error('Error updating booking status:', updateError);
       // We don't throw here because the service order was created successfully
       toast.warning('Reserva criada, mas houve um erro ao atualizar o status');
+    } else {
+      // Send confirmation notification to the user
+      notifyBookingConfirmed(booking);
     }
     
     // Update the company's queue position and last order timestamp
@@ -78,7 +86,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     }
     
     // Notify company about the new order
-    await notifyCompanyAboutNewOrder(companyId, data as ServiceOrder);
+    notifyCompanyNewOrder(data as ServiceOrder);
     
     return { serviceOrder: data as ServiceOrder, error: null };
   } catch (error) {
@@ -127,7 +135,7 @@ export const assignServiceOrderToDriver = async (orderId: string, driverId: stri
     // First verify the driver exists and is available
     const { data: driver, error: driverError } = await supabase
       .from('drivers')
-      .select('id, status')
+      .select('id, status, name')
       .eq('id', driverId)
       .single();
       
@@ -140,6 +148,15 @@ export const assignServiceOrderToDriver = async (orderId: string, driverId: stri
       console.error(`Driver ${driverId} is not active (status: ${driver.status})`);
       throw new Error(`Driver is not active (${driver.status})`);
     }
+    
+    // Get the order details before the update
+    const { data: orderBeforeUpdate, error: orderFetchError } = await supabase
+      .from('service_orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+      
+    if (orderFetchError) throw orderFetchError;
     
     // Assign the order to the driver
     const { data, error } = await supabase
@@ -164,6 +181,12 @@ export const assignServiceOrderToDriver = async (orderId: string, driverId: stri
       console.error('Warning: Failed to update driver status to on_trip:', driverUpdateError);
       // We don't throw here because the order assignment was successful
     }
+    
+    // Notify the driver about the new assignment
+    notifyDriverNewAssignment(data as ServiceOrder);
+    
+    // Notify the user that a driver has been assigned to their order
+    notifyDriverAssigned(data as ServiceOrder, driver.name);
     
     console.log('Service order assigned successfully:', data);
     return { updated: data as ServiceOrder, error: null };

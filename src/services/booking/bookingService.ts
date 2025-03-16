@@ -8,6 +8,11 @@ import {
   logWarning, 
   logError 
 } from '../monitoring/systemLogService';
+import {
+  notifyBookingCreated,
+  notifyBookingConfirmed,
+  notifyDriverAssigned
+} from '../notifications/workflowNotificationService';
 
 /**
  * Creates a new booking with validation for required fields
@@ -53,6 +58,9 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
       reference_code: data.reference_code,
       user_id: data.user_id
     });
+    
+    // Send notification to the user
+    notifyBookingCreated(data as Booking);
     
     return { booking: data as Booking, error: null };
   } catch (error) {
