@@ -12,8 +12,8 @@ const Hero: React.FC = () => {
       <div className="w-full pt-10 pb-16 md:pt-20 md:pb-32 relative rounded-b-[40px] md:rounded-b-[80px] bg-white py-[54px]">
         <div className="w-full text-center mb-8 md:mb-12 max-w-[1400px] mx-auto px-4 md:px-6">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 animate-fade-in">
-            <span className="block mb-2 text-center font-extrabold text-5xl text-gray-900">Transporte Executivo</span>
-            <span className="block text-amber-400 mt-1 md:mt-2 my-0 text-8xl">Inteligente</span>
+            <span className="block mb-2 text-center font-extrabold text-gray-900 text-5xl">Transporte Executivo</span>
+            <span className="block text-amber-400 mt-1 md:mt-2 my-0 text-5xl font-extrabold">Inteligente</span>
           </h1>
           
           <p style={{

@@ -43,7 +43,7 @@ const BookingForm: React.FC = () => {
   return <div className="w-full bg-[#FEF7E4] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
       <div className="px-4 md:px-8 pt-5 md:pt-7 pb-6 md:pb-8 bg-amber-300">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 space-y-3 md:space-y-0">
-          <h3 className="text-gray-800 font-extrabold text-2xl">Agende seu transfer</h3>
+          <h3 className="font-extrabold text-2xl text-stone-700">Agendar</h3>
           <TripTypeTabs value={tripType} onChange={setTripType} />
         </div>
 
@@ -81,7 +81,7 @@ const BookingForm: React.FC = () => {
           {passengers && parseInt(passengers) > 0 && <PassengerInfoFields passengerCount={parseInt(passengers)} passengerData={passengerData} onPassengerDataChange={setPassengerData} />}
         </div>
 
-        <Button onClick={handleBooking} className="w-full rounded-lg mt-7 text-black text-lg font-medium h-14 bg-amber-400 hover:bg-amber-500 transition-all duration-300">
+        <Button onClick={handleBooking} className="w-full rounded-lg mt-7 text-black text-lg font-medium h-14 bg-amber-400 hover:bg-amber-500 transition-all duration-300 my-[49px]">
           <span className="relative z-10 flex items-center justify-center">
             Buscar
           </span>
