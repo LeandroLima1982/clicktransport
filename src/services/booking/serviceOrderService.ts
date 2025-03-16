@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ServiceOrder } from '@/components/company/orders/types';
@@ -42,7 +43,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date,
-      status: 'pending',
+      status: 'pending' as const,
       notes: `Reserva: ${booking.reference_code}\n${booking.additional_notes || ''}`,
     };
     
@@ -56,16 +57,22 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       throw orderError;
     }
     
+    // Make sure order.status is one of the allowed values
+    const typedOrder: ServiceOrder = {
+      ...order,
+      status: order.status as ServiceOrder['status']
+    };
+    
     // Log the service order creation
     logInfo('Service order created from booking', 'order', {
       booking_id: booking.id,
-      order_id: order.id,
+      order_id: typedOrder.id,
       company_id: companyId
     });
     
     // Send notification to company
     try {
-      await notifyCompanyNewOrder(order);
+      await notifyCompanyNewOrder(typedOrder);
     } catch (notifyError) {
       console.error('Error sending company notification:', notifyError);
     }
@@ -77,7 +84,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       console.error('Error sending booking confirmation notification:', notifyError);
     }
     
-    return { serviceOrder: order, error: null };
+    return { serviceOrder: typedOrder, error: null };
   } catch (error) {
     console.error('Error creating service order from booking:', error);
     logError('Failed to create service order from booking', 'order', {
@@ -117,7 +124,7 @@ export const assignDriverToOrder = async (orderId: string, driverId: string) => 
       .from('service_orders')
       .update({ 
         driver_id: driverId,
-        status: 'assigned'
+        status: 'assigned' as const
       })
       .eq('id', orderId)
       .select('*, companies:company_id(name), drivers:driver_id(name)')
@@ -126,6 +133,12 @@ export const assignDriverToOrder = async (orderId: string, driverId: string) => 
     if (error) {
       throw error;
     }
+    
+    // Cast to the correct type
+    const typedOrder: ServiceOrder = {
+      ...data,
+      status: data.status as ServiceOrder['status']
+    };
     
     // Log the assignment
     logInfo('Driver assigned to service order', 'order', {
@@ -138,19 +151,19 @@ export const assignDriverToOrder = async (orderId: string, driverId: string) => 
     
     // Send notification to driver
     try {
-      await notifyDriverNewAssignment(data);
+      await notifyDriverNewAssignment(typedOrder);
     } catch (notifyError) {
       console.error('Error sending driver notification:', notifyError);
     }
     
     // Send notification to customer (if we had this info) about driver assignment
     try {
-      await notifyDriverAssigned(data, driverName);
+      await notifyDriverAssigned(typedOrder, driverName);
     } catch (notifyError) {
       console.error('Error sending driver assigned notification:', notifyError);
     }
     
-    return { success: true, order: data };
+    return { success: true, order: typedOrder };
   } catch (error) {
     console.error('Error assigning driver to order:', error);
     logError('Failed to assign driver to order', 'order', {
@@ -204,10 +217,13 @@ export const updateOrderStatus = async (orderId: string, newStatus: string, driv
       };
     }
     
+    // Check if newStatus is one of the allowed values
+    const typedStatus = newStatus as ServiceOrder['status'];
+    
     // Update the order status
     const { data, error } = await supabase
       .from('service_orders')
-      .update({ status: newStatus })
+      .update({ status: typedStatus })
       .eq('id', orderId)
       .select('*, companies:company_id(name)')
       .single();
@@ -216,29 +232,35 @@ export const updateOrderStatus = async (orderId: string, newStatus: string, driv
       throw error;
     }
     
+    // Cast to the correct type
+    const typedOrder: ServiceOrder = {
+      ...data,
+      status: data.status as ServiceOrder['status']
+    };
+    
     // Log the status update
     logInfo('Service order status updated', 'order', {
       order_id: orderId,
       previous_status: currentStatus,
-      new_status: newStatus
+      new_status: typedStatus
     });
     
     // Send appropriate notifications based on status
     try {
       // Notify company about status change
-      await notifyCompanyOrderStatusChange(data, currentStatus);
+      await notifyCompanyOrderStatusChange(typedOrder, currentStatus);
       
       // Additional notifications based on specific status changes
-      if (newStatus === 'in_progress') {
-        await notifyTripStarted(data);
-      } else if (newStatus === 'completed') {
-        await notifyTripCompleted(data);
+      if (typedStatus === 'in_progress') {
+        await notifyTripStarted(typedOrder);
+      } else if (typedStatus === 'completed') {
+        await notifyTripCompleted(typedOrder);
       }
     } catch (notifyError) {
       console.error('Error sending status change notification:', notifyError);
     }
     
-    return { success: true, order: data };
+    return { success: true, order: typedOrder };
   } catch (error) {
     console.error('Error updating order status:', error);
     logError('Failed to update order status', 'order', {
@@ -272,7 +294,13 @@ export const getCompanyOrders = async (companyId: string) => {
       throw error;
     }
     
-    return { orders: data, error: null };
+    // Ensure all orders have the correct status type
+    const typedOrders = data?.map(order => ({
+      ...order,
+      status: order.status as ServiceOrder['status']
+    })) || [];
+    
+    return { orders: typedOrders, error: null };
   } catch (error) {
     console.error('Error fetching company orders:', error);
     return { orders: [], error };
@@ -306,7 +334,13 @@ export const getDriverOrders = async (driverId: string, includeCompleted: boolea
       throw error;
     }
     
-    return { orders: data, error: null };
+    // Ensure all orders have the correct status type
+    const typedOrders = data?.map(order => ({
+      ...order,
+      status: order.status as ServiceOrder['status']
+    })) || [];
+    
+    return { orders: typedOrders, error: null };
   } catch (error) {
     console.error('Error fetching driver orders:', error);
     return { orders: [], error };
@@ -334,7 +368,13 @@ export const getPendingOrders = async () => {
       throw error;
     }
     
-    return { orders: data, error: null };
+    // Ensure all orders have the correct status type
+    const typedOrders = data?.map(order => ({
+      ...order,
+      status: order.status as ServiceOrder['status']
+    })) || [];
+    
+    return { orders: typedOrders, error: null };
   } catch (error) {
     console.error('Error fetching pending orders:', error);
     return { orders: [], error };
