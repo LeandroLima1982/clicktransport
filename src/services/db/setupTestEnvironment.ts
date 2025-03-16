@@ -25,6 +25,14 @@ export const cleanDatabase = async () => {
     
     if (bookingsError) throw bookingsError;
     
+    // Clean driver locations
+    const { error: locationsError } = await supabase
+      .from('driver_locations')
+      .delete()
+      .neq('driver_id', '00000000-0000-0000-0000-000000000000'); // This will delete all
+    
+    if (locationsError) throw locationsError;
+    
     // Delete drivers
     const { error: driversError } = await supabase
       .from('drivers')
@@ -48,6 +56,8 @@ export const cleanDatabase = async () => {
       .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all
     
     if (companiesError) throw companiesError;
+    
+    // Note: We don't delete from auth.users to avoid removing actual admin users
     
     console.log('Database cleaned successfully');
     return { success: true, error: null };
@@ -118,7 +128,7 @@ export const setupTestDrivers = async (companies: any[]) => {
     console.log('Setting up test drivers...');
     const drivers = [];
     
-    // Create 2 drivers for each company
+    // Create drivers for each company
     for (const company of companies) {
       // Driver 1
       const { data: driver1, error: error1 } = await supabase
@@ -126,9 +136,10 @@ export const setupTestDrivers = async (companies: any[]) => {
         .insert({
           name: `Motorista 1 - ${company.name}`,
           phone: '21999990000',
-          license_number: 'CNH12345',
+          license_number: `CNH-${Math.floor(1000 + Math.random() * 9000)}`,
           status: 'active',
-          company_id: company.id
+          company_id: company.id,
+          email: `driver1.${company.id.substring(0, 5)}@example.com`
         })
         .select()
         .single();
@@ -142,9 +153,10 @@ export const setupTestDrivers = async (companies: any[]) => {
         .insert({
           name: `Motorista 2 - ${company.name}`,
           phone: '21888880000',
-          license_number: 'CNH67890',
+          license_number: `CNH-${Math.floor(1000 + Math.random() * 9000)}`,
           status: 'active',
-          company_id: company.id
+          company_id: company.id,
+          email: `driver2.${company.id.substring(0, 5)}@example.com`
         })
         .select()
         .single();
@@ -173,9 +185,9 @@ export const setupTestVehicles = async (companies: any[]) => {
     console.log('Setting up test vehicles...');
     const vehicles = [];
     
-    // Create 2 vehicles for each company
+    // Create vehicles for each company
     for (const company of companies) {
-      // Vehicle 1
+      // Vehicle 1 - Sedan
       const { data: vehicle1, error: error1 } = await supabase
         .from('vehicles')
         .insert({
@@ -191,11 +203,11 @@ export const setupTestVehicles = async (companies: any[]) => {
       if (error1) throw error1;
       vehicles.push(vehicle1);
       
-      // Vehicle 2
+      // Vehicle 2 - SUV
       const { data: vehicle2, error: error2 } = await supabase
         .from('vehicles')
         .insert({
-          model: 'Honda Civic',
+          model: 'Honda CR-V',
           license_plate: `XYZ${Math.floor(1000 + Math.random() * 9000)}`,
           year: 2022,
           status: 'active',
@@ -206,6 +218,22 @@ export const setupTestVehicles = async (companies: any[]) => {
       
       if (error2) throw error2;
       vehicles.push(vehicle2);
+      
+      // Vehicle 3 - Van (for larger groups)
+      const { data: vehicle3, error: error3 } = await supabase
+        .from('vehicles')
+        .insert({
+          model: 'Mercedes-Benz Sprinter',
+          license_plate: `VAN${Math.floor(1000 + Math.random() * 9000)}`,
+          year: 2021,
+          status: 'active',
+          company_id: company.id
+        })
+        .select()
+        .single();
+      
+      if (error3) throw error3;
+      vehicles.push(vehicle3);
     }
     
     console.log(`Created ${vehicles.length} test vehicles`);
@@ -213,6 +241,42 @@ export const setupTestVehicles = async (companies: any[]) => {
   } catch (error) {
     console.error('Error setting up test vehicles:', error);
     return { success: false, vehicles: [], error };
+  }
+};
+
+/**
+ * Create a sample booking
+ */
+export const createSampleBooking = async () => {
+  try {
+    console.log('Creating sample booking...');
+    
+    const bookingData = {
+      reference_code: `BK-${Math.floor(10000 + Math.random() * 90000)}`,
+      status: 'confirmed',
+      origin: 'Aeroporto do Galeão, Rio de Janeiro',
+      destination: 'Copacabana Palace Hotel, Rio de Janeiro',
+      travel_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
+      booking_date: new Date().toISOString(),
+      total_price: 150.00,
+      passengers: 2,
+      user_id: '00000000-0000-0000-0000-000000000000', // Placeholder user ID
+      additional_notes: 'Cliente solicitou motorista que fale inglês'
+    };
+    
+    const { data: booking, error } = await supabase
+      .from('bookings')
+      .insert(bookingData)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    console.log('Sample booking created:', booking);
+    return { success: true, booking, error: null };
+  } catch (error) {
+    console.error('Error creating sample booking:', error);
+    return { success: false, booking: null, error };
   }
 };
 
@@ -251,12 +315,26 @@ export const setupTestEnvironment = async () => {
     }
     toast.success(`${vehicles.length} veículos de teste criados`, { duration: 2000 });
     
+    // Step 5: Create a sample booking
+    const { success: bookingSuccess, booking, error: bookingError } = await createSampleBooking();
+    if (!bookingSuccess) {
+      console.warn('Failed to create sample booking, but continuing with setup', bookingError);
+    } else {
+      toast.success('Reserva de teste criada', { duration: 2000 });
+    }
+    
     toast.success('Ambiente de teste configurado com sucesso!', { 
       description: 'O sistema está pronto para testes de fluxo de trabalho.',
       duration: 5000
     });
     
-    return { success: true };
+    return { 
+      success: true,
+      companies,
+      drivers,
+      vehicles,
+      booking
+    };
   } catch (error) {
     console.error('Error setting up test environment:', error);
     toast.error('Erro ao configurar ambiente de teste', {
@@ -271,5 +349,6 @@ export default {
   setupTestCompanies,
   setupTestDrivers,
   setupTestVehicles,
+  createSampleBooking,
   setupTestEnvironment
 };
