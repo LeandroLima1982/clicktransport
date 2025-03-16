@@ -10,7 +10,7 @@ interface DriverLocation {
   heading?: number;
   speed?: number;
   accuracy?: number;
-  timestamp?: string;
+  updated_at?: string;
 }
 
 /**
@@ -37,8 +37,7 @@ export const updateDriverLocation = async (
       longitude,
       heading,
       speed,
-      accuracy,
-      timestamp: new Date().toISOString()
+      accuracy
     };
 
     const { error } = await supabase
@@ -110,7 +109,7 @@ export const getDriversForOrder = async (orderId: string) => {
       .from('driver_locations')
       .select('*')
       .eq('order_id', orderId)
-      .order('timestamp', { ascending: false });
+      .order('updated_at', { ascending: false });
 
     if (error) {
       logError('Failed to get drivers for order', 'order', {

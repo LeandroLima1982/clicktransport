@@ -93,6 +93,54 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_locations: {
+        Row: {
+          accuracy: number | null
+          driver_id: string
+          heading: number | null
+          latitude: number
+          longitude: number
+          order_id: string | null
+          speed: number | null
+          timestamp: string
+        }
+        Insert: {
+          accuracy?: number | null
+          driver_id: string
+          heading?: number | null
+          latitude: number
+          longitude: number
+          order_id?: string | null
+          speed?: number | null
+          timestamp?: string
+        }
+        Update: {
+          accuracy?: number | null
+          driver_id?: string
+          heading?: number | null
+          latitude?: number
+          longitude?: number
+          order_id?: string | null
+          speed?: number | null
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_locations_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: true
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_locations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drivers: {
         Row: {
           company_id: string | null

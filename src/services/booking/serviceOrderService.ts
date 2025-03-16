@@ -1,7 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ServiceOrder } from '@/types/serviceOrder';
+import { ServiceOrder } from '@/components/company/orders/types';
 import { Booking } from '@/types/booking';
 import { logError, logInfo } from '../monitoring/systemLogService';
 import { 
