@@ -81,43 +81,70 @@ const AppearanceSettings: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    // Load current images from storage
+    // Load current images from site_images table
     loadCurrentImages();
   }, []);
 
   const loadCurrentImages = async () => {
     setIsRefreshing(true);
     try {
-      const { data: imageFiles, error } = await supabase.storage
-        .from('site-images')
-        .list();
+      // Get images from site_images table
+      const { data: siteImages, error: siteImagesError } = await supabase
+        .from('site_images')
+        .select('*');
       
-      if (error) {
-        throw error;
+      if (siteImagesError) {
+        throw siteImagesError;
       }
       
-      if (imageFiles) {
+      if (siteImages) {
         const currentImages: Record<string, string> = {};
         
-        for (const section of imageSections) {
-          const sectionImage = imageFiles.find(file => file.name.startsWith(`${section.id}-`));
-          if (sectionImage) {
-            const { data: publicUrl } = supabase.storage
-              .from('site-images')
-              .getPublicUrl(sectionImage.name);
-            
-            if (publicUrl) {
-              currentImages[section.id] = publicUrl.publicUrl;
-            }
+        // Map image URLs from the database to their section IDs
+        siteImages.forEach(image => {
+          if (image.section_id && image.image_url) {
+            currentImages[image.section_id] = image.image_url;
           }
-        }
+        });
         
         setUpdatedImages(currentImages);
-        toast.success('Imagens atualizadas com sucesso');
+        toast.success('Imagens carregadas com sucesso');
       }
     } catch (error) {
       console.error('Error loading images:', error);
       toast.error('Erro ao carregar imagens');
+      
+      // Fallback: load from storage if table query fails
+      try {
+        const { data: imageFiles, error } = await supabase.storage
+          .from('site-images')
+          .list();
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (imageFiles) {
+          const currentImages: Record<string, string> = {};
+          
+          for (const section of imageSections) {
+            const sectionImage = imageFiles.find(file => file.name.startsWith(`${section.id}-`));
+            if (sectionImage) {
+              const { data: publicUrl } = supabase.storage
+                .from('site-images')
+                .getPublicUrl(sectionImage.name);
+              
+              if (publicUrl) {
+                currentImages[section.id] = publicUrl.publicUrl;
+              }
+            }
+          }
+          
+          setUpdatedImages(currentImages);
+        }
+      } catch (storageError) {
+        console.error('Error loading images from storage:', storageError);
+      }
     } finally {
       setIsRefreshing(false);
     }
@@ -163,12 +190,44 @@ const AppearanceSettings: React.FC = () => {
           .from('site-images')
           .getPublicUrl(fileName);
         
+        const imageUrl = publicUrlData.publicUrl;
+        
+        // Update the site_images table with the new image URL
+        const { data: existingImage, error: checkError } = await supabase
+          .from('site_images')
+          .select('*')
+          .eq('section_id', sectionId)
+          .maybeSingle();
+        
+        if (checkError) throw checkError;
+        
+        // Insert or update the image URL in the database
+        if (existingImage) {
+          const { error: updateError } = await supabase
+            .from('site_images')
+            .update({ image_url: imageUrl })
+            .eq('section_id', sectionId);
+          
+          if (updateError) throw updateError;
+        } else {
+          const { error: insertError } = await supabase
+            .from('site_images')
+            .insert([{ 
+              section_id: sectionId, 
+              image_url: imageUrl,
+              component_path: imageSections.find(s => s.id === sectionId)?.componentPath
+            }]);
+          
+          if (insertError) throw insertError;
+        }
+        
+        // Update state with new image URL
         setUpdatedImages({
           ...updatedImages,
-          [sectionId]: publicUrlData.publicUrl
+          [sectionId]: imageUrl
         });
         
-        toast.success('Imagem enviada com sucesso', {
+        toast.success('Imagem atualizada com sucesso', {
           description: `A imagem para "${imageSections.find(s => s.id === sectionId)?.title}" foi atualizada.`
         });
       }
