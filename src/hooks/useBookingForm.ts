@@ -69,20 +69,6 @@ export const useBookingForm = () => {
       return;
     }
     
-    // Validate passenger information
-    const passengerCount = parseInt(passengers, 10);
-    for (let i = 0; i < passengerCount; i++) {
-      if (!passengerData[i]?.name) {
-        toast.error(`Por favor, informe o nome do passageiro ${i + 1}.`);
-        return;
-      }
-      
-      if (!passengerData[i]?.phone) {
-        toast.error(`Por favor, informe o WhatsApp do passageiro ${i + 1}.`);
-        return;
-      }
-    }
-    
     setShowBookingSteps(true);
   };
 

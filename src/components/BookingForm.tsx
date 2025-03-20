@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -7,8 +8,8 @@ import DateSelector from './booking/DateSelector';
 import TripTypeTabs from './booking/TripTypeTabs';
 import TimeSelector from './TimeSelector';
 import PassengerSelector from './booking/PassengerSelector';
-import PassengerInfoFields from './booking/PassengerInfoFields';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 const BookingForm: React.FC = () => {
   const {
     originValue,
@@ -40,6 +41,7 @@ const BookingForm: React.FC = () => {
     clearDestination
   } = useBookingForm();
   const isMobile = useIsMobile();
+
   return <div className="w-full bg-[#FEF7E4] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
       <div className="px-4 md:px-8 pt-5 md:pt-7 pb-6 md:pb-8 bg-amber-300">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 space-y-3 md:space-y-0">
@@ -77,8 +79,6 @@ const BookingForm: React.FC = () => {
                 <TimeSelector value={returnTime} onChange={setReturnTime} />
               </div>
             </div>}
-          
-          {passengers && parseInt(passengers) > 0 && <PassengerInfoFields passengerCount={parseInt(passengers)} passengerData={passengerData} onPassengerDataChange={setPassengerData} />}
         </div>
 
         <Button onClick={handleBooking} className="w-full rounded-lg mt-7 text-black text-lg font-medium h-14 bg-amber-400 hover:bg-amber-500 transition-all duration-300 my-[49px]">

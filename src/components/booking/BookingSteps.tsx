@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -13,6 +14,7 @@ import BookingConfirmation from './steps/BookingConfirmation';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import BookingComplete from './steps/BookingComplete';
+import PassengerInfoFields from './PassengerInfoFields';
 
 const vehicleOptions: Vehicle[] = [
   {
@@ -81,8 +83,16 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [showRegisterForm, setShowRegisterForm] = useState(false);
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
+  const [passengerData, setPassengerData] = useState<{name: string; phone: string}[]>([]);
 
   const { user } = useAuth();
+
+  useEffect(() => {
+    // Initialize passenger data based on passenger count
+    const passengerCount = parseInt(bookingData.passengers, 10) || 0;
+    const initialData = Array(passengerCount).fill(null).map(() => ({ name: '', phone: '' }));
+    setPassengerData(initialData);
+  }, [bookingData.passengers]);
 
   useEffect(() => {
     const fetchRouteData = async () => {
@@ -150,14 +160,28 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       return;
     }
     
-    if (currentStep < 4) {
-      setCurrentStep(currentStep + 1);
-    } else {
+    if (currentStep === 4) {
+      // Validate passenger information
+      const passengerCount = parseInt(bookingData.passengers, 10);
+      for (let i = 0; i < passengerCount; i++) {
+        if (!passengerData[i]?.name) {
+          toast.error(`Por favor, informe o nome do passageiro ${i + 1}.`);
+          return;
+        }
+        
+        if (!passengerData[i]?.phone) {
+          toast.error(`Por favor, informe o WhatsApp do passageiro ${i + 1}.`);
+          return;
+        }
+      }
+      
       if (!user) {
         setShowLoginForm(true);
       } else {
         handleSubmitBooking();
       }
+    } else {
+      setCurrentStep(currentStep + 1);
     }
   };
 
@@ -277,18 +301,31 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
             onSelectPaymentMethod={handlePaymentMethodSelect}
             selectedVehicle={selectedVehicleDetails}
             estimatedDistance={estimatedDistance}
-            bookingData={bookingData}
+            bookingData={{...bookingData, passengerData: null}}
             totalPrice={totalPrice}
             formatCurrency={formatCurrency}
           />
         );
       case 4:
         return (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold mb-4">Informações dos Passageiros</h3>
+            <p className="text-gray-600">Por favor, informe os dados de cada passageiro para finalizar sua reserva.</p>
+            
+            <PassengerInfoFields
+              passengerCount={parseInt(bookingData.passengers)}
+              passengerData={passengerData}
+              onPassengerDataChange={setPassengerData}
+            />
+          </div>
+        );
+      case 5:
+        return (
           <BookingConfirmation
             selectedVehicle={selectedVehicleDetails}
             selectedPaymentMethod={selectedPaymentMethod}
             paymentMethods={paymentMethods}
-            bookingData={bookingData}
+            bookingData={{...bookingData, passengerData: passengerData}}
             totalPrice={totalPrice}
             formatCurrency={formatCurrency}
             estimatedDistance={estimatedDistance}
@@ -323,7 +360,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
           <BookingComplete
             bookingReference={bookingReference}
             selectedVehicle={selectedVehicleDetails}
-            bookingData={bookingData}
+            bookingData={{...bookingData, passengerData: passengerData}}
             totalPrice={totalPrice}
             formatCurrency={formatCurrency}
             onClose={handleCloseAndReset}
@@ -338,7 +375,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
               
               <div className="mt-8">
                 <div className="flex justify-between mb-8">
-                  {['Veículo', 'Detalhes', 'Pagamento', 'Confirmação'].map((step, index) => (
+                  {['Veículo', 'Detalhes', 'Pagamento', 'Passageiros', 'Confirmação'].map((step, index) => (
                     <div 
                       key={index} 
                       className={`flex flex-col items-center ${index + 1 <= currentStep ? 'text-primary' : 'text-gray-400'}`}
@@ -375,7 +412,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
                     disabled={isSubmitting}
                     className="flex items-center"
                   >
-                    {currentStep === 4 ? (
+                    {currentStep === 5 ? (
                       isSubmitting ? 'Confirmando...' : 'Confirmar Reserva'
                     ) : (
                       <>
