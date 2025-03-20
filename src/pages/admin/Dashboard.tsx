@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,8 @@ import PerformanceReports from '@/components/admin/PerformanceReports';
 import DashboardStats from '@/components/admin/DashboardStats';
 import QueueDiagnostics from '@/components/admin/QueueDiagnostics';
 import TripRateSettings from '@/components/admin/TripRateSettings';
-import { FileText, Settings, UserCheck, ChartBar, Loader2, LogOut, RefreshCw, TestTube, DollarSign } from 'lucide-react';
+import AppearanceSettings from '@/components/admin/AppearanceSettings';
+import { FileText, Settings, UserCheck, ChartBar, Loader2, LogOut, RefreshCw, TestTube, DollarSign, Paintbrush } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useCompanyQueue } from '@/hooks/useCompanyQueue';
@@ -133,7 +135,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-          <TabsList className="grid w-full grid-cols-1 md:grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-1 md:grid-cols-6 h-auto">
             <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ChartBar className="h-4 w-4 mr-2" />
               Visão Geral
@@ -149,6 +151,10 @@ const AdminDashboard: React.FC = () => {
             <TabsTrigger value="rates" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <DollarSign className="h-4 w-4 mr-2" />
               Taxas & Preços
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Paintbrush className="h-4 w-4 mr-2" />
+              Aparência
             </TabsTrigger>
             <TabsTrigger value="reports" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ChartBar className="h-4 w-4 mr-2" />
@@ -268,6 +274,10 @@ const AdminDashboard: React.FC = () => {
 
           <TabsContent value="rates">
             <TripRateSettings />
+          </TabsContent>
+          
+          <TabsContent value="appearance">
+            <AppearanceSettings />
           </TabsContent>
 
           <TabsContent value="reports">
