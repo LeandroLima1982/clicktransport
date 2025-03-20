@@ -18,7 +18,7 @@ import PassengerInfoFields from './PassengerInfoFields';
 
 const vehicleOptions: Vehicle[] = [
   {
-    id: 1,
+    id: "sedan",
     name: 'Sedan Executivo',
     image: '/lovable-uploads/sedan-exec.jpg',
     description: 'Conforto para até 4 passageiros',
@@ -27,7 +27,7 @@ const vehicleOptions: Vehicle[] = [
     basePrice: 120,
   },
   {
-    id: 2,
+    id: "suv",
     name: 'SUV Premium',
     image: '/lovable-uploads/suv-premium.jpg',
     description: 'Espaço e conforto para até 6 passageiros',
@@ -36,7 +36,7 @@ const vehicleOptions: Vehicle[] = [
     basePrice: 180,
   },
   {
-    id: 3,
+    id: "van",
     name: 'Van Executiva',
     image: '/lovable-uploads/van-exec.jpg',
     description: 'Ideal para grupos de até 10 passageiros',
@@ -74,7 +74,7 @@ interface BookingStepsProps {
 
 const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedVehicle, setSelectedVehicle] = useState<number | null>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingComplete, setBookingComplete] = useState(false);
@@ -119,12 +119,13 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const estimatedDistance = routeInfo?.distance || 120;
   const estimatedTime = routeInfo?.duration || 95;
 
-  const calculatePrice = () => {
+  const calculatePrice = async () => {
     if (!selectedVehicle) return 0;
     const vehicle = vehicleOptions.find(v => v.id === selectedVehicle);
     if (!vehicle) return 0;
     
-    return calculateTripPrice(
+    // Use the synchronous version with extracted values to avoid Promise return
+    return calculateTripPriceSync(
       estimatedDistance,
       vehicle.basePrice,
       vehicle.pricePerKm,
@@ -132,7 +133,19 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     );
   };
 
-  const totalPrice = calculatePrice();
+  // Calculate price immediately for display purposes
+  const getDisplayPrice = () => {
+    if (!selectedVehicle) return 0;
+    const vehicle = vehicleOptions.find(v => v.id === selectedVehicle);
+    if (!vehicle) return 0;
+    
+    const distancePrice = estimatedDistance * vehicle.pricePerKm;
+    const totalPrice = vehicle.basePrice + distancePrice;
+    
+    return bookingData.tripType === 'roundtrip' ? totalPrice * 2 : totalPrice;
+  };
+
+  const totalPrice = getDisplayPrice();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -141,7 +154,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     }).format(value);
   };
 
-  const handleVehicleSelect = (vehicleId: number) => {
+  const handleVehicleSelect = (vehicleId: string) => {
     setSelectedVehicle(vehicleId);
   };
 

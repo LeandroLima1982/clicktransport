@@ -114,7 +114,13 @@ export const getVehicleRates = async (): Promise<VehicleRate[]> => {
     }
     
     if (data && data.length > 0) {
-      return data as VehicleRate[];
+      // Map database column names to our interface
+      return data.map(item => ({
+        id: item.id,
+        name: item.name,
+        basePrice: item.baseprice,
+        pricePerKm: item.priceperkm
+      }));
     }
     
     return [

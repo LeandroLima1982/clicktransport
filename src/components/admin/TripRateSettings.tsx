@@ -41,7 +41,14 @@ const TripRateSettings = () => {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        form.reset({ vehicles: data as VehicleRate[] });
+        // Map database column names to our interface
+        const mappedData = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          basePrice: item.baseprice,
+          pricePerKm: item.priceperkm
+        }));
+        form.reset({ vehicles: mappedData });
       } else {
         // If no rates exist yet, initialize with default values
         const defaultRates = [
@@ -64,9 +71,15 @@ const TripRateSettings = () => {
     try {
       // For each vehicle rate, upsert it to the database
       for (const vehicle of values.vehicles) {
+        // Map our interface properties to database column names
         const { error } = await supabase
           .from('vehicle_rates')
-          .upsert(vehicle, { onConflict: 'id' });
+          .upsert({
+            id: vehicle.id,
+            name: vehicle.name,
+            baseprice: vehicle.basePrice,
+            priceperkm: vehicle.pricePerKm
+          }, { onConflict: 'id' });
         
         if (error) throw error;
       }
