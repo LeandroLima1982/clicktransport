@@ -5,7 +5,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { calculateRoute, calculateTripPrice, RouteInfo } from '@/utils/routeUtils';
+import { calculateRoute, calculateTripPrice, calculateTripPriceSync, RouteInfo } from '@/utils/routeUtils';
 import { createBooking, createServiceOrderFromBooking } from '@/services/booking/bookingService';
 import VehicleSelection, { Vehicle } from './steps/VehicleSelection';
 import TripDetails from './steps/TripDetails';
