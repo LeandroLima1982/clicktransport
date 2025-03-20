@@ -10,7 +10,8 @@ import ServiceOrderMonitoring from '@/components/admin/ServiceOrderMonitoring';
 import PerformanceReports from '@/components/admin/PerformanceReports';
 import DashboardStats from '@/components/admin/DashboardStats';
 import QueueDiagnostics from '@/components/admin/QueueDiagnostics';
-import { FileText, Settings, UserCheck, ChartBar, Loader2, LogOut, RefreshCw, TestTube } from 'lucide-react';
+import TripRateSettings from '@/components/admin/TripRateSettings';
+import { FileText, Settings, UserCheck, ChartBar, Loader2, LogOut, RefreshCw, TestTube, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useCompanyQueue } from '@/hooks/useCompanyQueue';
@@ -132,7 +133,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-          <TabsList className="grid w-full grid-cols-1 md:grid-cols-4 h-auto">
+          <TabsList className="grid w-full grid-cols-1 md:grid-cols-5 h-auto">
             <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ChartBar className="h-4 w-4 mr-2" />
               Visão Geral
@@ -144,6 +145,10 @@ const AdminDashboard: React.FC = () => {
             <TabsTrigger value="orders" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileText className="h-4 w-4 mr-2" />
               Ordens de Serviço
+            </TabsTrigger>
+            <TabsTrigger value="rates" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <DollarSign className="h-4 w-4 mr-2" />
+              Taxas & Preços
             </TabsTrigger>
             <TabsTrigger value="reports" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ChartBar className="h-4 w-4 mr-2" />
@@ -259,6 +264,10 @@ const AdminDashboard: React.FC = () => {
 
           <TabsContent value="orders">
             <ServiceOrderMonitoring />
+          </TabsContent>
+
+          <TabsContent value="rates">
+            <TripRateSettings />
           </TabsContent>
 
           <TabsContent value="reports">

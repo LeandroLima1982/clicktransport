@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Users, Compass } from 'lucide-react';
+import { Users, Compass, Loader2 } from 'lucide-react';
+import { getVehicleRates } from '@/utils/routeUtils';
 
 export interface Vehicle {
-  id: number;
+  id: string;
   name: string;
   image: string;
   description: string;
@@ -16,8 +17,8 @@ export interface Vehicle {
 
 interface VehicleSelectionProps {
   vehicles: Vehicle[];
-  selectedVehicle: number | null;
-  onSelectVehicle: (vehicleId: number) => void;
+  selectedVehicle: string | null;
+  onSelectVehicle: (vehicleId: string) => void;
   formatCurrency: (value: number) => string;
 }
 
@@ -27,16 +28,59 @@ const VehicleSelection: React.FC<VehicleSelectionProps> = ({
   onSelectVehicle,
   formatCurrency
 }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [vehiclesWithRates, setVehiclesWithRates] = useState<Vehicle[]>(vehicles);
+
+  useEffect(() => {
+    const updateVehicleRates = async () => {
+      setIsLoading(true);
+      try {
+        // Get the latest rates from the database
+        const rates = await getVehicleRates();
+        
+        // Update the vehicles with the latest rates
+        const updatedVehicles = vehicles.map(vehicle => {
+          const rate = rates.find(r => r.id === vehicle.id);
+          if (rate) {
+            return {
+              ...vehicle,
+              basePrice: rate.basePrice,
+              pricePerKm: rate.pricePerKm
+            };
+          }
+          return vehicle;
+        });
+        
+        setVehiclesWithRates(updatedVehicles);
+      } catch (error) {
+        console.error('Error updating vehicle rates:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    updateVehicleRates();
+  }, [vehicles]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p>Carregando opções de veículos...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold">Selecione um veículo para sua viagem</h3>
       
       <RadioGroup 
         value={selectedVehicle?.toString() || ""} 
-        onValueChange={(value) => onSelectVehicle(parseInt(value))}
+        onValueChange={(value) => onSelectVehicle(value)}
       >
         <div className="grid grid-cols-1 gap-4">
-          {vehicles.map((vehicle) => (
+          {vehiclesWithRates.map((vehicle) => (
             <div key={vehicle.id} className="relative">
               <RadioGroupItem
                 value={vehicle.id.toString()}
