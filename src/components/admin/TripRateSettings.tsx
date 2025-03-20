@@ -52,9 +52,9 @@ const TripRateSettings = () => {
       } else {
         // If no rates exist yet, initialize with default values
         const defaultRates = [
-          { id: 'sedan', name: 'Sedan Executivo', basePrice: 100, pricePerKm: 2.5 },
-          { id: 'suv', name: 'SUV Premium', basePrice: 150, pricePerKm: 3.0 },
-          { id: 'van', name: 'Van Executiva', basePrice: 200, pricePerKm: 3.5 }
+          { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10 },
+          { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49 },
+          { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39 }
         ];
         form.reset({ vehicles: defaultRates });
       }

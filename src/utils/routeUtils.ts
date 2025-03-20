@@ -123,17 +123,19 @@ export const getVehicleRates = async (): Promise<VehicleRate[]> => {
       }));
     }
     
+    // Se não houver dados no banco, retorne valores padrão atualizados
     return [
-      { id: 'sedan', name: 'Sedan Executivo', basePrice: 100, pricePerKm: 2.5 },
-      { id: 'suv', name: 'SUV Premium', basePrice: 150, pricePerKm: 3.0 },
-      { id: 'van', name: 'Van Executiva', basePrice: 200, pricePerKm: 3.5 }
+      { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10 },
+      { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49 },
+      { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39 }
     ];
   } catch (error) {
     console.error('Error in getVehicleRates:', error);
+    // Return default values on error
     return [
-      { id: 'sedan', name: 'Sedan Executivo', basePrice: 100, pricePerKm: 2.5 },
-      { id: 'suv', name: 'SUV Premium', basePrice: 150, pricePerKm: 3.0 },
-      { id: 'van', name: 'Van Executiva', basePrice: 200, pricePerKm: 3.5 }
+      { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10 },
+      { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49 },
+      { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39 }
     ];
   }
 };
@@ -154,8 +156,9 @@ export const calculateTripPrice = async (
     return isRoundTrip ? totalPrice * 2 : totalPrice;
   } catch (error) {
     console.error('Error calculating trip price:', error);
-    const basePrice = 100;
-    const pricePerKm = 2.5;
+    // Valores padrão atualizados para cálculo de backup
+    const basePrice = 79.90;
+    const pricePerKm = 2.10;
     
     const distancePrice = distance * pricePerKm;
     const totalPrice = basePrice + distancePrice;
@@ -167,7 +170,7 @@ export const calculateTripPrice = async (
 export const calculateTripPriceSync = (
   distance: number,
   basePrice: number,
-  pricePerKm: number = 2.49,
+  pricePerKm: number = 2.10,
   isRoundTrip: boolean = false
 ): number => {
   const distancePrice = distance * pricePerKm;

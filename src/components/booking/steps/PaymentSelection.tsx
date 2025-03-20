@@ -1,7 +1,9 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, CreditCard, QrCode, Building, Landmark } from 'lucide-react';
 import { Vehicle } from './VehicleSelection';
+import { supabase } from '@/integrations/supabase/client';
+import { VehicleRate } from '@/utils/routeUtils';
 
 interface PaymentMethod {
   id: string;
@@ -36,6 +38,53 @@ const PaymentSelection: React.FC<PaymentSelectionProps> = ({
   totalPrice,
   formatCurrency
 }) => {
+  const [vehicleRates, setVehicleRates] = useState<VehicleRate[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    fetchVehicleRates();
+  }, []);
+
+  const fetchVehicleRates = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('vehicle_rates')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        // Map database column names to our interface
+        const mappedData = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          basePrice: item.baseprice,
+          pricePerKm: item.priceperkm
+        }));
+        setVehicleRates(mappedData);
+      } else {
+        // Use default rates if none found in database
+        setVehicleRates([
+          { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10 },
+          { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49 },
+          { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39 }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching vehicle rates:', error);
+      // Set default values on error
+      setVehicleRates([
+        { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10 },
+        { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49 },
+        { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39 }
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const renderIcon = (iconName: string) => {
     switch (iconName) {
       case 'credit-card':
@@ -51,6 +100,19 @@ const PaymentSelection: React.FC<PaymentSelectionProps> = ({
     }
   };
 
+  // Find vehicle rate based on selected vehicle
+  const getVehicleRate = () => {
+    if (!selectedVehicle) return null;
+    return vehicleRates.find(rate => rate.id === selectedVehicle.id) || null;
+  };
+
+  const vehicleRate = getVehicleRate();
+  const basePrice = vehicleRate?.basePrice || (selectedVehicle?.basePrice || 0);
+  const pricePerKm = vehicleRate?.pricePerKm || (selectedVehicle?.pricePerKm || 0);
+  
+  // Calculate price components
+  const distancePrice = pricePerKm * estimatedDistance;
+  const subtotal = basePrice + distancePrice;
   const oneWayPrice = bookingData.tripType === 'roundtrip' ? totalPrice / 2 : totalPrice;
   
   return (
@@ -101,32 +163,32 @@ const PaymentSelection: React.FC<PaymentSelectionProps> = ({
         <h4 className="font-medium mb-2">Resumo de valores</h4>
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span>Base ({selectedVehicle?.name})</span>
-            <span>{formatCurrency(selectedVehicle?.basePrice || 0)}</span>
+            <span>Tarifa base ({selectedVehicle?.name})</span>
+            <span>{formatCurrency(basePrice)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span>Distância ({estimatedDistance} km x {formatCurrency(selectedVehicle?.pricePerKm || 0)}/km)</span>
-            <span>{formatCurrency((selectedVehicle?.pricePerKm || 0) * estimatedDistance)}</span>
+            <span>Distância ({estimatedDistance} km x {formatCurrency(pricePerKm)}/km)</span>
+            <span>{formatCurrency(distancePrice)}</span>
           </div>
           <div className="flex justify-between text-sm pt-2 mt-2 border-t">
             <span className="font-medium">Subtotal por trecho:</span>
-            <span className="font-medium">{formatCurrency(oneWayPrice)}</span>
+            <span className="font-medium">{formatCurrency(subtotal)}</span>
           </div>
           {bookingData.tripType === 'roundtrip' && (
             <>
               <div className="flex justify-between text-sm">
                 <span>Valor da ida:</span>
-                <span>{formatCurrency(oneWayPrice)}</span>
+                <span>{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Valor da volta:</span>
-                <span>{formatCurrency(oneWayPrice)}</span>
+                <span>{formatCurrency(subtotal)}</span>
               </div>
             </>
           )}
           <div className="border-t pt-2 mt-2 flex justify-between font-bold">
             <span>Total</span>
-            <span className="text-primary">{formatCurrency(totalPrice)}</span>
+            <span className="text-primary">{formatCurrency(bookingData.tripType === 'roundtrip' ? subtotal * 2 : subtotal)}</span>
           </div>
         </div>
       </div>
