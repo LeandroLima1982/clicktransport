@@ -97,18 +97,24 @@ export const signIn = async (email: string, password: string) => {
       }
       // For company role, verify company admin status
       else if (userRole === 'company') {
+        // First try with stored company ID if available
         const companyId = localStorage.getItem('driverCompanyId');
-        if (companyId) {
-          const { isCompanyAdmin, error: companyError } = 
-            await verifyCompanyAdmin(result.data.user.id, companyId);
-          
-          if (companyError || !isCompanyAdmin) {
-            console.error('Company admin verification failed:', companyError);
-            return { error: companyError };
-          }
-          
-          console.log('Company admin association verified');
+        
+        // Verify company admin status - now with improved error handling
+        const { isCompanyAdmin, error: companyError, companyData } = 
+          await verifyCompanyAdmin(result.data.user.id, companyId || undefined);
+        
+        if (companyError || !isCompanyAdmin) {
+          console.error('Company admin verification failed:', companyError);
+          return { error: companyError };
         }
+        
+        // If we have company data, store the company ID in localStorage
+        if (companyData && companyData.id) {
+          localStorage.setItem('companyId', companyData.id);
+        }
+        
+        console.log('Company admin association verified');
       }
     }
     
