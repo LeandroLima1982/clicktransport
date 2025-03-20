@@ -81,36 +81,20 @@ const AppearanceSettings: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    // Check if image storage bucket exists and create if needed
-    checkStorageBucket();
-    
     // Load current images from storage
     loadCurrentImages();
   }, []);
 
-  const checkStorageBucket = async () => {
-    try {
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const siteImagesBucket = buckets?.find(bucket => bucket.name === 'site-images');
-      
-      if (!siteImagesBucket) {
-        // Create bucket if it doesn't exist
-        await supabase.storage.createBucket('site-images', {
-          public: true
-        });
-        console.log('Created site-images bucket');
-      }
-    } catch (error) {
-      console.error('Error checking storage bucket:', error);
-    }
-  };
-
   const loadCurrentImages = async () => {
     setIsRefreshing(true);
     try {
-      const { data: imageFiles } = await supabase.storage
+      const { data: imageFiles, error } = await supabase.storage
         .from('site-images')
         .list();
+      
+      if (error) {
+        throw error;
+      }
       
       if (imageFiles) {
         const currentImages: Record<string, string> = {};
