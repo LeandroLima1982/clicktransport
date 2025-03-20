@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Users, Compass, Loader2 } from 'lucide-react';
-import { getVehicleRates } from '@/utils/routeUtils';
+import { getVehicleRates, VehicleRate } from '@/utils/routeUtils';
 
 export interface Vehicle {
   id: string;
@@ -76,14 +76,14 @@ const VehicleSelection: React.FC<VehicleSelectionProps> = ({
       <h3 className="text-lg font-semibold">Selecione um veículo para sua viagem</h3>
       
       <RadioGroup 
-        value={selectedVehicle?.toString() || ""} 
+        value={selectedVehicle || ""} 
         onValueChange={(value) => onSelectVehicle(value)}
       >
         <div className="grid grid-cols-1 gap-4">
           {vehiclesWithRates.map((vehicle) => (
             <div key={vehicle.id} className="relative">
               <RadioGroupItem
-                value={vehicle.id.toString()}
+                value={vehicle.id}
                 id={`vehicle-${vehicle.id}`}
                 className="peer sr-only"
               />

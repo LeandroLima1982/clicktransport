@@ -1,3 +1,4 @@
+
 import { MAPBOX_TOKEN } from './mapbox';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -113,7 +114,7 @@ export const getVehicleRates = async (): Promise<VehicleRate[]> => {
     }
     
     if (data && data.length > 0) {
-      return data;
+      return data as VehicleRate[];
     }
     
     return [

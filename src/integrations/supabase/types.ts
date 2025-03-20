@@ -375,6 +375,33 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_rates: {
+        Row: {
+          baseprice: number
+          created_at: string | null
+          id: string
+          name: string
+          priceperkm: number
+          updated_at: string | null
+        }
+        Insert: {
+          baseprice?: number
+          created_at?: string | null
+          id: string
+          name: string
+          priceperkm?: number
+          updated_at?: string | null
+        }
+        Update: {
+          baseprice?: number
+          created_at?: string | null
+          id?: string
+          name?: string
+          priceperkm?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
           company_id: string

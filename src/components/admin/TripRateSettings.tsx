@@ -9,13 +9,7 @@ import { toast } from 'sonner';
 import { Loader2, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
-
-interface VehicleRate {
-  id: string;
-  name: string;
-  basePrice: number;
-  pricePerKm: number;
-}
+import { VehicleRate } from '@/utils/routeUtils';
 
 interface RatesFormValues {
   vehicles: VehicleRate[];
@@ -47,7 +41,7 @@ const TripRateSettings = () => {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        form.reset({ vehicles: data });
+        form.reset({ vehicles: data as VehicleRate[] });
       } else {
         // If no rates exist yet, initialize with default values
         const defaultRates = [
