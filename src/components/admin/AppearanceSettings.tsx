@@ -8,6 +8,16 @@ import { Upload, ImageIcon, Loader2, RefreshCw, Check, AlertTriangle } from 'luc
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
+// Define types for site images
+interface SiteImage {
+  id: string;
+  section_id: string;
+  image_url: string;
+  component_path?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 interface ImageSection {
   id: string;
   title: string;
@@ -89,19 +99,19 @@ const AppearanceSettings: React.FC = () => {
     setIsRefreshing(true);
     try {
       // Get images from site_images table
-      const { data: siteImages, error: siteImagesError } = await supabase
+      const { data, error } = await supabase
         .from('site_images')
         .select('*');
       
-      if (siteImagesError) {
-        throw siteImagesError;
+      if (error) {
+        throw error;
       }
       
-      if (siteImages) {
+      if (data) {
         const currentImages: Record<string, string> = {};
         
         // Map image URLs from the database to their section IDs
-        siteImages.forEach(image => {
+        (data as SiteImage[]).forEach(image => {
           if (image.section_id && image.image_url) {
             currentImages[image.section_id] = image.image_url;
           }
@@ -197,9 +207,9 @@ const AppearanceSettings: React.FC = () => {
           .from('site_images')
           .select('*')
           .eq('section_id', sectionId)
-          .maybeSingle();
+          .single();
         
-        if (checkError) throw checkError;
+        if (checkError && checkError.code !== 'PGRST116') throw checkError;
         
         // Insert or update the image URL in the database
         if (existingImage) {
@@ -212,11 +222,11 @@ const AppearanceSettings: React.FC = () => {
         } else {
           const { error: insertError } = await supabase
             .from('site_images')
-            .insert([{ 
-              section_id: sectionId, 
+            .insert({
+              section_id: sectionId,
               image_url: imageUrl,
               component_path: imageSections.find(s => s.id === sectionId)?.componentPath
-            }]);
+            });
           
           if (insertError) throw insertError;
         }

@@ -1,4 +1,5 @@
-import { supabase } from '../main';
+
+import { supabase } from '../integrations/supabase/client';
 
 export const createTables = async () => {
   try {
@@ -114,6 +115,20 @@ export const createTables = async () => {
       `
     });
 
+    // Tabela para imagens do site (site_images)
+    await supabase.rpc('execute_sql', {
+      sql_query: `
+        CREATE TABLE IF NOT EXISTS public.site_images (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          section_id TEXT NOT NULL UNIQUE,
+          image_url TEXT NOT NULL,
+          component_path TEXT,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+        );
+      `
+    });
+
     console.log('Todas as tabelas foram criadas com sucesso!');
     return { success: true, message: 'Tabelas criadas com sucesso!' };
   } catch (error) {
@@ -177,5 +192,22 @@ export const supabaseServices = {
     create: (data: any) => supabase.from('service_requests').insert(data),
     update: (id: string, data: any) => supabase.from('service_requests').update(data).eq('id', id),
     delete: (id: string) => supabase.from('service_requests').delete().eq('id', id),
+  },
+  
+  // Imagens do Site
+  siteImages: {
+    getAll: () => supabase.from('site_images').select('*'),
+    getBySection: (sectionId: string) => supabase.from('site_images').select('*').eq('section_id', sectionId).single(),
+    updateOrCreate: (sectionId: string, imageUrl: string, componentPath?: string) => {
+      return supabase.from('site_images')
+        .upsert({ 
+          section_id: sectionId, 
+          image_url: imageUrl, 
+          component_path: componentPath 
+        }, { 
+          onConflict: 'section_id' 
+        });
+    },
+    delete: (sectionId: string) => supabase.from('site_images').delete().eq('section_id', sectionId),
   }
 };

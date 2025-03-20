@@ -348,6 +348,33 @@ export type Database = {
           },
         ]
       }
+      site_images: {
+        Row: {
+          component_path: string | null
+          created_at: string | null
+          id: string
+          image_url: string
+          section_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          component_path?: string | null
+          created_at?: string | null
+          id?: string
+          image_url: string
+          section_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          component_path?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          section_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       system_logs: {
         Row: {
           category: string
