@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { fetchAddressSuggestions, loadGoogleMapsScript } from '@/utils/maps';
 import { toast } from 'sonner';
 
@@ -11,29 +11,40 @@ export const useLocationSuggestions = () => {
   const [apiLoaded, setApiLoaded] = useState(false);
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [apiLoadAttempted, setApiLoadAttempted] = useState(false);
 
   // Tenta carregar a API do Google Maps uma vez durante a inicialização
   useEffect(() => {
     const loadApi = async () => {
       try {
         await loadGoogleMapsScript();
+        console.log('Google Maps API carregada com sucesso no useLocationSuggestions');
         setApiLoaded(true);
       } catch (error) {
         console.error('Failed to load Google Maps API', error);
-        setApiLoaded(false); // Ainda marcamos como carregado para não bloquear a UI
+        setApiLoaded(false);
+        
+        // Notificar apenas uma vez
+        if (!apiLoadAttempted) {
+          toast.error("Erro ao carregar a API do Google Maps", {
+            description: "As sugestões de endereço podem não funcionar corretamente"
+          });
+        }
       }
+      setApiLoadAttempted(true);
     };
     
     loadApi();
-  }, []);
+  }, [apiLoadAttempted]);
 
-  const handleOriginChange = (value: string) => {
+  const handleOriginChange = useCallback((value: string) => {
     if (originTimeoutRef.current) {
       clearTimeout(originTimeoutRef.current);
     }
     
     if (value.length < 3) {
       setOriginSuggestions([]);
+      setIsLoadingOriginSuggestions(false);
       return;
     }
     
@@ -54,15 +65,16 @@ export const useLocationSuggestions = () => {
         setIsLoadingOriginSuggestions(false);
       }
     }, 500);
-  };
+  }, [originSuggestions.length]);
 
-  const handleDestinationChange = (value: string) => {
+  const handleDestinationChange = useCallback((value: string) => {
     if (destinationTimeoutRef.current) {
       clearTimeout(destinationTimeoutRef.current);
     }
     
     if (value.length < 3) {
       setDestinationSuggestions([]);
+      setIsLoadingDestinationSuggestions(false);
       return;
     }
     
@@ -83,7 +95,7 @@ export const useLocationSuggestions = () => {
         setIsLoadingDestinationSuggestions(false);
       }
     }, 500);
-  };
+  }, [destinationSuggestions.length]);
 
   const selectOriginSuggestion = (suggestion: any) => {
     const placeName = suggestion.description || suggestion.formatted_address || '';
@@ -96,6 +108,18 @@ export const useLocationSuggestions = () => {
     setDestinationSuggestions([]);
     return placeName;
   };
+
+  // Limpar timeouts quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      if (originTimeoutRef.current) {
+        clearTimeout(originTimeoutRef.current);
+      }
+      if (destinationTimeoutRef.current) {
+        clearTimeout(destinationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     originSuggestions,

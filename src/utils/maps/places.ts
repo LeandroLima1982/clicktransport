@@ -95,21 +95,18 @@ export const fetchAddressSuggestions = async (query: string): Promise<any[]> => 
   console.log(`Buscando sugestões para: "${query}"`);
   
   try {
-    // Tentar carregar o script do Google Maps
+    // Carregar o script do Google Maps antes de tudo
+    try {
+      await loadGoogleMapsScript();
+    } catch (error) {
+      console.error('Falha ao carregar Google Maps API:', error);
+      return getFallbackSuggestions(query);
+    }
+    
+    // Verificar se a API do Google Maps foi carregada corretamente
     if (!isGoogleMapsLoaded()) {
-      console.log('Google Maps Places API não carregada, tentando carregar...');
-      try {
-        await loadGoogleMapsScript();
-        await new Promise(resolve => setTimeout(resolve, 800)); // Aguardar um pouco mais para inicialização
-      } catch (error) {
-        console.error('Falha ao carregar Google Maps API:', error);
-        return getFallbackSuggestions(query);
-      }
-      
-      if (!isGoogleMapsLoaded()) {
-        console.warn('Google Maps Places API não foi carregada após tentativa, usando sugestões alternativas');
-        return getFallbackSuggestions(query);
-      }
+      console.warn('Google Maps API não foi carregada corretamente, usando sugestões alternativas');
+      return getFallbackSuggestions(query);
     }
     
     // Verifica se temos a API de Places disponível
@@ -118,8 +115,8 @@ export const fetchAddressSuggestions = async (query: string): Promise<any[]> => 
       return getFallbackSuggestions(query);
     }
     
-    try {
-      const results = await new Promise<any[]>((resolve, reject) => {
+    return new Promise<any[]>((resolve) => {
+      try {
         const service = new window.google.maps.places.AutocompleteService();
         const sessionToken = new window.google.maps.places.AutocompleteSessionToken();
         
@@ -139,13 +136,11 @@ export const fetchAddressSuggestions = async (query: string): Promise<any[]> => 
           console.log(`Recebidas ${predictions.length} sugestões do Google para "${query}"`);
           resolve(predictions);
         });
-      });
-      
-      return results;
-    } catch (error) {
-      console.error('Erro com Google Places API:', error);
-      return getFallbackSuggestions(query);
-    }
+      } catch (error) {
+        console.error('Erro com Google Places API:', error);
+        resolve(getFallbackSuggestions(query));
+      }
+    });
   } catch (error) {
     console.error('Erro ao buscar sugestões de endereço:', error);
     return getFallbackSuggestions(query);

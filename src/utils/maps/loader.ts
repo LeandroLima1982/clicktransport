@@ -22,8 +22,9 @@ export const loadGoogleMapsScript = async (): Promise<void> => {
     console.log('Google Maps API já está carregando, aguardando...');
     return new Promise((resolve, reject) => {
       const checkLoaded = setInterval(() => {
-        if (googleMapsScriptLoaded) {
+        if (googleMapsScriptLoaded || isGoogleMapsLoaded()) {
           clearInterval(checkLoaded);
+          googleMapsScriptLoaded = true;
           resolve();
         } else if (!googleMapsScriptLoading) {
           clearInterval(checkLoaded);
@@ -34,7 +35,7 @@ export const loadGoogleMapsScript = async (): Promise<void> => {
       // Timeout após 10 segundos para evitar espera infinita
       setTimeout(() => {
         clearInterval(checkLoaded);
-        if (!googleMapsScriptLoaded) {
+        if (!googleMapsScriptLoaded && !isGoogleMapsLoaded()) {
           googleMapsScriptLoading = false;
           reject('Timeout ao aguardar carregamento do Google Maps');
         }
@@ -62,7 +63,7 @@ export const loadGoogleMapsScript = async (): Promise<void> => {
       // Criar o elemento de script
       const script = document.createElement('script');
       script.id = 'google-maps-script';
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&language=pt-BR&region=BR&callback=initGoogleMaps`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMaps&language=pt-BR&region=BR`;
       script.async = true;
       script.defer = true;
       
@@ -100,7 +101,7 @@ export const loadGoogleMapsScript = async (): Promise<void> => {
       
       // Adicionar um timeout como garantia extra
       setTimeout(() => {
-        if (googleMapsScriptLoading && !googleMapsScriptLoaded) {
+        if (googleMapsScriptLoading && !googleMapsScriptLoaded && !isGoogleMapsLoaded()) {
           console.error('Timeout ao carregar o Google Maps API');
           googleMapsScriptLoading = false;
           reject('Timeout ao carregar o Google Maps API');

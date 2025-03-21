@@ -13,6 +13,9 @@ const validateApiKey = (key: string): boolean => {
 // Log de avisos sobre a API key
 if (!validateApiKey(GOOGLE_MAPS_API_KEY)) {
   console.error('Chave API do Google Maps inválida ou muito curta!');
+  toast.error('Chave API do Google Maps inválida', {
+    description: 'Entre em contato com o suporte para resolver este problema'
+  });
 }
 
 // Esta função é mantida por compatibilidade

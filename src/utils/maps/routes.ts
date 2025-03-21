@@ -4,16 +4,19 @@ import { isGoogleMapsLoaded } from './config';
 import { calculateHaversineDistance, geocodeAddress } from './geocoding';
 import { toast } from 'sonner';
 
+// Tipo para o retorno da função calculateRoute
+interface RouteResult {
+  distance: number;  // em quilômetros
+  duration: number;  // em minutos
+  geometry?: any;
+  source: 'google' | 'haversine' | 'fallback';
+}
+
 // Calculate route between two addresses with detailed error handling
 export const calculateRoute = async (
   origin: string,
   destination: string
-): Promise<{
-  distance: number; // in kilometers
-  duration: number; // in minutes
-  geometry?: any;
-  source: 'google' | 'haversine' | 'fallback';
-} | null> => {
+): Promise<RouteResult | null> => {
   if (!origin || !destination) {
     console.error('Origem ou destino ausente');
     return null;
@@ -38,12 +41,7 @@ export const calculateRoute = async (
         }
         
         try {
-          const result = await new Promise<{
-            distance: number;
-            duration: number;
-            geometry?: any;
-            source: 'google' | 'haversine' | 'fallback';
-          }>((resolve, reject) => {
+          const result: RouteResult = await new Promise((resolve, reject) => {
             const directionsService = new window.google.maps.DirectionsService();
             directionsService.route({
               origin: originCoords,
@@ -72,7 +70,7 @@ export const calculateRoute = async (
                   type: 'LineString',
                   coordinates: route.overview_path.map(point => [point.lng(), point.lat()])
                 },
-                source: 'google'
+                source: 'google' as const
               });
             });
           });
@@ -98,7 +96,7 @@ export const calculateRoute = async (
         distance,
         // Estimar duração baseada em velocidade média de 50 km/h
         duration: Math.ceil(distance * 60 / 50),
-        source: 'haversine'
+        source: 'haversine' as const
       };
     }
     
@@ -128,7 +126,7 @@ export const calculateRoute = async (
     return {
       distance: estimatedDistance,
       duration: Math.ceil(estimatedDistance * 60 / 50), // Ainda usando 50 km/h
-      source: 'fallback'
+      source: 'fallback' as const
     };
     
   } catch (error) {
@@ -138,7 +136,7 @@ export const calculateRoute = async (
     return {
       distance: 15,
       duration: 30,
-      source: 'fallback'
+      source: 'fallback' as const
     };
   }
 };
