@@ -2,9 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapPin, X, Loader2 } from 'lucide-react';
+import { MapPin, X, Loader2, Info } from 'lucide-react';
 import { getPlaceIcon, formatPlaceName, loadGoogleMapsScript } from '@/utils/googleMaps';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface LocationInputProps {
   id: string;
@@ -30,13 +31,23 @@ const LocationInput: React.FC<LocationInputProps> = ({
   isLoading = false
 }) => {
   const [apiLoaded, setApiLoaded] = useState(false);
+  const [hasFallbackSuggestions, setHasFallbackSuggestions] = useState(false);
   
   // Load Google Maps API on component mount
   useEffect(() => {
     loadGoogleMapsScript()
       .then(() => setApiLoaded(true))
-      .catch(err => console.error('Failed to load Google Maps API:', err));
+      .catch(err => {
+        console.error('Failed to load Google Maps API:', err);
+        setApiLoaded(false);
+      });
   }, []);
+  
+  // Check if suggestions include fallbacks
+  useEffect(() => {
+    const hasFallback = suggestions.some(s => s.fallback === true);
+    setHasFallbackSuggestions(hasFallback);
+  }, [suggestions]);
   
   return (
     <div className="space-y-2">
@@ -51,6 +62,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
           value={value}
           onChange={onChange}
           className="pl-10 pr-10 py-6 rounded-lg border border-gray-100 shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300"
+          autoComplete="off"
         />
         
         {isLoading && (
@@ -73,6 +85,13 @@ const LocationInput: React.FC<LocationInputProps> = ({
         
         {suggestions.length > 0 && (
           <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-md shadow-lg">
+            {hasFallbackSuggestions && (
+              <div className="px-3 py-2 text-xs text-amber-700 bg-amber-50 border-b border-amber-100 flex items-center">
+                <Info className="h-3 w-3 mr-1" />
+                Usando sugestões básicas. Para resultados melhores, digite um endereço mais completo.
+              </div>
+            )}
+            
             <ul className="py-1 max-h-60 overflow-auto">
               {suggestions.map((suggestion, index) => (
                 <li
@@ -90,9 +109,9 @@ const LocationInput: React.FC<LocationInputProps> = ({
           </div>
         )}
         
-        {!apiLoaded && (
+        {!apiLoaded && value.length > 2 && suggestions.length === 0 && !isLoading && (
           <div className="absolute z-10 mt-1 w-full bg-amber-50 border border-amber-200 rounded-md p-2 text-sm">
-            Carregando API do Google Maps...
+            API do Google Maps não disponível. Digite o endereço completo.
           </div>
         )}
       </div>

@@ -1,14 +1,31 @@
 
-import { useState, useRef } from 'react';
-import { fetchAddressSuggestions } from '@/utils/googleMaps';
+import { useState, useRef, useEffect } from 'react';
+import { fetchAddressSuggestions, loadGoogleMapsScript } from '@/utils/googleMaps';
+import { toast } from 'sonner';
 
 export const useLocationSuggestions = () => {
   const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
   const [isLoadingOriginSuggestions, setIsLoadingOriginSuggestions] = useState(false);
   const [isLoadingDestinationSuggestions, setIsLoadingDestinationSuggestions] = useState(false);
+  const [apiLoaded, setApiLoaded] = useState(false);
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Tenta carregar a API do Google Maps uma vez durante a inicialização
+  useEffect(() => {
+    const loadApi = async () => {
+      try {
+        await loadGoogleMapsScript();
+        setApiLoaded(true);
+      } catch (error) {
+        console.error('Failed to load Google Maps API', error);
+        setApiLoaded(false); // Ainda marcamos como carregado para não bloquear a UI
+      }
+    };
+    
+    loadApi();
+  }, []);
 
   const handleOriginChange = (value: string) => {
     if (originTimeoutRef.current) {
@@ -27,7 +44,12 @@ export const useLocationSuggestions = () => {
         setOriginSuggestions(suggestions);
       } catch (error) {
         console.error('Error fetching origin suggestions:', error);
-        setOriginSuggestions([]);
+        // Não limpe as sugestões aqui, mantenha as últimas ou use fallback
+        
+        // Notificar o usuário apenas uma vez
+        if (originSuggestions.length === 0) {
+          toast.error("Erro ao buscar sugestões de endereço. Tente um endereço mais completo.");
+        }
       } finally {
         setIsLoadingOriginSuggestions(false);
       }
@@ -51,7 +73,12 @@ export const useLocationSuggestions = () => {
         setDestinationSuggestions(suggestions);
       } catch (error) {
         console.error('Error fetching destination suggestions:', error);
-        setDestinationSuggestions([]);
+        // Não limpe as sugestões aqui, mantenha as últimas ou use fallback
+        
+        // Notificar o usuário apenas uma vez
+        if (destinationSuggestions.length === 0) {
+          toast.error("Erro ao buscar sugestões de endereço. Tente um endereço mais completo.");
+        }
       } finally {
         setIsLoadingDestinationSuggestions(false);
       }
@@ -75,6 +102,7 @@ export const useLocationSuggestions = () => {
     destinationSuggestions,
     isLoadingOriginSuggestions,
     isLoadingDestinationSuggestions,
+    apiLoaded,
     handleOriginChange,
     handleDestinationChange,
     selectOriginSuggestion,
