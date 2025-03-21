@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -89,6 +88,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [vehicleOptions, setVehicleOptions] = useState<Vehicle[]>(defaultVehicleOptions);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
   const [pendingBookingData, setPendingBookingData] = useState<any>(null);
+  const [isProcessingAuth, setIsProcessingAuth] = useState(false);
   
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -236,6 +236,9 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   };
 
   const handleLoginSuccess = () => {
+    if (isProcessingAuth) return;
+    setIsProcessingAuth(true);
+    
     setShowLoginForm(false);
     
     if (pendingBookingData) {
@@ -243,11 +246,17 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       // Add a small delay to ensure auth state is updated
       setTimeout(() => {
         handleSubmitBooking();
-      }, 1000);
+        setIsProcessingAuth(false);
+      }, 1500);
+    } else {
+      setIsProcessingAuth(false);
     }
   };
 
   const handleRegisterSuccess = () => {
+    if (isProcessingAuth) return;
+    setIsProcessingAuth(true);
+    
     setShowRegisterForm(false);
     setShowLoginForm(false);
     
@@ -256,15 +265,21 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       // Add a small delay to ensure auth state is updated
       setTimeout(() => {
         handleSubmitBooking();
-      }, 1000);
+        setIsProcessingAuth(false);
+      }, 1500);
+    } else {
+      setIsProcessingAuth(false);
     }
   };
 
   const handleSubmitBooking = async () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
     
     try {
-      if (!user) {
+      const currentUser = await supabase.auth.getUser();
+      
+      if (!currentUser || !currentUser.data.user) {
         console.error("Attempted to submit booking without user");
         toast.error('É necessário estar logado para finalizar a reserva');
         return;
@@ -284,7 +299,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
         passengers: parseInt(bookingData.passengers),
         vehicle_type: selectedVehicleDetails?.name || '',
         status: 'confirmed' as const,
-        user_id: user.id,
+        user_id: currentUser.data.user.id,
         additional_notes: `${bookingData.time ? 'Horário ida: ' + bookingData.time : ''} 
                           ${bookingData.returnTime ? 'Horário volta: ' + bookingData.returnTime : ''}`
       };

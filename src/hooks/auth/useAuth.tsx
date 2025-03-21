@@ -2,6 +2,7 @@
 import { createContext, useContext } from 'react';
 import { AuthContextType } from './types';
 
+// Create a default context value
 export const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
@@ -16,6 +17,7 @@ export const AuthContext = createContext<AuthContextType>({
   companyContext: null
 });
 
+// Custom hook to use the auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   

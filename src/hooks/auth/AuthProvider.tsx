@@ -6,19 +6,7 @@ import { signIn, signInWithGoogle, signUp, signOut, resetPassword } from './auth
 import { fetchUserRole } from './userProfile';
 import { AuthContextType, UserRole } from './types';
 import { toast } from 'sonner';
-
-export const AuthContext = createContext<AuthContextType>({
-  session: null,
-  user: null,
-  isLoading: true,
-  isAuthenticating: false,
-  signIn: async () => ({ error: null }),
-  signInWithGoogle: async () => ({ error: null }),
-  signUp: async () => ({ error: null }),
-  signOut: async () => ({ error: null }),
-  resetPassword: async () => ({ error: null }),
-  userRole: null,
-});
+import { AuthContext } from './useAuth';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -27,6 +15,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [companyContext, setCompanyContext] = useState<{id: string, name: string} | null>(null);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   // Update driver company context from localStorage
   const updateDriverCompanyContext = useCallback(() => {
@@ -47,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Function to get user role from database
   const getUserRole = useCallback(async (userId: string) => {
     try {
+      console.log('Fetching user role for ID:', userId);
       const role = await fetchUserRole(userId);
       console.log('User role fetched:', role);
       setUserRole(role);
@@ -66,6 +56,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Initialize and set up auth state listener
   useEffect(() => {
+    if (authInitialized) return;
+    
     let authListener: any;
     
     const initializeAuth = async () => {
@@ -119,10 +111,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
         
         authListener = data.subscription;
+        setAuthInitialized(true);
       } catch (error) {
         console.error('Error initializing auth:', error);
       } finally {
-        setIsLoading(false);
+        // Set loading to false with a small delay to ensure any state updates have completed
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 100);
       }
     };
     
@@ -133,7 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authListener.unsubscribe();
       }
     };
-  }, [getUserRole]);
+  }, [getUserRole, authInitialized]);
   
   // Handle sign-in with wrapper function to manage loading state
   const handleSignIn = async (email: string, password: string) => {
