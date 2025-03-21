@@ -9,7 +9,7 @@ declare global {
 }
 
 // Export the Google Maps API token - replace with your actual API key
-export const GOOGLE_MAPS_API_KEY = 'AIzaSyCHw5jXgGMuhRiyb2xpWExOTgyIiwiYSIcInNtODA3MGxmaTB0dDAyanFia244dnl1bmcifQ';
+export const GOOGLE_MAPS_API_KEY = 'AIzaSyCg71Bf3HBZDsFPQgWDBnWlwqBSSrKKe_A';
 
 // Check if token is valid
 if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_')) {
