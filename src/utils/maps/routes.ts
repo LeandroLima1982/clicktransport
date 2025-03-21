@@ -41,8 +41,9 @@ export const calculateRoute = async (
         }
         
         try {
-          const result: RouteResult = await new Promise((resolve, reject) => {
-            const directionsService = new window.google.maps.DirectionsService();
+          const directionsService = new window.google.maps.DirectionsService();
+          
+          return new Promise<RouteResult>((resolve, reject) => {
             directionsService.route({
               origin: originCoords,
               destination: destinationCoords,
@@ -74,8 +75,6 @@ export const calculateRoute = async (
               });
             });
           });
-          
-          return result;
         } catch (directionServiceError) {
           console.error('Erro na API de Direções:', directionServiceError);
           // Continue to next method instead of rethrowing

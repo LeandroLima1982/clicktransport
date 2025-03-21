@@ -12,10 +12,14 @@ export const useLocationSuggestions = () => {
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [apiLoadAttempted, setApiLoadAttempted] = useState(false);
+  const lastOriginSearch = useRef<string>('');
+  const lastDestinationSearch = useRef<string>('');
 
   // Tenta carregar a API do Google Maps uma vez durante a inicialização
   useEffect(() => {
     const loadApi = async () => {
+      if (apiLoaded) return; // Skip if already loaded
+      
       try {
         await loadGoogleMapsScript();
         console.log('Google Maps API carregada com sucesso no useLocationSuggestions');
@@ -35,7 +39,16 @@ export const useLocationSuggestions = () => {
     };
     
     loadApi();
-  }, [apiLoadAttempted]);
+    
+    // Retry loading after a delay if it failed initially
+    if (!apiLoaded && apiLoadAttempted) {
+      const retryTimeout = setTimeout(() => {
+        setApiLoadAttempted(false); // Allow another attempt
+      }, 10000);
+      
+      return () => clearTimeout(retryTimeout);
+    }
+  }, [apiLoaded, apiLoadAttempted]);
 
   const handleOriginChange = useCallback((value: string) => {
     if (originTimeoutRef.current) {
@@ -48,11 +61,20 @@ export const useLocationSuggestions = () => {
       return;
     }
     
+    // Skip if the search is the same as last time
+    if (value === lastOriginSearch.current) {
+      return;
+    }
+    
+    lastOriginSearch.current = value;
     setIsLoadingOriginSuggestions(true);
+    
     originTimeoutRef.current = setTimeout(async () => {
       try {
+        console.log('Fetching origin suggestions for:', value);
         const suggestions = await fetchAddressSuggestions(value);
         setOriginSuggestions(suggestions);
+        console.log('Got suggestions:', suggestions.length);
       } catch (error) {
         console.error('Error fetching origin suggestions:', error);
         // Não limpe as sugestões aqui, mantenha as últimas ou use fallback
@@ -78,11 +100,20 @@ export const useLocationSuggestions = () => {
       return;
     }
     
+    // Skip if the search is the same as last time
+    if (value === lastDestinationSearch.current) {
+      return;
+    }
+    
+    lastDestinationSearch.current = value;
     setIsLoadingDestinationSuggestions(true);
+    
     destinationTimeoutRef.current = setTimeout(async () => {
       try {
+        console.log('Fetching destination suggestions for:', value);
         const suggestions = await fetchAddressSuggestions(value);
         setDestinationSuggestions(suggestions);
+        console.log('Got suggestions:', suggestions.length);
       } catch (error) {
         console.error('Error fetching destination suggestions:', error);
         // Não limpe as sugestões aqui, mantenha as últimas ou use fallback
