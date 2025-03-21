@@ -2,7 +2,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { MapPin } from 'lucide-react';
-import { getPlaceIcon, formatPlaceName } from '@/utils/googlemaps';
+import { getPlaceIconProps, formatPlaceNameData } from '@/utils/googlemaps';
 
 interface LocationFieldProps {
   id: string;
@@ -41,21 +41,27 @@ const LocationField: React.FC<LocationFieldProps> = ({
         />
         {suggestions.length > 0 && (
           <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-            {suggestions.map((suggestion, index) => (
-              <div 
-                key={index}
-                className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-start"
-                onClick={() => onSelectSuggestion(suggestion)}
-              >
-                <div className="mr-2 mt-1">
-                  {getPlaceIcon(suggestion.types?.[0] || 'address')}
+            {suggestions.map((suggestion, index) => {
+              const iconProps = getPlaceIconProps(suggestion.types?.[0] || 'address');
+              const IconComponent = iconProps.icon;
+              const placeData = formatPlaceNameData(suggestion);
+              
+              return (
+                <div 
+                  key={index}
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-start"
+                  onClick={() => onSelectSuggestion(suggestion)}
+                >
+                  <div className="mr-2 mt-1">
+                    <IconComponent className={iconProps.className} />
+                  </div>
+                  <div>
+                    <div className="font-medium">{placeData.mainText}</div>
+                    <div className="text-xs text-gray-500">{placeData.secondaryText || ''}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-medium">{suggestion.structured_formatting?.main_text || suggestion.description}</div>
-                  <div className="text-xs text-gray-500">{suggestion.structured_formatting?.secondary_text || ''}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

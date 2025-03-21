@@ -3,7 +3,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MapPin, X } from 'lucide-react';
-import { getPlaceIcon, formatPlaceName } from '@/utils/googlemaps';
+import { getPlaceIconProps, formatPlaceNameData } from '@/utils/googlemaps';
 import { Button } from '@/components/ui/button';
 
 interface LocationInputProps {
@@ -56,18 +56,29 @@ const LocationInput: React.FC<LocationInputProps> = ({
         {suggestions.length > 0 && (
           <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-md shadow-lg">
             <ul className="py-1 max-h-60 overflow-auto">
-              {suggestions.map((suggestion, index) => (
-                <li
-                  key={index}
-                  className="px-3 py-2 text-sm hover:bg-amber-50 cursor-pointer"
-                  onClick={() => onSelectSuggestion(suggestion)}
-                >
-                  <div className="flex items-center gap-2">
-                    {getPlaceIcon(suggestion.types?.[0] || 'address')}
-                    {formatPlaceName(suggestion)}
-                  </div>
-                </li>
-              ))}
+              {suggestions.map((suggestion, index) => {
+                const iconProps = getPlaceIconProps(suggestion.types?.[0] || 'address');
+                const IconComponent = iconProps.icon;
+                const placeData = formatPlaceNameData(suggestion);
+                
+                return (
+                  <li
+                    key={index}
+                    className="px-3 py-2 text-sm hover:bg-amber-50 cursor-pointer"
+                    onClick={() => onSelectSuggestion(suggestion)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <IconComponent className={iconProps.className} />
+                      <div>
+                        <div className="font-medium">{placeData.mainText}</div>
+                        {placeData.secondaryText && (
+                          <div className="text-xs text-gray-600">{placeData.secondaryText}</div>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}

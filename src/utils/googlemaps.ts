@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Building, Landmark, Home, Navigation, MapPin, ShoppingBag, School, Hospital, Hotel, Coffee, Utensils, Bus, Plane, Dumbbell, Church, Trees } from 'lucide-react';
 import { toast } from 'sonner';
@@ -68,57 +69,74 @@ export const loadGoogleMapsScript = (callback: () => void) => {
   document.head.appendChild(script);
 };
 
-// Get icon based on place type with consistent styling
-export const getPlaceIcon = (placeType: string): React.ReactElement => {
+// Create a function to generate icon props
+const createIconProps = (IconComponent: any, iconSize: string, color: string) => {
+  return {
+    icon: IconComponent,
+    className: `${iconSize} ${color}`
+  };
+};
+
+// Get icon props based on place type
+export const getPlaceIconProps = (placeType: string) => {
   const iconSize = "h-4 w-4";
   
   // Map place types to icons
   switch (typeof placeType === 'string' ? placeType : 'address') {
     case 'airport':
-      return <Plane className={`${iconSize} text-blue-600`} />;
+      return createIconProps(Plane, iconSize, 'text-blue-600');
     case 'lodging':
     case 'hotel':
-      return <Hotel className={`${iconSize} text-amber-600`} />;
+      return createIconProps(Hotel, iconSize, 'text-amber-600');
     case 'restaurant':
     case 'food':
     case 'cafe':
-      return <Utensils className={`${iconSize} text-red-600`} />;
+      return createIconProps(Utensils, iconSize, 'text-red-600');
     case 'store':
     case 'shopping_mall':
-      return <ShoppingBag className={`${iconSize} text-purple-600`} />;
+      return createIconProps(ShoppingBag, iconSize, 'text-purple-600');
     case 'school':
     case 'university':
-      return <School className={`${iconSize} text-blue-500`} />;
+      return createIconProps(School, iconSize, 'text-blue-500');
     case 'hospital':
     case 'health':
-      return <Hospital className={`${iconSize} text-red-500`} />;
+      return createIconProps(Hospital, iconSize, 'text-red-500');
     case 'park':
-      return <Trees className={`${iconSize} text-green-600`} />;
+      return createIconProps(Trees, iconSize, 'text-green-600');
     case 'transit_station':
     case 'bus_station':
-      return <Bus className={`${iconSize} text-blue-500`} />;
+      return createIconProps(Bus, iconSize, 'text-blue-500');
     case 'point_of_interest':
-      return <Landmark className={`${iconSize} text-amber-500`} />;
+      return createIconProps(Landmark, iconSize, 'text-amber-500');
     case 'establishment':
-      return <Building className={`${iconSize} text-gray-600`} />;
+      return createIconProps(Building, iconSize, 'text-gray-600');
     case 'address':
     default:
-      return <Home className={`${iconSize} text-gray-500`} />;
+      return createIconProps(Home, iconSize, 'text-gray-500');
   }
 };
 
-// Format place details for display
-export const formatPlaceName = (place: google.maps.places.AutocompletePrediction): JSX.Element => {
+// For backward compatibility with existing code
+export const getPlaceIcon = (placeType: string): any => {
+  const iconProps = getPlaceIconProps(placeType);
+  const IconComponent = iconProps.icon;
+  // This will need to be rendered by a React component that uses this function
+  return { IconComponent, className: iconProps.className };
+};
+
+// Format place name data for display
+export const formatPlaceNameData = (place: google.maps.places.AutocompletePrediction) => {
   const mainText = place.structured_formatting?.main_text || place.description;
   const secondaryText = place.structured_formatting?.secondary_text || '';
   
-  return (
-    <div>
-      <div className="font-medium">{mainText}</div>
-      {secondaryText && <div className="text-xs text-gray-600">{secondaryText}</div>}
-    </div>
-  );
+  return {
+    mainText,
+    secondaryText
+  };
 };
+
+// For backward compatibility
+export const formatPlaceName = formatPlaceNameData;
 
 // Function to fetch address suggestions from Google Maps Places API
 export const fetchAddressSuggestions = async (query: string): Promise<google.maps.places.AutocompletePrediction[]> => {
