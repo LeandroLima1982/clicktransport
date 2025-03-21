@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { GOOGLE_MAPS_API_KEY, loadGoogleMapsScript } from '@/utils/googlemaps';
+import { GOOGLE_MAPS_API_KEY, loadGoogleMapsScript, isValidApiKey } from '@/utils/googlemaps';
 
 interface DriverMapProps {
   currentOrder: any;
@@ -25,7 +25,7 @@ const DriverMap: React.FC<DriverMapProps> = ({
   useEffect(() => {
     if (!mapContainer.current) return;
     
-    if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_')) {
+    if (!isValidApiKey()) {
       setError('Google Maps API key is missing. Please configure it in the environment settings.');
       setLoading(false);
       return;
@@ -33,6 +33,7 @@ const DriverMap: React.FC<DriverMapProps> = ({
     
     loadGoogleMapsScript(() => {
       try {
+        console.log('Initializing driver map');
         // Create map instance
         mapRef.current = new google.maps.Map(mapContainer.current, {
           center: { lat: -22.9035, lng: -43.2096 }, // Default to Rio de Janeiro

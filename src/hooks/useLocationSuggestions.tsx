@@ -1,17 +1,28 @@
 
-import { useState, useRef } from 'react';
-import { fetchAddressSuggestions } from '@/utils/googlemaps';
+import { useState, useRef, useEffect } from 'react';
+import { fetchAddressSuggestions, isValidApiKey } from '@/utils/googlemaps';
 import { toast } from 'sonner';
 
 export const useLocationSuggestions = () => {
   const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [apiKeyValid, setApiKeyValid] = useState(true);
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Verificar se a API key é válida ao montar o componente
+  useEffect(() => {
+    const valid = isValidApiKey();
+    setApiKeyValid(valid);
+    
+    if (!valid) {
+      toast.error('A chave da API do Google Maps é inválida. As sugestões de endereço não funcionarão.');
+    }
+  }, []);
+
   const handleOriginChange = (value: string) => {
-    if (value.length < 3) {
+    if (!apiKeyValid || value.length < 3) {
       setOriginSuggestions([]);
       return;
     }
@@ -23,6 +34,7 @@ export const useLocationSuggestions = () => {
     originTimeoutRef.current = setTimeout(async () => {
       setIsLoadingSuggestions(true);
       try {
+        console.log('Fetching origin suggestions for:', value);
         const suggestions = await fetchAddressSuggestions(value);
         setOriginSuggestions(suggestions);
       } catch (error) {
@@ -35,7 +47,7 @@ export const useLocationSuggestions = () => {
   };
 
   const handleDestinationChange = (value: string) => {
-    if (value.length < 3) {
+    if (!apiKeyValid || value.length < 3) {
       setDestinationSuggestions([]);
       return;
     }
@@ -47,6 +59,7 @@ export const useLocationSuggestions = () => {
     destinationTimeoutRef.current = setTimeout(async () => {
       setIsLoadingSuggestions(true);
       try {
+        console.log('Fetching destination suggestions for:', value);
         const suggestions = await fetchAddressSuggestions(value);
         setDestinationSuggestions(suggestions);
       } catch (error) {
@@ -74,6 +87,7 @@ export const useLocationSuggestions = () => {
     originSuggestions,
     destinationSuggestions,
     isLoadingSuggestions,
+    apiKeyValid,
     handleOriginChange,
     handleDestinationChange,
     selectOriginSuggestion,

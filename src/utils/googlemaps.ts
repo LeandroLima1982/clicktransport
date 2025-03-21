@@ -9,21 +9,29 @@ declare global {
   }
 }
 
-// Export the Google Maps API token
+// Export the Google Maps API token - usando uma chave válida, você deve trocar por sua chave real
 export const GOOGLE_MAPS_API_KEY = 'AIzaSyCz1o0MT2uHrlXvBvuJWkGwKA9NbESKsew';
 
-// Check if token is valid
-if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_')) {
-  console.error('Google Maps API key is missing or invalid - map functionality will not work!');
-}
+// Check if token is valid - corrigido o método de verificação
+export const isValidApiKey = () => {
+  return GOOGLE_MAPS_API_KEY && !GOOGLE_MAPS_API_KEY.includes('YOUR_') && GOOGLE_MAPS_API_KEY.length > 20;
+};
 
 // Function to load Google Maps API script
 export const loadGoogleMapsScript = (callback: () => void) => {
+  // Verificação de API válida
+  if (!isValidApiKey()) {
+    console.error('Google Maps API key is missing or invalid - map functionality will not work!');
+    return;
+  }
+
   // Check if script is already loaded
   if (window.google && window.google.maps) {
     callback();
     return;
   }
+
+  console.log('Loading Google Maps API script with key', GOOGLE_MAPS_API_KEY.substring(0, 10) + '...');
 
   // Create script element
   const script = document.createElement('script');
@@ -32,11 +40,14 @@ export const loadGoogleMapsScript = (callback: () => void) => {
   script.defer = true;
   
   // Define callback
-  window.initGoogleMaps = callback;
+  window.initGoogleMaps = () => {
+    console.log('Google Maps API loaded successfully');
+    callback();
+  };
   
   // Handle script errors
-  script.onerror = () => {
-    console.error('Error loading Google Maps API');
+  script.onerror = (error) => {
+    console.error('Error loading Google Maps API:', error);
   };
   
   document.head.appendChild(script);
@@ -46,9 +57,14 @@ export const loadGoogleMapsScript = (callback: () => void) => {
 type IconComponent = React.ReactElement;
 
 // Get icon based on place type
-export const getPlaceIcon = (placeType: string): IconComponent => {
+export const getPlaceIcon = (placeType: string | google.maps.places.AutocompletePrediction): IconComponent => {
+  // Extract type from prediction if needed
+  const type = typeof placeType === 'string' 
+    ? placeType 
+    : (placeType.types && placeType.types[0]) || 'address';
+  
   // Map Google place types to icons
-  switch (placeType) {
+  switch (type) {
     case 'airport':
       return React.createElement(Plane, { className: "h-4 w-4 text-blue-600" });
     case 'lodging':
@@ -96,15 +112,18 @@ export const formatPlaceName = (place: google.maps.places.AutocompletePrediction
 export const fetchAddressSuggestions = async (query: string): Promise<any[]> => {
   if (query.length < 3) return [];
   
-  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_')) {
+  if (!isValidApiKey()) {
     console.error('Invalid Google Maps API key. Check your configuration.');
     return [];
   }
+  
+  console.log('Fetching address suggestions for:', query);
   
   // Ensure Google Maps API is loaded
   return new Promise((resolve) => {
     loadGoogleMapsScript(() => {
       try {
+        console.log('Google Maps loaded, fetching predictions...');
         const autocompleteService = new google.maps.places.AutocompleteService();
         autocompleteService.getPlacePredictions(
           {
@@ -113,8 +132,9 @@ export const fetchAddressSuggestions = async (query: string): Promise<any[]> => 
             types: ['address', 'establishment', 'geocode']
           },
           (predictions, status) => {
+            console.log('Places API status:', status);
             if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
-              console.log('Google Places suggestions:', predictions);
+              console.log('Google Places suggestions:', predictions.length);
               resolve(predictions);
             } else {
               console.error('Google Places API error:', status);
@@ -141,11 +161,22 @@ export const calculateRoute = async (
   origin: string,
   destination: string
 ): Promise<RouteInfo | null> => {
-  if (!origin || !destination) return null;
+  if (!origin || !destination) {
+    console.log('Origin or destination is empty');
+    return null;
+  }
+  
+  if (!isValidApiKey()) {
+    console.error('Invalid Google Maps API key for route calculation');
+    return null;
+  }
+  
+  console.log('Calculating route from', origin, 'to', destination);
   
   return new Promise((resolve) => {
     loadGoogleMapsScript(() => {
       try {
+        console.log('Maps loaded, calculating directions...');
         const directionsService = new google.maps.DirectionsService();
         
         directionsService.route(
@@ -155,6 +186,7 @@ export const calculateRoute = async (
             travelMode: google.maps.TravelMode.DRIVING
           },
           (result, status) => {
+            console.log('Directions API status:', status);
             if (status === google.maps.DirectionsStatus.OK && result) {
               const route = result.routes[0].legs[0];
               
@@ -163,6 +195,8 @@ export const calculateRoute = async (
               
               // Convert duration from seconds to minutes
               const durationMin = Math.ceil((route.duration?.value || 0) / 60);
+              
+              console.log('Route calculated successfully:', distanceKm, 'km,', durationMin, 'min');
               
               resolve({
                 distance: parseFloat(distanceKm.toFixed(2)),

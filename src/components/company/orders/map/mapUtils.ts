@@ -1,10 +1,12 @@
 
 import { toast } from 'sonner';
-import { GOOGLE_MAPS_API_KEY, loadGoogleMapsScript } from '@/utils/googlemaps';
+import { GOOGLE_MAPS_API_KEY, loadGoogleMapsScript, isValidApiKey } from '@/utils/googlemaps';
 
 // Get coordinates from an address using Google Geocoding API
 export const getCoordinatesFromAddress = async (address: string): Promise<[number, number] | null> => {
-  if (!GOOGLE_MAPS_API_KEY) return null;
+  if (!isValidApiKey()) return null;
+  
+  console.log('Getting coordinates for address:', address);
   
   return new Promise((resolve) => {
     loadGoogleMapsScript(() => {
@@ -14,8 +16,10 @@ export const getCoordinatesFromAddress = async (address: string): Promise<[numbe
         geocoder.geocode(
           { address: address, region: 'br' },
           (results, status) => {
+            console.log('Geocoding status:', status);
             if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
               const location = results[0].geometry.location;
+              console.log('Coordinates found:', location.lng(), location.lat());
               resolve([location.lng(), location.lat()]);
             } else {
               console.error('Geocoding error:', status);
@@ -40,7 +44,9 @@ export const fetchRouteData = async (
   distance: number;
   duration: number;
 } | null> => {
-  if (!GOOGLE_MAPS_API_KEY) return null;
+  if (!isValidApiKey()) return null;
+  
+  console.log('Fetching route data between:', start, 'and', end);
   
   return new Promise((resolve) => {
     loadGoogleMapsScript(() => {
@@ -54,6 +60,7 @@ export const fetchRouteData = async (
             travelMode: google.maps.TravelMode.DRIVING
           },
           (result, status) => {
+            console.log('Directions API status:', status);
             if (status === google.maps.DirectionsStatus.OK && result) {
               const route = result.routes[0].legs[0];
               
@@ -65,6 +72,8 @@ export const fetchRouteData = async (
               
               const path = result.routes[0].overview_path;
               const coordinates = path.map(point => [point.lng(), point.lat()]);
+              
+              console.log('Route data calculated successfully');
               
               resolve({
                 geometry: {
@@ -93,9 +102,10 @@ export const createStaticMapUrl = (
   start: [number, number], 
   end: [number, number]
 ): string | null => {
-  if (!GOOGLE_MAPS_API_KEY) return null;
+  if (!isValidApiKey()) return null;
   
   try {
+    console.log('Creating static map URL');
     // Center point between start and end
     const centerLng = (start[0] + end[0]) / 2;
     const centerLat = (start[1] + end[1]) / 2;
@@ -118,7 +128,9 @@ export const createStaticMapUrl = (
     const destMarker = `markers=color:red|label:B|${end[1]},${end[0]}`;
     
     // Create the static map URL
-    return `https://maps.googleapis.com/maps/api/staticmap?center=${centerLat},${centerLng}&zoom=${zoom}&size=800x500&maptype=roadmap&${originMarker}&${destMarker}&key=${GOOGLE_MAPS_API_KEY}`;
+    const url = `https://maps.googleapis.com/maps/api/staticmap?center=${centerLat},${centerLng}&zoom=${zoom}&size=800x500&maptype=roadmap&${originMarker}&${destMarker}&key=${GOOGLE_MAPS_API_KEY}`;
+    console.log('Static map URL created');
+    return url;
   } catch (error) {
     console.error('Error creating static map URL:', error);
     return null;
@@ -127,7 +139,7 @@ export const createStaticMapUrl = (
 
 // Check if Google Maps API key is valid
 export const validateMapboxToken = (): boolean => {
-  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_')) {
+  if (!isValidApiKey()) {
     console.error("Invalid Google Maps API key");
     toast.error('Token do Google Maps inválido. Verifique a configuração.');
     return false;

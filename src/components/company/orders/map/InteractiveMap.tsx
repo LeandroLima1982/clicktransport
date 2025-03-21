@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { GOOGLE_MAPS_API_KEY, loadGoogleMapsScript } from '@/utils/googlemaps';
+import { GOOGLE_MAPS_API_KEY, loadGoogleMapsScript, isValidApiKey } from '@/utils/googlemaps';
 
 interface InteractiveMapProps {
   originCoords: [number, number];
@@ -57,6 +57,13 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         mapContainer.current.style.backgroundColor = '#e9e9e9';
         mapContainer.current.style.position = 'relative';
         mapContainer.current.style.display = 'block';
+      }
+      
+      if (!isValidApiKey()) {
+        console.error('Invalid Google Maps API key');
+        setMapInitError('Google Maps API key is invalid or missing');
+        if (onMapLoadFailure) onMapLoadFailure();
+        return;
       }
       
       loadGoogleMapsScript(() => {
@@ -160,6 +167,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 travelMode: google.maps.TravelMode.DRIVING
               },
               (result, status) => {
+                console.log('Directions service result:', status);
                 if (status === google.maps.DirectionsStatus.OK && result) {
                   directionsRendererRef.current!.setDirections(result);
                 } else {
@@ -249,6 +257,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           <div className="text-center max-w-md p-4 bg-destructive/10 rounded-md">
             <p className="text-sm text-destructive font-medium">Erro ao carregar mapa interativo</p>
             <p className="text-xs text-muted-foreground mt-1">Tentando usar mapa estático como alternativa</p>
+            <p className="text-xs text-muted-foreground mt-1">{mapInitError}</p>
           </div>
         </div>
       )}
