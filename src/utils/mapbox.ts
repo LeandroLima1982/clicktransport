@@ -101,18 +101,21 @@ export const isValidMapboxToken = (token: string): boolean => {
          !token.includes('YOUR_MAPBOX_TOKEN');
 };
 
-// Correção: Ajuste nos parâmetros para funcionamento correto da API Mapbox
+// Function to build parameters for Mapbox geocoding API - improved for Brazilian addresses
 export const buildMapboxParams = (query: string) => {
-  return {
+  return new URLSearchParams({
     access_token: MAPBOX_TOKEN,
     country: 'br',
-    language: 'pt-BR',
+    language: 'pt',
     limit: '8',
     types: POI_TYPES,
-    autocomplete: true,
-    fuzzyMatch: true,
+    autocomplete: 'true',
+    fuzzyMatch: 'true',
+    routing: 'true',  // Melhora busca de endereços para rotas
+    worldview: 'br',  // Usa visão brasileira do mundo
     proximity: '-43.1729,-22.9068', // Rio de Janeiro como centro padrão
-  };
+    bbox: '-73.9872354,-33.7683777,-34.7299934,5.24448639', // Brasil bounding box
+  });
 };
 
 // Função melhorada para buscar sugestões de endereços do Mapbox API
@@ -144,21 +147,10 @@ export const fetchAddressSuggestions = async (query: string) => {
     }
     
     const endpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json`;
-    
-    // Construir parâmetros da consulta como URLSearchParams
-    const params = new URLSearchParams();
-    const mapboxParams = buildMapboxParams(query);
-    
-    // Adicionar cada parâmetro à URLSearchParams
-    Object.entries(mapboxParams).forEach(([key, value]) => {
-      params.append(key, value.toString());
-    });
-    
-    console.log("URL de consulta Mapbox:", `${endpoint}?${params.toString()}`);
+    const params = buildMapboxParams(query);
     
     const response = await fetch(`${endpoint}?${params.toString()}`);
     if (!response.ok) {
-      console.error(`Erro na API Mapbox: ${response.status}`, await response.text());
       throw new Error(`Erro na API Mapbox: ${response.status}`);
     }
     
