@@ -1,11 +1,12 @@
 
 import { useState, useRef } from 'react';
-import { fetchAddressSuggestions } from '@/utils/mapbox';
+import { fetchAddressSuggestions } from '@/utils/googleMaps';
 
 export const useLocationSuggestions = () => {
   const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [isLoadingOriginSuggestions, setIsLoadingOriginSuggestions] = useState(false);
+  const [isLoadingDestinationSuggestions, setIsLoadingDestinationSuggestions] = useState(false);
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -14,11 +15,22 @@ export const useLocationSuggestions = () => {
       clearTimeout(originTimeoutRef.current);
     }
     
+    if (value.length < 3) {
+      setOriginSuggestions([]);
+      return;
+    }
+    
+    setIsLoadingOriginSuggestions(true);
     originTimeoutRef.current = setTimeout(async () => {
-      setIsLoadingSuggestions(true);
-      const suggestions = await fetchAddressSuggestions(value);
-      setOriginSuggestions(suggestions);
-      setIsLoadingSuggestions(false);
+      try {
+        const suggestions = await fetchAddressSuggestions(value);
+        setOriginSuggestions(suggestions);
+      } catch (error) {
+        console.error('Error fetching origin suggestions:', error);
+        setOriginSuggestions([]);
+      } finally {
+        setIsLoadingOriginSuggestions(false);
+      }
     }, 500);
   };
 
@@ -27,22 +39,33 @@ export const useLocationSuggestions = () => {
       clearTimeout(destinationTimeoutRef.current);
     }
     
+    if (value.length < 3) {
+      setDestinationSuggestions([]);
+      return;
+    }
+    
+    setIsLoadingDestinationSuggestions(true);
     destinationTimeoutRef.current = setTimeout(async () => {
-      setIsLoadingSuggestions(true);
-      const suggestions = await fetchAddressSuggestions(value);
-      setDestinationSuggestions(suggestions);
-      setIsLoadingSuggestions(false);
+      try {
+        const suggestions = await fetchAddressSuggestions(value);
+        setDestinationSuggestions(suggestions);
+      } catch (error) {
+        console.error('Error fetching destination suggestions:', error);
+        setDestinationSuggestions([]);
+      } finally {
+        setIsLoadingDestinationSuggestions(false);
+      }
     }, 500);
   };
 
   const selectOriginSuggestion = (suggestion: any) => {
-    const placeName = suggestion.place_name;
+    const placeName = suggestion.description || suggestion.formatted_address || '';
     setOriginSuggestions([]);
     return placeName;
   };
 
   const selectDestinationSuggestion = (suggestion: any) => {
-    const placeName = suggestion.place_name;
+    const placeName = suggestion.description || suggestion.formatted_address || '';
     setDestinationSuggestions([]);
     return placeName;
   };
@@ -50,7 +73,8 @@ export const useLocationSuggestions = () => {
   return {
     originSuggestions,
     destinationSuggestions,
-    isLoadingSuggestions,
+    isLoadingOriginSuggestions,
+    isLoadingDestinationSuggestions,
     handleOriginChange,
     handleDestinationChange,
     selectOriginSuggestion,

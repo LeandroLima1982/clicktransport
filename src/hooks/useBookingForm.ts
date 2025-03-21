@@ -1,7 +1,7 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
-import { fetchAddressSuggestions } from '@/utils/mapbox';
+import { fetchAddressSuggestions, setGoogleMapsApiKey } from '@/utils/googleMaps';
 
 export interface PassengerInfo {
   name: string;
@@ -33,10 +33,23 @@ export const useBookingForm = () => {
   const [returnTime, setReturnTime] = useState<string>('');
   const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [isLoadingOriginSuggestions, setIsLoadingOriginSuggestions] = useState(false);
+  const [isLoadingDestinationSuggestions, setIsLoadingDestinationSuggestions] = useState(false);
+  const [apiKey, setApiKey] = useState<string>('');
   
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Show API key input if not set
+  useEffect(() => {
+    // Optional: you can prompt for API key here or handle it elsewhere
+    // For now, we'll just check local storage
+    const savedApiKey = localStorage.getItem('google_maps_api_key');
+    if (savedApiKey) {
+      setApiKey(savedApiKey);
+      setGoogleMapsApiKey(savedApiKey);
+    }
+  }, []);
   
   const handleBooking = () => {
     if (!originValue) {
@@ -80,12 +93,24 @@ export const useBookingForm = () => {
       clearTimeout(originTimeoutRef.current);
     }
     
+    if (!apiKey) {
+      toast.error('Chave da API do Google Maps não configurada');
+      return;
+    }
+    
     if (value.length >= 3) {
+      setIsLoadingOriginSuggestions(true);
       originTimeoutRef.current = setTimeout(async () => {
-        setIsLoadingSuggestions(true);
-        const suggestions = await fetchAddressSuggestions(value);
-        setOriginSuggestions(suggestions);
-        setIsLoadingSuggestions(false);
+        try {
+          const suggestions = await fetchAddressSuggestions(value);
+          setOriginSuggestions(suggestions);
+        } catch (error) {
+          console.error('Error fetching origin suggestions:', error);
+          toast.error('Erro ao buscar sugestões de endereço de origem');
+          setOriginSuggestions([]);
+        } finally {
+          setIsLoadingOriginSuggestions(false);
+        }
       }, 500);
     } else {
       setOriginSuggestions([]);
@@ -100,12 +125,24 @@ export const useBookingForm = () => {
       clearTimeout(destinationTimeoutRef.current);
     }
     
+    if (!apiKey) {
+      toast.error('Chave da API do Google Maps não configurada');
+      return;
+    }
+    
     if (value.length >= 3) {
+      setIsLoadingDestinationSuggestions(true);
       destinationTimeoutRef.current = setTimeout(async () => {
-        setIsLoadingSuggestions(true);
-        const suggestions = await fetchAddressSuggestions(value);
-        setDestinationSuggestions(suggestions);
-        setIsLoadingSuggestions(false);
+        try {
+          const suggestions = await fetchAddressSuggestions(value);
+          setDestinationSuggestions(suggestions);
+        } catch (error) {
+          console.error('Error fetching destination suggestions:', error);
+          toast.error('Erro ao buscar sugestões de endereço de destino');
+          setDestinationSuggestions([]);
+        } finally {
+          setIsLoadingDestinationSuggestions(false);
+        }
       }, 500);
     } else {
       setDestinationSuggestions([]);
@@ -113,12 +150,11 @@ export const useBookingForm = () => {
   };
 
   const selectSuggestion = (suggestion: any, isOrigin: boolean) => {
-    const placeName = suggestion.place_name;
     if (isOrigin) {
-      setOriginValue(placeName);
+      setOriginValue(suggestion.description);
       setOriginSuggestions([]);
     } else {
-      setDestinationValue(placeName);
+      setDestinationValue(suggestion.description);
       setDestinationSuggestions([]);
     }
   };
@@ -131,6 +167,13 @@ export const useBookingForm = () => {
   const clearDestination = () => {
     setDestinationValue('');
     setDestinationSuggestions([]);
+  };
+
+  const setGoogleApiKey = (key: string) => {
+    setApiKey(key);
+    setGoogleMapsApiKey(key);
+    localStorage.setItem('google_maps_api_key', key);
+    toast.success('Chave da API do Google Maps configurada!');
   };
 
   const bookingData: BookingFormData = {
@@ -157,8 +200,10 @@ export const useBookingForm = () => {
     returnTime,
     originSuggestions,
     destinationSuggestions,
-    isLoadingSuggestions,
+    isLoadingOriginSuggestions,
+    isLoadingDestinationSuggestions,
     showBookingSteps,
+    apiKey,
     setTripType,
     setDate,
     setReturnDate,
@@ -173,6 +218,7 @@ export const useBookingForm = () => {
     setShowBookingSteps,
     bookingData,
     clearOrigin,
-    clearDestination
+    clearDestination,
+    setGoogleApiKey
   };
 };
