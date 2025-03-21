@@ -2,7 +2,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { MapPin } from 'lucide-react';
-import { getPlaceIcon, formatPlaceName } from '@/utils/mapbox';
+import { getPlaceIcon, formatPlaceName } from '@/utils/googlemaps';
 
 interface LocationFieldProps {
   id: string;
@@ -48,11 +48,11 @@ const LocationField: React.FC<LocationFieldProps> = ({
                 onClick={() => onSelectSuggestion(suggestion)}
               >
                 <div className="mr-2 mt-1">
-                  {getPlaceIcon(suggestion.place_type[0])}
+                  {getPlaceIcon(suggestion.types?.[0] || 'address')}
                 </div>
                 <div>
-                  <div className="font-medium">{formatPlaceName(suggestion.place_name)}</div>
-                  <div className="text-xs text-gray-500">{suggestion.place_name}</div>
+                  <div className="font-medium">{suggestion.structured_formatting?.main_text || suggestion.description}</div>
+                  <div className="text-xs text-gray-500">{suggestion.structured_formatting?.secondary_text || ''}</div>
                 </div>
               </div>
             ))}

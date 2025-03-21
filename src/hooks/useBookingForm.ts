@@ -1,7 +1,7 @@
 
 import { useState, useRef } from 'react';
 import { toast } from 'sonner';
-import { fetchAddressSuggestions } from '@/utils/mapbox';
+import { fetchAddressSuggestions } from '@/utils/googlemaps';
 
 export interface PassengerInfo {
   name: string;
@@ -83,9 +83,15 @@ export const useBookingForm = () => {
     if (value.length >= 3) {
       originTimeoutRef.current = setTimeout(async () => {
         setIsLoadingSuggestions(true);
-        const suggestions = await fetchAddressSuggestions(value);
-        setOriginSuggestions(suggestions);
-        setIsLoadingSuggestions(false);
+        try {
+          const suggestions = await fetchAddressSuggestions(value);
+          setOriginSuggestions(suggestions);
+        } catch (error) {
+          console.error('Error fetching origin suggestions:', error);
+          toast.error('Erro ao buscar sugestões de endereço');
+        } finally {
+          setIsLoadingSuggestions(false);
+        }
       }, 500);
     } else {
       setOriginSuggestions([]);
@@ -103,9 +109,15 @@ export const useBookingForm = () => {
     if (value.length >= 3) {
       destinationTimeoutRef.current = setTimeout(async () => {
         setIsLoadingSuggestions(true);
-        const suggestions = await fetchAddressSuggestions(value);
-        setDestinationSuggestions(suggestions);
-        setIsLoadingSuggestions(false);
+        try {
+          const suggestions = await fetchAddressSuggestions(value);
+          setDestinationSuggestions(suggestions);
+        } catch (error) {
+          console.error('Error fetching destination suggestions:', error);
+          toast.error('Erro ao buscar sugestões de endereço');
+        } finally {
+          setIsLoadingSuggestions(false);
+        }
       }, 500);
     } else {
       setDestinationSuggestions([]);
@@ -113,7 +125,7 @@ export const useBookingForm = () => {
   };
 
   const selectSuggestion = (suggestion: any, isOrigin: boolean) => {
-    const placeName = suggestion.place_name;
+    const placeName = suggestion.description;
     if (isOrigin) {
       setOriginValue(placeName);
       setOriginSuggestions([]);
