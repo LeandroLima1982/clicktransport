@@ -22,7 +22,7 @@ const ApiConfiguration: React.FC = () => {
     const currentKey = getGoogleMapsApiKey();
     if (currentKey && currentKey !== 'YOUR_GOOGLE_MAPS_API_KEY') {
       setGoogleMapsApiKey(currentKey);
-      setKeyStatus('valid');
+      setKeyStatus(isValidApiKey() ? 'valid' : 'invalid');
     } else {
       setGoogleMapsApiKey('');
       setKeyStatus('invalid');
@@ -40,6 +40,8 @@ const ApiConfiguration: React.FC = () => {
         return;
       }
 
+      console.log('Salvando nova chave API do Google Maps:', googleMapsApiKey.substring(0, 5) + '...');
+      
       // Update the API key
       const success = updateGoogleMapsApiKey(googleMapsApiKey);
       

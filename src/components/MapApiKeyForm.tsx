@@ -25,6 +25,7 @@ const MapApiKeyForm: React.FC<MapApiKeyFormProps> = ({
   useEffect(() => {
     if (open) {
       const currentKey = getGoogleMapsApiKey();
+      console.log('Dialog aberto, carregando chave atual');
       if (currentKey && currentKey !== 'YOUR_GOOGLE_MAPS_API_KEY') {
         setApiKey(currentKey);
       } else {
@@ -37,17 +38,19 @@ const MapApiKeyForm: React.FC<MapApiKeyFormProps> = ({
     e.preventDefault();
     setIsSubmitting(true);
     
-    if (!apiKey || apiKey.length < 20) {
-      toast.error('Por favor, insira uma chave de API válida');
-      setIsSubmitting(false);
-      return;
-    }
-    
     try {
+      if (!apiKey || apiKey.length < 20) {
+        toast.error('Por favor, insira uma chave de API válida');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log('Enviando chave API para salvar:', apiKey.substring(0, 5) + '...');
+      
       // Save the API key
       onSaveApiKey(apiKey);
       
-      toast.success('Chave da API salva com sucesso');
+      // Close the dialog
       onOpenChange(false);
     } catch (error) {
       console.error('Error saving API key:', error);

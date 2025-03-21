@@ -12,6 +12,7 @@ const ApiKeyButton: React.FC = () => {
   const { user, userRole } = useAuth();
 
   const handleSaveApiKey = (apiKey: string) => {
+    console.log('Salvando chave API pelo ApiKeyButton');
     updateGoogleMapsApiKey(apiKey);
   };
 

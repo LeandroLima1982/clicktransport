@@ -6,31 +6,42 @@ import { toast } from 'sonner';
 declare global {
   interface Window {
     initGoogleMaps?: () => void;
+    GOOGLE_MAPS_API_KEY?: string; // Para armazenar a chave globalmente
   }
 }
 
 // Get the API key from localStorage or use a default placeholder
 export const getGoogleMapsApiKey = (): string => {
+  // Primeiro, verifique se existe uma chave global atualizada na memória
+  if (window.GOOGLE_MAPS_API_KEY) {
+    return window.GOOGLE_MAPS_API_KEY;
+  }
+  
+  // Depois, tente recuperar do localStorage
   const storedKey = localStorage.getItem('GOOGLE_MAPS_API_KEY');
-  return storedKey || 'YOUR_GOOGLE_MAPS_API_KEY';
+  
+  // Se encontrou uma chave, armazene-a globalmente para uso futuro
+  if (storedKey && storedKey.length > 20) {
+    window.GOOGLE_MAPS_API_KEY = storedKey;
+    return storedKey;
+  }
+  
+  return 'YOUR_GOOGLE_MAPS_API_KEY';
 };
 
-// Export the Google Maps API token
+// Export the Google Maps API token - Obtenha a chave dinamicamente a cada chamada
 export const GOOGLE_MAPS_API_KEY = getGoogleMapsApiKey();
 
 // Check if token is valid
 export const isValidApiKey = () => {
+  // Obtenha a chave mais recente a cada verificação
   const apiKey = getGoogleMapsApiKey();
   const isValid = apiKey && 
          apiKey !== 'YOUR_GOOGLE_MAPS_API_KEY' && 
          apiKey.length > 20;
          
   if (!isValid) {
-    console.error('Invalid Google Maps API key - Please update it to use map features');
-    toast.error('Chave da API do Google Maps inválida', {
-      description: 'Configure a chave nas configurações da aplicação',
-      duration: 5000,
-    });
+    console.error('Chave da API do Google Maps inválida - Atualize a chave nas configurações');
   }
   
   return isValid;
@@ -58,7 +69,7 @@ export const loadGoogleMapsScript = (callback: () => void) => {
     return;
   }
 
-  console.log('Loading Google Maps API script');
+  console.log('Loading Google Maps API script with key:', currentApiKey.substring(0, 5) + '...');
 
   // Create script element
   const script = document.createElement('script');
