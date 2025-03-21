@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { MapPin, Loader2 } from 'lucide-react';
-import { getPlaceIcon, formatPlaceName } from '@/utils/googleMaps';
+import { getPlaceIcon, formatPlaceName } from '@/utils/maps';
 
 interface LocationFieldProps {
   id: string;

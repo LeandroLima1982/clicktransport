@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MapPin, X, Loader2, Info } from 'lucide-react';
-import { getPlaceIcon, formatPlaceName, loadGoogleMapsScript } from '@/utils/googleMaps';
+import { getPlaceIcon, formatPlaceName, loadGoogleMapsScript } from '@/utils/maps';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+
 interface LocationInputProps {
   id: string;
   label: string;
@@ -16,6 +17,7 @@ interface LocationInputProps {
   onClear: () => void;
   isLoading?: boolean;
 }
+
 const LocationInput: React.FC<LocationInputProps> = ({
   id,
   label,
@@ -30,7 +32,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
   const [apiLoaded, setApiLoaded] = useState(false);
   const [hasFallbackSuggestions, setHasFallbackSuggestions] = useState(false);
 
-  // Load Google Maps API on component mount
   useEffect(() => {
     loadGoogleMapsScript().then(() => setApiLoaded(true)).catch(err => {
       console.error('Failed to load Google Maps API:', err);
@@ -38,11 +39,11 @@ const LocationInput: React.FC<LocationInputProps> = ({
     });
   }, []);
 
-  // Check if suggestions include fallbacks
   useEffect(() => {
     const hasFallback = suggestions.some(s => s.fallback === true);
     setHasFallbackSuggestions(hasFallback);
   }, [suggestions]);
+
   return <div className="space-y-2">
       <Label htmlFor={id} className="text-gray-700 block text-sm font-medium">
         {label}
@@ -79,8 +80,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
             API do Google Maps não disponível. Digite o endereço completo.
           </div>}
       </div>
-      
-      
     </div>;
 };
+
 export default LocationInput;

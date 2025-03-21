@@ -1,7 +1,6 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
-import { fetchAddressSuggestions, loadGoogleMapsScript } from '@/utils/googleMaps';
+import { fetchAddressSuggestions, loadGoogleMapsScript } from '@/utils/maps';
 
 export interface PassengerInfo {
   name: string;
@@ -39,9 +38,7 @@ export const useBookingForm = () => {
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Initialize Google Maps API on component mount
   useEffect(() => {
-    // Load Google Maps API
     loadGoogleMapsScript()
       .then(() => {
         console.log('Google Maps API loaded successfully');

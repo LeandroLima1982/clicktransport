@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from 'react';
-import { fetchAddressSuggestions, loadGoogleMapsScript } from '@/utils/googleMaps';
+import { fetchAddressSuggestions, loadGoogleMapsScript } from '@/utils/maps';
 import { toast } from 'sonner';
 
 export const useLocationSuggestions = () => {
