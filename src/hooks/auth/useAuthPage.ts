@@ -47,15 +47,19 @@ export const useAuthPage = () => {
       return;
     }
     
-    // Strict role-based redirections - each user type has own dashboard
+    // For all client users, always redirect to bookings page first
+    if (userRole === 'client') {
+      navigate('/bookings', { replace: true });
+      return;
+    }
+    
+    // Other role-based redirections
     if (userRole === 'company') {
       navigate('/company/dashboard', { replace: true });
     } else if (userRole === 'driver') {
       navigate('/driver/dashboard', { replace: true });
     } else if (userRole === 'admin') {
       navigate('/admin/dashboard', { replace: true });
-    } else if (userRole === 'client') {
-      navigate('/bookings', { replace: true });
     } else {
       navigate('/', { replace: true });
     }
@@ -124,8 +128,8 @@ export const useAuthPage = () => {
       
       if (error) throw error;
       
-      toast.success('Conta criada com sucesso! Verifique seu email para ativar sua conta.');
-      setActiveTab('login');
+      toast.success('Conta criada com sucesso! Aguarde enquanto redirecionamos você.');
+      // No need to change tab - redirectToDashboard will happen automatically after sign up due to useEffect above
     } catch (err: any) {
       console.error('Error registering:', err);
       setError(err.message || 'Error creating account. Please try again.');

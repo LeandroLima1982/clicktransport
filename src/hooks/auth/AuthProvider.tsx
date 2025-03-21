@@ -1,3 +1,4 @@
+
 import React, { createContext, useEffect, useState, useCallback } from 'react';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../integrations/supabase/client';
@@ -65,41 +66,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Initialize and set up auth state listener
   useEffect(() => {
+    let authListener: any;
+    
     const initializeAuth = async () => {
       try {
         setIsLoading(true);
         
         // Get current session
         const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
-        setUser(currentSession?.user || null);
         
         if (currentSession?.user) {
+          setSession(currentSession);
+          setUser(currentSession.user);
           await getUserRole(currentSession.user.id);
+        } else {
+          setSession(null);
+          setUser(null);
+          setUserRole(null);
         }
         
         // Subscribe to auth changes
-        const { data: authListener } = supabase.auth.onAuthStateChange(
+        const { data } = supabase.auth.onAuthStateChange(
           async (event, updatedSession) => {
             console.log('Auth state changed:', event);
             
-            setSession(updatedSession);
-            setUser(updatedSession?.user || null);
-            
             if (event === 'SIGNED_IN' && updatedSession?.user) {
+              setSession(updatedSession);
+              setUser(updatedSession.user);
               await getUserRole(updatedSession.user.id);
             } else if (event === 'SIGNED_OUT') {
+              setSession(null);
+              setUser(null);
               setUserRole(null);
               localStorage.removeItem('driverCompanyId');
               localStorage.removeItem('driverCompanyName');
               setCompanyContext(null);
+            } else if (event === 'USER_UPDATED' && updatedSession?.user) {
+              setSession(updatedSession);
+              setUser(updatedSession.user);
+              await getUserRole(updatedSession.user.id);
+            } else if (event === 'INITIAL_SESSION') {
+              // Handle initial session
+              if (updatedSession) {
+                setSession(updatedSession);
+                setUser(updatedSession.user);
+                if (updatedSession.user) {
+                  await getUserRole(updatedSession.user.id);
+                }
+              }
             }
           }
         );
         
-        return () => {
-          authListener.subscription.unsubscribe();
-        };
+        authListener = data.subscription;
       } catch (error) {
         console.error('Error initializing auth:', error);
       } finally {
@@ -108,6 +127,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     initializeAuth();
+    
+    return () => {
+      if (authListener) {
+        authListener.unsubscribe();
+      }
+    };
   }, [getUserRole]);
   
   // Handle sign-in with wrapper function to manage loading state
@@ -145,7 +170,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleSignUp = async (email: string, password: string, userData?: any) => {
     try {
       setIsAuthenticating(true);
-      return await signUp(email, password, userData);
+      const result = await signUp(email, password, userData);
+      
+      if (!result.error) {
+        // Attempt to immediately log in the user after successful registration
+        if (!result.error) {
+          console.log('Sign up successful, attempting immediate login');
+          await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+        }
+      }
+      
+      return result;
     } catch (error) {
       return { error: error as AuthError };
     } finally {

@@ -38,13 +38,18 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
       
       if (error) throw error;
       
-      if (data?.session) {
-        toast.success('Cadastro realizado com sucesso!');
-        onRegisterSuccess();
-      } else {
-        // No session yet, but registration in progress
-        toast.info('Verifique seu email para confirmar o cadastro');
-        onShowLogin();
+      if (data?.user) {
+        if (data.session) {
+          toast.success('Cadastro realizado com sucesso!');
+          // Small delay to ensure auth state is updated before proceeding
+          setTimeout(() => {
+            onRegisterSuccess();
+          }, 500);
+        } else {
+          // If email confirmation is enabled, this might happen
+          toast.info('Verifique seu email para confirmar o cadastro');
+          onShowLogin();
+        }
       }
     } catch (error: any) {
       console.error('Register error:', error);

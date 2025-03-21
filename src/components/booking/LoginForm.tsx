@@ -33,7 +33,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
       
       if (data?.session) {
         toast.success('Login realizado com sucesso!');
-        onLoginSuccess();
+        // Small delay to ensure auth state is updated before proceeding
+        setTimeout(() => {
+          onLoginSuccess();
+        }, 500);
       }
     } catch (error: any) {
       console.error('Login error:', error);

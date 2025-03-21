@@ -4,6 +4,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { calculateRoute, calculateTripPrice, calculateTripPriceSync, RouteInfo, getVehicleRates, VehicleRate } from '@/utils/routeUtils';
 import { createBooking, createServiceOrderFromBooking } from '@/services/booking/bookingService';
 import VehicleSelection, { Vehicle } from './steps/VehicleSelection';
@@ -86,7 +87,9 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [passengerData, setPassengerData] = useState<{name: string; phone: string}[]>([]);
   const [vehicleOptions, setVehicleOptions] = useState<Vehicle[]>(defaultVehicleOptions);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
-
+  const [pendingBookingData, setPendingBookingData] = useState<any>(null);
+  
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -209,6 +212,13 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       }
       
       if (!user) {
+        setPendingBookingData({
+          selectedVehicle,
+          selectedPaymentMethod,
+          totalPrice,
+          passengerData,
+          bookingData
+        });
         setShowLoginForm(true);
       } else {
         handleSubmitBooking();
@@ -226,13 +236,19 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
 
   const handleLoginSuccess = () => {
     setShowLoginForm(false);
-    handleSubmitBooking();
+    
+    if (pendingBookingData) {
+      handleSubmitBooking();
+    }
   };
 
   const handleRegisterSuccess = () => {
     setShowRegisterForm(false);
     setShowLoginForm(false);
-    handleSubmitBooking();
+    
+    if (pendingBookingData) {
+      handleSubmitBooking();
+    }
   };
 
   const handleSubmitBooking = async () => {
@@ -299,6 +315,11 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setShowLoginForm(false);
     setShowRegisterForm(false);
     onClose();
+  };
+
+  const handleCloseAndRedirect = () => {
+    onClose();
+    navigate('/bookings');
   };
 
   const selectedVehicleDetails = vehicleOptions.find(v => v.id === selectedVehicle);
@@ -397,7 +418,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
             bookingData={{...bookingData, passengerData: passengerData}}
             totalPrice={totalPrice}
             formatCurrency={formatCurrency}
-            onClose={handleCloseAndReset}
+            onClose={handleCloseAndRedirect}
           />
         ) : (
           <>
