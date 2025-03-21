@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Table,
@@ -34,20 +35,19 @@ interface CompanyManagementListProps {
   companies: Company[];
   isLoading: boolean;
   onRefreshData: () => void;
+  onViewDetails: (company: Company) => void;
 }
 
 const CompanyManagementList: React.FC<CompanyManagementListProps> = ({
   companies,
   isLoading,
-  onRefreshData
+  onRefreshData,
+  onViewDetails
 }) => {
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const handleViewDetails = (company: Company) => {
-    setSelectedCompany(company);
-    // In the future, this could open a modal with detailed information
-    toast.info(`Detalhes da empresa: ${company.name}`);
+    onViewDetails(company);
   };
 
   const handleStatusChange = async (company: Company, newStatus: string) => {
