@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Settings } from 'lucide-react';
+import { Settings, KeyRound } from 'lucide-react';
 import MapApiKeyForm from './MapApiKeyForm';
 import { updateGoogleMapsApiKey } from '@/utils/updateApiKey';
 
@@ -15,13 +15,13 @@ const ApiKeyButton: React.FC = () => {
   return (
     <>
       <Button 
-        variant="outline" 
+        variant="default" 
         size="sm" 
-        className="gap-1" 
+        className="gap-1 bg-amber-500 hover:bg-amber-600 text-white" 
         onClick={() => setShowApiKeyForm(true)}
       >
-        <Settings className="h-4 w-4" />
-        <span>API Maps</span>
+        <KeyRound className="h-4 w-4" />
+        <span>Configurar API Maps</span>
       </Button>
       
       <MapApiKeyForm 

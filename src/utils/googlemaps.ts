@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Building, Landmark, Home, Navigation, MapPin, ShoppingBag, School, Hospital, Hotel, Coffee, Utensils, Bus, Plane, Dumbbell, Church, Trees } from 'lucide-react';
 import { toast } from 'sonner';
@@ -22,9 +21,19 @@ export const GOOGLE_MAPS_API_KEY = getGoogleMapsApiKey();
 // Check if token is valid
 export const isValidApiKey = () => {
   const apiKey = getGoogleMapsApiKey();
-  return apiKey && 
+  const isValid = apiKey && 
          apiKey !== 'YOUR_GOOGLE_MAPS_API_KEY' && 
          apiKey.length > 20;
+         
+  if (!isValid) {
+    console.error('Invalid Google Maps API key - Please update it to use map features');
+    toast.error('Chave da API do Google Maps inválida', {
+      description: 'Configure a chave nas configurações da aplicação',
+      duration: 5000,
+    });
+  }
+  
+  return isValid;
 };
 
 // Function to load Google Maps API script with better error handling
@@ -32,7 +41,10 @@ export const loadGoogleMapsScript = (callback: () => void) => {
   // Check if API key is valid
   if (!isValidApiKey()) {
     console.error('Invalid Google Maps API key - Please update it to use map features');
-    toast.error('API do Google Maps inválida. Configure nas configurações do aplicativo.');
+    toast.error('Chave da API do Google Maps inválida', {
+      description: 'Configure a chave nas configurações da aplicação',
+      duration: 5000,
+    });
     return;
   }
 

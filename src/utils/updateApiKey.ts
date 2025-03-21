@@ -37,7 +37,7 @@ export const getStoredApiKey = (): string => {
 };
 
 // Initialize API key from environment variable or secret if available
-export const initializeApiKey = (): void => {
+export const initializeApiKey = async (): Promise<void> => {
   try {
     // Check if we already have a stored key
     const existingKey = localStorage.getItem('GOOGLE_MAPS_API_KEY');
@@ -47,12 +47,21 @@ export const initializeApiKey = (): void => {
     }
     
     // Try to get key from environment variable (added through lov-secret-form)
-    const envApiKey = import.meta.env.GOOGLE_MAPS_API_KEY;
+    const envApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     
     if (envApiKey && typeof envApiKey === 'string' && envApiKey.length > 20) {
       console.log('Setting Google Maps API key from environment variable');
       localStorage.setItem('GOOGLE_MAPS_API_KEY', envApiKey);
       toast.success('Chave da API do Google Maps configurada com sucesso!');
+    } else {
+      // If no key is found, show a toast to alert the user
+      console.warn('No valid Google Maps API key found');
+      setTimeout(() => {
+        toast.error('Chave da API do Google Maps inválida', {
+          description: 'Configure a chave nas configurações da aplicação',
+          duration: 5000,
+        });
+      }, 2000);
     }
   } catch (error) {
     console.error('Error initializing API key:', error);
