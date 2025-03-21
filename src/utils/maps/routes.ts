@@ -37,7 +37,7 @@ export const calculateRoute = async (
           throw new Error('Falha na geocodificação');
         }
         
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
           const directionsService = new window.google.maps.DirectionsService();
           directionsService.route({
             origin: originCoords,
@@ -46,7 +46,9 @@ export const calculateRoute = async (
           }, (result, status) => {
             if (status !== window.google.maps.DirectionsStatus.OK || !result) {
               console.warn(`Falha na solicitação de direções: ${status}`);
-              throw new Error(`DirectionsService falhou: ${status}`);
+              // Instead of throwing an error inside the callback, use reject
+              reject(new Error(`DirectionsService falhou: ${status}`));
+              return;
             }
             
             const route = result.routes[0];
