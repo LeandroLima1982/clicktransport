@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Calendar, MapPin, Users, Clock, AlertTriangle, Info } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Vehicle } from './VehicleSelection';
@@ -22,7 +22,6 @@ interface TripDetailsProps {
   totalPrice: number;
   formatCurrency: (value: number) => string;
   isCalculatingRoute: boolean;
-  routeSource?: 'google' | 'haversine' | 'fallback';
 }
 
 const TripDetails: React.FC<TripDetailsProps> = ({
@@ -32,8 +31,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({
   estimatedTime,
   totalPrice,
   formatCurrency,
-  isCalculatingRoute,
-  routeSource = 'fallback'
+  isCalculatingRoute
 }) => {
   const formatDate = (date: Date | undefined) => {
     if (!date) return '';
@@ -44,28 +42,6 @@ const TripDetails: React.FC<TripDetailsProps> = ({
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}min`;
-  };
-
-  const getRouteSourceLabel = () => {
-    switch (routeSource) {
-      case 'google':
-        return 'Cálculo preciso via Google Maps';
-      case 'haversine':
-        return 'Cálculo aproximado baseado em coordenadas geográficas';
-      default:
-        return 'Estimativa baseada em parâmetros padrão';
-    }
-  };
-
-  const getRouteSourceColor = () => {
-    switch (routeSource) {
-      case 'google':
-        return 'text-green-600';
-      case 'haversine':
-        return 'text-amber-600';
-      default:
-        return 'text-red-600';
-    }
   };
 
   return (
@@ -152,7 +128,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({
                 </svg>
                 <span className="font-medium">Distância</span>
               </div>
-              <div>{estimatedDistance.toFixed(1)} km</div>
+              <div>{estimatedDistance} km</div>
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg">
@@ -163,15 +139,6 @@ const TripDetails: React.FC<TripDetailsProps> = ({
               <div>{formatTime(estimatedTime)}</div>
             </div>
           </div>
-          
-          {routeSource && (
-            <div className="flex items-center text-xs bg-gray-50 p-2 rounded-lg">
-              <Info className={`h-4 w-4 mr-2 ${getRouteSourceColor()}`} />
-              <span className={getRouteSourceColor()}>
-                {getRouteSourceLabel()}
-              </span>
-            </div>
-          )}
           
           <div className="border-t border-b py-4 my-4">
             <div className="flex justify-between items-center">

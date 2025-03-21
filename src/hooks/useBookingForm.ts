@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+
+import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
-import { fetchAddressSuggestions, loadGoogleMapsScript, isGoogleMapsLoaded } from '@/utils/maps';
+import { fetchAddressSuggestions } from '@/utils/mapbox';
 
 export interface PassengerInfo {
   name: string;
@@ -32,29 +33,22 @@ export const useBookingForm = () => {
   const [returnTime, setReturnTime] = useState<string>('');
   const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
-  const [isLoadingOriginSuggestions, setIsLoadingOriginSuggestions] = useState(false);
-  const [isLoadingDestinationSuggestions, setIsLoadingDestinationSuggestions] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [errorCount, setErrorCount] = useState(0);
   
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
+  // Reset error count after a period to allow retrying
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadGoogleMapsScript()
-        .then(() => {
-          console.log('Google Maps API carregada com sucesso no useBookingForm');
-        })
-        .catch(error => {
-          console.error('Erro ao carregar Google Maps API no useBookingForm:', error);
-        });
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
-  const checkApiAvailability = useCallback(() => {
-    return isGoogleMapsLoaded();
-  }, []);
+    if (errorCount > 0) {
+      const timer = setTimeout(() => {
+        setErrorCount(0);
+      }, 30000); // Reset after 30 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [errorCount]);
   
   const handleBooking = () => {
     if (!originValue) {
@@ -98,22 +92,34 @@ export const useBookingForm = () => {
       clearTimeout(originTimeoutRef.current);
     }
     
-    if (value.length >= 3) {
-      setIsLoadingOriginSuggestions(true);
+    // Só buscar sugestões se o usuário já digitou pelo menos 3 caracteres
+    // e não tivemos muitos erros recentes
+    if (value.length >= 3 && errorCount < 5) {
+      setIsLoadingSuggestions(true);
+      
       originTimeoutRef.current = setTimeout(async () => {
         try {
           const suggestions = await fetchAddressSuggestions(value);
-          console.log(`Recebidas ${suggestions.length} sugestões para origem: "${value}"`);
           setOriginSuggestions(suggestions);
+          
+          // Se não encontrou nada, sugerir adicionar mais informações
+          if (suggestions.length === 0 && value.length > 5) {
+            console.log("Sem resultados para: " + value);
+          }
         } catch (error) {
-          console.error('Erro ao buscar sugestões de origem:', error);
-          if (originSuggestions.length === 0) {
-            toast.error('Erro ao buscar sugestões de endereço de origem');
+          console.error('Erro ao buscar sugestões:', error);
+          setErrorCount(prev => prev + 1);
+          
+          // Avisar o usuário apenas na primeira falha
+          if (errorCount === 0) {
+            toast.error('Erro ao buscar sugestões de endereço. Tente um formato diferente.', {
+              description: 'Exemplo: "Rua Nome, 123, Bairro, Cidade"'
+            });
           }
         } finally {
-          setIsLoadingOriginSuggestions(false);
+          setIsLoadingSuggestions(false);
         }
-      }, 400);
+      }, 300);
     } else {
       setOriginSuggestions([]);
     }
@@ -127,37 +133,32 @@ export const useBookingForm = () => {
       clearTimeout(destinationTimeoutRef.current);
     }
     
-    if (value.length >= 3) {
-      setIsLoadingDestinationSuggestions(true);
+    if (value.length >= 3 && errorCount < 5) {
+      setIsLoadingSuggestions(true);
+      
       destinationTimeoutRef.current = setTimeout(async () => {
         try {
           const suggestions = await fetchAddressSuggestions(value);
-          console.log(`Recebidas ${suggestions.length} sugestões para destino: "${value}"`);
           setDestinationSuggestions(suggestions);
         } catch (error) {
-          console.error('Erro ao buscar sugestões de destino:', error);
-          if (destinationSuggestions.length === 0) {
-            toast.error('Erro ao buscar sugestões de endereço de destino');
-          }
+          console.error('Erro ao buscar sugestões:', error);
+          setErrorCount(prev => prev + 1);
         } finally {
-          setIsLoadingDestinationSuggestions(false);
+          setIsLoadingSuggestions(false);
         }
-      }, 400);
+      }, 300);
     } else {
       setDestinationSuggestions([]);
     }
   };
 
   const selectSuggestion = (suggestion: any, isOrigin: boolean) => {
-    const description = suggestion.description || suggestion.formatted_address || '';
-    
+    const placeName = suggestion.place_name;
     if (isOrigin) {
-      console.log(`Selecionado para origem: "${description}"`);
-      setOriginValue(description);
+      setOriginValue(placeName);
       setOriginSuggestions([]);
     } else {
-      console.log(`Selecionado para destino: "${description}"`);
-      setDestinationValue(description);
+      setDestinationValue(placeName);
       setDestinationSuggestions([]);
     }
   };
@@ -196,8 +197,7 @@ export const useBookingForm = () => {
     returnTime,
     originSuggestions,
     destinationSuggestions,
-    isLoadingOriginSuggestions,
-    isLoadingDestinationSuggestions,
+    isLoadingSuggestions,
     showBookingSteps,
     setTripType,
     setDate,
@@ -213,7 +213,6 @@ export const useBookingForm = () => {
     setShowBookingSteps,
     bookingData,
     clearOrigin,
-    clearDestination,
-    checkApiAvailability,
+    clearDestination
   };
 };
