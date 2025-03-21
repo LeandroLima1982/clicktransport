@@ -80,20 +80,13 @@ export const useBookingForm = () => {
       clearTimeout(originTimeoutRef.current);
     }
     
-    // Melhoria: iniciar busca com pelo menos 3 caracteres e sem mostrar indicador
-    // de carregamento para consultas curtas para evitar sensação de lentidão
     if (value.length >= 3) {
-      setIsLoadingSuggestions(true);
       originTimeoutRef.current = setTimeout(async () => {
-        try {
-          const suggestions = await fetchAddressSuggestions(value);
-          setOriginSuggestions(suggestions);
-        } catch (error) {
-          console.error('Erro ao buscar sugestões:', error);
-        } finally {
-          setIsLoadingSuggestions(false);
-        }
-      }, 300); // Tempo reduzido para feedback mais rápido
+        setIsLoadingSuggestions(true);
+        const suggestions = await fetchAddressSuggestions(value);
+        setOriginSuggestions(suggestions);
+        setIsLoadingSuggestions(false);
+      }, 500);
     } else {
       setOriginSuggestions([]);
     }
@@ -108,17 +101,12 @@ export const useBookingForm = () => {
     }
     
     if (value.length >= 3) {
-      setIsLoadingSuggestions(true);
       destinationTimeoutRef.current = setTimeout(async () => {
-        try {
-          const suggestions = await fetchAddressSuggestions(value);
-          setDestinationSuggestions(suggestions);
-        } catch (error) {
-          console.error('Erro ao buscar sugestões:', error);
-        } finally {
-          setIsLoadingSuggestions(false);
-        }
-      }, 300);
+        setIsLoadingSuggestions(true);
+        const suggestions = await fetchAddressSuggestions(value);
+        setDestinationSuggestions(suggestions);
+        setIsLoadingSuggestions(false);
+      }, 500);
     } else {
       setDestinationSuggestions([]);
     }
