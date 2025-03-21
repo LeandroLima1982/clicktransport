@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Building, Landmark, Home, Navigation, MapPin, ShoppingBag, School, Hospital, Hotel, Coffee, Utensils, Bus, Plane, Music as MusicIcon, Dumbbell, Church, Library as LibraryBig, Trees } from 'lucide-react';
 
@@ -13,7 +12,7 @@ declare global {
 export const GOOGLE_MAPS_API_KEY = 'AIzaSyCHw5jXgGMuhRiyb2xpWExOTgyIiwiYSIcInNtODA3MGxmaTB0dDAyanFia244dnl1bmcifQ';
 
 // Check if token is valid
-if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.trim() === '') {
+if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_')) {
   console.error('Google Maps API key is missing or invalid - map functionality will not work!');
 }
 
