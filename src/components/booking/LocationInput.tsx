@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MapPin, X, Loader2 } from 'lucide-react';
-import { getPlaceIcon, formatPlaceName, isGoogleMapsApiKeySet, loadGoogleMapsScript } from '@/utils/googleMaps';
+import { getPlaceIcon, formatPlaceName, loadGoogleMapsScript } from '@/utils/googleMaps';
 import { Button } from '@/components/ui/button';
 
 interface LocationInputProps {
@@ -33,11 +33,9 @@ const LocationInput: React.FC<LocationInputProps> = ({
   
   // Load Google Maps API on component mount
   useEffect(() => {
-    if (isGoogleMapsApiKeySet()) {
-      loadGoogleMapsScript()
-        .then(() => setApiLoaded(true))
-        .catch(err => console.error('Failed to load Google Maps API:', err));
-    }
+    loadGoogleMapsScript()
+      .then(() => setApiLoaded(true))
+      .catch(err => console.error('Failed to load Google Maps API:', err));
   }, []);
   
   return (
@@ -92,7 +90,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
           </div>
         )}
         
-        {!apiLoaded && isGoogleMapsApiKeySet() && (
+        {!apiLoaded && (
           <div className="absolute z-10 mt-1 w-full bg-amber-50 border border-amber-200 rounded-md p-2 text-sm">
             Carregando API do Google Maps...
           </div>

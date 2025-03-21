@@ -1,6 +1,7 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
-import { fetchAddressSuggestions, setGoogleMapsApiKey, loadGoogleMapsScript } from '@/utils/googleMaps';
+import { fetchAddressSuggestions, loadGoogleMapsScript } from '@/utils/googleMaps';
 
 export interface PassengerInfo {
   name: string;

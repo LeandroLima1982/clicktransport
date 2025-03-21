@@ -5,18 +5,18 @@ import {
   Music as MusicIcon, Dumbbell, Church, Library as LibraryBig, Trees 
 } from 'lucide-react';
 
-// Google Maps API key - setting a default value
-export let GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
+// Google Maps API key - usando a chave fornecida diretamente
+export const GOOGLE_MAPS_API_KEY = 'AIzaSyCz1o0MT2uHrlXvBvuJWkGwKA9NbESKsew';
 
+// Esta função é mantida por compatibilidade, mas já não é necessária
 export const setGoogleMapsApiKey = (key: string) => {
-  GOOGLE_MAPS_API_KEY = key;
-  // Initialize Google Maps API here if needed
-  console.log('Google Maps API key set');
+  console.log('API key already set internally');
+  // Não alteramos a chave, pois já está definida internamente
 };
 
 // Check if API key is set
 export const isGoogleMapsApiKeySet = (): boolean => {
-  return GOOGLE_MAPS_API_KEY !== '' && GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
+  return true; // Sempre retorna true já que a chave está definida internamente
 };
 
 // Get icon for place based on place type
@@ -199,11 +199,7 @@ export const geocodeAddress = async (address: string): Promise<google.maps.LatLn
 
 // Load Google Maps script dynamically
 export const loadGoogleMapsScript = async (): Promise<void> => {
-  if (!isGoogleMapsApiKeySet()) {
-    console.error('Google Maps API key not set correctly');
-    return Promise.reject('Google Maps API key not set correctly');
-  }
-  
+  // Não precisamos verificar se a chave está definida, pois já sabemos que está
   return new Promise((resolve, reject) => {
     // Check if script is already loaded
     if (isGoogleMapsLoaded()) {
