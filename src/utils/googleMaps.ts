@@ -52,6 +52,14 @@ export const formatPlaceName = (place: any): React.ReactElement => {
   ].filter(Boolean));
 };
 
+// Type guard to check if the Google Maps API is loaded
+const isGoogleMapsLoaded = (): boolean => {
+  return typeof window !== 'undefined' && 
+         typeof window.google !== 'undefined' && 
+         typeof window.google.maps !== 'undefined' &&
+         typeof window.google.maps.places !== 'undefined';
+};
+
 // Fetch address suggestions
 export const fetchAddressSuggestions = async (query: string): Promise<any[]> => {
   if (!GOOGLE_MAPS_API_KEY || query.length < 3) return [];
@@ -60,16 +68,16 @@ export const fetchAddressSuggestions = async (query: string): Promise<any[]> => 
     console.log("Fetching Google Maps suggestions for:", query);
     
     // Using browser's built-in Autocomplete API (requires the script to be loaded)
-    if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+    if (!isGoogleMapsLoaded()) {
       console.error('Google Maps Places API not loaded');
       await loadGoogleMapsScript();
-      if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+      if (!isGoogleMapsLoaded()) {
         throw new Error('Google Maps Places API failed to load');
       }
     }
     
     return new Promise((resolve) => {
-      const service = new google.maps.places.AutocompleteService();
+      const service = new window.google.maps.places.AutocompleteService();
       
       service.getPlacePredictions({
         input: query,
@@ -77,7 +85,7 @@ export const fetchAddressSuggestions = async (query: string): Promise<any[]> => 
         types: ['address', 'establishment', 'geocode'],
         language: 'pt-BR'
       }, (predictions, status) => {
-        if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) {
+        if (status !== window.google.maps.places.PlacesServiceStatus.OK || !predictions) {
           console.warn('Google Places API returned:', status);
           resolve([]);
           return;
@@ -116,19 +124,19 @@ export const calculateRoute = async (
     
     // Now get the route
     return new Promise((resolve) => {
-      if (!google.maps || !google.maps.DirectionsService) {
+      if (!isGoogleMapsLoaded()) {
         console.error('Google Maps Directions API not loaded');
         resolve(null);
         return;
       }
       
-      const directionsService = new google.maps.DirectionsService();
+      const directionsService = new window.google.maps.DirectionsService();
       directionsService.route({
         origin: originCoords,
         destination: destinationCoords,
-        travelMode: google.maps.TravelMode.DRIVING
+        travelMode: window.google.maps.TravelMode.DRIVING
       }, (result, status) => {
-        if (status !== google.maps.DirectionsStatus.OK || !result) {
+        if (status !== window.google.maps.DirectionsStatus.OK || !result) {
           console.error('Directions request failed:', status);
           resolve(null);
           return;
@@ -164,17 +172,17 @@ export const geocodeAddress = async (address: string): Promise<google.maps.LatLn
   try {
     await loadGoogleMapsScript();
     
-    if (!google.maps || !google.maps.Geocoder) {
+    if (!isGoogleMapsLoaded()) {
       console.error('Google Maps Geocoder not loaded');
       return null;
     }
     
     return new Promise((resolve) => {
-      const geocoder = new google.maps.Geocoder();
+      const geocoder = new window.google.maps.Geocoder();
       geocoder.geocode(
         { address, region: 'br' },
         (results, status) => {
-          if (status !== google.maps.GeocoderStatus.OK || !results || results.length === 0) {
+          if (status !== window.google.maps.GeocoderStatus.OK || !results || results.length === 0) {
             console.error('Geocoding failed:', status);
             resolve(null);
             return;
@@ -199,7 +207,7 @@ export const loadGoogleMapsScript = async (): Promise<void> => {
   
   return new Promise((resolve, reject) => {
     // Check if script is already loaded
-    if (typeof google !== 'undefined' && google.maps) {
+    if (isGoogleMapsLoaded()) {
       return resolve();
     }
     
