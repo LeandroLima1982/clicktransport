@@ -39,8 +39,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
       if (error) throw error;
       
       if (data?.user) {
+        toast.success('Cadastro realizado com sucesso!');
+        
+        // If session exists, it means no email confirmation is required
         if (data.session) {
-          toast.success('Cadastro realizado com sucesso!');
           // Small delay to ensure auth state is updated before proceeding
           setTimeout(() => {
             onRegisterSuccess();
@@ -114,7 +116,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
         </div>
         
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? 'Processando...' : 'Cadastrar'}
+          {isLoading ? 'Processando...' : 'Cadastrar e Concluir Reserva'}
         </Button>
       </form>
       

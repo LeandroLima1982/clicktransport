@@ -238,6 +238,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setShowLoginForm(false);
     
     if (pendingBookingData) {
+      console.log("Login successful, proceeding with booking submission:", pendingBookingData);
       handleSubmitBooking();
     }
   };
@@ -247,6 +248,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setShowLoginForm(false);
     
     if (pendingBookingData) {
+      console.log("Registration successful, proceeding with booking submission:", pendingBookingData);
       handleSubmitBooking();
     }
   };
@@ -255,6 +257,12 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setIsSubmitting(true);
     
     try {
+      if (!user) {
+        console.error("Attempted to submit booking without user");
+        toast.error('É necessário estar logado para finalizar a reserva');
+        return;
+      }
+      
       const reference = 'TRF-' + Math.floor(100000 + Math.random() * 900000);
       const selectedVehicleDetails = vehicleOptions.find(v => v.id === selectedVehicle);
       
@@ -269,10 +277,12 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
         passengers: parseInt(bookingData.passengers),
         vehicle_type: selectedVehicleDetails?.name || '',
         status: 'confirmed' as const,
-        user_id: user?.id || '',
+        user_id: user.id,
         additional_notes: `${bookingData.time ? 'Horário ida: ' + bookingData.time : ''} 
                           ${bookingData.returnTime ? 'Horário volta: ' + bookingData.returnTime : ''}`
       };
+      
+      console.log("Submitting booking with data:", bookingObject);
       
       const { booking, error } = await createBooking(bookingObject);
       
