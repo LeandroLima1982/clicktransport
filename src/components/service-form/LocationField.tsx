@@ -42,12 +42,16 @@ const LocationField: React.FC<LocationFieldProps> = ({
           onChange={onChange} 
           required
           placeholder={placeholder}
+          className={!isApiKeyValid ? "border-amber-300" : ""}
         />
         
         {!isApiKeyValid && (
-          <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-            <span className="text-xs text-amber-700">Chave da API do Google Maps inválida</span>
+          <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-amber-700 font-medium">Chave da API do Google Maps inválida</p>
+              <p className="text-xs text-amber-600">Sugestões de endereço e cálculos de rota não estão disponíveis.</p>
+            </div>
             <div className="ml-auto">
               <ApiKeyButton />
             </div>
