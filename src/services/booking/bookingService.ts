@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ServiceOrder } from '@/components/company/orders/types';
@@ -30,14 +31,20 @@ export const createBooking = async (bookingData: any) => {
     }
     
     // Log the booking creation
-    logInfo('Booking created', 'booking', {
+    logInfo('Booking created', 'system', {
       booking_id: data.id,
       user_id: bookingData.user_id
     });
     
     // Send notification to customer about booking creation
     try {
-      await notifyBookingCreated(data);
+      // Ensure the booking data matches the required Booking type
+      const typedBooking: Booking = {
+        ...data,
+        status: data.status as Booking['status']
+      };
+      
+      await notifyBookingCreated(typedBooking);
     } catch (notifyError) {
       console.error('Error sending booking creation notification:', notifyError);
     }
@@ -45,7 +52,7 @@ export const createBooking = async (bookingData: any) => {
     return { booking: data, error: null };
   } catch (error) {
     console.error('Error creating booking:', error);
-    logError('Failed to create booking', 'booking', {
+    logError('Failed to create booking', 'system', {
       error: error
     });
     return { booking: null, error };
