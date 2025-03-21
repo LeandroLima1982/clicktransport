@@ -61,7 +61,13 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
         
         if (error) throw error;
         
-        setVehicles(data || []);
+        // Type cast the status field to ensure it matches the Vehicle type
+        const typedVehicles = (data || []).map(vehicle => ({
+          ...vehicle,
+          status: vehicle.status as Vehicle['status'] // Cast string to union type
+        }));
+        
+        setVehicles(typedVehicles);
       }
     } catch (error) {
       console.error('Error fetching vehicles:', error);

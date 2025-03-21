@@ -55,7 +55,14 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       if (error) throw error;
       
       console.log("Order data received:", data);
-      setOrder(data);
+      
+      // Type cast the status field to ensure it matches the ServiceOrder type
+      const typedOrder = {
+        ...data,
+        status: data.status as ServiceOrder['status'] // Cast string to union type
+      };
+      
+      setOrder(typedOrder);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching order details:', error);
