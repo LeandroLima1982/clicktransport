@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { isValidApiKey } from '@/utils/googlemaps';
+import { getGoogleMapsApiKey } from '@/utils/googlemaps';
 
 interface MapApiKeyFormProps {
   open: boolean;
@@ -21,6 +21,18 @@ const MapApiKeyForm: React.FC<MapApiKeyFormProps> = ({
   const [apiKey, setApiKey] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Load existing API key when dialog opens
+  useEffect(() => {
+    if (open) {
+      const currentKey = getGoogleMapsApiKey();
+      if (currentKey && currentKey !== 'YOUR_GOOGLE_MAPS_API_KEY') {
+        setApiKey(currentKey);
+      } else {
+        setApiKey('');
+      }
+    }
+  }, [open]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -34,9 +46,6 @@ const MapApiKeyForm: React.FC<MapApiKeyFormProps> = ({
     try {
       // Save the API key
       onSaveApiKey(apiKey);
-      
-      // Update localStorage for persistence (optional)
-      localStorage.setItem('GOOGLE_MAPS_API_KEY', apiKey);
       
       toast.success('Chave da API salva com sucesso');
       onOpenChange(false);
@@ -77,7 +86,7 @@ const MapApiKeyForm: React.FC<MapApiKeyFormProps> = ({
           <div className="text-xs text-gray-500">
             <p>Onde encontrar sua chave:</p>
             <ol className="list-decimal pl-4 mt-1 space-y-1">
-              <li>Acesse o Console do Google Cloud</li>
+              <li>Acesse o <a href="https://console.cloud.google.com/apis/credentials" target="_blank" className="text-amber-600 hover:underline">Console do Google Cloud</a></li>
               <li>Crie um projeto ou selecione um existente</li>
               <li>Habilite as APIs necessárias em "API e Serviços"</li>
               <li>Crie credenciais e copie a chave API</li>
