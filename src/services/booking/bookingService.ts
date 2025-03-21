@@ -10,8 +10,47 @@ import {
   notifyDriverAssigned,
   notifyTripStarted,
   notifyTripCompleted,
-  notifyCompanyOrderStatusChange
+  notifyCompanyOrderStatusChange,
+  notifyBookingCreated
 } from '../notifications/workflowNotificationService';
+
+/**
+ * Create a new booking
+ */
+export const createBooking = async (bookingData: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .insert(bookingData)
+      .select()
+      .single();
+      
+    if (error) {
+      throw error;
+    }
+    
+    // Log the booking creation
+    logInfo('Booking created', 'booking', {
+      booking_id: data.id,
+      user_id: bookingData.user_id
+    });
+    
+    // Send notification to customer about booking creation
+    try {
+      await notifyBookingCreated(data);
+    } catch (notifyError) {
+      console.error('Error sending booking creation notification:', notifyError);
+    }
+    
+    return { booking: data, error: null };
+  } catch (error) {
+    console.error('Error creating booking:', error);
+    logError('Failed to create booking', 'booking', {
+      error: error
+    });
+    return { booking: null, error };
+  }
+};
 
 /**
  * Create a new service order from a booking
