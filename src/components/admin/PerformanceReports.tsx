@@ -66,18 +66,15 @@ const PerformanceReports: React.FC = () => {
     setError(null);
     
     try {
-      // Format dates for query
       const fromDate = format(dateRange.from, 'yyyy-MM-dd');
       const toDate = format(dateRange.to, 'yyyy-MM-dd');
       
-      // Build query for order stats
       let query = supabase
         .from('service_orders')
         .select('*')
         .gte('created_at', `${fromDate}T00:00:00`)
         .lte('created_at', `${toDate}T23:59:59`);
       
-      // Add company filter if not "all"
       if (selectedCompany !== 'all') {
         query = query.eq('company_id', selectedCompany);
       }
@@ -86,11 +83,9 @@ const PerformanceReports: React.FC = () => {
       
       if (ordersError) throw ordersError;
       
-      // Process order data by date
       const ordersByDate = processOrdersByDate(ordersData || []);
       setOrderStats(ordersByDate);
       
-      // Fetch driver stats
       let driverQuery = supabase
         .from('drivers')
         .select(`
@@ -104,7 +99,6 @@ const PerformanceReports: React.FC = () => {
         `)
         .eq('status', 'active');
       
-      // Add company filter for drivers if not "all"
       if (selectedCompany !== 'all') {
         driverQuery = driverQuery.eq('company_id', selectedCompany);
       }
@@ -113,7 +107,6 @@ const PerformanceReports: React.FC = () => {
       
       if (driversError) throw driversError;
       
-      // Process driver stats
       const processedDriverStats = processDriverStats(driversData || []);
       setDriverStats(processedDriverStats);
       
@@ -126,7 +119,6 @@ const PerformanceReports: React.FC = () => {
   };
 
   const processOrdersByDate = (orders: any[]): OrderStats[] => {
-    // Group orders by date and status
     const ordersByDate: Record<string, { completed: number, cancelled: number, pending: number, in_progress: number }> = {};
     
     orders.forEach(order => {
@@ -141,7 +133,6 @@ const PerformanceReports: React.FC = () => {
         };
       }
       
-      // Increment the appropriate status counter
       if (order.status === 'completed') {
         ordersByDate[date].completed += 1;
       } else if (order.status === 'cancelled') {
@@ -153,7 +144,6 @@ const PerformanceReports: React.FC = () => {
       }
     });
     
-    // Convert to array format for chart
     return Object.keys(ordersByDate).map(date => ({
       date,
       ...ordersByDate[date]
@@ -166,10 +156,8 @@ const PerformanceReports: React.FC = () => {
         order.status === 'completed'
       ).length;
       
-      // In a real app, you would calculate these from actual data
-      // Here we're using placeholder calculations
-      const totalDistance = completedOrders * Math.floor(Math.random() * 50 + 10); // Random distance per order
-      const averageRating = (3 + Math.random() * 2).toFixed(1); // Random rating between 3-5
+      const totalDistance = completedOrders * Math.floor(Math.random() * 50 + 10);
+      const averageRating = (3 + Math.random() * 2).toFixed(1);
       
       return {
         driver_name: driver.name,
