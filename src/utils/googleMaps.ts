@@ -54,6 +54,10 @@ export const formatPlaceName = (place: any): React.ReactElement => {
   ].filter(Boolean));
 };
 
+// Variável para rastrear se o script do Google Maps já está carregado ou em processo de carregamento
+let googleMapsScriptLoading = false;
+let googleMapsScriptLoaded = false;
+
 // Type guard to check if the Google Maps API is loaded
 const isGoogleMapsLoaded = (): boolean => {
   return typeof window !== 'undefined' && 
@@ -105,11 +109,13 @@ export const fetchAddressSuggestions = async (query: string): Promise<any[]> => 
       return JSON.parse(cachedResults);
     }
     
-    // Using browser's built-in Autocomplete API (requires the script to be loaded)
+    // Carrega o script do Google Maps se necessário
     if (!isGoogleMapsLoaded()) {
       console.log('Google Maps Places API not loaded, attempting to load it');
       try {
         await loadGoogleMapsScript();
+        // Aguarda um momento para garantir que as APIs estejam inicializadas
+        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
         console.error('Failed to load Google Maps API:', error);
         const fallbackResults = getFallbackSuggestions(query);
@@ -315,39 +321,76 @@ export const geocodeAddress = async (address: string): Promise<google.maps.LatLn
 
 // Load Google Maps script dynamically
 export const loadGoogleMapsScript = async (): Promise<void> => {
-  // Check if script is already loaded
+  // Se o script já estiver carregado, retorna imediatamente
   if (isGoogleMapsLoaded()) {
+    console.log('Google Maps API already loaded');
     return Promise.resolve();
   }
   
-  return new Promise((resolve, reject) => {
-    // Create the script element
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&language=pt-BR&region=BR`;
-    script.async = true;
-    script.defer = true;
-    
-    script.onload = () => {
-      console.log('Google Maps API loaded successfully');
-      setTimeout(() => {
-        // Verificar se a API está realmente disponível
-        if (isGoogleMapsLoaded()) {
+  // Se o script estiver em processo de carregamento, aguarda
+  if (googleMapsScriptLoading) {
+    console.log('Google Maps API already loading, waiting...');
+    return new Promise((resolve, reject) => {
+      const checkIfLoaded = () => {
+        if (googleMapsScriptLoaded) {
           resolve();
+        } else if (!googleMapsScriptLoading) {
+          reject('Google Maps script loading was aborted');
         } else {
-          console.warn('Google Maps API loaded but not fully initialized');
-          resolve(); // Resolve anyway to let the app continue
+          setTimeout(checkIfLoaded, 100);
         }
-      }, 500);
-    };
-    
-    script.onerror = () => {
-      console.error('Failed to load Google Maps API, may need to enable billing or check API key restrictions');
-      toast.error("Erro ao carregar a API do Google Maps. Usando recursos de fallback para sugestões de endereço.", {
-        duration: 5000,
-      });
-      reject('Failed to load Google Maps API');
-    };
-    
-    document.head.appendChild(script);
+      };
+      setTimeout(checkIfLoaded, 100);
+    });
+  }
+  
+  // Marca o início do carregamento
+  googleMapsScriptLoading = true;
+  
+  return new Promise((resolve, reject) => {
+    try {
+      // Verifica se o script já existe para evitar duplicações
+      const existingScript = document.getElementById('google-maps-script');
+      if (existingScript) {
+        document.head.removeChild(existingScript);
+      }
+      
+      // Create the script element
+      const script = document.createElement('script');
+      script.id = 'google-maps-script';
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&language=pt-BR&region=BR&callback=initGoogleMaps`;
+      script.async = true;
+      script.defer = true;
+      
+      // Define a função de callback global
+      window.initGoogleMaps = () => {
+        console.log('Google Maps API loaded successfully');
+        googleMapsScriptLoaded = true;
+        googleMapsScriptLoading = false;
+        resolve();
+      };
+      
+      script.onerror = () => {
+        console.error('Failed to load Google Maps API, may need to enable billing or check API key restrictions');
+        toast.error("Erro ao carregar a API do Google Maps. Usando recursos de fallback para sugestões de endereço.", {
+          duration: 5000,
+        });
+        googleMapsScriptLoading = false;
+        reject('Failed to load Google Maps API');
+      };
+      
+      document.head.appendChild(script);
+    } catch (error) {
+      googleMapsScriptLoading = false;
+      reject(error);
+    }
   });
 };
+
+// Declare the global initGoogleMaps function
+declare global {
+  interface Window {
+    google: any;
+    initGoogleMaps: () => void;
+  }
+}
