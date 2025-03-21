@@ -8,7 +8,7 @@ import {
 import { toast } from 'sonner';
 
 // Google Maps API key - usando a chave fornecida diretamente
-export const GOOGLE_MAPS_API_KEY = 'AIzaSyCz1o0MT2uHrlXvBvuJWkGwKA9NbESKsew';
+export const GOOGLE_MAPS_API_KEY = 'ZtMseps9SZEeSOkGJp0gw8QZc-U=';
 
 // Esta função é mantida por compatibilidade, mas já não é necessária
 export const setGoogleMapsApiKey = (key: string) => {
