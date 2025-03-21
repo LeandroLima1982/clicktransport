@@ -31,7 +31,6 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { assignServiceOrderToDriver } from '@/services/booking/bookingService';
 
 interface OrderTableProps {
   orders: ServiceOrder[];
@@ -65,7 +64,14 @@ const OrderTable: React.FC<OrderTableProps> = ({
       // Prevent multiple clicks
       setIsAssigning(prev => ({ ...prev, [orderId]: true }));
       
-      const { updated, error } = await assignServiceOrderToDriver(orderId, driverId);
+      // Make the API call directly to the service order table
+      const { error } = await supabase
+        .from('service_orders')
+        .update({ 
+          driver_id: driverId,
+          status: 'assigned'
+        })
+        .eq('id', orderId);
       
       if (error) throw error;
       
@@ -142,6 +148,11 @@ const OrderTable: React.FC<OrderTableProps> = ({
                           {driver.name}
                         </SelectItem>
                       ))}
+                      {drivers.length === 0 && (
+                        <SelectItem value="no-drivers-found" disabled>
+                          Nenhum motorista disponível
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 ) : (

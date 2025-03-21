@@ -88,6 +88,7 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
   }, [companyId]);
 
   const fetchData = async () => {
+    console.log('Fetching data for company ID:', companyId);
     setIsLoading(true);
     try {
       const [ordersResponse, driversResponse, vehiclesResponse] = await Promise.all([
@@ -100,17 +101,25 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
         supabase
           .from('drivers')
           .select('id, name')
-          .eq('company_id', companyId),
+          .eq('company_id', companyId)
+          .eq('status', 'active'),
         
         supabase
           .from('vehicles')
           .select('id, model, license_plate')
           .eq('company_id', companyId)
+          .eq('status', 'active')
       ]);
       
       if (ordersResponse.error) throw ordersResponse.error;
       if (driversResponse.error) throw driversResponse.error;
       if (vehiclesResponse.error) throw vehiclesResponse.error;
+      
+      console.log('Fetched data:', {
+        orders: ordersResponse.data?.length || 0,
+        drivers: driversResponse.data?.length || 0,
+        vehicles: vehiclesResponse.data?.length || 0
+      });
       
       // Ensure the correct typing of status by using type assertion
       const typedOrders = (ordersResponse.data || []).map(order => ({
@@ -123,6 +132,9 @@ const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ companyId }) => {
       setVehicles(vehiclesResponse.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast.error('Erro ao carregar dados', {
+        description: 'Falha ao buscar ordens ou motoristas'
+      });
     } finally {
       setIsLoading(false);
     }
