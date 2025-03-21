@@ -2,7 +2,7 @@
 import { toast } from 'sonner';
 
 // Google Maps API key - usando a chave fornecida pelo usuário
-export const GOOGLE_MAPS_API_KEY = 'AIzaSyCg71Bf3HBZDsFPQgWDBnWlwqBSSrKKe_A';
+export const GOOGLE_MAPS_API_KEY = 'AIzaSyCz1o0MT2uHrlXvBvuJWkGwKA9NbESKsew';
 
 // Verificar se a chave API é válida
 const validateApiKey = (key: string): boolean => {
