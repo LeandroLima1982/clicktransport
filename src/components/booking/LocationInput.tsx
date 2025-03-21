@@ -54,17 +54,22 @@ const LocationInput: React.FC<LocationInputProps> = ({
         )}
         
         {suggestions.length > 0 && (
-          <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-md shadow-lg">
-            <ul className="py-1 max-h-60 overflow-auto">
+          <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-md shadow-lg max-h-60 overflow-auto">
+            <ul className="py-1">
               {suggestions.map((suggestion) => (
                 <li
                   key={suggestion.id}
-                  className="px-3 py-2 text-sm hover:bg-amber-50 cursor-pointer"
+                  className="px-3 py-3 text-sm hover:bg-amber-50 cursor-pointer border-b border-gray-50 last:border-0"
                   onClick={() => onSelectSuggestion(suggestion)}
                 >
-                  <div className="flex items-center gap-2">
-                    {getPlaceIcon(suggestion)}
-                    {formatPlaceName(suggestion)}
+                  <div className="flex items-start gap-2">
+                    <div className="mt-0.5">
+                      {getPlaceIcon(suggestion)}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium line-clamp-1">{suggestion.place_name.split(',')[0]}</div>
+                      <div className="text-xs text-gray-500 line-clamp-2 mt-0.5">{suggestion.place_name}</div>
+                    </div>
                   </div>
                 </li>
               ))}

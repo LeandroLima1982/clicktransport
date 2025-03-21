@@ -11,8 +11,8 @@ if (!MAPBOX_TOKEN || MAPBOX_TOKEN.trim() === '') {
   console.error('Mapbox token is missing or invalid - map functionality will not work!');
 }
 
-// POI types to include in the geocoding request - prioritizing important locations
-export const POI_TYPES = 'poi.landmark,poi.airport,address,place,neighborhood,locality,district';
+// POI types to include in the geocoding request - prioritizing important locations and addresses
+export const POI_TYPES = 'address,poi.landmark,poi.airport,place,neighborhood,locality,district';
 
 // Function type for getPlaceIcon
 type IconComponent = React.ReactElement;
@@ -109,55 +109,85 @@ export const buildMapboxParams = (query: string) => {
     language: 'pt',
     limit: '8',
     types: POI_TYPES,
-    proximity: '-43.1729,-22.9068', // Rio de Janeiro as default center
-    bbox: '-73.9872354,-33.7683777,-34.7299934,5.24448639', // Brazil's bounding box
+    autocomplete: 'true',
     fuzzyMatch: 'true',
-    autocomplete: 'true'
+    routing: 'true',  // Melhora busca de endereços para rotas
+    worldview: 'br',  // Usa visão brasileira do mundo
+    proximity: '-43.1729,-22.9068', // Rio de Janeiro como centro padrão
+    bbox: '-73.9872354,-33.7683777,-34.7299934,5.24448639', // Brasil bounding box
   });
 };
 
-// Function to fetch address suggestions from Mapbox API
+// Função melhorada para buscar sugestões de endereços do Mapbox API
 export const fetchAddressSuggestions = async (query: string) => {
   if (query.length < 3) return [];
   
   if (!isValidMapboxToken(MAPBOX_TOKEN)) {
-    console.error('Invalid Mapbox token. Check your configuration.');
+    console.error('Token Mapbox inválido. Verifique sua configuração.');
     return [];
   }
   
   try {
-    console.log("Fetching address suggestions for:", query);
-    const endpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`;
+    console.log("Buscando sugestões de endereço para:", query);
+    
+    // Adiciona termos que melhoram a busca para endereços brasileiros
+    let searchQuery = query;
+    
+    // Verifica se o endereço já tem número (padrão brasileiro: "rua x, 123")
+    const hasNumber = /\d+/.test(query);
+    
+    // Se não tiver número e tiver "rua", "av", etc., adiciona um marcador para melhorar a precisão
+    if (!hasNumber && /rua|avenida|av\.|av|alameda|travessa|estrada|rodovia/i.test(query)) {
+      searchQuery += ' endereço'; 
+    }
+    
+    // Adiciona país se não estiver especificado
+    if (!query.toLowerCase().includes('brasil') && !query.toLowerCase().includes('brazil')) {
+      searchQuery += ' Brasil';
+    }
+    
+    const endpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json`;
     const params = buildMapboxParams(query);
     
     const response = await fetch(`${endpoint}?${params.toString()}`);
     if (!response.ok) {
-      throw new Error(`Mapbox API error: ${response.status}`);
+      throw new Error(`Erro na API Mapbox: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log("Received suggestions:", data.features?.length || 0);
+    console.log("Sugestões recebidas:", data.features?.length || 0);
     
-    // Sort results to prioritize POIs like airports and addresses
+    // Ordena resultados para priorizar endereços específicos
     const features = data.features || [];
     
     return features.sort((a: any, b: any) => {
-      // Priority order: airports, hotels, landmarks, addresses, others
+      // Ordem de prioridade: endereços específicos, pontos de interesse, outros
       const getTypeScore = (item: any) => {
-        const category = item.properties?.category || '';
         const placeType = item.place_type?.[0] || '';
+        const placeName = item.place_name || '';
         
-        if (category.includes('airport')) return 1;
-        if (category.includes('hotel')) return 2; 
+        // Prioriza endereços com números
+        if (placeType === 'address' && /\d+/.test(placeName)) return 1;
+        
+        // Depois endereços sem números
+        if (placeType === 'address') return 2;
+        
+        // Depois pontos de interesse
         if (placeType === 'poi') return 3;
-        if (placeType === 'address') return 4;
-        return 5;
+        
+        // Bairros e localidades 
+        if (placeType === 'neighborhood' || placeType === 'locality') return 4;
+        
+        // Cidades
+        if (placeType === 'place') return 5;
+        
+        return 6;
       };
       
       return getTypeScore(a) - getTypeScore(b);
     });
   } catch (error) {
-    console.error('Error fetching address suggestions:', error);
+    console.error('Erro ao buscar sugestões de endereço:', error);
     return [];
   }
 };
