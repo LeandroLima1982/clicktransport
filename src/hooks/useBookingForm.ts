@@ -1,7 +1,6 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
-import { fetchAddressSuggestions, setGoogleMapsApiKey } from '@/utils/googleMaps';
+import { fetchAddressSuggestions, setGoogleMapsApiKey, loadGoogleMapsScript } from '@/utils/googleMaps';
 
 export interface PassengerInfo {
   name: string;
@@ -35,20 +34,21 @@ export const useBookingForm = () => {
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
   const [isLoadingOriginSuggestions, setIsLoadingOriginSuggestions] = useState(false);
   const [isLoadingDestinationSuggestions, setIsLoadingDestinationSuggestions] = useState(false);
-  const [apiKey, setApiKey] = useState<string>('');
   
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Show API key input if not set
+  // Initialize Google Maps API on component mount
   useEffect(() => {
-    // Optional: you can prompt for API key here or handle it elsewhere
-    // For now, we'll just check local storage
-    const savedApiKey = localStorage.getItem('google_maps_api_key');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-      setGoogleMapsApiKey(savedApiKey);
-    }
+    // Load Google Maps API
+    loadGoogleMapsScript()
+      .then(() => {
+        console.log('Google Maps API loaded successfully');
+      })
+      .catch(error => {
+        console.error('Error loading Google Maps API:', error);
+        toast.error('Erro ao carregar a API do Google Maps');
+      });
   }, []);
   
   const handleBooking = () => {
@@ -93,11 +93,6 @@ export const useBookingForm = () => {
       clearTimeout(originTimeoutRef.current);
     }
     
-    if (!apiKey) {
-      toast.error('Chave da API do Google Maps não configurada');
-      return;
-    }
-    
     if (value.length >= 3) {
       setIsLoadingOriginSuggestions(true);
       originTimeoutRef.current = setTimeout(async () => {
@@ -123,11 +118,6 @@ export const useBookingForm = () => {
     
     if (destinationTimeoutRef.current) {
       clearTimeout(destinationTimeoutRef.current);
-    }
-    
-    if (!apiKey) {
-      toast.error('Chave da API do Google Maps não configurada');
-      return;
     }
     
     if (value.length >= 3) {
@@ -169,13 +159,6 @@ export const useBookingForm = () => {
     setDestinationSuggestions([]);
   };
 
-  const setGoogleApiKey = (key: string) => {
-    setApiKey(key);
-    setGoogleMapsApiKey(key);
-    localStorage.setItem('google_maps_api_key', key);
-    toast.success('Chave da API do Google Maps configurada!');
-  };
-
   const bookingData: BookingFormData = {
     originValue,
     destinationValue,
@@ -203,7 +186,6 @@ export const useBookingForm = () => {
     isLoadingOriginSuggestions,
     isLoadingDestinationSuggestions,
     showBookingSteps,
-    apiKey,
     setTripType,
     setDate,
     setReturnDate,
@@ -219,6 +201,5 @@ export const useBookingForm = () => {
     bookingData,
     clearOrigin,
     clearDestination,
-    setGoogleApiKey
   };
 };

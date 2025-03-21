@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Building, Landmark, Home, Navigation, MapPin, ShoppingBag, 
@@ -6,8 +5,8 @@ import {
   Music as MusicIcon, Dumbbell, Church, Library as LibraryBig, Trees 
 } from 'lucide-react';
 
-// Google Maps API key - will be set through environment
-export let GOOGLE_MAPS_API_KEY = '';
+// Google Maps API key - setting a default value
+export let GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
 
 export const setGoogleMapsApiKey = (key: string) => {
   GOOGLE_MAPS_API_KEY = key;
@@ -17,7 +16,7 @@ export const setGoogleMapsApiKey = (key: string) => {
 
 // Check if API key is set
 export const isGoogleMapsApiKeySet = (): boolean => {
-  return GOOGLE_MAPS_API_KEY !== '';
+  return GOOGLE_MAPS_API_KEY !== '' && GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
 };
 
 // Get icon for place based on place type
@@ -200,9 +199,9 @@ export const geocodeAddress = async (address: string): Promise<google.maps.LatLn
 
 // Load Google Maps script dynamically
 export const loadGoogleMapsScript = async (): Promise<void> => {
-  if (!GOOGLE_MAPS_API_KEY) {
-    console.error('Google Maps API key not set');
-    return Promise.reject('Google Maps API key not set');
+  if (!isGoogleMapsApiKeySet()) {
+    console.error('Google Maps API key not set correctly');
+    return Promise.reject('Google Maps API key not set correctly');
   }
   
   return new Promise((resolve, reject) => {
