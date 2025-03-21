@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { fetchAddressSuggestions } from '@/utils/mapbox';
 
@@ -34,21 +34,9 @@ export const useBookingForm = () => {
   const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [errorCount, setErrorCount] = useState(0);
   
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Reset error count after a period to allow retrying
-  useEffect(() => {
-    if (errorCount > 0) {
-      const timer = setTimeout(() => {
-        setErrorCount(0);
-      }, 30000); // Reset after 30 seconds
-      
-      return () => clearTimeout(timer);
-    }
-  }, [errorCount]);
   
   const handleBooking = () => {
     if (!originValue) {
@@ -92,34 +80,13 @@ export const useBookingForm = () => {
       clearTimeout(originTimeoutRef.current);
     }
     
-    // Só buscar sugestões se o usuário já digitou pelo menos 3 caracteres
-    // e não tivemos muitos erros recentes
-    if (value.length >= 3 && errorCount < 5) {
-      setIsLoadingSuggestions(true);
-      
+    if (value.length >= 3) {
       originTimeoutRef.current = setTimeout(async () => {
-        try {
-          const suggestions = await fetchAddressSuggestions(value);
-          setOriginSuggestions(suggestions);
-          
-          // Se não encontrou nada, sugerir adicionar mais informações
-          if (suggestions.length === 0 && value.length > 5) {
-            console.log("Sem resultados para: " + value);
-          }
-        } catch (error) {
-          console.error('Erro ao buscar sugestões:', error);
-          setErrorCount(prev => prev + 1);
-          
-          // Avisar o usuário apenas na primeira falha
-          if (errorCount === 0) {
-            toast.error('Erro ao buscar sugestões de endereço. Tente um formato diferente.', {
-              description: 'Exemplo: "Rua Nome, 123, Bairro, Cidade"'
-            });
-          }
-        } finally {
-          setIsLoadingSuggestions(false);
-        }
-      }, 300);
+        setIsLoadingSuggestions(true);
+        const suggestions = await fetchAddressSuggestions(value);
+        setOriginSuggestions(suggestions);
+        setIsLoadingSuggestions(false);
+      }, 500);
     } else {
       setOriginSuggestions([]);
     }
@@ -133,20 +100,13 @@ export const useBookingForm = () => {
       clearTimeout(destinationTimeoutRef.current);
     }
     
-    if (value.length >= 3 && errorCount < 5) {
-      setIsLoadingSuggestions(true);
-      
+    if (value.length >= 3) {
       destinationTimeoutRef.current = setTimeout(async () => {
-        try {
-          const suggestions = await fetchAddressSuggestions(value);
-          setDestinationSuggestions(suggestions);
-        } catch (error) {
-          console.error('Erro ao buscar sugestões:', error);
-          setErrorCount(prev => prev + 1);
-        } finally {
-          setIsLoadingSuggestions(false);
-        }
-      }, 300);
+        setIsLoadingSuggestions(true);
+        const suggestions = await fetchAddressSuggestions(value);
+        setDestinationSuggestions(suggestions);
+        setIsLoadingSuggestions(false);
+      }, 500);
     } else {
       setDestinationSuggestions([]);
     }
