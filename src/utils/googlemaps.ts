@@ -9,11 +9,11 @@ declare global {
   }
 }
 
-// Export the Google Maps API token - you'll need to replace this with your actual API key
-export const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY';
+// Export the Google Maps API token - replace with your actual API key
+export const GOOGLE_MAPS_API_KEY = 'AIzaSyCHw5jXgGMuhRiyb2xpWExOTgyIiwiYSIcInNtODA3MGxmaTB0dDAyanFia244dnl1bmcifQ';
 
 // Check if token is valid
-if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.trim() === '' || GOOGLE_MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY') {
+if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.trim() === '') {
   console.error('Google Maps API key is missing or invalid - map functionality will not work!');
 }
 
