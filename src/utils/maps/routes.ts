@@ -37,43 +37,51 @@ export const calculateRoute = async (
           throw new Error('Falha na geocodificação');
         }
         
-        return new Promise((resolve, reject) => {
-          const directionsService = new window.google.maps.DirectionsService();
-          directionsService.route({
-            origin: originCoords,
-            destination: destinationCoords,
-            travelMode: window.google.maps.TravelMode.DRIVING
-          }, (result, status) => {
-            if (status !== window.google.maps.DirectionsStatus.OK || !result) {
-              console.warn(`Falha na solicitação de direções: ${status}`);
-              // Instead of throwing an error inside the callback, use reject
-              reject(new Error(`DirectionsService falhou: ${status}`));
-              return;
-            }
-            
-            const route = result.routes[0];
-            const leg = route.legs[0];
-            
-            // Extrair dados da rota
-            console.log(`Distância calculada via Google: ${leg.distance?.value/1000} km, ${leg.duration?.value/60} min`);
-            
-            resolve({
-              // Converter de metros para quilômetros
-              distance: leg.distance ? leg.distance.value / 1000 : 0,
-              // Converter de segundos para minutos
-              duration: leg.duration ? Math.ceil(leg.duration.value / 60) : 0,
-              // Para visualização de rota no mapa
-              geometry: {
-                type: 'LineString',
-                coordinates: route.overview_path.map(point => [point.lng(), point.lat()])
-              },
-              source: 'google'
+        try {
+          const result = await new Promise<{
+            distance: number;
+            duration: number;
+            geometry?: any;
+            source: 'google' | 'haversine' | 'fallback';
+          }>((resolve, reject) => {
+            const directionsService = new window.google.maps.DirectionsService();
+            directionsService.route({
+              origin: originCoords,
+              destination: destinationCoords,
+              travelMode: window.google.maps.TravelMode.DRIVING
+            }, (result, status) => {
+              if (status !== window.google.maps.DirectionsStatus.OK || !result) {
+                console.warn(`Falha na solicitação de direções: ${status}`);
+                reject(new Error(`DirectionsService falhou: ${status}`));
+                return;
+              }
+              
+              const route = result.routes[0];
+              const leg = route.legs[0];
+              
+              // Extrair dados da rota
+              console.log(`Distância calculada via Google: ${leg.distance?.value/1000} km, ${leg.duration?.value/60} min`);
+              
+              resolve({
+                // Converter de metros para quilômetros
+                distance: leg.distance ? leg.distance.value / 1000 : 0,
+                // Converter de segundos para minutos
+                duration: leg.duration ? Math.ceil(leg.duration.value / 60) : 0,
+                // Para visualização de rota no mapa
+                geometry: {
+                  type: 'LineString',
+                  coordinates: route.overview_path.map(point => [point.lng(), point.lat()])
+                },
+                source: 'google'
+              });
             });
           });
-        }).catch(error => {
-          console.error('Erro na API de Direções:', error);
-          throw error; // Propagar para o próximo método
-        });
+          
+          return result;
+        } catch (directionServiceError) {
+          console.error('Erro na API de Direções:', directionServiceError);
+          // Continue to next method instead of rethrowing
+        }
       } catch (directionError) {
         console.warn(`Problemas com DirectionsService: ${directionError}. Tentando método haversine.`);
         // Continuar para próximo método
