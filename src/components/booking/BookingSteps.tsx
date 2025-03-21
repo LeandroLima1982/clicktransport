@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -90,7 +91,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [pendingBookingData, setPendingBookingData] = useState<any>(null);
   
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const passengerCount = parseInt(bookingData.passengers, 10) || 0;
@@ -211,7 +212,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
         }
       }
       
-      if (!user) {
+      if (!isAuthenticated) {
         setPendingBookingData({
           selectedVehicle,
           selectedPaymentMethod,
@@ -239,7 +240,10 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     
     if (pendingBookingData) {
       console.log("Login successful, proceeding with booking submission:", pendingBookingData);
-      handleSubmitBooking();
+      // Add a small delay to ensure auth state is updated
+      setTimeout(() => {
+        handleSubmitBooking();
+      }, 1000);
     }
   };
 
@@ -249,7 +253,10 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     
     if (pendingBookingData) {
       console.log("Registration successful, proceeding with booking submission:", pendingBookingData);
-      handleSubmitBooking();
+      // Add a small delay to ensure auth state is updated
+      setTimeout(() => {
+        handleSubmitBooking();
+      }, 1000);
     }
   };
 

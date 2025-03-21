@@ -46,7 +46,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
           // Small delay to ensure auth state is updated before proceeding
           setTimeout(() => {
             onRegisterSuccess();
-          }, 500);
+          }, 1000);
         } else {
           // If email confirmation is enabled, this might happen
           toast.info('Verifique seu email para confirmar o cadastro');
