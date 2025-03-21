@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Building, Landmark, Home, Navigation, MapPin, ShoppingBag, School, Hospital, Hotel, Coffee, Utensils, Bus, Plane, Music as MusicIcon, Dumbbell, Church, Library as LibraryBig, Trees } from 'lucide-react';
 
@@ -8,7 +9,7 @@ declare global {
   }
 }
 
-// Export the Google Maps API token - replace with your actual API key
+// Export the Google Maps API token
 export const GOOGLE_MAPS_API_KEY = 'AIzaSyCg71Bf3HBZDsFPQgWDBnWlwqBSSrKKe_A';
 
 // Check if token is valid
@@ -113,6 +114,7 @@ export const fetchAddressSuggestions = async (query: string): Promise<any[]> => 
           },
           (predictions, status) => {
             if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+              console.log('Google Places suggestions:', predictions);
               resolve(predictions);
             } else {
               console.error('Google Places API error:', status);

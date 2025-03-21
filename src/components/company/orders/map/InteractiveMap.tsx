@@ -61,6 +61,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       
       loadGoogleMapsScript(() => {
         try {
+          console.log('Initializing Google Maps with coordinates:', originCoords, destinationCoords);
           // Create the map instance
           map.current = new google.maps.Map(mapContainer.current!, {
             center: { lat: originCoords[1], lng: originCoords[0] },
