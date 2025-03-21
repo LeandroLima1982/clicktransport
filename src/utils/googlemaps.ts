@@ -1,6 +1,6 @@
-
 import React from 'react';
-import { Building, Landmark, Home, Navigation, MapPin, ShoppingBag, School, Hospital, Hotel, Coffee, Utensils, Bus, Plane, Music as MusicIcon, Dumbbell, Church, Library as LibraryBig, Trees } from 'lucide-react';
+import { Building, Landmark, Home, Navigation, MapPin, ShoppingBag, School, Hospital, Hotel, Coffee, Utensils, Bus, Plane, Dumbbell, Church, Trees } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Extend the Window interface to include our callback
 declare global {
@@ -9,33 +9,47 @@ declare global {
   }
 }
 
-// Export the Google Maps API token - usando uma chave válida, você deve trocar por sua chave real
-export const GOOGLE_MAPS_API_KEY = 'AIzaSyCz1o0MT2uHrlXvBvuJWkGwKA9NbESKsew';
-
-// Check if token is valid - corrigido o método de verificação
-export const isValidApiKey = () => {
-  return GOOGLE_MAPS_API_KEY && !GOOGLE_MAPS_API_KEY.includes('YOUR_') && GOOGLE_MAPS_API_KEY.length > 20;
+// Get the API key from localStorage or use a default placeholder
+export const getGoogleMapsApiKey = (): string => {
+  const storedKey = localStorage.getItem('GOOGLE_MAPS_API_KEY');
+  return storedKey || 'YOUR_GOOGLE_MAPS_API_KEY';
 };
 
-// Function to load Google Maps API script
+// Export the Google Maps API token
+export const GOOGLE_MAPS_API_KEY = getGoogleMapsApiKey();
+
+// Check if token is valid
+export const isValidApiKey = () => {
+  const apiKey = getGoogleMapsApiKey();
+  return apiKey && 
+         apiKey !== 'YOUR_GOOGLE_MAPS_API_KEY' && 
+         apiKey.length > 20;
+};
+
+// Function to load Google Maps API script with better error handling
 export const loadGoogleMapsScript = (callback: () => void) => {
-  // Verificação de API válida
+  // Check if API key is valid
   if (!isValidApiKey()) {
-    console.error('Google Maps API key is missing or invalid - map functionality will not work!');
+    console.error('Invalid Google Maps API key - Please update it to use map features');
+    toast.error('API do Google Maps inválida. Configure nas configurações do aplicativo.');
     return;
   }
 
+  // Get the current API key (might have been updated since page load)
+  const currentApiKey = getGoogleMapsApiKey();
+
   // Check if script is already loaded
   if (window.google && window.google.maps) {
+    console.log('Google Maps API already loaded, executing callback');
     callback();
     return;
   }
 
-  console.log('Loading Google Maps API script with key', GOOGLE_MAPS_API_KEY.substring(0, 10) + '...');
+  console.log('Loading Google Maps API script');
 
   // Create script element
   const script = document.createElement('script');
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMaps`;
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${currentApiKey}&libraries=places&callback=initGoogleMaps`;
   script.async = true;
   script.defer = true;
   
@@ -48,82 +62,79 @@ export const loadGoogleMapsScript = (callback: () => void) => {
   // Handle script errors
   script.onerror = (error) => {
     console.error('Error loading Google Maps API:', error);
+    toast.error('Erro ao carregar a API do Google Maps');
   };
   
   document.head.appendChild(script);
 };
 
-// Function type for getPlaceIcon
-type IconComponent = React.ReactElement;
-
-// Get icon based on place type
-export const getPlaceIcon = (placeType: string | google.maps.places.AutocompletePrediction): IconComponent => {
-  // Extract type from prediction if needed
-  const type = typeof placeType === 'string' 
-    ? placeType 
-    : (placeType.types && placeType.types[0]) || 'address';
+// Get icon based on place type with consistent styling
+export const getPlaceIcon = (placeType: string): React.ReactElement => {
+  const iconSize = "h-4 w-4";
   
-  // Map Google place types to icons
-  switch (type) {
+  // Map place types to icons
+  switch (typeof placeType === 'string' ? placeType : 'address') {
     case 'airport':
-      return React.createElement(Plane, { className: "h-4 w-4 text-blue-600" });
+      return <Plane className={`${iconSize} text-blue-600`} />;
     case 'lodging':
     case 'hotel':
-      return React.createElement(Hotel, { className: "h-4 w-4 text-amber-600" });
+      return <Hotel className={`${iconSize} text-amber-600`} />;
     case 'restaurant':
     case 'food':
     case 'cafe':
-      return React.createElement(Utensils, { className: "h-4 w-4 text-red-600" });
+      return <Utensils className={`${iconSize} text-red-600`} />;
     case 'store':
     case 'shopping_mall':
-      return React.createElement(ShoppingBag, { className: "h-4 w-4 text-purple-600" });
+      return <ShoppingBag className={`${iconSize} text-purple-600`} />;
     case 'school':
     case 'university':
-      return React.createElement(School, { className: "h-4 w-4 text-blue-500" });
+      return <School className={`${iconSize} text-blue-500`} />;
     case 'hospital':
     case 'health':
-      return React.createElement(Hospital, { className: "h-4 w-4 text-red-500" });
+      return <Hospital className={`${iconSize} text-red-500`} />;
     case 'park':
-      return React.createElement(Trees, { className: "h-4 w-4 text-green-600" });
+      return <Trees className={`${iconSize} text-green-600`} />;
     case 'transit_station':
     case 'bus_station':
-      return React.createElement(Bus, { className: "h-4 w-4 text-blue-500" });
+      return <Bus className={`${iconSize} text-blue-500`} />;
     case 'point_of_interest':
-      return React.createElement(Landmark, { className: "h-4 w-4 text-amber-500" });
+      return <Landmark className={`${iconSize} text-amber-500`} />;
+    case 'establishment':
+      return <Building className={`${iconSize} text-gray-600`} />;
     case 'address':
-      return React.createElement(Home, { className: "h-4 w-4 text-gray-500" });
     default:
-      return React.createElement(MapPin, { className: "h-4 w-4 text-gray-500" });
+      return <Home className={`${iconSize} text-gray-500`} />;
   }
 };
 
 // Format place details for display
-export const formatPlaceName = (place: google.maps.places.AutocompletePrediction): React.ReactElement => {
+export const formatPlaceName = (place: google.maps.places.AutocompletePrediction): JSX.Element => {
   const mainText = place.structured_formatting?.main_text || place.description;
   const secondaryText = place.structured_formatting?.secondary_text || '';
   
-  return React.createElement('div', {}, [
-    React.createElement('div', { className: "font-medium", key: "main" }, mainText),
-    secondaryText && React.createElement('div', { className: "text-xs text-gray-600", key: "context" }, secondaryText)
-  ].filter(Boolean));
+  return (
+    <div>
+      <div className="font-medium">{mainText}</div>
+      {secondaryText && <div className="text-xs text-gray-600">{secondaryText}</div>}
+    </div>
+  );
 };
 
 // Function to fetch address suggestions from Google Maps Places API
-export const fetchAddressSuggestions = async (query: string): Promise<any[]> => {
+export const fetchAddressSuggestions = async (query: string): Promise<google.maps.places.AutocompletePrediction[]> => {
   if (query.length < 3) return [];
   
   if (!isValidApiKey()) {
     console.error('Invalid Google Maps API key. Check your configuration.');
+    toast.error('Chave da API do Google Maps inválida');
     return [];
   }
   
   console.log('Fetching address suggestions for:', query);
   
-  // Ensure Google Maps API is loaded
   return new Promise((resolve) => {
     loadGoogleMapsScript(() => {
       try {
-        console.log('Google Maps loaded, fetching predictions...');
         const autocompleteService = new google.maps.places.AutocompleteService();
         autocompleteService.getPlacePredictions(
           {
@@ -134,7 +145,7 @@ export const fetchAddressSuggestions = async (query: string): Promise<any[]> => 
           (predictions, status) => {
             console.log('Places API status:', status);
             if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
-              console.log('Google Places suggestions:', predictions.length);
+              console.log('Found suggestions:', predictions.length);
               resolve(predictions);
             } else {
               console.error('Google Places API error:', status);
@@ -168,6 +179,7 @@ export const calculateRoute = async (
   
   if (!isValidApiKey()) {
     console.error('Invalid Google Maps API key for route calculation');
+    toast.error('Chave da API do Google Maps inválida');
     return null;
   }
   
@@ -176,7 +188,6 @@ export const calculateRoute = async (
   return new Promise((resolve) => {
     loadGoogleMapsScript(() => {
       try {
-        console.log('Maps loaded, calculating directions...');
         const directionsService = new google.maps.DirectionsService();
         
         directionsService.route(
@@ -208,12 +219,46 @@ export const calculateRoute = async (
               });
             } else {
               console.error('Directions API error:', status);
+              toast.error('Erro ao calcular rota');
               resolve(null);
             }
           }
         );
       } catch (error) {
         console.error('Error calculating route:', error);
+        resolve(null);
+      }
+    });
+  });
+};
+
+// Get coordinates from an address
+export const getCoordinatesFromAddress = async (address: string): Promise<[number, number] | null> => {
+  if (!address || !isValidApiKey()) return null;
+  
+  console.log('Getting coordinates for address:', address);
+  
+  return new Promise((resolve) => {
+    loadGoogleMapsScript(() => {
+      try {
+        const geocoder = new google.maps.Geocoder();
+        
+        geocoder.geocode(
+          { address: address, region: 'br' },
+          (results, status) => {
+            console.log('Geocoding status:', status);
+            if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
+              const location = results[0].geometry.location;
+              console.log('Coordinates found:', location.lng(), location.lat());
+              resolve([location.lng(), location.lat()]);
+            } else {
+              console.error('Geocoding error:', status);
+              resolve(null);
+            }
+          }
+        );
+      } catch (error) {
+        console.error('Error geocoding address:', error);
         resolve(null);
       }
     });

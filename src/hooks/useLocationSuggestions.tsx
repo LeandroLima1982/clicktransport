@@ -4,21 +4,28 @@ import { fetchAddressSuggestions, isValidApiKey } from '@/utils/googlemaps';
 import { toast } from 'sonner';
 
 export const useLocationSuggestions = () => {
-  const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
-  const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
+  const [originSuggestions, setOriginSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [apiKeyValid, setApiKeyValid] = useState(true);
+  const [apiKeyValid, setApiKeyValid] = useState(false);
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Verificar se a API key é válida ao montar o componente
+  // Check API key validity on mount
   useEffect(() => {
-    const valid = isValidApiKey();
-    setApiKeyValid(valid);
+    const checkApiKey = () => {
+      const valid = isValidApiKey();
+      setApiKeyValid(valid);
+      
+      if (!valid) {
+        console.error('Google Maps API key is invalid or missing');
+        toast.error('Configure a chave da API do Google Maps para utilizar sugestões de endereço');
+      } else {
+        console.log('Google Maps API key is valid');
+      }
+    };
     
-    if (!valid) {
-      toast.error('A chave da API do Google Maps é inválida. As sugestões de endereço não funcionarão.');
-    }
+    checkApiKey();
   }, []);
 
   const handleOriginChange = (value: string) => {
@@ -71,16 +78,22 @@ export const useLocationSuggestions = () => {
     }, 500);
   };
 
-  const selectOriginSuggestion = (suggestion: any) => {
+  const selectOriginSuggestion = (suggestion: google.maps.places.AutocompletePrediction) => {
     const placeName = suggestion.description;
     setOriginSuggestions([]);
     return placeName;
   };
 
-  const selectDestinationSuggestion = (suggestion: any) => {
+  const selectDestinationSuggestion = (suggestion: google.maps.places.AutocompletePrediction) => {
     const placeName = suggestion.description;
     setDestinationSuggestions([]);
     return placeName;
+  };
+
+  // Function to update API key (can be called after receiving it from the user)
+  const updateApiKey = (newKey: string) => {
+    // This function would be implemented in the main application code
+    console.log('API key update requested');
   };
 
   return {
@@ -93,6 +106,7 @@ export const useLocationSuggestions = () => {
     selectOriginSuggestion,
     selectDestinationSuggestion,
     clearOriginSuggestions: () => setOriginSuggestions([]),
-    clearDestinationSuggestions: () => setDestinationSuggestions([])
+    clearDestinationSuggestions: () => setDestinationSuggestions([]),
+    updateApiKey
   };
 };
