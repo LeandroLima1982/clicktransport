@@ -5,6 +5,10 @@ import App from './App';
 import { initializeApp } from './utils/initApp';
 import './index.css';
 import { Toaster } from './components/ui/sonner';
+import { supabase } from './utils/supabaseClient';
+
+// Re-export supabase client so existing imports work
+export { supabase };
 
 // Initialize the app before rendering
 initializeApp();
