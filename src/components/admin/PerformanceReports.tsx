@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, XAxis, YAxis, Bar, ResponsiveContainer, Tooltip, Legend } from 'recharts';
@@ -8,6 +9,7 @@ import { supabase } from '@/utils/supabaseClient';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DateRange } from "react-day-picker";
 
 interface OrderStats {
   date: string;
@@ -25,10 +27,7 @@ interface DriverStats {
 }
 
 const PerformanceReports: React.FC = () => {
-  const [dateRange, setDateRange] = useState<{
-    from: Date;
-    to: Date;
-  }>({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date()
   });
@@ -66,6 +65,11 @@ const PerformanceReports: React.FC = () => {
     setError(null);
     
     try {
+      // Make sure both from and to dates exist before proceeding
+      if (!dateRange.from || !dateRange.to) {
+        throw new Error('Invalid date range selected');
+      }
+      
       const fromDate = format(dateRange.from, 'yyyy-MM-dd');
       const toDate = format(dateRange.to, 'yyyy-MM-dd');
       
@@ -168,6 +172,12 @@ const PerformanceReports: React.FC = () => {
     }).sort((a, b) => b.completed_orders - a.completed_orders);
   };
 
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    if (range) {
+      setDateRange(range);
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -192,7 +202,7 @@ const PerformanceReports: React.FC = () => {
           
           <DateRangePicker
             value={dateRange}
-            onChange={setDateRange}
+            onChange={handleDateRangeChange}
           />
         </div>
       </CardHeader>

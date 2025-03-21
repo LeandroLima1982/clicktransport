@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { addDays, format } from "date-fns"
+import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { DateRange } from "react-day-picker"
 
@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/popover"
 
 interface DateRangePickerProps {
-  value: DateRange;
-  onChange: (date: DateRange) => void;
+  value: DateRange | undefined;
+  onChange: (date: DateRange | undefined) => void;
   className?: string;
 }
 
