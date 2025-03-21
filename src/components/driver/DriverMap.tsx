@@ -1,8 +1,6 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { GOOGLE_MAPS_API_KEY, loadGoogleMapsScript } from '@/utils/googlemaps';
-import { calculateRoute } from '@/utils/routeUtils';
 
 interface DriverMapProps {
   currentOrder: any;
@@ -26,7 +24,7 @@ const DriverMap: React.FC<DriverMapProps> = ({
   useEffect(() => {
     if (!mapContainer.current) return;
     
-    if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY') {
+    if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_')) {
       setError('Google Maps API key is missing. Please configure it in the environment settings.');
       setLoading(false);
       return;

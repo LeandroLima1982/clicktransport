@@ -127,7 +127,7 @@ export const createStaticMapUrl = (
 
 // Check if Google Maps API key is valid
 export const validateMapboxToken = (): boolean => {
-  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY') {
+  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_')) {
     console.error("Invalid Google Maps API key");
     toast.error('Token do Google Maps inválido. Verifique a configuração.');
     return false;
