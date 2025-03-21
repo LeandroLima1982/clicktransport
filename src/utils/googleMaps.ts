@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Building, Landmark, Home, Navigation, MapPin, ShoppingBag, 
@@ -59,6 +60,33 @@ const isGoogleMapsLoaded = (): boolean => {
          typeof window.google.maps.places !== 'undefined';
 };
 
+// Fallback suggestions when API fails
+const getFallbackSuggestions = (query: string): any[] => {
+  if (!query || query.length < 3) return [];
+  
+  // Create some generic suggestions based on the user input
+  return [
+    {
+      place_id: 'fallback-1',
+      description: `${query}, Rio de Janeiro, Brasil`,
+      structured_formatting: {
+        main_text: query,
+        secondary_text: 'Rio de Janeiro, Brasil'
+      },
+      types: ['street_address']
+    },
+    {
+      place_id: 'fallback-2',
+      description: `${query}, São Paulo, Brasil`,
+      structured_formatting: {
+        main_text: query,
+        secondary_text: 'São Paulo, Brasil'
+      },
+      types: ['street_address']
+    }
+  ];
+};
+
 // Fetch address suggestions
 export const fetchAddressSuggestions = async (query: string): Promise<any[]> => {
   if (!GOOGLE_MAPS_API_KEY || query.length < 3) return [];
@@ -68,10 +96,18 @@ export const fetchAddressSuggestions = async (query: string): Promise<any[]> => 
     
     // Using browser's built-in Autocomplete API (requires the script to be loaded)
     if (!isGoogleMapsLoaded()) {
-      console.error('Google Maps Places API not loaded');
-      await loadGoogleMapsScript();
+      console.log('Google Maps Places API not loaded, attempting to load it');
+      try {
+        await loadGoogleMapsScript();
+      } catch (error) {
+        console.error('Failed to load Google Maps API:', error);
+        // Return fallback suggestions when API can't be loaded
+        return getFallbackSuggestions(query);
+      }
+      
       if (!isGoogleMapsLoaded()) {
-        throw new Error('Google Maps Places API failed to load');
+        console.warn('Google Maps Places API failed to load, using fallback suggestions');
+        return getFallbackSuggestions(query);
       }
     }
     
@@ -86,7 +122,8 @@ export const fetchAddressSuggestions = async (query: string): Promise<any[]> => 
       }, (predictions, status) => {
         if (status !== window.google.maps.places.PlacesServiceStatus.OK || !predictions) {
           console.warn('Google Places API returned:', status);
-          resolve([]);
+          // If the API fails, use our fallback suggestions
+          resolve(getFallbackSuggestions(query));
           return;
         }
         
@@ -96,7 +133,7 @@ export const fetchAddressSuggestions = async (query: string): Promise<any[]> => 
     });
   } catch (error) {
     console.error('Error fetching address suggestions:', error);
-    return [];
+    return getFallbackSuggestions(query);
   }
 };
 
@@ -218,6 +255,7 @@ export const loadGoogleMapsScript = async (): Promise<void> => {
     };
     
     script.onerror = () => {
+      console.error('Failed to load Google Maps API, may need to enable billing or check API key restrictions');
       reject('Failed to load Google Maps API');
     };
     
