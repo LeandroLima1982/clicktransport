@@ -243,7 +243,7 @@ const CompanyManagement: React.FC = () => {
                   <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="active">Ativas</SelectItem>
                   <SelectItem value="pending">Pendentes</SelectItem>
                   <SelectItem value="inactive">Inativas</SelectItem>
