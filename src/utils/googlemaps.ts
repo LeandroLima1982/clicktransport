@@ -2,6 +2,13 @@
 import React from 'react';
 import { Building, Landmark, Home, Navigation, MapPin, ShoppingBag, School, Hospital, Hotel, Coffee, Utensils, Bus, Plane, Music as MusicIcon, Dumbbell, Church, Library as LibraryBig, Trees } from 'lucide-react';
 
+// Extend the Window interface to include our callback
+declare global {
+  interface Window {
+    initGoogleMaps?: () => void;
+  }
+}
+
 // Export the Google Maps API token - you'll need to replace this with your actual API key
 export const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY';
 
