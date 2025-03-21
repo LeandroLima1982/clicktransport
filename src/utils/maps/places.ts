@@ -6,7 +6,8 @@ import {
   Music as MusicIcon, Dumbbell, Church, Library as LibraryBig, Trees 
 } from 'lucide-react';
 import { loadGoogleMapsScript } from './loader';
-import { isGoogleMapsLoaded } from './config';
+import { isGoogleMapsLoaded, GOOGLE_MAPS_API_KEY } from './config';
+import { toast } from 'sonner';
 
 // Get icon for place based on place type
 export const getPlaceIcon = (place: any): React.ReactElement => {
@@ -41,103 +42,112 @@ export const formatPlaceName = (place: any): React.ReactElement => {
   ].filter(Boolean));
 };
 
-// Melhoria nos fallback suggestions com mais cidades e tipos
+// Improved fallback suggestions with real cities and more structured data
 const getFallbackSuggestions = (query: string): any[] => {
   if (!query || query.length < 3) return [];
   
-  // Extrai as primeiras palavras para aumentar a chance de correspondência
-  const words = query.split(' ');
-  const searchTerm = words.length > 2 ? `${words[0]} ${words[1]}` : query;
-  
   const majorCities = [
-    'Rio de Janeiro', 'São Paulo', 'Belo Horizonte', 'Brasília', 
-    'Salvador', 'Recife', 'Fortaleza', 'Curitiba', 'Porto Alegre',
-    'Manaus', 'Belém', 'Goiânia', 'Guarulhos', 'Campinas'
+    { name: 'Rio de Janeiro', state: 'RJ', country: 'Brasil' },
+    { name: 'São Paulo', state: 'SP', country: 'Brasil' },
+    { name: 'Belo Horizonte', state: 'MG', country: 'Brasil' },
+    { name: 'Brasília', state: 'DF', country: 'Brasil' },
+    { name: 'Salvador', state: 'BA', country: 'Brasil' },
+    { name: 'Recife', state: 'PE', country: 'Brasil' },
+    { name: 'Fortaleza', state: 'CE', country: 'Brasil' },
+    { name: 'Curitiba', state: 'PR', country: 'Brasil' },
+    { name: 'Porto Alegre', state: 'RS', country: 'Brasil' }
   ];
   
-  // Crie sugestões com as principais cidades
-  return majorCities.slice(0, 5).map((city, index) => ({
+  // For better fallback suggestions, try to extract potential street info
+  const words = query.trim().split(' ');
+  const potentialStreet = words.slice(0, Math.min(3, words.length)).join(' ');
+  
+  return majorCities.map((city, index) => ({
     place_id: `fallback-${index}`,
-    description: `${searchTerm}, ${city}, Brasil`,
+    description: `${potentialStreet}, ${city.name}, ${city.state}, ${city.country}`,
     structured_formatting: {
-      main_text: searchTerm,
-      secondary_text: `${city}, Brasil`
+      main_text: potentialStreet,
+      secondary_text: `${city.name}, ${city.state}, ${city.country}`
     },
     types: ['street_address'],
     fallback: true
   }));
 };
 
-// Improved address suggestion function with better fallbacks
+// Debug helper
+const logPlacesApiError = (status: string, query: string) => {
+  const statusMap: {[key: string]: string} = {
+    'ZERO_RESULTS': 'Nenhum resultado encontrado para a consulta.',
+    'OVER_QUERY_LIMIT': 'Limite de consultas excedido. Verifique a faturação da API.',
+    'REQUEST_DENIED': 'A solicitação foi negada. Verifique as configurações da chave API.',
+    'INVALID_REQUEST': 'Solicitação inválida.',
+    'UNKNOWN_ERROR': 'Erro desconhecido do servidor Google.',
+  };
+  
+  const message = statusMap[status] || `Erro na API Places (${status})`;
+  console.warn(`Places API para "${query}": ${message}`);
+};
+
+// Improved address suggestion function with better error handling
 export const fetchAddressSuggestions = async (query: string): Promise<any[]> => {
   if (!query || query.length < 3) return [];
   
+  console.log(`Buscando sugestões para: "${query}"`);
+  
   try {
-    console.log("Fetching Google Maps suggestions for:", query);
-    
-    // Cache key for this query
-    const cacheKey = `address_suggestions_${query}`;
-    
-    // Check if we have cached results (for repeat queries)
-    const cachedResults = sessionStorage.getItem(cacheKey);
-    if (cachedResults) {
-      return JSON.parse(cachedResults);
-    }
-    
-    // Carrega o script do Google Maps se necessário
+    // Tentar carregar o script do Google Maps
     if (!isGoogleMapsLoaded()) {
-      console.log('Google Maps Places API not loaded, attempting to load it');
+      console.log('Google Maps Places API não carregada, tentando carregar...');
       try {
         await loadGoogleMapsScript();
-        // Aguarda um momento para garantir que as APIs estejam inicializadas
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 800)); // Aguardar um pouco mais para inicialização
       } catch (error) {
-        console.error('Failed to load Google Maps API:', error);
-        const fallbackResults = getFallbackSuggestions(query);
-        sessionStorage.setItem(cacheKey, JSON.stringify(fallbackResults));
-        return fallbackResults;
+        console.error('Falha ao carregar Google Maps API:', error);
+        return getFallbackSuggestions(query);
       }
       
       if (!isGoogleMapsLoaded()) {
-        console.warn('Google Maps Places API failed to load, using fallback suggestions');
-        const fallbackResults = getFallbackSuggestions(query);
-        sessionStorage.setItem(cacheKey, JSON.stringify(fallbackResults));
-        return fallbackResults;
+        console.warn('Google Maps Places API não foi carregada após tentativa, usando sugestões alternativas');
+        return getFallbackSuggestions(query);
       }
     }
     
+    // Verifica se temos a API de Places disponível
+    if (!window.google?.maps?.places) {
+      console.error('Google Maps Places API não está disponível');
+      return getFallbackSuggestions(query);
+    }
+    
     try {
-      const results = await new Promise<any[]>((resolve) => {
+      const results = await new Promise<any[]>((resolve, reject) => {
         const service = new window.google.maps.places.AutocompleteService();
+        const sessionToken = new window.google.maps.places.AutocompleteSessionToken();
         
         service.getPlacePredictions({
           input: query,
           componentRestrictions: { country: 'br' },
           types: ['address', 'establishment', 'geocode'],
-          language: 'pt-BR'
+          language: 'pt-BR',
+          sessionToken: sessionToken
         }, (predictions, status) => {
-          if (status !== window.google.maps.places.PlacesServiceStatus.OK || !predictions) {
-            console.warn('Google Places API returned:', status);
-            const fallbackResults = getFallbackSuggestions(query);
-            resolve(fallbackResults);
+          if (status !== window.google.maps.places.PlacesServiceStatus.OK || !predictions || predictions.length === 0) {
+            logPlacesApiError(status, query);
+            resolve(getFallbackSuggestions(query));
             return;
           }
           
-          console.log("Received Google suggestions:", predictions.length);
+          console.log(`Recebidas ${predictions.length} sugestões do Google para "${query}"`);
           resolve(predictions);
         });
       });
       
-      // Cache the results
-      sessionStorage.setItem(cacheKey, JSON.stringify(results));
       return results;
     } catch (error) {
-      console.error('Error with Google Places API:', error);
-      const fallbackResults = getFallbackSuggestions(query);
-      return fallbackResults;
+      console.error('Erro com Google Places API:', error);
+      return getFallbackSuggestions(query);
     }
   } catch (error) {
-    console.error('Error fetching address suggestions:', error);
+    console.error('Erro ao buscar sugestões de endereço:', error);
     return getFallbackSuggestions(query);
   }
 };

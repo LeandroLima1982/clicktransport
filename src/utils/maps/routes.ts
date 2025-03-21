@@ -2,8 +2,9 @@
 import { loadGoogleMapsScript } from './loader';
 import { isGoogleMapsLoaded } from './config';
 import { calculateHaversineDistance, geocodeAddress } from './geocoding';
+import { toast } from 'sonner';
 
-// Calculate route between two addresses (with improved fallback)
+// Calculate route between two addresses with detailed error handling
 export const calculateRoute = async (
   origin: string,
   destination: string
@@ -11,23 +12,29 @@ export const calculateRoute = async (
   distance: number; // in kilometers
   duration: number; // in minutes
   geometry?: any;
+  source: 'google' | 'haversine' | 'fallback';
 } | null> => {
   if (!origin || !destination) {
-    console.error('Origin or destination is missing');
+    console.error('Origem ou destino ausente');
     return null;
   }
   
-  console.log(`Calculating route from "${origin}" to "${destination}"`);
+  console.log(`Calculando rota de "${origin}" para "${destination}"`);
   
   try {
-    // First try with Google Directions API
-    if (isGoogleMapsLoaded()) {
+    // Tentativa #1: API Google Directions (melhor opção)
+    await loadGoogleMapsScript();
+    
+    if (isGoogleMapsLoaded() && window.google?.maps?.DirectionsService) {
       try {
+        console.log("Usando Google DirectionsService API");
+        
         const originCoords = await geocodeAddress(origin);
         const destinationCoords = await geocodeAddress(destination);
         
         if (!originCoords || !destinationCoords) {
-          throw new Error('Failed to geocode addresses');
+          console.warn('Geocodificação falhou, tentando método alternativo');
+          throw new Error('Falha na geocodificação');
         }
         
         return new Promise((resolve) => {
@@ -38,54 +45,90 @@ export const calculateRoute = async (
             travelMode: window.google.maps.TravelMode.DRIVING
           }, (result, status) => {
             if (status !== window.google.maps.DirectionsStatus.OK || !result) {
-              console.error('Directions request failed:', status);
-              // Fall back to haversine calculation
-              calculateHaversineDistance(origin, destination).then(distance => {
-                resolve({
-                  distance: distance,
-                  // Estimate duration based on average speed of 50 km/h
-                  duration: Math.ceil(distance * 60 / 50)
-                });
-              });
-              return;
+              console.warn(`Falha na solicitação de direções: ${status}`);
+              throw new Error(`DirectionsService falhou: ${status}`);
             }
             
             const route = result.routes[0];
             const leg = route.legs[0];
             
-            // Extract route data
+            // Extrair dados da rota
+            console.log(`Distância calculada via Google: ${leg.distance?.value/1000} km, ${leg.duration?.value/60} min`);
+            
             resolve({
-              // Convert from meters to kilometers
+              // Converter de metros para quilômetros
               distance: leg.distance ? leg.distance.value / 1000 : 0,
-              // Convert from seconds to minutes
+              // Converter de segundos para minutos
               duration: leg.duration ? Math.ceil(leg.duration.value / 60) : 0,
-              // For now, we'll use a simple array of coordinates
+              // Para visualização de rota no mapa
               geometry: {
                 type: 'LineString',
                 coordinates: route.overview_path.map(point => [point.lng(), point.lat()])
-              }
+              },
+              source: 'google'
             });
           });
+        }).catch(error => {
+          console.error('Erro na API de Direções:', error);
+          throw error; // Propagar para o próximo método
         });
-      } catch (error) {
-        console.error('Error with Google Directions API:', error);
-        // Fall back to haversine calculation
+      } catch (directionError) {
+        console.warn(`Problemas com DirectionsService: ${directionError}. Tentando método haversine.`);
+        // Continuar para próximo método
       }
     }
     
-    // Fallback to haversine if Google API fails or isn't loaded
+    // Tentativa #2: Cálculo Haversine baseado em coordenadas geográficas
+    console.log("Tentando método haversine para cálculo da distância");
     const distance = await calculateHaversineDistance(origin, destination);
+    
+    if (distance > 0) {
+      console.log(`Distância calculada via Haversine: ${distance} km`);
+      return {
+        distance,
+        // Estimar duração baseada em velocidade média de 50 km/h
+        duration: Math.ceil(distance * 60 / 50),
+        source: 'haversine'
+      };
+    }
+    
+    // Tentativa #3: Fallback com valores estimados
+    console.warn("Usando valores fallback");
+    
+    // Estimar uma distância razoável baseada no contexto urbano/interurbano
+    let estimatedDistance = 15; // Padrão para viagens urbanas
+    
+    // Verificar se os endereços contêm cidades diferentes (indicando viagem mais longa)
+    const originLower = origin.toLowerCase();
+    const destinationLower = destination.toLowerCase();
+    
+    const majorCities = [
+      'rio de janeiro', 'são paulo', 'belo horizonte', 'brasília', 'salvador', 
+      'recife', 'fortaleza', 'curitiba', 'porto alegre', 'manaus'
+    ];
+    
+    const originCity = majorCities.find(city => originLower.includes(city));
+    const destinationCity = majorCities.find(city => destinationLower.includes(city));
+    
+    if (originCity && destinationCity && originCity !== destinationCity) {
+      // Viagem entre cidades principais - estimar distância maior
+      estimatedDistance = 100; 
+    }
+    
     return {
-      distance,
-      // Estimate duration based on average speed of 50 km/h
-      duration: Math.ceil(distance * 60 / 50)
+      distance: estimatedDistance,
+      duration: Math.ceil(estimatedDistance * 60 / 50), // Ainda usando 50 km/h
+      source: 'fallback'
     };
+    
   } catch (error) {
-    console.error('Error calculating route:', error);
-    // Last resort fallback
+    console.error('Erro ao calcular rota:', error);
+    
+    // Última opção de fallback
     return {
-      distance: 50, // Default 50km
-      duration: 60  // Default 60 minutes
+      distance: 15,
+      duration: 30,
+      source: 'fallback'
     };
   }
 };
