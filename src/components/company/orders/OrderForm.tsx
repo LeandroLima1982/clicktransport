@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,7 +17,7 @@ import { Plus, MapPin } from 'lucide-react';
 import { supabase } from '@/main';
 import { toast } from 'sonner';
 import { Driver, Vehicle } from './types';
-import { fetchAddressSuggestions, getPlaceIcon, formatPlaceName } from '@/utils/googlemaps';
+import { fetchAddressSuggestions, getPlaceIcon, formatPlaceName } from '@/utils/mapbox';
 
 interface OrderFormProps {
   companyId: string;
@@ -93,7 +94,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
   };
   
   const selectSuggestion = (suggestion: any, isOrigin: boolean) => {
-    const placeName = suggestion.description;
+    const placeName = suggestion.place_name;
     if (isOrigin) {
       setNewOrder({ ...newOrder, origin: placeName });
       setOriginSuggestions([]);
@@ -115,6 +116,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
         return;
       }
       
+      // Determine if we should set the status to 'assigned' when a driver is selected
       const orderStatus = newOrder.driver_id ? 'assigned' : 'pending';
       
       const { error } = await supabase

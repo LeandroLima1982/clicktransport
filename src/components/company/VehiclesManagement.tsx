@@ -9,7 +9,7 @@ import {
 import { Car, Plus } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/utils/supabaseClient';
+import { supabase } from '@/main';
 import { toast } from 'sonner';
 
 // Import components
@@ -61,13 +61,7 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
         
         if (error) throw error;
         
-        // Type cast the status field to ensure it matches the Vehicle type
-        const typedVehicles = (data || []).map(vehicle => ({
-          ...vehicle,
-          status: vehicle.status as Vehicle['status'] // Cast string to union type
-        }));
-        
-        setVehicles(typedVehicles);
+        setVehicles(data || []);
       }
     } catch (error) {
       console.error('Error fetching vehicles:', error);

@@ -1,7 +1,10 @@
 
 import React, { useEffect, useRef, useState } from 'react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { Loader2 } from 'lucide-react';
-import { GOOGLE_MAPS_API_KEY, loadGoogleMapsScript, isValidApiKey } from '@/utils/googlemaps';
+import { MAPBOX_TOKEN } from '@/utils/mapbox';
+import { calculateRoute } from '@/utils/routeUtils';
 
 interface DriverMapProps {
   currentOrder: any;
@@ -15,127 +18,127 @@ const DriverMap: React.FC<DriverMapProps> = ({
   heading 
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
-  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [routeGeometry, setRouteGeometry] = useState<any>(null);
   
   // Initialize map when component mounts
   useEffect(() => {
     if (!mapContainer.current) return;
     
-    if (!isValidApiKey()) {
-      setError('Google Maps API key is missing. Please configure it in the environment settings.');
+    if (!MAPBOX_TOKEN) {
+      setError('Mapbox token is missing. Please configure it in the environment settings.');
       setLoading(false);
       return;
     }
     
-    loadGoogleMapsScript(() => {
-      try {
-        console.log('Initializing driver map');
-        // Create map instance
-        mapRef.current = new google.maps.Map(mapContainer.current, {
-          center: { lat: -22.9035, lng: -43.2096 }, // Default to Rio de Janeiro
-          zoom: 12,
-          mapTypeControl: false,
-          fullscreenControl: true,
-          streetViewControl: false
-        });
-        
-        // Create directions renderer
-        directionsRendererRef.current = new google.maps.DirectionsRenderer({
-          map: mapRef.current,
-          suppressMarkers: true,
-          polylineOptions: {
-            strokeColor: '#3887BE',
-            strokeWeight: 5,
-            strokeOpacity: 0.75
-          }
-        });
-        
+    try {
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+      
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        zoom: 12,
+        center: currentLocation || [-43.2096, -22.9035], // Default to Rio de Janeiro
+        attributionControl: false
+      });
+      
+      map.current.addControl(
+        new mapboxgl.NavigationControl({ showCompass: true }),
+        'bottom-right'
+      );
+      
+      // Handle successful map load
+      map.current.on('load', () => {
         setLoading(false);
         
-        // Add origin and destination markers if we have an order
-        if (currentOrder) {
-          fetchRouteAndAddMarkers();
-        }
-      } catch (err) {
-        console.error('Error initializing map:', err);
-        setError('Erro ao inicializar mapa');
+        // Add origin and destination markers
+        fetchRouteAndAddMarkers();
+      });
+      
+      // Handle map errors
+      map.current.on('error', (err) => {
+        console.error('Map error:', err);
+        setError('Erro ao carregar mapa: ' + err.error?.message || 'Erro desconhecido');
         setLoading(false);
-      }
-    });
+      });
+    } catch (err) {
+      console.error('Error initializing map:', err);
+      setError('Erro ao inicializar mapa');
+      setLoading(false);
+    }
     
     // Clean up on unmount
     return () => {
-      if (markerRef.current) {
-        markerRef.current.setMap(null);
-      }
-      if (directionsRendererRef.current) {
-        directionsRendererRef.current.setMap(null);
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
       }
     };
   }, []);
   
   // Fetch route and add markers
   const fetchRouteAndAddMarkers = async () => {
-    if (!mapRef.current || !currentOrder || !directionsRendererRef.current) return;
+    if (!map.current || !currentOrder) return;
     
     try {
-      const directionsService = new google.maps.DirectionsService();
+      const routeInfo = await calculateRoute(currentOrder.origin, currentOrder.destination);
       
-      directionsService.route(
-        {
-          origin: currentOrder.origin,
-          destination: currentOrder.destination,
-          travelMode: google.maps.TravelMode.DRIVING
-        },
-        (result, status) => {
-          if (status === google.maps.DirectionsStatus.OK && result) {
-            // Display the route
-            if (directionsRendererRef.current) {
-              directionsRendererRef.current.setDirections(result);
-            }
-            
-            // Add origin marker
-            new google.maps.Marker({
-              position: result.routes[0].legs[0].start_location,
-              map: mapRef.current,
-              icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                fillColor: '#00FF00',
-                fillOpacity: 1,
-                strokeWeight: 0,
-                scale: 7
-              },
-              title: 'Origem'
-            });
-            
-            // Add destination marker
-            new google.maps.Marker({
-              position: result.routes[0].legs[0].end_location,
-              map: mapRef.current,
-              icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                fillColor: '#FF0000',
-                fillOpacity: 1,
-                strokeWeight: 0,
-                scale: 7
-              },
-              title: 'Destino'
-            });
-            
-            // Fit bounds to include the entire route
-            const bounds = new google.maps.LatLngBounds();
-            bounds.extend(result.routes[0].legs[0].start_location);
-            bounds.extend(result.routes[0].legs[0].end_location);
-            mapRef.current?.fitBounds(bounds);
-          } else {
-            console.error('Directions API error:', status);
+      if (routeInfo && routeInfo.geometry) {
+        setRouteGeometry(routeInfo.geometry);
+        
+        // Add origin marker
+        new mapboxgl.Marker({ color: '#00FF00' })
+          .setLngLat(routeInfo.geometry.coordinates[0])
+          .setPopup(new mapboxgl.Popup().setHTML(`<h3>Origem</h3><p>${currentOrder.origin}</p>`))
+          .addTo(map.current);
+        
+        // Add destination marker
+        new mapboxgl.Marker({ color: '#FF0000' })
+          .setLngLat(routeInfo.geometry.coordinates[routeInfo.geometry.coordinates.length - 1])
+          .setPopup(new mapboxgl.Popup().setHTML(`<h3>Destino</h3><p>${currentOrder.destination}</p>`))
+          .addTo(map.current);
+        
+        // Add route to map
+        map.current.addSource('route', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: {},
+            geometry: routeInfo.geometry
           }
-        }
-      );
+        });
+        
+        map.current.addLayer({
+          id: 'route',
+          type: 'line',
+          source: 'route',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          paint: {
+            'line-color': '#3887be',
+            'line-width': 5,
+            'line-opacity': 0.75
+          }
+        });
+        
+        // Fit bounds to include the entire route
+        const bounds = new mapboxgl.LngLatBounds();
+        routeInfo.geometry.coordinates.forEach((coord: [number, number]) => {
+          bounds.extend(coord);
+        });
+        
+        map.current.fitBounds(bounds, {
+          padding: 50,
+          duration: 1000
+        });
+      } else {
+        console.error('No route geometry returned');
+      }
     } catch (err) {
       console.error('Error fetching route:', err);
     }
@@ -143,31 +146,37 @@ const DriverMap: React.FC<DriverMapProps> = ({
   
   // Update vehicle marker when location changes
   useEffect(() => {
-    if (!mapRef.current || !currentLocation) return;
+    if (!map.current || !currentLocation) return;
     
     // Remove existing marker if it exists
     if (markerRef.current) {
-      markerRef.current.setMap(null);
+      markerRef.current.remove();
     }
     
+    // Create element for the custom marker
+    const el = document.createElement('div');
+    el.className = 'vehicle-marker';
+    el.style.width = '24px';
+    el.style.height = '24px';
+    el.style.backgroundImage = 'url(/vehicle-icon.svg)';
+    el.style.backgroundSize = 'cover';
+    el.style.transform = `rotate(${heading || 0}deg)`;
+    
     // Create and add new marker
-    markerRef.current = new google.maps.Marker({
-      position: { lat: currentLocation[1], lng: currentLocation[0] },
-      map: mapRef.current,
-      icon: {
-        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-        scale: 5,
-        rotation: heading || 0,
-        fillColor: '#4285F4',
-        fillOpacity: 1,
-        strokeWeight: 1,
-        strokeColor: '#FFFFFF'
-      }
-    });
+    markerRef.current = new mapboxgl.Marker({
+      element: el,
+      rotationAlignment: 'map'
+    })
+      .setLngLat(currentLocation)
+      .addTo(map.current);
     
     // Center map on current location if not first load
     if (!loading) {
-      mapRef.current.panTo({ lat: currentLocation[1], lng: currentLocation[0] });
+      map.current.easeTo({
+        center: currentLocation,
+        zoom: 15,
+        duration: 1000
+      });
     }
   }, [currentLocation, heading]);
   

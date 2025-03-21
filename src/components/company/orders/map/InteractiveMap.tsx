@@ -1,7 +1,8 @@
-
 import React, { useEffect, useRef, useState } from 'react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { MAPBOX_TOKEN } from '@/utils/mapbox';
 import { Loader2 } from 'lucide-react';
-import { GOOGLE_MAPS_API_KEY, loadGoogleMapsScript, isValidApiKey } from '@/utils/googlemaps';
 
 interface InteractiveMapProps {
   originCoords: [number, number];
@@ -25,9 +26,11 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   onMapLoadFailure
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<google.maps.Map | null>(null);
-  const marker = useRef<google.maps.Marker | null>(null);
-  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const marker = useRef<mapboxgl.Marker | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const vehicleMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [isMapLoading, setIsMapLoading] = useState(true);
   const [mapInitError, setMapInitError] = useState<string | null>(null);
   const initTimerRef = useRef<number | null>(null);
@@ -49,6 +52,13 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     // Initialize map
     try {
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+    
+      // Clear any existing map instance
+      if (map.current) {
+        map.current.remove();
+      }
+
       // Apply explicit styling to ensure map container is visible
       if (mapContainer.current) {
         mapContainer.current.style.minHeight = '400px';
@@ -58,137 +68,120 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         mapContainer.current.style.position = 'relative';
         mapContainer.current.style.display = 'block';
       }
-      
-      if (!isValidApiKey()) {
-        console.error('Invalid Google Maps API key');
-        setMapInitError('Google Maps API key is invalid or missing');
-        if (onMapLoadFailure) onMapLoadFailure();
-        return;
-      }
-      
-      loadGoogleMapsScript(() => {
+    
+      // Create new map instance
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        zoom: 12,
+        center: originCoords, // Start centered on origin
+        minZoom: 2,
+        fadeDuration: 0, // Disable fade animations to help with rendering
+        renderWorldCopies: false, // Disable rendering multiple copies of world to reduce load
+        attributionControl: false, // Disable attribution to simplify the map
+        preserveDrawingBuffer: false, // Better performance
+        antialias: false, // Better performance on low-end devices
+        maxPitch: 45, // Limit pitch to improve performance
+        trackResize: true,
+      });
+
+      // Handle map errors
+      map.current.on('error', (error) => {
+        console.error('Mapbox error:', error);
+        setMapInitError(`Map error: ${error.error?.message || 'Unknown error'}`);
+        if (onMapLoadFailure) {
+          onMapLoadFailure();
+        }
+      });
+
+      // Handle successful map load
+      map.current.on('load', () => {
+        if (!map.current) return;
+        
+        // Clear the timeout as map loaded successfully
+        if (initTimerRef.current) {
+          clearTimeout(initTimerRef.current);
+          initTimerRef.current = null;
+        }
+        
         try {
-          console.log('Initializing Google Maps with coordinates:', originCoords, destinationCoords);
-          // Create the map instance
-          map.current = new google.maps.Map(mapContainer.current!, {
-            center: { lat: originCoords[1], lng: originCoords[0] },
-            zoom: 12,
-            zoomControl: true,
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: true
-          });
-          
-          // Clear the timeout since map loaded successfully
-          if (initTimerRef.current) {
-            clearTimeout(initTimerRef.current);
-            initTimerRef.current = null;
-          }
-          
-          // Handle successful map load
+          console.log("Map loaded successfully, adding markers");
           setIsMapLoading(false);
           
-          // Create directions renderer
-          directionsRendererRef.current = new google.maps.DirectionsRenderer({
-            map: map.current,
-            suppressMarkers: true,
-            polylineOptions: {
-              strokeColor: '#3887be',
-              strokeWeight: 5,
-              strokeOpacity: 0.75
-            }
-          });
-          
           // Add origin and destination markers
-          new google.maps.Marker({
-            position: { lat: originCoords[1], lng: originCoords[0] },
-            map: map.current,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              fillColor: '#00FF00',
-              fillOpacity: 1,
-              strokeWeight: 0,
-              scale: 7
-            },
-            title: originAddress
-          });
+          new mapboxgl.Marker({ color: '#00FF00' })
+            .setLngLat(originCoords)
+            .setPopup(new mapboxgl.Popup().setHTML(`<h3>Origem</h3><p>${originAddress}</p>`))
+            .addTo(map.current);
           
-          new google.maps.Marker({
-            position: { lat: destinationCoords[1], lng: destinationCoords[0] },
-            map: map.current,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              fillColor: '#FF0000',
-              fillOpacity: 1,
-              strokeWeight: 0,
-              scale: 7
-            },
-            title: destinationAddress
-          });
+          new mapboxgl.Marker({ color: '#FF0000' })
+            .setLngLat(destinationCoords)
+            .setPopup(new mapboxgl.Popup().setHTML(`<h3>Destino</h3><p>${destinationAddress}</p>`))
+            .addTo(map.current);
           
-          // Create marker for the vehicle if current location exists
-          if (currentLocation) {
-            marker.current = new google.maps.Marker({
-              position: { lat: currentLocation[1], lng: currentLocation[0] },
-              map: map.current,
-              icon: {
-                path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                fillColor: '#3FB1CE',
-                fillOpacity: 1,
-                strokeWeight: 1,
-                strokeColor: '#FFFFFF',
-                scale: 5,
-                rotation: heading || 0
-              }
-            });
-          }
+          // Create marker for the vehicle
+          vehicleMarkerRef.current = new mapboxgl.Marker({ 
+            color: '#3FB1CE',
+            rotation: heading
+          })
+            .setLngLat(currentLocation || originCoords)
+            .addTo(map.current);
           
           // Set bounds to include both markers
-          const bounds = new google.maps.LatLngBounds()
-            .extend({ lat: originCoords[1], lng: originCoords[0] })
-            .extend({ lat: destinationCoords[1], lng: destinationCoords[0] });
+          const bounds = new mapboxgl.LngLatBounds()
+            .extend(originCoords)
+            .extend(destinationCoords);
           
           // If we have current location, include it in the bounds
           if (currentLocation) {
-            bounds.extend({ lat: currentLocation[1], lng: currentLocation[0] });
+            bounds.extend(currentLocation);
           }
           
-          map.current.fitBounds(bounds, 70);
+          map.current.fitBounds(bounds, { padding: 70, maxZoom: 15 });
           
-          // If route geometry is available, draw the route
-          if (routeGeometry?.coordinates?.length > 0) {
-            // Use directions service to draw the route
-            const directionsService = new google.maps.DirectionsService();
-            
-            directionsService.route(
-              {
-                origin: { lat: originCoords[1], lng: originCoords[0] },
-                destination: { lat: destinationCoords[1], lng: destinationCoords[0] },
-                travelMode: google.maps.TravelMode.DRIVING
-              },
-              (result, status) => {
-                console.log('Directions service result:', status);
-                if (status === google.maps.DirectionsStatus.OK && result) {
-                  directionsRendererRef.current!.setDirections(result);
-                } else {
-                  console.error('Directions service failed:', status);
-                }
+          // Add route to map if routeGeometry is available
+          if (routeGeometry && routeGeometry.coordinates && routeGeometry.coordinates.length > 0) {
+            // Add route to map
+            map.current.addSource('route', {
+              type: 'geojson',
+              data: {
+                type: 'Feature',
+                properties: {},
+                geometry: routeGeometry
               }
-            );
+            });
+            
+            map.current.addLayer({
+              id: 'route',
+              type: 'line',
+              source: 'route',
+              layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+              },
+              paint: {
+                'line-color': '#3887be',
+                'line-width': 5,
+                'line-opacity': 0.75
+              }
+            });
+
+            // Start animation only if we don't have real-time location
+            if (!currentLocation && vehicleMarkerRef.current && routeGeometry.coordinates.length > 0) {
+              animateMarkerAlongRoute(routeGeometry.coordinates);
+            }
           }
-          
         } catch (error) {
-          console.error('Error initializing Google Maps:', error);
-          setMapInitError(`Error initializing map: ${error}`);
+          console.error("Error setting up map markers:", error);
+          setMapInitError(`Error setting up map markers: ${error}`);
           if (onMapLoadFailure) {
             onMapLoadFailure();
           }
         }
       });
-      
     } catch (error) {
-      console.error('Error creating Google Maps instance:', error);
-      setMapInitError(`Error creating map instance: ${error}`);
+      console.error('Error creating Mapbox instance:', error);
+      setMapInitError(`Error creating Mapbox instance: ${error}`);
       if (onMapLoadFailure) {
         onMapLoadFailure();
       }
@@ -196,49 +189,117 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     // Cleanup on unmount
     return () => {
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+      
+      // Cancel any ongoing animation
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+
+      // Clear the initialization timeout
       if (initTimerRef.current) {
         clearTimeout(initTimerRef.current);
         initTimerRef.current = null;
       }
     };
-  }, [originCoords, destinationCoords, routeGeometry, originAddress, destinationAddress, currentLocation, heading, onMapLoadFailure]);
+  }, [originCoords, destinationCoords, routeGeometry, originAddress, destinationAddress, onMapLoadFailure]);
+
+  const animateMarkerAlongRoute = (coordinates: [number, number][]) => {
+    // Cancel any ongoing animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+
+    // If we have a very simple route with just two points, add some interpolation
+    if (coordinates.length <= 2) {
+      const interpolated = [];
+      for (let i = 0; i < 100; i++) {
+        const ratio = i / 100;
+        interpolated.push([
+          coordinates[0][0] + (coordinates[1][0] - coordinates[0][0]) * ratio,
+          coordinates[0][1] + (coordinates[1][1] - coordinates[0][1]) * ratio
+        ]);
+      }
+      coordinates = interpolated as [number, number][];
+    }
+
+    let start: number;
+    const animationDuration = 30000; // 30 seconds for the full route animation
+
+    const animate = (timestamp: number) => {
+      if (!startTimeRef.current) {
+        startTimeRef.current = timestamp;
+      }
+      const elapsed = timestamp - startTimeRef.current;
+      const progress = Math.min(elapsed / animationDuration, 1);
+      
+      // Get the current point along the route based on progress
+      const pointIndex = Math.min(
+        Math.floor(progress * coordinates.length),
+        coordinates.length - 1
+      );
+      
+      // Update marker position
+      if (vehicleMarkerRef.current && map.current) {
+        vehicleMarkerRef.current.setLngLat(coordinates[pointIndex]);
+        
+        // Calculate heading (direction) based on the next point
+        if (pointIndex < coordinates.length - 1) {
+          const currentPoint = coordinates[pointIndex];
+          const nextPoint = coordinates[pointIndex + 1];
+          const angle = Math.atan2(
+            nextPoint[1] - currentPoint[1],
+            nextPoint[0] - currentPoint[0]
+          ) * (180 / Math.PI);
+          
+          vehicleMarkerRef.current.setRotation(angle);
+        }
+      }
+      
+      // Continue animation if not complete
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        // Animation complete, reset for potential replay
+        startTimeRef.current = null;
+      }
+    };
+    
+    // Start the animation
+    animationRef.current = requestAnimationFrame(animate);
+  };
 
   // Update vehicle marker position when currentLocation changes
   useEffect(() => {
-    if (!map.current || !currentLocation) return;
+    if (!map.current || !currentLocation || !vehicleMarkerRef.current) return;
 
-    const position = { lat: currentLocation[1], lng: currentLocation[0] };
+    // Cancel any ongoing animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
 
-    // Update existing marker or create new one
-    if (marker.current) {
-      marker.current.setPosition(position);
-      
-      if (heading !== undefined) {
-        const icon = marker.current.getIcon() as google.maps.Symbol;
-        icon.rotation = heading;
-        marker.current.setIcon(icon);
-      }
-    } else {
-      marker.current = new google.maps.Marker({
-        position,
-        map: map.current,
-        icon: {
-          path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-          fillColor: '#3FB1CE',
-          fillOpacity: 1,
-          strokeWeight: 1,
-          strokeColor: '#FFFFFF',
-          scale: 5,
-          rotation: heading || 0
-        }
-      });
+    // Update marker position and rotation
+    vehicleMarkerRef.current
+      .setLngLat(currentLocation);
+    
+    if (heading !== undefined) {
+      vehicleMarkerRef.current.setRotation(heading);
     }
 
     // Check if the marker is in the current viewport
     const bounds = map.current.getBounds();
-    if (bounds && !bounds.contains(position)) {
+    if (!bounds.contains({ lng: currentLocation[0], lat: currentLocation[1] })) {
       // If not in viewport, adjust the map view
-      map.current.panTo(position);
+      map.current.easeTo({
+        center: currentLocation,
+        duration: 1000,
+        zoom: map.current.getZoom() // Keep current zoom level
+      });
     }
   }, [currentLocation, heading]);
 
@@ -257,7 +318,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           <div className="text-center max-w-md p-4 bg-destructive/10 rounded-md">
             <p className="text-sm text-destructive font-medium">Erro ao carregar mapa interativo</p>
             <p className="text-xs text-muted-foreground mt-1">Tentando usar mapa estático como alternativa</p>
-            <p className="text-xs text-muted-foreground mt-1">{mapInitError}</p>
           </div>
         </div>
       )}

@@ -1,10 +1,8 @@
 
 import React from 'react';
 import { Input } from '@/components/ui/input';
-import { MapPin, AlertTriangle } from 'lucide-react';
-import { getPlaceIconProps, formatPlaceNameData, isValidApiKey } from '@/utils/googlemaps';
-import { Button } from '@/components/ui/button';
-import ApiKeyButton from '../ApiKeyButton';
+import { MapPin } from 'lucide-react';
+import { getPlaceIcon, formatPlaceName } from '@/utils/mapbox';
 
 interface LocationFieldProps {
   id: string;
@@ -27,8 +25,6 @@ const LocationField: React.FC<LocationFieldProps> = ({
   suggestions,
   onSelectSuggestion
 }) => {
-  const isApiKeyValid = isValidApiKey();
-  
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
@@ -42,45 +38,24 @@ const LocationField: React.FC<LocationFieldProps> = ({
           onChange={onChange} 
           required
           placeholder={placeholder}
-          className={!isApiKeyValid ? "border-amber-300" : ""}
         />
-        
-        {!isApiKeyValid && (
-          <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm text-amber-700 font-medium">Chave da API do Google Maps inválida</p>
-              <p className="text-xs text-amber-600">Sugestões de endereço e cálculos de rota não estão disponíveis.</p>
-            </div>
-            <div className="ml-auto">
-              <ApiKeyButton />
-            </div>
-          </div>
-        )}
-        
         {suggestions.length > 0 && (
           <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-            {suggestions.map((suggestion, index) => {
-              const iconProps = getPlaceIconProps(suggestion.types?.[0] || 'address');
-              const IconComponent = iconProps.icon;
-              const placeData = formatPlaceNameData(suggestion);
-              
-              return (
-                <div 
-                  key={index}
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-start"
-                  onClick={() => onSelectSuggestion(suggestion)}
-                >
-                  <div className="mr-2 mt-1">
-                    <IconComponent className={iconProps.className} />
-                  </div>
-                  <div>
-                    <div className="font-medium">{placeData.mainText}</div>
-                    <div className="text-xs text-gray-500">{placeData.secondaryText || ''}</div>
-                  </div>
+            {suggestions.map((suggestion, index) => (
+              <div 
+                key={index}
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-start"
+                onClick={() => onSelectSuggestion(suggestion)}
+              >
+                <div className="mr-2 mt-1">
+                  {getPlaceIcon(suggestion.place_type[0])}
                 </div>
-              );
-            })}
+                <div>
+                  <div className="font-medium">{formatPlaceName(suggestion.place_name)}</div>
+                  <div className="text-xs text-gray-500">{suggestion.place_name}</div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
