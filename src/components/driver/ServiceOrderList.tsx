@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/main';
+import { supabase } from '@/utils/supabaseClient';
 import AssignedOrderList from './AssignedOrderList';
 import AvailableOrderList from './AvailableOrderList';
 import { useServiceOrders } from './hooks/useServiceOrders';

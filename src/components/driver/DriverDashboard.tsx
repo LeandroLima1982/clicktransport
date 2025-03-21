@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/main';
+import { supabase } from '@/utils/supabaseClient';
 
 const DriverDashboard: React.FC = () => {
   const { user } = useAuth();

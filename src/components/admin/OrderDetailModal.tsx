@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -10,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from '@/main';
+import { supabase } from '@/utils/supabaseClient';
 import { toast } from 'sonner';
 import { MapPin, Calendar, User, Truck, FileText, Users, CreditCard } from 'lucide-react';
 import { ServiceOrder } from './ServiceOrderTable';
@@ -78,7 +77,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     }
   };
 
-  // Parse passenger data if available
   let passengerData = [];
   try {
     if (order.passenger_data) {
@@ -90,7 +88,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     console.error('Error parsing passenger data:', e);
   }
 
-  // Calculate one-way price and return price
   const totalPrice = order.total_price || 0;
   const isRoundTrip = order.trip_type === 'roundtrip';
   const oneWayPrice = isRoundTrip ? totalPrice / 2 : totalPrice;

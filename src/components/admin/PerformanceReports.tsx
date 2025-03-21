@@ -1,193 +1,279 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart, XAxis, YAxis, Bar, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { format } from 'date-fns';
+import { AlertCircle } from 'lucide-react';
+import { supabase } from '@/utils/supabaseClient';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { Button } from "@/components/ui/button";
-import { FilterX, Download, Loader2 } from 'lucide-react';
-import { supabase } from '@/main';
-import DashboardStats from './DashboardStats';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+interface OrderStats {
+  date: string;
+  completed: number;
+  cancelled: number;
+  pending: number;
+  in_progress: number;
+}
+
+interface DriverStats {
+  driver_name: string;
+  completed_orders: number;
+  total_distance: number;
+  average_rating: number;
+}
 
 const PerformanceReports: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [reportType, setReportType] = useState('general');
-  const [reportsData, setReportsData] = useState<any>({
-    companies: [],
-    orders: [],
-    drivers: []
+  const [dateRange, setDateRange] = useState<{
+    from: Date;
+    to: Date;
+  }>({
+    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    to: new Date()
   });
+  
+  const [orderStats, setOrderStats] = useState<OrderStats[]>([]);
+  const [driverStats, setDriverStats] = useState<DriverStats[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<string>('all');
+  const [companies, setCompanies] = useState<{id: string, name: string}[]>([]);
 
   useEffect(() => {
-    fetchReportData();
-  }, []);
+    fetchCompanies();
+    fetchData();
+  }, [dateRange, selectedCompany]);
 
-  const fetchReportData = async () => {
-    setIsLoading(true);
+  const fetchCompanies = async () => {
     try {
-      // Fetch data
-      await Promise.all([
-        fetchCompaniesData(),
-        fetchOrdersData(),
-        fetchDriversData()
-      ]);
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name')
+        .eq('status', 'active');
+      
+      if (error) throw error;
+      
+      setCompanies(data || []);
     } catch (error) {
-      console.error('Error fetching report data:', error);
+      console.error('Error fetching companies:', error);
+      setError('Failed to load companies data');
+    }
+  };
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Format dates for query
+      const fromDate = format(dateRange.from, 'yyyy-MM-dd');
+      const toDate = format(dateRange.to, 'yyyy-MM-dd');
+      
+      // Build query for order stats
+      let query = supabase
+        .from('service_orders')
+        .select('*')
+        .gte('created_at', `${fromDate}T00:00:00`)
+        .lte('created_at', `${toDate}T23:59:59`);
+      
+      // Add company filter if not "all"
+      if (selectedCompany !== 'all') {
+        query = query.eq('company_id', selectedCompany);
+      }
+      
+      const { data: ordersData, error: ordersError } = await query;
+      
+      if (ordersError) throw ordersError;
+      
+      // Process order data by date
+      const ordersByDate = processOrdersByDate(ordersData || []);
+      setOrderStats(ordersByDate);
+      
+      // Fetch driver stats
+      let driverQuery = supabase
+        .from('drivers')
+        .select(`
+          id,
+          name,
+          service_orders!driver_id(
+            id,
+            status,
+            created_at
+          )
+        `)
+        .eq('status', 'active');
+      
+      // Add company filter for drivers if not "all"
+      if (selectedCompany !== 'all') {
+        driverQuery = driverQuery.eq('company_id', selectedCompany);
+      }
+      
+      const { data: driversData, error: driversError } = await driverQuery;
+      
+      if (driversError) throw driversError;
+      
+      // Process driver stats
+      const processedDriverStats = processDriverStats(driversData || []);
+      setDriverStats(processedDriverStats);
+      
+    } catch (error: any) {
+      console.error('Error fetching performance data:', error);
+      setError(error.message || 'Failed to load performance data');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchCompaniesData = async () => {
-    const { data, error } = await supabase
-      .from('companies')
-      .select('status');
+  const processOrdersByDate = (orders: any[]): OrderStats[] => {
+    // Group orders by date and status
+    const ordersByDate: Record<string, { completed: number, cancelled: number, pending: number, in_progress: number }> = {};
     
-    if (error) throw error;
-    
-    // Count companies by status
-    const statusCounts: Record<string, number> = {};
-    data?.forEach(company => {
-      statusCounts[company.status] = (statusCounts[company.status] || 0) + 1;
+    orders.forEach(order => {
+      const date = format(new Date(order.created_at), 'yyyy-MM-dd');
+      
+      if (!ordersByDate[date]) {
+        ordersByDate[date] = {
+          completed: 0,
+          cancelled: 0,
+          pending: 0,
+          in_progress: 0
+        };
+      }
+      
+      // Increment the appropriate status counter
+      if (order.status === 'completed') {
+        ordersByDate[date].completed += 1;
+      } else if (order.status === 'cancelled') {
+        ordersByDate[date].cancelled += 1;
+      } else if (order.status === 'pending') {
+        ordersByDate[date].pending += 1;
+      } else if (order.status === 'in_progress') {
+        ordersByDate[date].in_progress += 1;
+      }
     });
     
-    const companiesData = Object.keys(statusCounts).map(status => ({
-      name: status === 'active' ? 'Ativas' : 
-            status === 'pending' ? 'Pendentes' : 
-            status === 'inactive' ? 'Inativas' : 
-            status === 'suspended' ? 'Suspensas' : status,
-      value: statusCounts[status]
-    }));
-    
-    setReportsData(prev => ({ ...prev, companies: companiesData }));
+    // Convert to array format for chart
+    return Object.keys(ordersByDate).map(date => ({
+      date,
+      ...ordersByDate[date]
+    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   };
 
-  const fetchOrdersData = async () => {
-    const { data, error } = await supabase
-      .from('service_orders')
-      .select('status, created_at');
-    
-    if (error) throw error;
-    
-    // Count orders by status
-    const statusCounts: Record<string, number> = {};
-    data?.forEach(order => {
-      statusCounts[order.status] = (statusCounts[order.status] || 0) + 1;
-    });
-    
-    const ordersData = Object.keys(statusCounts).map(status => ({
-      name: status === 'pending' ? 'Pendentes' :
-            status === 'in_progress' ? 'Em Progresso' :
-            status === 'completed' ? 'Concluídas' :
-            status === 'cancelled' ? 'Canceladas' : status,
-      value: statusCounts[status]
-    }));
-    
-    setReportsData(prev => ({ ...prev, orders: ordersData }));
+  const processDriverStats = (drivers: any[]): DriverStats[] => {
+    return drivers.map(driver => {
+      const completedOrders = driver.service_orders.filter((order: any) => 
+        order.status === 'completed'
+      ).length;
+      
+      // In a real app, you would calculate these from actual data
+      // Here we're using placeholder calculations
+      const totalDistance = completedOrders * Math.floor(Math.random() * 50 + 10); // Random distance per order
+      const averageRating = (3 + Math.random() * 2).toFixed(1); // Random rating between 3-5
+      
+      return {
+        driver_name: driver.name,
+        completed_orders: completedOrders,
+        total_distance: totalDistance,
+        average_rating: parseFloat(averageRating)
+      };
+    }).sort((a, b) => b.completed_orders - a.completed_orders);
   };
-
-  const fetchDriversData = async () => {
-    const { data, error } = await supabase
-      .from('drivers')
-      .select('status');
-    
-    if (error) throw error;
-    
-    // Count drivers by status
-    const statusCounts: Record<string, number> = {};
-    data?.forEach(driver => {
-      statusCounts[driver.status] = (statusCounts[driver.status] || 0) + 1;
-    });
-    
-    const driversData = Object.keys(statusCounts).map(status => ({
-      name: status === 'active' ? 'Ativos' :
-            status === 'inactive' ? 'Inativos' :
-            status === 'on_trip' ? 'Em Viagem' : status,
-      value: statusCounts[status]
-    }));
-    
-    setReportsData(prev => ({ ...prev, drivers: driversData }));
-  };
-
-  // Define chart colors
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-60">
-        <Loader2 className="h-8 w-8 text-primary animate-spin" />
-      </div>
-    );
-  }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-          <CardTitle>Relatórios de Desempenho</CardTitle>
-          <div className="flex mt-2 md:mt-0 space-x-2">
-            <Button variant="outline" size="sm">
-              <Download className="mr-2 h-4 w-4" />
-              Exportar
-            </Button>
-            <Button variant="outline" size="sm">
-              <FilterX className="mr-2 h-4 w-4" />
-              Filtros
-            </Button>
-          </div>
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-xl">Performance Reports</CardTitle>
+        <div className="flex items-center gap-4">
+          <Select
+            value={selectedCompany}
+            onValueChange={setSelectedCompany}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select company" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Companies</SelectItem>
+              {companies.map(company => (
+                <SelectItem key={company.id} value={company.id}>
+                  {company.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+          />
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs value={reportType} onValueChange={setReportType} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="general">Geral</TabsTrigger>
-            <TabsTrigger value="companies">Empresas</TabsTrigger>
-            <TabsTrigger value="drivers">Motoristas</TabsTrigger>
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        <Tabs defaultValue="orders">
+          <TabsList className="mb-4">
+            <TabsTrigger value="orders">Orders by Status</TabsTrigger>
+            <TabsTrigger value="drivers">Driver Performance</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="general">
-            <DashboardStats />
-          </TabsContent>
-          
-          <TabsContent value="companies">
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={reportsData.companies}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {reportsData.companies.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+          <TabsContent value="orders">
+            <div className="h-[400px]">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <p>Loading order statistics...</p>
+                </div>
+              ) : orderStats.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <p>No order data available for the selected period</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={orderStats} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="completed" name="Completed" fill="#10b981" />
+                    <Bar dataKey="in_progress" name="In Progress" fill="#3b82f6" />
+                    <Bar dataKey="pending" name="Pending" fill="#f59e0b" />
+                    <Bar dataKey="cancelled" name="Cancelled" fill="#ef4444" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </TabsContent>
           
           <TabsContent value="drivers">
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={reportsData.drivers}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="value" name="Motoristas" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="h-[400px]">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <p>Loading driver statistics...</p>
+                </div>
+              ) : driverStats.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <p>No driver data available for the selected period</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart 
+                    data={driverStats} 
+                    layout="vertical"
+                    margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
+                  >
+                    <XAxis type="number" />
+                    <YAxis type="category" dataKey="driver_name" />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="completed_orders" name="Completed Orders" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </TabsContent>
         </Tabs>

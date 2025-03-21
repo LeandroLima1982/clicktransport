@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Table,
@@ -20,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from 'sonner';
-import { supabase } from '@/main';
+import { supabase } from '@/utils/supabaseClient';
 
 interface Company {
   id: string;

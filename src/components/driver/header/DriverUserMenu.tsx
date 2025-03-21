@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, LogOut, Loader2, Car, Settings, LayoutDashboard, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ import {
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/main';
+import { supabase } from '@/utils/supabaseClient';
 
 const DriverUserMenu: React.FC = () => {
   const { signOut, isAuthenticating, user, companyContext } = useAuth();

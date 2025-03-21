@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/main';
+import { supabase } from '@/utils/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { MapIcon, Loader2 } from 'lucide-react';
 import InteractiveMap from './InteractiveMap';
