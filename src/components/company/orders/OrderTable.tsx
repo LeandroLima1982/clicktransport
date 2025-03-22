@@ -147,7 +147,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                 </div>
               </TableCell>
               <TableCell>
-                {order.status === 'pending' || order.status === 'created' ? (
+                {(order.status === 'pending' || order.status === 'created') ? (
                   <Select 
                     onValueChange={(value) => handleAssignDriver(order.id, value)}
                     disabled={isAssigning[order.id]}

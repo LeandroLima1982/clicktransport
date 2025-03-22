@@ -29,6 +29,7 @@ export const truncateAddress = (address: string, maxLength: number) => {
 export const translateStatus = (status: string) => {
   const statusMap: {[key: string]: string} = {
     'pending': 'Pendente',
+    'created': 'Criado',
     'assigned': 'Atribuído',
     'in_progress': 'Em progresso',
     'completed': 'Concluído',

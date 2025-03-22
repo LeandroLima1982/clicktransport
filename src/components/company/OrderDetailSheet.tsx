@@ -18,7 +18,7 @@ interface ServiceOrder {
   destination: string;
   pickup_date: string;
   delivery_date: string | null;
-  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
   notes: string | null;
   driver_id: string | null;
   vehicle_id: string | null;
@@ -64,6 +64,7 @@ const OrderDetailSheet: React.FC<OrderDetailSheetProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 border-yellow-300 text-yellow-800';
+      case 'created': return 'bg-blue-50 border-blue-300 text-blue-800';
       case 'assigned': return 'bg-blue-100 border-blue-300 text-blue-800';
       case 'in_progress': return 'bg-purple-100 border-purple-300 text-purple-800';
       case 'completed': return 'bg-green-100 border-green-300 text-green-800';
@@ -75,6 +76,7 @@ const OrderDetailSheet: React.FC<OrderDetailSheetProps> = ({
   const translateStatus = (status: string) => {
     const statusMap: {[key: string]: string} = {
       'pending': 'Pendente',
+      'created': 'Criado',
       'assigned': 'Atribuído',
       'in_progress': 'Em progresso',
       'completed': 'Concluído',
