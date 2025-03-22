@@ -90,7 +90,7 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-lg font-semibold">{vehicle.model}</CardTitle>
                     <div className="space-x-2">
-                      <Badge variant="secondary">{vehicle.type || 'Sedan'}</Badge>
+                      <Badge variant="secondary">{vehicle.type}</Badge>
                       <Button variant="ghost" size="sm">
                         <Edit className="mr-2 h-4 w-4" />
                         Editar

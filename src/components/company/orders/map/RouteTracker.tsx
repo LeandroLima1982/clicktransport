@@ -1,150 +1,107 @@
+import React from 'react';
+import { MapboxMap } from './mapUtils';
+import { Button } from '@/components/ui/button';
+import { Layers } from 'lucide-react';
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
-import { AlertCircle, MapPin, Timer, Award } from 'lucide-react';
-import { Loader2 } from 'lucide-react';
-
-interface RouteTrackerProps {
+export interface RouteTrackerProps {
   orderId: string;
   originCoords: [number, number];
   destinationCoords: [number, number];
+  useStaticMap: boolean;
+  staticMapUrl: string;
+  routeGeometry: any;
   routeDistance: number;
   routeDuration: number;
-  originAddress?: string;
-  destinationAddress?: string;
-  staticMapUrl?: string;
-  routeGeometry?: any;
-  useStaticMap?: boolean;
-  isLoading?: boolean;
+  mapInstance?: MapboxMap;
+  isLoading: boolean;
+  onToggleMapType?: () => void;
 }
 
 const RouteTracker: React.FC<RouteTrackerProps> = ({
   orderId,
   originCoords,
   destinationCoords,
-  routeDistance,
-  routeDuration,
-  originAddress,
-  destinationAddress,
+  useStaticMap,
   staticMapUrl,
   routeGeometry,
-  useStaticMap,
-  isLoading
+  routeDistance,
+  routeDuration,
+  mapInstance,
+  isLoading,
+  onToggleMapType,
 }) => {
-  const [driverLocation, setDriverLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Format distance and duration for display
+  const formatDistance = (meters: number) => {
+    if (meters < 1000) {
+      return `${meters.toFixed(0)}m`;
+    }
+    return `${(meters / 1000).toFixed(1)}km`;
+  };
 
-  useEffect(() => {
-    const fetchInitialDriverLocation = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('driver_locations')
-          .select('*')
-          .eq('order_id', orderId)
-          .single();
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}min`;
+    }
+    return `${minutes}min`;
+  };
 
-        if (error) {
-          console.error('Error fetching initial driver location:', error);
-          setError('Erro ao carregar a localização do motorista.');
-          return;
-        }
-
-        if (data) {
-          setDriverLocation({ latitude: data.latitude, longitude: data.longitude });
-        } else {
-          setError('Localização do motorista não encontrada.');
-        }
-      } catch (error) {
-        console.error('Error fetching driver location:', error);
-        setError('Erro ao carregar a localização do motorista.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInitialDriverLocation();
-  }, [orderId]);
-
-  if (isLoading || loading) {
+  if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Rastreamento da Rota</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-32">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Carregando localização do motorista...
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-64 bg-gray-100 rounded-md">
+        <p className="text-gray-500">Carregando rota...</p>
+      </div>
     );
   }
 
-  if (error) {
+  if (useStaticMap) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Rastreamento da Rota</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-32">
-          <AlertCircle className="mr-2 h-4 w-4 text-red-500" />
-          {error}
-        </CardContent>
-      </Card>
+      <div className="relative">
+        <img 
+          src={staticMapUrl} 
+          alt="Mapa da rota" 
+          className="w-full h-64 object-cover rounded-md"
+        />
+        {onToggleMapType && (
+          <Button
+            onClick={onToggleMapType}
+            variant="outline"
+            size="sm"
+            className="absolute top-2 right-2 z-10"
+          >
+            <Layers className="h-4 w-4 mr-1" />
+            Interativo
+          </Button>
+        )}
+        <div className="mt-2 flex justify-between text-sm text-gray-600">
+          <span>Distância: {formatDistance(routeDistance)}</span>
+          <span>Tempo estimado: {formatDuration(routeDuration)}</span>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Rastreamento da Rota</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {driverLocation ? (
-          <>
-            <div className="flex items-center space-x-2">
-              <MapPin className="h-4 w-4 text-gray-500" />
-               {originAddress && destinationAddress ? (
-                <>
-                  <span>{originAddress}</span>
-                  <span> - </span>
-                  <span>{destinationAddress}</span>
-                </>
-              ) : (
-                <span>Rota não especificada</span>
-              )}
-            </div>
-            <div className="flex items-center space-x-2">
-              <Timer className="h-4 w-4 text-gray-500" />
-              <span>
-                {routeDuration ? `${(routeDuration / 60).toFixed(0)} minutos` : 'Calculando...'}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Award className="h-4 w-4 text-gray-500" />
-              <span>
-                {routeDistance ? `${(routeDistance / 1000).toFixed(1)} km` : 'Calculando...'}
-              </span>
-            </div>
-            <div>
-              <p>
-                <strong>Latitude do Motorista:</strong> {driverLocation?.latitude}
-              </p>
-              <p>
-                <strong>Longitude do Motorista:</strong> {driverLocation?.longitude}
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="flex items-center justify-center h-32">
-            <AlertCircle className="mr-2 h-4 w-4 text-red-500" />
-            Localização do motorista não disponível.
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div className="relative">
+      <div id={`map-${orderId}`} className="w-full h-64 rounded-md"></div>
+      {onToggleMapType && (
+        <Button
+          onClick={onToggleMapType}
+          variant="outline"
+          size="sm"
+          className="absolute top-2 right-2 z-10"
+        >
+          <Layers className="h-4 w-4 mr-1" />
+          Estático
+        </Button>
+      )}
+      <div className="mt-2 flex justify-between text-sm text-gray-600">
+        <span>Distância: {formatDistance(routeDistance)}</span>
+        <span>Tempo estimado: {formatDuration(routeDuration)}</span>
+      </div>
+    </div>
   );
 };
 

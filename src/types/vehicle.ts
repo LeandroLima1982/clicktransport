@@ -4,8 +4,8 @@ export interface Vehicle {
   company_id: string;
   model: string;
   license_plate: string;
-  type: string;
   year: number;
+  type: string;
   status: string;
   created_at: string;
 }

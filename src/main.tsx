@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from '@/hooks/useAuth'
 import { ThemeProvider } from 'next-themes'
 import { Toaster as SonnerToaster } from 'sonner'
+import { BrowserRouter } from 'react-router-dom'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,11 +23,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" enableSystem={false}>
-        <AuthProvider>
-          <App />
-          <SonnerToaster position="top-right" closeButton />
-          <Toaster />
-        </AuthProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <App />
+            <SonnerToaster position="top-right" closeButton />
+            <Toaster />
+          </AuthProvider>
+        </BrowserRouter>
       </ThemeProvider>
     </QueryClientProvider>
   </React.StrictMode>,
