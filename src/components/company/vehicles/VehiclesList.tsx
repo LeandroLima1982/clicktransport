@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Table,
@@ -42,20 +41,20 @@ const VehiclesList: React.FC<VehiclesListProps> = ({
       case 'sedan':
       case 'hatch':
       case 'coupe':
-        return <Car className="h-5 w-5 text-gray-700" />;
+        return <Car className="h-6 w-6 text-gray-700" />;
       case 'suv':
       case 'van':
-        return <CarTaxiFront className="h-5 w-5 text-gray-700" />;
+        return <CarTaxiFront className="h-6 w-6 text-gray-700" />;
       case 'bus':
-        return <Bus className="h-5 w-5 text-gray-700" />;
+        return <Bus className="h-6 w-6 text-gray-700" />;
       case 'truck':
-        return <Truck className="h-5 w-5 text-gray-700" />;
+        return <Truck className="h-6 w-6 text-gray-700" />;
       case 'tractor':
-        return <Tractor className="h-5 w-5 text-gray-700" />;
+        return <Tractor className="h-6 w-6 text-gray-700" />;
       case 'motorcycle':
-        return <Bike className="h-5 w-5 text-gray-700" />;
+        return <Bike className="h-6 w-6 text-gray-700" />;
       default:
-        return <Car className="h-5 w-5 text-gray-700" />;
+        return <Car className="h-6 w-6 text-gray-700" />;
     }
   };
 
@@ -75,7 +74,7 @@ const VehiclesList: React.FC<VehiclesListProps> = ({
         <TableBody>
           {vehicles.map((vehicle) => (
             <TableRow key={vehicle.id}>
-              <TableCell className="pl-4">
+              <TableCell className="pl-4 flex justify-center">
                 {getVehicleIcon(vehicle.type)}
               </TableCell>
               <TableCell className="font-medium">{vehicle.model}</TableCell>

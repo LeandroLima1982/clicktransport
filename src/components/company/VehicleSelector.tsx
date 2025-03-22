@@ -26,25 +26,25 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   className = ""
 }) => {
   // Função para determinar qual ícone exibir baseado no tipo do veículo
-  const getVehicleIcon = (type?: string) => {
+  const getVehicleIcon = (type?: string, size: number = 16) => {
     switch(type?.toLowerCase()) {
       case 'sedan':
       case 'hatch':
       case 'coupe':
-        return <Car className="h-4 w-4 text-gray-700 inline-block mr-1" />;
+        return <Car className={`h-${size} w-${size} text-gray-700 inline-block mr-2`} />;
       case 'suv':
       case 'van':
-        return <CarTaxiFront className="h-4 w-4 text-gray-700 inline-block mr-1" />;
+        return <CarTaxiFront className={`h-${size} w-${size} text-gray-700 inline-block mr-2`} />;
       case 'bus':
-        return <Bus className="h-4 w-4 text-gray-700 inline-block mr-1" />;
+        return <Bus className={`h-${size} w-${size} text-gray-700 inline-block mr-2`} />;
       case 'truck':
-        return <Truck className="h-4 w-4 text-gray-700 inline-block mr-1" />;
+        return <Truck className={`h-${size} w-${size} text-gray-700 inline-block mr-2`} />;
       case 'tractor':
-        return <Tractor className="h-4 w-4 text-gray-700 inline-block mr-1" />;
+        return <Tractor className={`h-${size} w-${size} text-gray-700 inline-block mr-2`} />;
       case 'motorcycle':
-        return <Bike className="h-4 w-4 text-gray-700 inline-block mr-1" />;
+        return <Bike className={`h-${size} w-${size} text-gray-700 inline-block mr-2`} />;
       default:
-        return <Car className="h-4 w-4 text-gray-700 inline-block mr-1" />;
+        return <Car className={`h-${size} w-${size} text-gray-700 inline-block mr-2`} />;
     }
   };
 
@@ -66,8 +66,10 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
       </select>
       
       {selectedVehicleId && (
-        <div className="mt-1 text-sm text-gray-500 flex items-center">
-          {getVehicleIcon(vehicles.find(v => v.id === selectedVehicleId)?.type)}
+        <div className="mt-3 text-sm text-gray-500 flex items-center justify-start p-2 bg-gray-50 rounded-md">
+          <div className="mr-3 flex justify-center items-center">
+            {getVehicleIcon(vehicles.find(v => v.id === selectedVehicleId)?.type, 6)}
+          </div>
           <span>
             {vehicles.find(v => v.id === selectedVehicleId)?.model} ({vehicles.find(v => v.id === selectedVehicleId)?.license_plate})
           </span>

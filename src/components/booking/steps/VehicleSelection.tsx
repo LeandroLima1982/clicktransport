@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Check, Users, Car, CarTaxiFront, Bus } from 'lucide-react';
+import { Check, Users, Car, CarTaxiFront, Bus, Truck, Bike, Tractor } from 'lucide-react';
 
 export interface Vehicle {
   id: string;
@@ -38,14 +38,22 @@ const VehicleSelection: React.FC<VehicleSelectionProps> = ({
 
   // Função para obter o ícone apropriado para cada tipo de veículo
   const getVehicleIcon = (vehicleId: string) => {
-    if (vehicleId === 'sedan') {
-      return <Car className="h-5 w-5 text-primary" />;
-    } else if (vehicleId === 'suv') {
-      return <CarTaxiFront className="h-5 w-5 text-primary" />;
-    } else if (vehicleId === 'van') {
-      return <Bus className="h-5 w-5 text-primary" />;
+    switch(vehicleId.toLowerCase()) {
+      case 'sedan':
+        return <Car className="h-16 w-16 text-primary" />;
+      case 'suv':
+        return <CarTaxiFront className="h-16 w-16 text-primary" />;
+      case 'van':
+        return <Bus className="h-16 w-16 text-primary" />;
+      case 'truck':
+        return <Truck className="h-16 w-16 text-primary" />;
+      case 'motorcycle':
+        return <Bike className="h-16 w-16 text-primary" />;
+      case 'tractor':
+        return <Tractor className="h-16 w-16 text-primary" />;
+      default:
+        return <Car className="h-16 w-16 text-primary" />;
     }
-    return <Car className="h-5 w-5 text-primary" />;
   };
 
   return (
@@ -62,16 +70,13 @@ const VehicleSelection: React.FC<VehicleSelectionProps> = ({
             onClick={() => onSelectVehicle(vehicle.id)}
           >
             <div className="flex flex-col md:flex-row md:items-center">
-              <div className="md:w-1/3 mb-4 md:mb-0 md:mr-4">
-                <div className="relative">
-                  <img src={vehicle.image} alt={vehicle.name} className="rounded-md w-full h-32 object-cover" />
-                  <div className="absolute top-2 left-2 bg-white/80 p-1 rounded-full">
-                    {getVehicleIcon(vehicle.id)}
-                  </div>
+              <div className="md:w-1/4 mb-4 md:mb-0 md:mr-4 flex justify-center items-center">
+                <div className="flex items-center justify-center bg-gray-50 rounded-lg p-4 w-24 h-24">
+                  {getVehicleIcon(vehicle.id)}
                 </div>
               </div>
               
-              <div className="md:w-2/3 flex-1">
+              <div className="md:w-3/4 flex-1">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="font-semibold text-lg">{vehicle.name}</h4>
                   {selectedVehicle === vehicle.id && (
