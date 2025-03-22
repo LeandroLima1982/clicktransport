@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash } from 'lucide-react';
+import { Edit, Trash, Car, Bus, Truck, Tractor, CarTaxiFront, Bike } from 'lucide-react';
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 
 interface Vehicle {
@@ -18,6 +18,7 @@ interface Vehicle {
   license_plate: string;
   year: number | null;
   status: 'active' | 'maintenance' | 'inactive';
+  type: string;
 }
 
 interface VehiclesListProps {
@@ -35,11 +36,35 @@ const VehiclesList: React.FC<VehiclesListProps> = ({
   getStatusBadgeClass,
   translateStatus
 }) => {
+  // Função para determinar qual ícone exibir baseado no tipo do veículo
+  const getVehicleIcon = (type: string) => {
+    switch(type?.toLowerCase()) {
+      case 'sedan':
+      case 'hatch':
+      case 'coupe':
+        return <Car className="h-5 w-5 text-gray-700" />;
+      case 'suv':
+      case 'van':
+        return <CarTaxiFront className="h-5 w-5 text-gray-700" />;
+      case 'bus':
+        return <Bus className="h-5 w-5 text-gray-700" />;
+      case 'truck':
+        return <Truck className="h-5 w-5 text-gray-700" />;
+      case 'tractor':
+        return <Tractor className="h-5 w-5 text-gray-700" />;
+      case 'motorcycle':
+        return <Bike className="h-5 w-5 text-gray-700" />;
+      default:
+        return <Car className="h-5 w-5 text-gray-700" />;
+    }
+  };
+
   return (
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-12"></TableHead>
             <TableHead>Modelo</TableHead>
             <TableHead>Placa</TableHead>
             <TableHead>Ano</TableHead>
@@ -50,6 +75,9 @@ const VehiclesList: React.FC<VehiclesListProps> = ({
         <TableBody>
           {vehicles.map((vehicle) => (
             <TableRow key={vehicle.id}>
+              <TableCell className="pl-4">
+                {getVehicleIcon(vehicle.type)}
+              </TableCell>
               <TableCell className="font-medium">{vehicle.model}</TableCell>
               <TableCell>{vehicle.license_plate}</TableCell>
               <TableCell>{vehicle.year || '-'}</TableCell>

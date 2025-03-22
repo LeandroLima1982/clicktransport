@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Check, Users } from 'lucide-react';
+import { Check, Users, Car, CarTaxiFront, Bus } from 'lucide-react';
 
 export interface Vehicle {
   id: string;
@@ -36,6 +36,18 @@ const VehicleSelection: React.FC<VehicleSelectionProps> = ({
     );
   }
 
+  // Função para obter o ícone apropriado para cada tipo de veículo
+  const getVehicleIcon = (vehicleId: string) => {
+    if (vehicleId === 'sedan') {
+      return <Car className="h-5 w-5 text-primary" />;
+    } else if (vehicleId === 'suv') {
+      return <CarTaxiFront className="h-5 w-5 text-primary" />;
+    } else if (vehicleId === 'van') {
+      return <Bus className="h-5 w-5 text-primary" />;
+    }
+    return <Car className="h-5 w-5 text-primary" />;
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold mb-4">Escolha seu veículo</h3>
@@ -51,7 +63,12 @@ const VehicleSelection: React.FC<VehicleSelectionProps> = ({
           >
             <div className="flex flex-col md:flex-row md:items-center">
               <div className="md:w-1/3 mb-4 md:mb-0 md:mr-4">
-                <img src={vehicle.image} alt={vehicle.name} className="rounded-md w-full h-32 object-cover" />
+                <div className="relative">
+                  <img src={vehicle.image} alt={vehicle.name} className="rounded-md w-full h-32 object-cover" />
+                  <div className="absolute top-2 left-2 bg-white/80 p-1 rounded-full">
+                    {getVehicleIcon(vehicle.id)}
+                  </div>
+                </div>
               </div>
               
               <div className="md:w-2/3 flex-1">
