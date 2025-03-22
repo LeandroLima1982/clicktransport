@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const DriverUserMenu: React.FC = () => {
-  const { signOut, isAuthenticating, user, companyContext } = useAuth();
+  const { user, companyContext } = useAuth();
   const navigate = useNavigate();
   const [driverData, setDriverData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,24 +59,15 @@ const DriverUserMenu: React.FC = () => {
       setLocalLoading(true);
       console.log('Driver logging out...');
       
-      // First try direct logout
-      try {
-        await supabase.auth.signOut();
-        console.log('Driver direct logout successful');
-        
-        // Clear any driver-specific data
-        localStorage.removeItem('driverCompanyId');
-        localStorage.removeItem('driverCompanyName');
-        
-        toast.success('Logout realizado com sucesso');
-        navigate('/', { replace: true });
-        return;
-      } catch (directError) {
-        console.error('Direct logout failed, trying fallback:', directError);
-      }
+      // Clear any driver-specific data
+      localStorage.removeItem('driverCompanyId');
+      localStorage.removeItem('driverCompanyName');
       
-      // Fallback to using the Auth context
-      await signOut();
+      // Perform the logout
+      await supabase.auth.signOut();
+      console.log('Driver direct logout successful');
+      
+      toast.success('Logout realizado com sucesso');
       navigate('/', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
@@ -87,7 +78,7 @@ const DriverUserMenu: React.FC = () => {
   };
 
   const companyName = companyContext?.name || driverData?.company?.name;
-  const isSigningOut = isAuthenticating || localLoading;
+  const isSigningOut = localLoading;
 
   return (
     <DropdownMenu>

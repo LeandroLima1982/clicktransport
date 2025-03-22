@@ -21,9 +21,11 @@ export const signOut = async () => {
     }
     
     console.log('User signed out successfully from Supabase');
+    toast.success('Logout realizado com sucesso');
     return { error: null };
   } catch (err) {
     console.error('Exception during sign out:', err);
+    toast.error('Erro ao fazer logout');
     return { error: err as AuthError | Error };
   }
 };
