@@ -1,9 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { MapPin, AlertCircle, Timer, Award } from 'lucide-react';
+import { AlertCircle, MapPin, Timer, Award } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
 interface RouteTrackerProps {
@@ -14,6 +13,10 @@ interface RouteTrackerProps {
   routeDuration: number;
   originAddress?: string;
   destinationAddress?: string;
+  staticMapUrl?: string;
+  routeGeometry?: any;
+  useStaticMap?: boolean;
+  isLoading?: boolean;
 }
 
 const RouteTracker: React.FC<RouteTrackerProps> = ({
@@ -23,7 +26,11 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
   routeDistance,
   routeDuration,
   originAddress,
-  destinationAddress
+  destinationAddress,
+  staticMapUrl,
+  routeGeometry,
+  useStaticMap,
+  isLoading
 }) => {
   const [driverLocation, setDriverLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,7 +68,7 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
     fetchInitialDriverLocation();
   }, [orderId]);
 
-  if (loading) {
+  if (isLoading || loading) {
     return (
       <Card>
         <CardHeader>

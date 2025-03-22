@@ -35,7 +35,7 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
       
       if (error) throw error;
       
-      // Add type property if missing
+      // Add type property if missing and convert to Vehicle type
       const vehiclesWithType = data.map(vehicle => ({
         ...vehicle,
         type: vehicle.type || 'sedan'
