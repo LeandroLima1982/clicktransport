@@ -35,13 +35,13 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
       
       if (error) throw error;
       
-      // Ensure all vehicles have a type property
-      const vehiclesWithType = data.map(vehicle => ({
+      // Ensure all vehicles have the required properties
+      const typedVehicles = data.map(vehicle => ({
         ...vehicle,
         type: vehicle.type || 'sedan'  // Default to 'sedan' if type is missing
       })) as Vehicle[];
       
-      setVehicles(vehiclesWithType);
+      setVehicles(typedVehicles);
     } catch (error) {
       console.error('Error fetching vehicles:', error);
       toast.error('Erro ao carregar veículos');
