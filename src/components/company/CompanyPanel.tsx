@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import CompanyDashboard from './CompanyDashboard';
-import ServiceOrderList from './orders/ServiceOrderList';
+import ServiceOrderList from '@/components/company/orders/OrderTable';
 import VehiclesManagement from './VehiclesManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 

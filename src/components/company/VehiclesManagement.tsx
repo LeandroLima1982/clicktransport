@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,8 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Car, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import VehicleForm from './VehicleForm';
 import { Vehicle } from '@/types/vehicle';
+import VehicleForm from './vehicles/VehicleForm';
 
 interface VehiclesManagementProps {
   companyId: string;

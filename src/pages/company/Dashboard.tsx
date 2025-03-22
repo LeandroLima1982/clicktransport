@@ -107,7 +107,7 @@ const CompanyDashboard: React.FC = () => {
   
   return (
     <TransitionEffect>
-      <CompanyPanel company={companyData} />
+      <CompanyPanel companyId={companyData.id} />
     </TransitionEffect>
   );
 };
