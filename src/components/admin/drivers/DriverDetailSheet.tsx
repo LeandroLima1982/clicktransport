@@ -1,41 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
+  SheetFooter,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Phone, Mail, Building2, Calendar, Car, User, Key, RotateCw, 
-  ShieldAlert, ShieldCheck, ShieldX, Clock
-} from 'lucide-react';
-import { Driver } from '@/hooks/auth/types';
-import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { formatDate, formatRelativeDate } from '@/components/company/orders/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue 
-} from "@/components/ui/select";
+import { CheckCircle2, XCircle, Loader2, Shield } from 'lucide-react';
+import { Driver } from './types';
+import ConfirmDialog from '@/components/ui/confirm-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Company {
   id: string;
@@ -110,7 +90,6 @@ const DriverDetailSheet: React.FC<DriverDetailSheetProps> = ({
     } catch (error) {
       console.error('Error updating company:', error);
       toast.error('Erro ao atualizar empresa');
-      // Reset to original value
       setSelectedCompany(driver.company_id);
     } finally {
       setIsUpdating(false);

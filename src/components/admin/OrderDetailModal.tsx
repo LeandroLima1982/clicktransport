@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from '@/main';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MapPin, Calendar, User, Truck, FileText, Users, CreditCard } from 'lucide-react';
 import { ServiceOrder } from './ServiceOrderTable';

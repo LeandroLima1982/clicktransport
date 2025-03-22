@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { ServiceOrder } from './types';
+import { ServiceOrder } from '@/types/serviceOrder';
 import { supabase } from '@/integrations/supabase/client';
 import { validateMapboxToken, getCoordinatesFromAddress, fetchRouteData, createStaticMapUrl } from './map/mapUtils';
 import LoadingState from './map/LoadingState';
@@ -33,7 +32,6 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
     }
   }, [isOpen, orderId]);
 
-  // Initialize map or fetch coordinates for static map when order is available
   useEffect(() => {
     if (order && isOpen) {
       console.log("Order data available, preparing map:", order);
@@ -55,7 +53,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       if (error) throw error;
       
       console.log("Order data received:", data);
-      setOrder(data);
+      setOrder(data as ServiceOrder);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching order details:', error);
@@ -71,7 +69,6 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
         return;
       }
       
-      // Get coordinates from addresses
       const [originCoordinates, destinationCoordinates] = await Promise.all([
         getCoordinatesFromAddress(origin),
         getCoordinatesFromAddress(destination)
@@ -87,11 +84,9 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       setOriginCoords(originCoordinates);
       setDestinationCoords(destinationCoordinates);
       
-      // Try to initialize interactive map first
       try {
         setUseStaticMap(false);
         
-        // Get route data for display
         const routeData = await fetchRouteData(originCoordinates, destinationCoordinates);
         if (routeData) {
           setRouteGeometry(routeData.geometry);
@@ -102,11 +97,9 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
         console.error("Interactive map initialization failed, falling back to static map:", error);
         setUseStaticMap(true);
         
-        // Create static map URL
         const staticUrl = createStaticMapUrl(originCoordinates, destinationCoordinates);
         setStaticMapUrl(staticUrl);
         
-        // Get route data even with static map
         const routeData = await fetchRouteData(originCoordinates, destinationCoordinates);
         if (routeData) {
           setRouteGeometry(routeData.geometry);
@@ -121,24 +114,18 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
   };
 
   const handleRetry = () => {
-    // Reset error state
     setMapError(null);
     
-    // If we have coordinates, try to initialize the map again
     if (originCoords && destinationCoords) {
       if (useStaticMap) {
-        // If we were using static map, try interactive again
         setUseStaticMap(false);
         
-        // Create static map URL as fallback
         const staticUrl = createStaticMapUrl(originCoords, destinationCoords);
         setStaticMapUrl(staticUrl);
       } else {
-        // If we were using interactive map, try to refetch order and reinitialize
         fetchOrderDetails();
       }
     } else {
-      // If we don't have coordinates, refetch everything
       fetchOrderDetails();
     }
   };
@@ -148,7 +135,6 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
       setUseStaticMap(!useStaticMap);
       
       if (useStaticMap) {
-        // If switching to interactive map, ensure we have a static fallback
         const staticUrl = createStaticMapUrl(originCoords, destinationCoords);
         setStaticMapUrl(staticUrl);
       }

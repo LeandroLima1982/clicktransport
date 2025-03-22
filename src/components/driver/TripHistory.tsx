@@ -1,18 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { CalendarIcon, Search, MapIcon, InfoIcon, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import { Loader2, MapPin, Calendar, Clock } from 'lucide-react';
+import { Trip } from '@/types/trip';
 
 interface Trip {
   id: string;
@@ -32,38 +25,63 @@ const TripHistory: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const tripsPerPage = 5;
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchTrips();
-  }, [activeTab, currentPage]);
+    if (user) {
+      const fetchDriverId = async () => {
+        setIsLoading(true);
+        try {
+          const { data: driverData, error: driverError } = await supabase
+            .from('drivers')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
 
-  const fetchTrips = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      let query = supabase
-        .from('trips')
-        .select('*')
-        .range((currentPage - 1) * tripsPerPage, currentPage * tripsPerPage - 1)
-        .order('start_time', { ascending: false });
+          if (driverError) throw driverError;
 
-      if (activeTab !== 'all') {
-        query = query.eq('status', activeTab);
-      }
+          if (driverData) {
+            const driverId = driverData.id;
+            
+            const { data, error } = await supabase
+              .from('service_orders')
+              .select('*')
+              .eq('driver_id', driverId)
+              .eq('status', 'completed')
+              .order('created_at', { ascending: false });
+            
+            if (error) throw error;
+            
+            const tripsData = data.map(order => ({
+              id: order.id,
+              origin: order.origin,
+              destination: order.destination,
+              pickup_date: order.pickup_date,
+              status: order.status,
+              driver_id: order.driver_id,
+              company_id: order.company_id,
+              created_at: order.created_at,
+              notes: order.notes,
+              start_address: order.origin,
+              end_address: order.destination,
+              start_time: order.pickup_date,
+              end_time: order.delivery_date,
+              price: 0 // Placeholder
+            }));
+            
+            setTrips(tripsData);
+          }
+        } catch (error) {
+          console.error('Error fetching trips:', error);
+          toast.error('Erro ao carregar histórico de viagens');
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
-      const { data, error } = await query;
-
-      if (error) {
-        setError(error.message);
-      } else {
-        setTrips(data || []);
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
+      fetchDriverId();
     }
-  };
+  }, [user]);
 
   const filteredTrips = trips.filter(trip => {
     const searchStr = searchQuery.toLowerCase();

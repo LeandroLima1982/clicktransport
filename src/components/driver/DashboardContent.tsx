@@ -1,99 +1,87 @@
 
 import React from 'react';
-import StatsCards from './StatsCards';
-import { useIsMobile } from '@/hooks/use-mobile';
 import DriverDashboard from './DriverDashboard';
 import ServiceOrderList from './ServiceOrderList';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChartBar, FileText, History, MapPin, Clock } from 'lucide-react';
-import TripHistory from './TripHistory';
+import { useServiceOrders } from './hooks/useServiceOrders';
 import { useAuth } from '@/hooks/useAuth';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 const DashboardContent: React.FC = () => {
-  const isMobile = useIsMobile();
   const { user } = useAuth();
+  const [driverId, setDriverId] = useState<string | null>(null);
+  const [isLoadingDriver, setIsLoadingDriver] = useState(true);
   
-  if (isMobile) {
-    return (
-      <div className="space-y-6 pb-10">
-        <Tabs defaultValue="dashboard" className="w-full animate-fade-in">
-          <TabsList className="w-full grid grid-cols-3 mb-6 bg-[#262626] p-1 rounded-xl">
-            <TabsTrigger value="dashboard" className="rounded-lg text-white data-[state=active]:bg-[#333333] data-[state=active]:text-[#F8D748]">
-              <ChartBar className="h-4 w-4 mr-2" />
-              <span>Dashboard</span>
-            </TabsTrigger>
-            <TabsTrigger value="orders" className="rounded-lg text-white data-[state=active]:bg-[#333333] data-[state=active]:text-[#F8D748]">
-              <FileText className="h-4 w-4 mr-2" />
-              <span>Serviços</span>
-            </TabsTrigger>
-            <TabsTrigger value="history" className="rounded-lg text-white data-[state=active]:bg-[#333333] data-[state=active]:text-[#F8D748]">
-              <History className="h-4 w-4 mr-2" />
-              <span>Histórico</span>
-            </TabsTrigger>
-          </TabsList>
+  const { 
+    orders, 
+    isLoading, 
+    handleUpdateStatus
+  } = useServiceOrders(driverId);
 
-          <TabsContent value="dashboard" className="space-y-4 animate-fade-in">
-            <DriverDashboard />
-          </TabsContent>
-          
-          <TabsContent value="orders" className="space-y-4 animate-fade-in">
-            <ServiceOrderList />
-          </TabsContent>
-          
-          <TabsContent value="history" className="space-y-4 animate-fade-in">
-            <TripHistory />
-          </TabsContent>
-        </Tabs>
+  useEffect(() => {
+    if (user) {
+      fetchDriverId();
+    }
+  }, [user]);
+
+  const fetchDriverId = async () => {
+    setIsLoadingDriver(true);
+    try {
+      const { data, error } = await supabase
+        .from('drivers')
+        .select('id')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error) {
+        console.error('Erro ao buscar ID do motorista:', error);
+        toast.error('Erro ao buscar perfil do motorista');
+        return;
+      }
+
+      if (data) {
+        setDriverId(data.id);
+      } else {
+        toast.error('Perfil de motorista não encontrado');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar ID do motorista:', error);
+      toast.error('Erro ao carregar perfil do motorista');
+    } finally {
+      setIsLoadingDriver(false);
+    }
+  };
+
+  if (isLoadingDriver || isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Carregando...</span>
       </div>
     );
   }
-  
-  return (
-    <main className="flex-1 p-4 md:p-6 bg-gray-50 overflow-auto">
-      <div className="mb-6 md:mb-8 space-y-2 animate-fade-in">
-        <h1 className="text-xl md:text-2xl font-bold">
-          Bem-vindo, {user?.user_metadata.firstName || 'Motorista'}
-        </h1>
-        <p className="text-muted-foreground">Gerencie sua agenda e atribuições de serviço</p>
-      </div>
-      
-      <div className="space-y-6">
-        <div className="animate-slide-in" style={{animationDelay: '0.1s'}}>
-          <StatsCards />
-        </div>
-        
-        <div className="animate-slide-in" style={{animationDelay: '0.2s'}}>
-          <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="w-full grid grid-cols-3 mb-8">
-              <TabsTrigger value="dashboard" className="flex items-center gap-2">
-                <ChartBar className="h-4 w-4" />
-                <span className="hidden sm:inline">Dashboard</span>
-              </TabsTrigger>
-              <TabsTrigger value="orders" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Ordens de Serviço</span>
-              </TabsTrigger>
-              <TabsTrigger value="history" className="flex items-center gap-2">
-                <History className="h-4 w-4" />
-                <span className="hidden sm:inline">Histórico</span>
-              </TabsTrigger>
-            </TabsList>
 
-            <TabsContent value="dashboard" className="space-y-4">
-              <DriverDashboard />
-            </TabsContent>
-            
-            <TabsContent value="orders" className="space-y-4">
-              <ServiceOrderList />
-            </TabsContent>
-            
-            <TabsContent value="history" className="space-y-4">
-              <TripHistory />
-            </TabsContent>
-          </Tabs>
-        </div>
+  return (
+    <div className="space-y-6">
+      <DriverDashboard />
+      
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-4">Ordens de Serviço Atribuídas</h2>
+        {orders && orders.length > 0 ? (
+          <ServiceOrderList 
+            orders={orders}
+            driverId={driverId}
+            handleUpdateStatus={handleUpdateStatus}
+          />
+        ) : (
+          <div className="text-center p-8 bg-muted rounded-lg">
+            <p className="text-muted-foreground">Nenhuma ordem de serviço atribuída no momento.</p>
+          </div>
+        )}
       </div>
-    </main>
+    </div>
   );
 };
 
