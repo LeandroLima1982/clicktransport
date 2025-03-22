@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { 
   CalendarRange, 
   Truck, 
@@ -12,9 +13,11 @@ import {
   Users, 
   ClipboardList, 
   TrendingUp, 
-  AlertTriangle 
+  AlertTriangle,
+  Loader2 
 } from 'lucide-react';
 import { useCompanyQueue } from '@/hooks/useCompanyQueue';
+import { toast } from 'sonner';
 
 interface CompanyDashboardProps {
   companyId?: string;
@@ -22,6 +25,7 @@ interface CompanyDashboardProps {
 
 const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ companyId }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { companies, isLoading: queueLoading, fetchCompanies } = useCompanyQueue();
   const [stats, setStats] = useState({
     drivers: 0,
@@ -109,8 +113,35 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ companyId }) => {
     }
   };
 
+  // Handle button clicks
+  const handleViewVehiclesMap = () => {
+    // For now, we'll just show a toast and navigate to vehicles tab
+    toast.info('Funcionalidade de mapa será implementada em breve');
+    if (companyId) {
+      const event = new CustomEvent('navigate-tab', { detail: { tab: 'vehicles' } });
+      window.dispatchEvent(event);
+    }
+  };
+
+  const handleManageDrivers = () => {
+    // Navigate to the drivers tab
+    if (companyId) {
+      const event = new CustomEvent('navigate-tab', { detail: { tab: 'drivers' } });
+      window.dispatchEvent(event);
+    }
+  };
+
+  const handleNewServiceOrder = () => {
+    // Navigate to the orders tab
+    if (companyId) {
+      const event = new CustomEvent('navigate-tab', { detail: { tab: 'orders' } });
+      window.dispatchEvent(event);
+    }
+    toast.info('Funcionalidade de nova ordem será implementada em breve');
+  };
+
   if (loading) {
-    return <div className="flex justify-center items-center h-48"><Hourglass className="animate-spin h-8 w-8 text-primary" /></div>;
+    return <div className="flex justify-center items-center h-48"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
   }
 
   if (error) {
@@ -245,15 +276,15 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ companyId }) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start" variant="outline" onClick={handleViewVehiclesMap}>
                 <MapPin className="mr-2 h-4 w-4" />
                 Ver Mapa de Veículos
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start" variant="outline" onClick={handleManageDrivers}>
                 <Users className="mr-2 h-4 w-4" />
                 Gerenciar Motoristas
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start" variant="outline" onClick={handleNewServiceOrder}>
                 <ClipboardList className="mr-2 h-4 w-4" />
                 Nova Ordem de Serviço
               </Button>

@@ -1,14 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import CompanyDashboard from './CompanyDashboard';
 import ServiceOrderList from './ServiceOrderList';
 import VehiclesManagement from './VehiclesManagement';
 import DriversManagement from './DriversManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, LogOut, ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface CompanyPanelProps {
   companyId?: string;
@@ -26,6 +29,8 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (resolvedCompanyId) {
@@ -38,7 +43,7 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('companies')
-        .select('id, name')
+        .select('id, name, logo_url')
         .eq('id', resolvedCompanyId)
         .single();
 
@@ -49,9 +54,25 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
       setCompanyInfo(data);
     } catch (error) {
       console.error('Error fetching company info:', error);
+      toast.error('Erro ao carregar informações da empresa');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success('Você saiu com sucesso');
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast.error('Erro ao sair');
+    }
+  };
+
+  const handleBackToHome = () => {
+    navigate('/');
   };
 
   if (!resolvedCompanyId) {
@@ -71,10 +92,28 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
       {companyInfo && (
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center">
-            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xl mr-4">
-              {companyInfo.name.substring(0, 2).toUpperCase()}
-            </div>
+            {companyInfo.logo_url ? (
+              <img 
+                src={companyInfo.logo_url} 
+                alt={`${companyInfo.name} logo`} 
+                className="h-16 w-16 object-contain rounded-full mr-4"
+              />
+            ) : (
+              <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xl mr-4">
+                {companyInfo.name.substring(0, 2).toUpperCase()}
+              </div>
+            )}
             <h1 className="text-2xl font-bold">{companyInfo.name}</h1>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleBackToHome}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar para Home
+            </Button>
+            <Button variant="destructive" size="sm" onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
+            </Button>
           </div>
         </div>
       )}
@@ -90,7 +129,7 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
             </TabsList>
             <div className="p-4">
               <TabsContent value="dashboard">
-                <CompanyDashboard />
+                <CompanyDashboard companyId={resolvedCompanyId} />
               </TabsContent>
               <TabsContent value="orders">
                 <ServiceOrderList companyId={resolvedCompanyId} />
