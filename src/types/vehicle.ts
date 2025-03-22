@@ -7,5 +7,5 @@ export interface Vehicle {
   license_plate: string;
   status: string;
   created_at: string;
-  type: string; // Added the type property to fix the TypeScript error
+  type: string;
 }

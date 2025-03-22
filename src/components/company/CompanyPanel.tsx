@@ -20,7 +20,6 @@ interface CompanyPanelProps {
 interface CompanyInfo {
   id: string;
   name: string;
-  logo_url?: string;
 }
 
 const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
@@ -43,7 +42,7 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('companies')
-        .select('id, name, logo_url')
+        .select('id, name')
         .eq('id', resolvedCompanyId)
         .single();
 
@@ -92,17 +91,9 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
       {companyInfo && (
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center">
-            {companyInfo.logo_url ? (
-              <img 
-                src={companyInfo.logo_url} 
-                alt={`${companyInfo.name} logo`} 
-                className="h-16 w-16 object-contain rounded-full mr-4"
-              />
-            ) : (
-              <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xl mr-4">
-                {companyInfo.name.substring(0, 2).toUpperCase()}
-              </div>
-            )}
+            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xl mr-4">
+              {companyInfo.name.substring(0, 2).toUpperCase()}
+            </div>
             <h1 className="text-2xl font-bold">{companyInfo.name}</h1>
           </div>
           <div className="flex gap-2">
