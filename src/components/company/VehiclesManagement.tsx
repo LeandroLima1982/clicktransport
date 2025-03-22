@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,10 +35,10 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
       
       if (error) throw error;
       
-      // Add type property if missing and convert to Vehicle type
+      // Ensure all vehicles have a type property
       const vehiclesWithType = data.map(vehicle => ({
         ...vehicle,
-        type: vehicle.type || 'sedan'
+        type: vehicle.type || 'sedan'  // Default to 'sedan' if type is missing
       })) as Vehicle[];
       
       setVehicles(vehiclesWithType);
