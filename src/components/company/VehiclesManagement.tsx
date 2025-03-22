@@ -39,7 +39,7 @@ const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) =>
       const vehiclesWithType = data.map(vehicle => ({
         ...vehicle,
         type: vehicle.type || 'sedan'
-      }));
+      })) as Vehicle[];
       
       setVehicles(vehiclesWithType);
     } catch (error) {

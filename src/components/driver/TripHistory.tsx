@@ -1,13 +1,39 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Loader2, MapPin, Calendar, Clock } from 'lucide-react';
-import { Trip } from '@/types/trip';
+import { 
+  Loader2, 
+  MapPin, 
+  Calendar, 
+  Clock, 
+  Search, 
+  ChevronLeft, 
+  ChevronRight, 
+  Info as InfoIcon, 
+  Map as MapIcon,
+} from 'lucide-react';
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from '@/components/ui/tabs';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { formatRelativeDate } from '@/components/company/orders/utils';
 
-interface Trip {
+interface TripData {
   id: string;
   start_address: string;
   end_address: string;
@@ -18,7 +44,7 @@ interface Trip {
 }
 
 const TripHistory: React.FC = () => {
-  const [trips, setTrips] = useState<Trip[]>([]);
+  const [trips, setTrips] = useState<TripData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,20 +78,13 @@ const TripHistory: React.FC = () => {
             
             if (error) throw error;
             
-            const tripsData = data.map(order => ({
+            const tripsData: TripData[] = data.map(order => ({
               id: order.id,
-              origin: order.origin,
-              destination: order.destination,
-              pickup_date: order.pickup_date,
-              status: order.status,
-              driver_id: order.driver_id,
-              company_id: order.company_id,
-              created_at: order.created_at,
-              notes: order.notes,
               start_address: order.origin,
               end_address: order.destination,
               start_time: order.pickup_date,
-              end_time: order.delivery_date,
+              end_time: order.delivery_date || order.pickup_date,
+              status: 'completed' as const,
               price: 0 // Placeholder
             }));
             
@@ -190,7 +209,7 @@ const TripHistory: React.FC = () => {
 };
 
 interface TripTableProps {
-  trips: Trip[];
+  trips: TripData[];
   formatDate: (dateStr: string) => string;
   getStatusBadge: (status: string) => React.ReactNode;
 }
@@ -226,7 +245,7 @@ const TripTable: React.FC<TripTableProps> = ({ trips, formatDate, getStatusBadge
               </TableCell>
               <TableCell>
                 <div className="flex items-center">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <Calendar className="mr-2 h-4 w-4" />
                   {formatDate(trip.start_time)}
                 </div>
               </TableCell>

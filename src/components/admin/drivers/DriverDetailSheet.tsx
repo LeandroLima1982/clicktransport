@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -9,34 +10,36 @@ import {
 } from "@/components/ui/sheet";
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { CheckCircle2, XCircle, Loader2, Shield } from 'lucide-react';
+import { 
+  CheckCircle2, 
+  XCircle, 
+  Loader2, 
+  Key, 
+  Building2,
+  Mail,
+  Phone,
+  Car,
+  Calendar
+} from 'lucide-react';
 import { Driver } from './types';
-import ConfirmDialog from '@/components/ui/confirm-dialog';
+import { formatRelativeDate } from '@/components/company/orders/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Company {
   id: string;
   name: string;
-}
-
-interface Driver {
-  id: string;
-  name: string;
-  email: string | null;
-  phone: string | null;
-  status: string | null;
-  license_number: string | null;
-  last_login: string | null;
-  is_password_changed: boolean | null;
-  company_id: string | null;
-  vehicle_id: string | null;
-  companies?: {
-    name: string;
-    id: string;
-  } | null;
 }
 
 interface DriverDetailSheetProps {
