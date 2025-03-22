@@ -24,6 +24,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
     setError(null);
     
     try {
+      console.log('Attempting to log in with:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -32,6 +33,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
       if (error) throw error;
       
       if (data?.session) {
+        console.log('Login successful, session established');
         toast.success('Login realizado com sucesso!');
         // Small delay to ensure auth state is updated before proceeding
         setTimeout(() => {

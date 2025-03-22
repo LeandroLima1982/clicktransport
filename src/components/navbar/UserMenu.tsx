@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, LogOut, Loader2, Car, Briefcase, Shield, LayoutDashboard, Book, Home, Settings, Users, Calendar, CreditCard, TestTube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/hooks/auth/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import { toast } from 'sonner';
 
 interface UserMenuProps {
   user: any;
@@ -19,8 +20,21 @@ const UserMenu: React.FC<UserMenuProps> = ({
   handleSignOut,
   isAuthenticating
 }) => {
+  const navigate = useNavigate();
+  
+  const onSignOut = async () => {
+    try {
+      await handleSignOut();
+      navigate('/', { replace: true });
+    } catch (error) {
+      console.error('Error during sign out:', error);
+      toast.error('Erro ao fazer logout');
+    }
+  };
+  
   if (!user) {
-    return <>
+    return (
+      <>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="rounded-full px-6 btn-hover-slide">
@@ -57,10 +71,12 @@ const UserMenu: React.FC<UserMenuProps> = ({
         <Link to="/auth?register=true">
           <Button className="rounded-full px-6 btn-hover-slide mx-[8px]">Cadastrar-se</Button>
         </Link>
-      </>;
+      </>
+    );
   }
   
-  return <DropdownMenu>
+  return (
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="rounded-full px-4 btn-hover-slide flex items-center gap-2">
           <User className="h-4 w-4" />
@@ -174,7 +190,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem onClick={handleSignOut} disabled={isAuthenticating}>
+        <DropdownMenuItem onClick={onSignOut} disabled={isAuthenticating}>
           {isAuthenticating ? <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Saindo...
@@ -184,7 +200,8 @@ const UserMenu: React.FC<UserMenuProps> = ({
             </>}
         </DropdownMenuItem>
       </DropdownMenuContent>
-    </DropdownMenu>;
+    </DropdownMenu>
+  );
 };
 
 export default UserMenu;

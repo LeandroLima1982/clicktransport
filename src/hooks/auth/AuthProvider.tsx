@@ -64,20 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         setIsLoading(true);
         
-        // Get current session
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        
-        if (currentSession?.user) {
-          setSession(currentSession);
-          setUser(currentSession.user);
-          await getUserRole(currentSession.user.id);
-        } else {
-          setSession(null);
-          setUser(null);
-          setUserRole(null);
-        }
-        
-        // Subscribe to auth changes
+        // Set up the auth state change listener FIRST
         const { data } = supabase.auth.onAuthStateChange(
           async (event, updatedSession) => {
             console.log('Auth state changed:', event);
@@ -111,6 +98,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
         
         authListener = data.subscription;
+        
+        // THEN check for existing session
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        if (currentSession?.user) {
+          setSession(currentSession);
+          setUser(currentSession.user);
+          await getUserRole(currentSession.user.id);
+        } else {
+          setSession(null);
+          setUser(null);
+          setUserRole(null);
+        }
+        
         setAuthInitialized(true);
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -190,12 +191,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Handle sign-out
   const handleSignOut = async () => {
     try {
+      console.log("Starting sign out process...");
       setIsAuthenticating(true);
+      
+      // Clear any local storage related to auth
       localStorage.removeItem('driverCompanyId');
       localStorage.removeItem('driverCompanyName');
       setCompanyContext(null);
-      return await signOut();
+      
+      // Call the signOut function
+      const result = await signOut();
+      
+      if (result.error) {
+        console.error("Error during sign out:", result.error);
+        toast.error("Erro ao fazer logout");
+      } else {
+        console.log("Sign out successful");
+        // Force clear local state
+        setUser(null);
+        setSession(null);
+        setUserRole(null);
+        toast.success("Logout realizado com sucesso");
+      }
+      
+      return result;
     } catch (error) {
+      console.error("Exception during sign out:", error);
+      toast.error("Erro inesperado ao fazer logout");
       return { error: error as Error };
     } finally {
       setIsAuthenticating(false);

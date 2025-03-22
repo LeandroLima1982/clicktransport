@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider } from './hooks/useAuth';
+import { AuthProvider } from './hooks/auth/AuthProvider';
 import { Toaster } from 'sonner';
-import { useAuth } from './hooks/useAuth';
+import { useAuth } from './hooks/auth/useAuth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import Index from './pages/Index';
