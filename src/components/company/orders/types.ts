@@ -5,7 +5,7 @@ export interface ServiceOrder {
   destination: string;
   pickup_date: string;
   delivery_date: string | null;
-  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
   notes: string | null;
   driver_id: string | null;
   vehicle_id: string | null;
@@ -16,6 +16,7 @@ export interface ServiceOrder {
 export interface Driver {
   id: string;
   name: string;
+  status?: 'active' | 'inactive' | 'on_trip';
 }
 
 export interface Vehicle {
@@ -26,6 +27,7 @@ export interface Vehicle {
 
 export const statusMap: {[key: string]: string} = {
   'pending': 'Pendente',
+  'created': 'Criado',
   'assigned': 'Atribuído',
   'in_progress': 'Em progresso',
   'completed': 'Concluído',
@@ -35,6 +37,7 @@ export const statusMap: {[key: string]: string} = {
 export const getStatusBadgeClass = (status: string) => {
   switch (status) {
     case 'pending': return 'bg-yellow-100 text-yellow-800';
+    case 'created': return 'bg-blue-50 text-blue-800';
     case 'assigned': return 'bg-blue-100 text-blue-800';
     case 'in_progress': return 'bg-purple-100 text-purple-800';
     case 'completed': return 'bg-green-100 text-green-800';

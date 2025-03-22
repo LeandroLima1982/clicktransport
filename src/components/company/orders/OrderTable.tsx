@@ -102,7 +102,9 @@ const OrderTable: React.FC<OrderTableProps> = ({
   }
 
   // Filter out drivers who are inactive or already on a trip
-  const availableDrivers = drivers.filter(driver => driver.status === 'active');
+  const availableDrivers = drivers.filter(driver => 
+    driver.status === 'active' || driver.status === undefined
+  );
 
   return (
     <div className="rounded-md border overflow-hidden">
