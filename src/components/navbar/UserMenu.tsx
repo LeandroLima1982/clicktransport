@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { UserRole } from '@/hooks/auth/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserMenuProps {
   user: any;
@@ -24,11 +25,25 @@ const UserMenu: React.FC<UserMenuProps> = ({
   
   const onSignOut = async () => {
     try {
-      await handleSignOut();
+      console.log('UserMenu: Logging out user...');
+      await supabase.auth.signOut();
+      console.log('UserMenu: Sign out successful via direct Supabase call');
+      localStorage.removeItem('driverCompanyId');
+      localStorage.removeItem('driverCompanyName');
+      
+      toast.success('Logout realizado com sucesso');
       navigate('/', { replace: true });
     } catch (error) {
-      console.error('Error during sign out:', error);
+      console.error('UserMenu: Error during direct sign out:', error);
       toast.error('Erro ao fazer logout');
+      
+      // Fallback to the provided handleSignOut if direct call fails
+      try {
+        await handleSignOut();
+        navigate('/', { replace: true });
+      } catch (fallbackError) {
+        console.error('UserMenu: Fallback sign out also failed:', fallbackError);
+      }
     }
   };
   

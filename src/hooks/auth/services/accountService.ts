@@ -9,7 +9,8 @@ export const signOut = async () => {
   
   try {
     // Clear any local storage or session storage if needed
-    // localStorage.removeItem('yourAuthItem');
+    localStorage.removeItem('driverCompanyId');
+    localStorage.removeItem('driverCompanyName');
     
     // Perform the actual sign out
     const result = await supabase.auth.signOut();

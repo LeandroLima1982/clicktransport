@@ -70,10 +70,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('Auth state changed:', event);
             
             if (event === 'SIGNED_IN' && updatedSession?.user) {
+              console.log('SIGNED_IN event detected, updating user state');
               setSession(updatedSession);
               setUser(updatedSession.user);
               await getUserRole(updatedSession.user.id);
             } else if (event === 'SIGNED_OUT') {
+              console.log('SIGNED_OUT event detected, clearing user state');
               setSession(null);
               setUser(null);
               setUserRole(null);
@@ -81,11 +83,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               localStorage.removeItem('driverCompanyName');
               setCompanyContext(null);
             } else if (event === 'USER_UPDATED' && updatedSession?.user) {
+              console.log('USER_UPDATED event detected, updating user state');
               setSession(updatedSession);
               setUser(updatedSession.user);
               await getUserRole(updatedSession.user.id);
             } else if (event === 'INITIAL_SESSION') {
               // Handle initial session
+              console.log('INITIAL_SESSION event detected');
               if (updatedSession) {
                 setSession(updatedSession);
                 setUser(updatedSession.user);
@@ -103,10 +107,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
         if (currentSession?.user) {
+          console.log('Existing session found, setting user state');
           setSession(currentSession);
           setUser(currentSession.user);
           await getUserRole(currentSession.user.id);
         } else {
+          console.log('No existing session found');
           setSession(null);
           setUser(null);
           setUserRole(null);
@@ -171,13 +177,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (!result.error) {
         // Attempt to immediately log in the user after successful registration
-        if (!result.error) {
-          console.log('Sign up successful, attempting immediate login');
-          await supabase.auth.signInWithPassword({
-            email,
-            password
-          });
-        }
+        console.log('Sign up successful, attempting immediate login');
+        await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
       }
       
       return result;

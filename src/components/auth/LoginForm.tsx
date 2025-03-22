@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import LoginFormInputs from './LoginFormInputs';
 import LoginLinks from './LoginLinks';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoginFormProps {
   handleLogin: (e: React.FormEvent) => Promise<void>;
@@ -23,6 +24,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [internalLoading, setInternalLoading] = useState(false);
   const { signIn } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -48,13 +50,48 @@ const LoginForm: React.FC<LoginFormProps> = ({
       }
       
       console.log(`Login attempt: ${accountType}`);
+      setInternalLoading(true);
       
       if (handleLogin) {
         await handleLogin(e);
       } else {
+        // Try direct login with Supabase first
+        try {
+          console.log('Attempting direct Supabase login');
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+          
+          if (error) {
+            console.error('Direct login error:', error);
+            throw error;
+          }
+          
+          if (data?.session) {
+            console.log('Direct login successful');
+            toast.success('Login realizado com sucesso!');
+            
+            // Navigate to appropriate page based on URL parameters
+            const returnTo = searchParams.get('return_to');
+            setTimeout(() => {
+              if (returnTo) {
+                navigate(returnTo);
+              } else {
+                navigate('/');
+              }
+            }, 1000);
+            return;
+          }
+        } catch (directError) {
+          console.error('Direct login attempt failed:', directError);
+          // Fall back to using signIn from AuthContext
+        }
+        
+        // Use Auth Context signIn as fallback
         const { error } = await signIn(email, password);
         if (error) {
-          console.error('Login error:', error);
+          console.error('Login error from context:', error);
           if (error.message === 'You are not registered as a driver for this company') {
             toast.error('Acesso negado', { 
               description: 'Você não está registrado como motorista para esta empresa'
@@ -71,6 +108,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
           navigate(`/auth?type=${accountType}`);
         } else {
           toast.success('Login realizado com sucesso!');
+          
+          // Navigate after successful login
+          const returnTo = searchParams.get('return_to');
+          setTimeout(() => {
+            if (returnTo) {
+              navigate(returnTo);
+            } else {
+              navigate('/');
+            }
+          }, 1000);
         }
       }
     } catch (error) {
@@ -78,8 +125,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
       toast.error('Ocorreu um erro inesperado');
       // Maintain the account type in URL when redirecting after error
       navigate(`/auth?type=${accountType}`);
+    } finally {
+      setInternalLoading(false);
     }
   };
+  
+  const isButtonLoading = loading || internalLoading;
   
   return (
     <TabsContent value="login">
@@ -98,9 +149,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
           <Button 
             type="submit" 
             className="w-full rounded-full" 
-            disabled={loading}
+            disabled={isButtonLoading}
           >
-            {loading ? (
+            {isButtonLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Entrando...

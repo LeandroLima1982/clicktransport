@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, LogOut, Loader2, Car, Settings, LayoutDashboard, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,13 +13,15 @@ import {
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/utils/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const DriverUserMenu: React.FC = () => {
   const { signOut, isAuthenticating, user, companyContext } = useAuth();
   const navigate = useNavigate();
   const [driverData, setDriverData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [localLoading, setLocalLoading] = useState(false);
   
   useEffect(() => {
     if (user) {
@@ -53,17 +56,38 @@ const DriverUserMenu: React.FC = () => {
   
   const handleSignOut = async () => {
     try {
+      setLocalLoading(true);
       console.log('Driver logging out...');
+      
+      // First try direct logout
+      try {
+        await supabase.auth.signOut();
+        console.log('Driver direct logout successful');
+        
+        // Clear any driver-specific data
+        localStorage.removeItem('driverCompanyId');
+        localStorage.removeItem('driverCompanyName');
+        
+        toast.success('Logout realizado com sucesso');
+        navigate('/', { replace: true });
+        return;
+      } catch (directError) {
+        console.error('Direct logout failed, trying fallback:', directError);
+      }
+      
+      // Fallback to using the Auth context
       await signOut();
-      // Navigate immediately after calling signOut, don't wait for the promise to resolve
       navigate('/', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
-      // Error will be displayed by the AuthProvider
+      toast.error('Erro ao fazer logout');
+    } finally {
+      setLocalLoading(false);
     }
   };
 
   const companyName = companyContext?.name || driverData?.company?.name;
+  const isSigningOut = isAuthenticating || localLoading;
 
   return (
     <DropdownMenu>
@@ -114,8 +138,8 @@ const DriverUserMenu: React.FC = () => {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut} disabled={isAuthenticating}>
-          {isAuthenticating ? (
+        <DropdownMenuItem onClick={handleSignOut} disabled={isSigningOut}>
+          {isSigningOut ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Saindo...

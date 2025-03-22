@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -17,9 +18,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) {
+      setError('Por favor, preencha todos os campos');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     
@@ -35,10 +42,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
       if (data?.session) {
         console.log('Login successful, session established');
         toast.success('Login realizado com sucesso!');
+        
         // Small delay to ensure auth state is updated before proceeding
         setTimeout(() => {
-          onLoginSuccess();
-        }, 500);
+          if (onLoginSuccess) {
+            onLoginSuccess();
+          } else {
+            navigate('/');
+          }
+        }, 1000);
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -82,7 +94,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
             <button
               type="button"
               className="text-sm font-medium text-primary hover:underline"
-              onClick={() => toast.info('Função de recuperação em breve!')}
+              onClick={() => navigate('/forgot-password')}
             >
               Esqueceu a senha?
             </button>
