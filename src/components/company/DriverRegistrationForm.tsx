@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, User, Car } from "lucide-react";
+import { Loader2, User, Car, Eye, EyeOff } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +27,8 @@ const DriverRegistrationForm: React.FC<DriverRegistrationFormProps> = ({
     confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { user } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,6 +37,24 @@ const DriverRegistrationForm: React.FC<DriverRegistrationFormProps> = ({
       ...prev,
       [name]: value
     }));
+  };
+
+  const generatePassword = () => {
+    // Generate a random password of 8 characters
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      password,
+      confirmPassword: password
+    }));
+    
+    // Show the password after generating it
+    setShowPassword(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,7 +115,7 @@ const DriverRegistrationForm: React.FC<DriverRegistrationFormProps> = ({
       if (driverError) throw driverError;
       
       toast.success('Motorista cadastrado com sucesso!', {
-        description: 'O motorista agora pode fazer login usando as credenciais fornecidas.'
+        description: `O motorista agora pode fazer login usando as credenciais fornecidas. Senha provisória: ${formData.password}`
       });
       
       // Reset form
@@ -185,30 +205,58 @@ const DriverRegistrationForm: React.FC<DriverRegistrationFormProps> = ({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
+            <div className="flex justify-between items-center">
+              <Label htmlFor="password">Senha Provisória</Label>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={generatePassword}
+              >
+                Gerar Senha
+              </Button>
+            </div>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+              <button 
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
             <p className="text-xs text-muted-foreground">
-              Mínimo de 6 caracteres
+              Mínimo de 6 caracteres. O motorista usará esta senha no primeiro acesso.
             </p>
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
         </CardContent>
         

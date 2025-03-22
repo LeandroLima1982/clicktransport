@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Eye, MapPin, User, Calendar } from 'lucide-react';
+import { MoreHorizontal, Eye, MapPin, User, Calendar, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +31,6 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { assignServiceOrderToDriver } from '@/services/booking/bookingService';
 
 interface OrderTableProps {
   orders: ServiceOrder[];
@@ -65,9 +64,24 @@ const OrderTable: React.FC<OrderTableProps> = ({
       // Prevent multiple clicks
       setIsAssigning(prev => ({ ...prev, [orderId]: true }));
       
-      const { updated, error } = await assignServiceOrderToDriver(orderId, driverId);
+      console.log(`Assigning driver ${driverId} to order ${orderId}`);
       
-      if (error) throw error;
+      // Update the service order directly
+      const { data, error } = await supabase
+        .from('service_orders')
+        .update({ 
+          driver_id: driverId,
+          status: 'assigned' 
+        })
+        .eq('id', orderId)
+        .select();
+      
+      if (error) {
+        console.error('Error updating service order:', error);
+        throw error;
+      }
+      
+      console.log('Order updated successfully:', data);
       
       toast.success('Motorista atribuído com sucesso');
       onDataRefresh();
@@ -86,6 +100,9 @@ const OrderTable: React.FC<OrderTableProps> = ({
   if (orders.length === 0) {
     return <div className="text-center py-4">Nenhuma ordem de serviço encontrada</div>;
   }
+
+  // Filter out drivers who are inactive or already on a trip
+  const availableDrivers = drivers.filter(driver => driver.status === 'active');
 
   return (
     <div className="rounded-md border overflow-hidden">
@@ -128,20 +145,26 @@ const OrderTable: React.FC<OrderTableProps> = ({
                 </div>
               </TableCell>
               <TableCell>
-                {order.status === 'pending' ? (
+                {order.status === 'pending' || order.status === 'created' ? (
                   <Select 
                     onValueChange={(value) => handleAssignDriver(order.id, value)}
                     disabled={isAssigning[order.id]}
                   >
                     <SelectTrigger className="h-8 w-[180px]">
-                      <SelectValue placeholder="Atribuir motorista" />
+                      <SelectValue placeholder={isAssigning[order.id] ? 'Atribuindo...' : 'Atribuir motorista'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {drivers.map((driver) => (
-                        <SelectItem key={driver.id} value={driver.id}>
-                          {driver.name}
-                        </SelectItem>
-                      ))}
+                      {availableDrivers.length === 0 ? (
+                        <div className="p-2 text-sm text-center">
+                          Não há motoristas disponíveis
+                        </div>
+                      ) : (
+                        availableDrivers.map((driver) => (
+                          <SelectItem key={driver.id} value={driver.id}>
+                            {driver.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 ) : (
