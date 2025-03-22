@@ -437,6 +437,7 @@ export type Database = {
           license_plate: string
           model: string
           status: string
+          type: string | null
           year: number | null
         }
         Insert: {
@@ -446,6 +447,7 @@ export type Database = {
           license_plate: string
           model: string
           status?: string
+          type?: string | null
           year?: number | null
         }
         Update: {
@@ -455,6 +457,7 @@ export type Database = {
           license_plate?: string
           model?: string
           status?: string
+          type?: string | null
           year?: number | null
         }
         Relationships: [
