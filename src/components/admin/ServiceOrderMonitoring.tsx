@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, FileText, RefreshCw } from 'lucide-react';
-import { supabase } from '@/main';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ServiceOrderTable, { ServiceOrder } from './ServiceOrderTable';
 

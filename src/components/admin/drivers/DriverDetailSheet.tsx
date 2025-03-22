@@ -1,26 +1,21 @@
-
 import React, { useState } from 'react';
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Car,
-  CalendarClock,
-  License,
-  Mail,
-  Phone,
-  Building,
-  Key,
-  CheckCircle2,
-  XCircle,
-  UserCog
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Phone, Mail, Building2, Calendar, Car, User, Key, RotateCw, 
+  ShieldAlert, ShieldCheck, ShieldX, Clock
 } from 'lucide-react';
+import { Driver } from '@/hooks/auth/types';
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { formatDate, formatRelativeDate } from '@/components/company/orders/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -160,7 +155,7 @@ const DriverDetailSheet: React.FC<DriverDetailSheetProps> = ({
 
             <div className="space-y-2">
               <h3 className="text-sm font-medium flex items-center">
-                <Building className="h-4 w-4 mr-2" />
+                <Building2 className="h-4 w-4 mr-2" />
                 Empresa
               </h3>
               <Select 
@@ -203,7 +198,7 @@ const DriverDetailSheet: React.FC<DriverDetailSheetProps> = ({
 
             <div className="space-y-2">
               <h3 className="text-sm font-medium flex items-center">
-                <License className="h-4 w-4 mr-2" />
+                <Car className="h-4 w-4 mr-2" />
                 CNH
               </h3>
               <p className="text-slate-700 bg-slate-50 p-2 rounded">
@@ -213,7 +208,7 @@ const DriverDetailSheet: React.FC<DriverDetailSheetProps> = ({
 
             <div className="space-y-2">
               <h3 className="text-sm font-medium flex items-center">
-                <CalendarClock className="h-4 w-4 mr-2" />
+                <Calendar className="h-4 w-4 mr-2" />
                 Último Acesso
               </h3>
               <p className="text-slate-700 bg-slate-50 p-2 rounded">

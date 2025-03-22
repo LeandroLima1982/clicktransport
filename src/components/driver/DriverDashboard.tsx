@@ -1,8 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/main';
+import { supabase } from '@/integrations/supabase/client';
+import { Activity, Calendar, Clock, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const DriverDashboard: React.FC = () => {
   const { user } = useAuth();

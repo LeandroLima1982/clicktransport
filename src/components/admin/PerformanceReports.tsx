@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Button } from "@/components/ui/button";
 import { FilterX, Download, Loader2 } from 'lucide-react';
-import { supabase } from '@/main';
+import { supabase } from '@/integrations/supabase/client';
 import DashboardStats from './DashboardStats';
 
 const PerformanceReports: React.FC = () => {

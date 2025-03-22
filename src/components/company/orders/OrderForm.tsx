@@ -14,7 +14,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Plus, MapPin } from 'lucide-react';
-import { supabase } from '@/main';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Driver, Vehicle } from './types';
 import { fetchAddressSuggestions, getPlaceIcon, formatPlaceName } from '@/utils/mapbox';

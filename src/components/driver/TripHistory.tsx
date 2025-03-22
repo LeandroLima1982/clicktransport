@@ -1,253 +1,229 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/main';
-import { format } from 'date-fns';
-import { FileText, MapPin, Calendar } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { CalendarIcon, Search, MapIcon, InfoIcon, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 
-interface ServiceOrder {
+interface Trip {
   id: string;
-  origin: string;
-  destination: string;
-  pickup_date: string;
-  delivery_date: string | null;
-  status: string;
-  notes: string | null;
-  company_id: string;
-  company_name?: string;
+  start_address: string;
+  end_address: string;
+  start_time: string;
+  end_time: string;
+  status: 'completed' | 'cancelled' | 'scheduled';
+  price: number;
 }
 
 const TripHistory: React.FC = () => {
-  const { user } = useAuth();
-  const [orders, setOrders] = useState<ServiceOrder[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [driverId, setDriverId] = useState<string | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const tripsPerPage = 5;
 
   useEffect(() => {
-    if (user) {
-      fetchDriverId();
-    }
-  }, [user]);
+    fetchTrips();
+  }, [activeTab, currentPage]);
 
-  useEffect(() => {
-    if (driverId) {
-      fetchCompletedOrders();
-    }
-  }, [driverId]);
-
-  const fetchDriverId = async () => {
-    try {
-      const { data } = await supabase
-        .from('drivers')
-        .select('id')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (data) {
-        setDriverId(data.id);
-      }
-    } catch (error) {
-      console.error('Error fetching driver ID:', error);
-    }
-  };
-
-  const fetchCompletedOrders = async () => {
+  const fetchTrips = async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase
-        .from('service_orders')
-        .select('*, companies(name)')
-        .eq('driver_id', driverId)
-        .eq('status', 'completed')
-        .order('pickup_date', { ascending: false });
+      let query = supabase
+        .from('trips')
+        .select('*')
+        .range((currentPage - 1) * tripsPerPage, currentPage * tripsPerPage - 1)
+        .order('start_time', { ascending: false });
 
-      if (error) throw error;
+      if (activeTab !== 'all') {
+        query = query.eq('status', activeTab);
+      }
 
-      // Format the data
-      const formattedOrders = data?.map((order: any) => ({
-        ...order,
-        company_name: order.companies?.name
-      })) || [];
+      const { data, error } = await query;
 
-      setOrders(formattedOrders);
-    } catch (error) {
-      console.error('Error fetching completed orders:', error);
+      if (error) {
+        setError(error.message);
+      } else {
+        setTrips(data || []);
+      }
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Não definido';
-    try {
-      return format(new Date(dateString), 'dd/MM/yyyy HH:mm');
-    } catch (e) {
-      return dateString;
-    }
+  const filteredTrips = trips.filter(trip => {
+    const searchStr = searchQuery.toLowerCase();
+    return (
+      trip.start_address.toLowerCase().includes(searchStr) ||
+      trip.end_address.toLowerCase().includes(searchStr)
+    );
+  });
+
+  const totalPages = Math.ceil(trips.length / tripsPerPage);
+
+  const goToPreviousPage = () => {
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  };
+
+  const goToNextPage = () => {
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge variant="outline" className="bg-green-100 text-green-800">Concluído</Badge>;
+        return <Badge variant="outline">Concluída</Badge>;
       case 'cancelled':
-        return <Badge variant="outline" className="bg-red-100 text-red-800">Cancelado</Badge>;
+        return <Badge variant="destructive">Cancelada</Badge>;
+      case 'scheduled':
+        return <Badge>Agendada</Badge>;
       default:
-        return <Badge variant="outline">Desconhecido</Badge>;
+        return <Badge>{status}</Badge>;
     }
   };
 
   if (isLoading) {
-    return <div className="p-4">Carregando histórico...</div>;
+    return <p>Carregando histórico de viagens...</p>;
+  }
+
+  if (error) {
+    return <p>Erro ao carregar viagens: {error}</p>;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Histórico de Corridas</h2>
-        <div className="text-sm text-muted-foreground">
-          Total: {orders.length} corridas
+    <Card>
+      <CardHeader>
+        <CardTitle>Histórico de Viagens</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              type="search"
+              placeholder="Buscar por local..."
+              className="pl-8 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
-      </div>
 
-      {orders.length === 0 ? (
-        <div className="text-center p-8 bg-gray-50 rounded-lg">
-          <FileText className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-          <h3 className="text-lg font-medium mb-1">Sem histórico de corridas</h3>
-          <p className="text-muted-foreground">
-            Você ainda não completou nenhuma corrida. Quando finalizar alguma, ela aparecerá aqui.
-          </p>
+        <Tabs defaultValue="all" className="space-y-4" onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="all">Todas</TabsTrigger>
+            <TabsTrigger value="completed">Concluídas</TabsTrigger>
+            <TabsTrigger value="scheduled">Agendadas</TabsTrigger>
+            <TabsTrigger value="cancelled">Canceladas</TabsTrigger>
+          </TabsList>
+          <TabsContent value="all" className="space-y-2">
+            <TripTable trips={filteredTrips} formatDate={formatDate} getStatusBadge={getStatusBadge} />
+          </TabsContent>
+          <TabsContent value="completed" className="space-y-2">
+            <TripTable trips={filteredTrips} formatDate={formatDate} getStatusBadge={getStatusBadge} />
+          </TabsContent>
+          <TabsContent value="scheduled" className="space-y-2">
+            <TripTable trips={filteredTrips} formatDate={formatDate} getStatusBadge={getStatusBadge} />
+          </TabsContent>
+          <TabsContent value="cancelled" className="space-y-2">
+            <TripTable trips={filteredTrips} formatDate={formatDate} getStatusBadge={getStatusBadge} />
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex justify-between items-center mt-4">
+          <Button variant="outline" size="sm" onClick={goToPreviousPage} disabled={currentPage === 1}>
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Anterior
+          </Button>
+          <span>Página {currentPage} de {totalPages}</span>
+          <Button variant="outline" size="sm" onClick={goToNextPage} disabled={currentPage === totalPages}>
+            Próxima
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {orders.map(order => (
-            <Card key={order.id} className="overflow-hidden">
-              <CardContent className="p-0">
-                <div className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold mb-2">Ordem #{order.id.slice(0, 8)}</h3>
-                      <div className="flex items-center space-x-3 mb-1">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{formatDate(order.pickup_date)}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">Empresa: {order.company_name}</p>
-                    </div>
-                    {getStatusBadge(order.status)}
-                  </div>
-                  
-                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-start space-x-2">
-                        <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Origem:</p>
-                          <p className="text-sm">{order.origin}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Destino:</p>
-                          <p className="text-sm">{order.destination}</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-end justify-end">
-                      <Sheet>
-                        <SheetTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setSelectedOrder(order)}
-                          >
-                            Ver Detalhes
-                          </Button>
-                        </SheetTrigger>
-                        <SheetContent>
-                          {selectedOrder && (
-                            <>
-                              <SheetHeader>
-                                <SheetTitle>Detalhes da Corrida</SheetTitle>
-                                <SheetDescription>
-                                  Informações completas da ordem de serviço.
-                                </SheetDescription>
-                              </SheetHeader>
-                              
-                              <div className="mt-6 space-y-6">
-                                <div>
-                                  <h4 className="text-sm font-medium mb-2">Informações Gerais</h4>
-                                  <div className="space-y-1">
-                                    <p className="text-sm flex justify-between">
-                                      <span className="text-muted-foreground">ID:</span>
-                                      <span>{selectedOrder.id.slice(0, 8)}</span>
-                                    </p>
-                                    <p className="text-sm flex justify-between">
-                                      <span className="text-muted-foreground">Empresa:</span>
-                                      <span>{selectedOrder.company_name}</span>
-                                    </p>
-                                    <p className="text-sm flex justify-between">
-                                      <span className="text-muted-foreground">Status:</span>
-                                      <span>{getStatusBadge(selectedOrder.status)}</span>
-                                    </p>
-                                    <p className="text-sm flex justify-between">
-                                      <span className="text-muted-foreground">Data de Coleta:</span>
-                                      <span>{formatDate(selectedOrder.pickup_date)}</span>
-                                    </p>
-                                    <p className="text-sm flex justify-between">
-                                      <span className="text-muted-foreground">Data de Entrega:</span>
-                                      <span>{formatDate(selectedOrder.delivery_date)}</span>
-                                    </p>
-                                  </div>
-                                </div>
-                                
-                                <div>
-                                  <h4 className="text-sm font-medium mb-2">Localização</h4>
-                                  <div className="space-y-3">
-                                    <div>
-                                      <p className="text-sm text-muted-foreground">Origem:</p>
-                                      <p className="font-medium">{selectedOrder.origin}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-sm text-muted-foreground">Destino:</p>
-                                      <p className="font-medium">{selectedOrder.destination}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                {selectedOrder.notes && (
-                                  <div>
-                                    <h4 className="text-sm font-medium mb-2">Observações</h4>
-                                    <p>{selectedOrder.notes}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </SheetContent>
-                      </Sheet>
-                    </div>
-                  </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+interface TripTableProps {
+  trips: Trip[];
+  formatDate: (dateStr: string) => string;
+  getStatusBadge: (status: string) => React.ReactNode;
+}
+
+const TripTable: React.FC<TripTableProps> = ({ trips, formatDate, getStatusBadge }) => {
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Início</TableHead>
+            <TableHead>Fim</TableHead>
+            <TableHead>Data/Hora</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Preço</TableHead>
+            <TableHead className="text-right">Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {trips.map((trip) => (
+            <TableRow key={trip.id}>
+              <TableCell>
+                <div className="flex items-center">
+                  <MapIcon className="mr-2 h-4 w-4" />
+                  {trip.start_address}
                 </div>
-              </CardContent>
-            </Card>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <MapIcon className="mr-2 h-4 w-4" />
+                  {trip.end_address}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formatDate(trip.start_time)}
+                </div>
+              </TableCell>
+              <TableCell>{getStatusBadge(trip.status)}</TableCell>
+              <TableCell>{trip.price.toFixed(2)}</TableCell>
+              <TableCell className="text-right">
+                <Button variant="ghost" size="sm">
+                  <InfoIcon className="mr-2 h-4 w-4" />
+                  Detalhes
+                </Button>
+              </TableCell>
+            </TableRow>
           ))}
-        </div>
-      )}
+        </TableBody>
+      </Table>
     </div>
   );
 };

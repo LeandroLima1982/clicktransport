@@ -1,122 +1,112 @@
-
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/main';
-import AssignedOrderList from './AssignedOrderList';
-import AvailableOrderList from './AvailableOrderList';
-import { useServiceOrders } from './hooks/useServiceOrders';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { MapPin, Clock, Calendar, FileText, ArrowRight } from 'lucide-react';
 
-const ServiceOrderList: React.FC = () => {
-  const { user } = useAuth();
-  const [driverId, setDriverId] = useState<string | null>(null);
-  const [isLoadingDriver, setIsLoadingDriver] = useState(true);
-  
-  const { 
-    orders, 
-    isLoading, 
-    error,
-    handleAcceptOrder, 
-    handleRejectOrder, 
-    handleUpdateStatus,
-    refreshOrders
-  } = useServiceOrders(driverId);
+interface ServiceOrder {
+  id: string;
+  origin: string;
+  destination: string;
+  pickup_date: string;
+  status: string;
+}
 
-  useEffect(() => {
-    if (user) {
-      fetchDriverId();
-    }
-  }, [user]);
+interface ServiceOrderListProps {
+  orders: ServiceOrder[];
+  driverId: string | null;
+  handleUpdateStatus: (orderId: string, newStatus: string) => Promise<void>;
+}
 
-  const fetchDriverId = async () => {
-    setIsLoadingDriver(true);
+const ServiceOrderList: React.FC<ServiceOrderListProps> = ({ orders, driverId, handleUpdateStatus }) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleStartTrip = async (orderId: string) => {
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('drivers')
-        .select('id')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (error) {
-        console.error('Erro ao buscar ID do motorista:', error);
-        toast.error('Erro ao buscar perfil do motorista');
-        return;
-      }
-
-      if (data) {
-        setDriverId(data.id);
-        console.log('ID do motorista encontrado:', data.id);
-      } else {
-        toast.error('Perfil de motorista não encontrado');
-      }
+      await handleUpdateStatus(orderId, 'in_progress');
+      toast.success('Viagem iniciada!');
     } catch (error) {
-      console.error('Erro ao buscar ID do motorista:', error);
-      toast.error('Erro ao carregar perfil do motorista');
+      console.error('Error starting trip:', error);
+      toast.error('Erro ao iniciar viagem');
     } finally {
-      setIsLoadingDriver(false);
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (error) {
-      toast.error(error);
+  const handleCompleteTrip = async (orderId: string) => {
+    setIsLoading(true);
+    try {
+      await handleUpdateStatus(orderId, 'completed');
+      toast.success('Viagem concluída!');
+    } catch (error) {
+      console.error('Error completing trip:', error);
+      toast.error('Erro ao concluir viagem');
+    } finally {
+      setIsLoading(false);
     }
-  }, [error]);
-
-  const isLoadingAny = isLoading || isLoadingDriver;
-
-  const handleRefresh = () => {
-    refreshOrders();
-    toast.success('Lista atualizada');
   };
 
-  if (isLoadingAny) {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  if (!orders || orders.length === 0) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Carregando ordens de serviço...</span>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Nenhuma ordem atribuída</CardTitle>
+          <CardContent>Não há ordens de serviço atribuídas a você no momento.</CardContent>
+        </CardHeader>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Ordens de Serviço</h2>
-        <button 
-          onClick={handleRefresh}
-          className="text-sm text-primary hover:underline"
-        >
-          Atualizar
-        </button>
-      </div>
-      
-      <Tabs defaultValue="assigned">
-        <TabsList>
-          <TabsTrigger value="assigned">Minhas Corridas</TabsTrigger>
-          <TabsTrigger value="available">Disponíveis</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="assigned" className="mt-4">
-          <AssignedOrderList 
-            orders={orders} 
-            driverId={driverId}
-            handleUpdateStatus={handleUpdateStatus}
-          />
-        </TabsContent>
-        
-        <TabsContent value="available" className="mt-4">
-          <AvailableOrderList 
-            orders={orders}
-            driverId={driverId}
-            handleAcceptOrder={handleAcceptOrder}
-            handleRejectOrder={handleRejectOrder}
-            handleUpdateStatus={handleUpdateStatus}
-          />
-        </TabsContent>
-      </Tabs>
+    <div className="grid gap-4">
+      {orders.map((order) => (
+        <Card key={order.id}>
+          <CardHeader>
+            <CardTitle>
+              <MapPin className="mr-2 h-4 w-4 inline-block" />
+              {order.origin} - {order.destination}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-1">
+            <p>
+              <Calendar className="mr-2 h-4 w-4 inline-block" />
+              Data de Coleta: {formatDate(order.pickup_date)}
+            </p>
+            <p>
+              <FileText className="mr-2 h-4 w-4 inline-block" />
+              Status: <Badge variant="secondary">{order.status}</Badge>
+            </p>
+          </CardContent>
+          <CardFooter className="flex justify-end">
+            {order.status === 'pending' && (
+              <Button onClick={() => handleStartTrip(order.id)} disabled={isLoading}>
+                {isLoading ? 'Iniciando...' : 'Iniciar Viagem'}
+                <ArrowRight className="ml-2 h-4 w-4 inline-block" />
+              </Button>
+            )}
+            {order.status === 'in_progress' && (
+              <Button onClick={() => handleCompleteTrip(order.id)} disabled={isLoading}>
+                {isLoading ? 'Concluindo...' : 'Concluir Viagem'}
+                <ArrowRight className="ml-2 h-4 w-4 inline-block" />
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      ))}
     </div>
   );
 };

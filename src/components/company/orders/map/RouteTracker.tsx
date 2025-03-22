@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/main';
 import { Button } from '@/components/ui/button';
-import { MapIcon, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Compass, Map } from 'lucide-react';
 import InteractiveMap from './InteractiveMap';
 import StaticMap from './StaticMap';
 import RouteInfo from './RouteInfo';
@@ -54,7 +53,6 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
   const [heading, setHeading] = useState<number | undefined>(undefined);
   const [locationUpdateTime, setLocationUpdateTime] = useState<Date | null>(null);
 
-  // Set up realtime subscription
   useEffect(() => {
     console.log(`Setting up realtime subscription for order ${orderId}`);
     
@@ -73,22 +71,15 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
           const newLocation = payload.new as DriverLocation;
           
           if (newLocation) {
-            // Update current location
             setCurrentLocation([newLocation.longitude, newLocation.latitude]);
             
-            // Update heading if available
             if (newLocation.heading !== undefined) {
               setHeading(newLocation.heading);
             }
             
-            // Update location timestamp
             setLocationUpdateTime(new Date());
             
-            // Calculate remaining distance and duration
-            // This is a simplified estimation - in a real app you might
-            // want to call a directions API to get more accurate values
             if (destinationCoords && routeDistance && routeDuration) {
-              // Calculate what percentage of the route is completed
               const totalDistance = calculateDistance(
                 originCoords[1], originCoords[0],
                 destinationCoords[1], destinationCoords[0]
@@ -104,11 +95,9 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
                 destinationCoords[1], destinationCoords[0]
               );
               
-              // Simple ratio calculation
               const progressRatio = distanceFromStart / totalDistance;
               const remainingRatio = distanceToDestination / totalDistance;
               
-              // Update remaining values
               setRemainingDistance(routeDistance * remainingRatio);
               setRemainingDuration(routeDuration * remainingRatio);
             }
@@ -117,15 +106,13 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
       )
       .subscribe();
     
-    // Clean up subscription
     return () => {
       supabase.removeChannel(channel);
     };
   }, [orderId, originCoords, destinationCoords, routeDistance, routeDuration]);
 
-  // Calculate distance between two coordinates using Haversine formula
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; // Radius of the earth in km
+    const R = 6371;
     const dLat = deg2rad(lat2 - lat1);
     const dLon = deg2rad(lon2 - lon1);
     const a = 
@@ -133,10 +120,10 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
       Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
       Math.sin(dLon/2) * Math.sin(dLon/2); 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-    const d = R * c; // Distance in km
+    const d = R * c;
     return d;
   };
-  
+
   const deg2rad = (deg: number) => {
     return deg * (Math.PI/180);
   };
@@ -183,12 +170,12 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
         >
           {useStaticMap ? (
             <>
-              <MapIcon className="h-4 w-4" />
+              <Map className="h-4 w-4" />
               Tentar mapa interativo
             </>
           ) : (
             <>
-              <Loader2 className="h-4 w-4" />
+              <Compass className="h-4 w-4" />
               Usar mapa estático
             </>
           )}

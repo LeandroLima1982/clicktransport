@@ -1,247 +1,212 @@
-
 import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Car, Plus } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/main';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Plus, RefreshCw, Truck, Edit, Trash2 } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import VehicleForm from './VehicleForm';
 
-// Import components
-import VehiclesList from './vehicles/VehiclesList';
-import VehicleForm from './vehicles/VehicleForm';
-import EmptyVehicleState from './vehicles/EmptyVehicleState';
-import VehicleDeleteDialog from './vehicles/VehicleDeleteDialog';
-import VehicleSearchBar from './vehicles/VehicleSearchBar';
-
-// Import types and utils
-import { Vehicle, VehicleForm as VehicleFormType } from './vehicles/types';
-import { getStatusBadgeClass, translateStatus } from './vehicles/utils';
-import { Button } from '@/components/ui/button';
-
-interface VehiclesManagementProps {
-  companyId: string;
+interface Vehicle {
+  id: string;
+  company_id: string;
+  model: string;
+  license_plate: string;
+  type: string;
+  status: string;
 }
 
-const VehiclesManagement: React.FC<VehiclesManagementProps> = ({ companyId }) => {
-  const { user } = useAuth();
+const VehiclesManagement: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [vehicleToDelete, setVehicleToDelete] = useState<string | null>(null);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-  
-  // Form state
-  const [vehicleForm, setVehicleForm] = useState<VehicleFormType>({
-    id: '',
-    model: '',
-    license_plate: '',
-    year: '',
-    status: 'active'
-  });
+  const [isCreating, setIsCreating] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     fetchVehicles();
-  }, [companyId]);
+  }, []);
 
   const fetchVehicles = async () => {
     setIsLoading(true);
     try {
-      if (companyId) {
-        const { data, error } = await supabase
-          .from('vehicles')
-          .select('*')
-          .eq('company_id', companyId);
-        
-        if (error) throw error;
-        
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .order('model');
+
+      if (error) {
+        console.error('Error fetching vehicles:', error);
+        toast.error('Failed to load vehicles');
+      } else {
         setVehicles(data || []);
       }
-    } catch (error) {
-      console.error('Error fetching vehicles:', error);
-      toast.error('Erro ao carregar veículos');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setVehicleForm({ ...vehicleForm, [name]: value });
-  };
-
-  const handleEditVehicle = (vehicle: Vehicle) => {
-    setVehicleForm({
-      id: vehicle.id,
-      model: vehicle.model,
-      license_plate: vehicle.license_plate,
-      year: vehicle.year?.toString() || '',
-      status: vehicle.status
-    });
-    setIsEditing(true);
-    setIsSheetOpen(true);
-  };
-
-  const resetForm = () => {
-    setVehicleForm({
-      id: '',
-      model: '',
-      license_plate: '',
-      year: '',
-      status: 'active'
-    });
+  const handleCreate = () => {
+    setSelectedVehicle(null);
     setIsEditing(false);
+    setIsCreating(true);
   };
 
-  const handleSaveVehicle = async () => {
-    try {
-      // Validate form
-      if (!vehicleForm.model || !vehicleForm.license_plate) {
-        toast.error('Modelo e placa são obrigatórios');
-        return;
-      }
-      
-      const vehicleData = {
-        model: vehicleForm.model,
-        license_plate: vehicleForm.license_plate,
-        year: vehicleForm.year ? parseInt(vehicleForm.year) : null,
-        status: vehicleForm.status as 'active' | 'maintenance' | 'inactive'
-      };
-      
-      if (isEditing) {
-        // Update vehicle
+  const handleEdit = (vehicle: Vehicle) => {
+    setSelectedVehicle(vehicle);
+    setIsEditing(true);
+    setIsCreating(true);
+  };
+
+  const handleDelete = async (vehicleId: string) => {
+    if (window.confirm("Are you sure you want to delete this vehicle?")) {
+      try {
         const { error } = await supabase
           .from('vehicles')
-          .update(vehicleData)
-          .eq('id', vehicleForm.id);
-        
-        if (error) throw error;
-        
-        toast.success('Veículo atualizado com sucesso');
-      } else {
-        // Create new vehicle
-        const { error } = await supabase
-          .from('vehicles')
-          .insert([
-            {
-              ...vehicleData,
-              company_id: companyId
-            }
-          ]);
-        
-        if (error) throw error;
-        
-        toast.success('Veículo cadastrado com sucesso');
+          .delete()
+          .eq('id', vehicleId);
+
+        if (error) {
+          console.error('Error deleting vehicle:', error);
+          toast.error('Failed to delete vehicle');
+        } else {
+          toast.success('Vehicle deleted successfully');
+          fetchVehicles();
+        }
+      } catch (error) {
+        console.error('Error deleting vehicle:', error);
+        toast.error('Failed to delete vehicle');
       }
-      
-      // Reset form and refresh data
-      resetForm();
-      setIsSheetOpen(false);
-      fetchVehicles();
-      
-    } catch (error) {
-      console.error('Error saving vehicle:', error);
-      toast.error('Erro ao salvar veículo');
     }
   };
 
-  const handleDeleteVehicle = async () => {
-    if (!vehicleToDelete) return;
-    
+  const handleStatusChange = async (vehicleId: string, newStatus: string) => {
     try {
       const { error } = await supabase
         .from('vehicles')
-        .delete()
-        .eq('id', vehicleToDelete);
-      
-      if (error) throw error;
-      
-      toast.success('Veículo removido com sucesso');
-      setVehicleToDelete(null);
-      fetchVehicles();
+        .update({ status: newStatus })
+        .eq('id', vehicleId);
+
+      if (error) {
+        console.error('Error updating vehicle status:', error);
+        toast.error('Failed to update vehicle status');
+      } else {
+        toast.success('Vehicle status updated successfully');
+        fetchVehicles();
+      }
     } catch (error) {
-      console.error('Error deleting vehicle:', error);
-      toast.error('Erro ao remover veículo');
+      console.error('Error updating vehicle status:', error);
+      toast.error('Failed to update vehicle status');
     }
   };
 
-  const handleOpenNewVehicleForm = () => {
-    resetForm();
-    setIsSheetOpen(true);
-  }
+  const handleFormClose = () => {
+    setIsCreating(false);
+    setSelectedVehicle(null);
+  };
 
-  const filteredVehicles = vehicles.filter(vehicle => 
-    vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehicle.license_plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (vehicle.year && vehicle.year.toString().includes(searchTerm))
-  );
+  const handleFormSuccess = () => {
+    fetchVehicles();
+    setIsCreating(false);
+    setSelectedVehicle(null);
+  };
 
   return (
-    <div>
-      {/* Search and Add New Vehicle */}
-      <VehicleSearchBar 
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onNewVehicleClick={handleOpenNewVehicleForm}
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle>Vehicles Management</CardTitle>
+          <div className="flex space-x-2">
+            <Button variant="outline" size="sm" onClick={fetchVehicles} disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh
+                </>
+              )}
+            </Button>
+            <Button size="sm" onClick={handleCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Vehicle
+            </Button>
+          </div>
+        </div>
+        <CardDescription>Manage your company vehicles</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Model</TableHead>
+                <TableHead>License Plate</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  </TableCell>
+                </TableRow>
+              ) : vehicles.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    No vehicles found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                vehicles.map((vehicle) => (
+                  <TableRow key={vehicle.id}>
+                    <TableCell>{vehicle.model}</TableCell>
+                    <TableCell>{vehicle.license_plate}</TableCell>
+                    <TableCell>{vehicle.type}</TableCell>
+                    <TableCell>
+                      <Badge variant={vehicle.status === 'active' ? 'default' : 'secondary'}>
+                        {vehicle.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(vehicle)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(vehicle.id)}>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+      <VehicleForm
+        open={isCreating}
+        onOpenChange={handleFormClose}
+        vehicle={selectedVehicle}
+        isEditing={isEditing}
+        onSuccess={handleFormSuccess}
       />
-      
-      {/* Delete Confirmation Dialog */}
-      <VehicleDeleteDialog 
-        isOpen={!!vehicleToDelete} 
-        onClose={() => setVehicleToDelete(null)} 
-        onConfirm={handleDeleteVehicle} 
-      />
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center">
-            <Car className="mr-2 h-5 w-5" />
-            Veículos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="h-40 flex items-center justify-center">
-              <p>Carregando...</p>
-            </div>
-          ) : filteredVehicles.length === 0 ? (
-            <div className="h-40 flex items-center justify-center flex-col">
-              <p className="text-muted-foreground mb-2">Nenhum veículo encontrado</p>
-              <Button variant="outline" onClick={handleOpenNewVehicleForm}>
-                <Plus className="mr-2 h-4 w-4" />
-                Cadastrar Veículo
-              </Button>
-            </div>
-          ) : (
-            <VehiclesList 
-              vehicles={filteredVehicles}
-              onEdit={handleEditVehicle}
-              onDelete={setVehicleToDelete}
-              getStatusBadgeClass={getStatusBadgeClass}
-              translateStatus={translateStatus}
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Add/Edit Vehicle Sheet */}
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent>
-          <VehicleForm 
-            isEditing={isEditing}
-            vehicleForm={vehicleForm}
-            handleInputChange={handleInputChange}
-            handleSaveVehicle={handleSaveVehicle}
-          />
-        </SheetContent>
-      </Sheet>
-    </div>
+    </Card>
   );
 };
 

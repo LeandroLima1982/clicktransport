@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { ServiceOrder } from './types';
-import { supabase } from '@/main';
+import { supabase } from '@/integrations/supabase/client';
 import { validateMapboxToken, getCoordinatesFromAddress, fetchRouteData, createStaticMapUrl } from './map/mapUtils';
 import LoadingState from './map/LoadingState';
 import ErrorState from './map/ErrorState';
