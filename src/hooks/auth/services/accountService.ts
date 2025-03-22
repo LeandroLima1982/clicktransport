@@ -8,8 +8,9 @@ export const signOut = async () => {
   console.log('Attempting to sign out user');
   
   try {
-    // Clear any local storage or session storage if needed
-    // localStorage.removeItem('yourAuthItem');
+    // Clear any local storage items related to user state
+    localStorage.removeItem('lastAuthRoute');
+    localStorage.removeItem('userRole');
     
     // Perform the actual sign out
     const result = await supabase.auth.signOut();
@@ -58,5 +59,48 @@ export const resetPassword = async (email: string) => {
       description: 'Ocorreu um erro ao processar sua solicitação.'
     });
     return { error: err as AuthError };
+  }
+};
+
+// Update company status
+export const updateCompanyStatus = async (companyId: string, status: string) => {
+  try {
+    const { error } = await supabase
+      .from('companies')
+      .update({ status })
+      .eq('id', companyId);
+    
+    if (error) throw error;
+    
+    toast.success(`Status da empresa atualizado para ${status}`);
+    return { error: null };
+  } catch (error: any) {
+    console.error('Error updating company status:', error);
+    toast.error('Erro ao atualizar status da empresa', {
+      description: error.message
+    });
+    return { error };
+  }
+};
+
+// Send password reset email to a specific user (admin function)
+export const sendAdminPasswordReset = async (email: string) => {
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    
+    if (error) throw error;
+    
+    toast.success('Email de redefinição enviado com sucesso', {
+      description: `Um email foi enviado para ${email}`
+    });
+    return { error: null };
+  } catch (error: any) {
+    console.error('Error sending password reset:', error);
+    toast.error('Erro ao enviar email de redefinição', {
+      description: error.message
+    });
+    return { error };
   }
 };

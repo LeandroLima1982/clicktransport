@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, MoreHorizontal, UserPlus } from 'lucide-react';
+import { FileText, MoreHorizontal, UserPlus, Trash2, Edit, CheckCircle, AlertCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,8 +19,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
-import { supabase } from '@/main';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Company {
   id: string;
@@ -35,20 +45,22 @@ interface CompanyManagementListProps {
   companies: Company[];
   isLoading: boolean;
   onRefreshData: () => void;
+  onViewDetail: (company: Company) => void;
 }
 
 const CompanyManagementList: React.FC<CompanyManagementListProps> = ({
   companies,
   isLoading,
-  onRefreshData
+  onRefreshData,
+  onViewDetail
 }) => {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
 
   const handleViewDetails = (company: Company) => {
-    setSelectedCompany(company);
-    // In the future, this could open a modal with detailed information
-    toast.info(`Detalhes da empresa: ${company.name}`);
+    onViewDetail(company);
   };
 
   const handleStatusChange = async (company: Company, newStatus: string) => {
@@ -69,6 +81,50 @@ const CompanyManagementList: React.FC<CompanyManagementListProps> = ({
     } finally {
       setUpdatingStatus(false);
     }
+  };
+
+  const handleDeleteCompany = async () => {
+    if (!companyToDelete) return;
+    
+    try {
+      // Check if company has associated data
+      const { count: ordersCount, error: ordersError } = await supabase
+        .from('service_orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', companyToDelete.id);
+      
+      if (ordersError) throw ordersError;
+      
+      if (ordersCount && ordersCount > 0) {
+        toast.error('Não é possível excluir esta empresa', {
+          description: 'Existem ordens de serviço associadas a esta empresa.'
+        });
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', companyToDelete.id);
+      
+      if (error) throw error;
+      
+      toast.success('Empresa excluída com sucesso');
+      onRefreshData();
+    } catch (error: any) {
+      console.error('Error deleting company:', error);
+      toast.error('Falha ao excluir empresa', {
+        description: error.message
+      });
+    } finally {
+      setCompanyToDelete(null);
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  const openDeleteDialog = (company: Company) => {
+    setCompanyToDelete(company);
+    setDeleteDialogOpen(true);
   };
 
   const translateStatus = (status: string) => {
@@ -122,80 +178,143 @@ const CompanyManagementList: React.FC<CompanyManagementListProps> = ({
   }
 
   return (
-    <div className="rounded-md border overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nome</TableHead>
-            <TableHead>CNPJ</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Data Cadastro</TableHead>
-            <TableHead>Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {companies.map(company => (
-            <TableRow key={company.id}>
-              <TableCell className="font-medium">{company.name}</TableCell>
-              <TableCell>{company.cnpj || '-'}</TableCell>
-              <TableCell>{getStatusBadge(company.status)}</TableCell>
-              <TableCell>{formatDate(company.created_at)}</TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleViewDetails(company)}>
-                      <FileText className="mr-2 h-4 w-4" />
-                      Ver Detalhes
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
+    <>
+      <div className="rounded-md border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead>CNPJ</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Data Cadastro</TableHead>
+              <TableHead>Ações Rápidas</TableHead>
+              <TableHead className="text-right">Opções</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {companies.map(company => (
+              <TableRow key={company.id}>
+                <TableCell className="font-medium">{company.name}</TableCell>
+                <TableCell>{company.cnpj || '-'}</TableCell>
+                <TableCell>{getStatusBadge(company.status)}</TableCell>
+                <TableCell>{formatDate(company.created_at)}</TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
                     {company.status !== 'active' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(company, 'active')}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleStatusChange(company, 'active')} 
                         disabled={updatingStatus}
+                        className="h-8 w-8 text-green-600"
+                        title="Ativar"
                       >
-                        <Badge className="bg-green-100 text-green-800 mr-2">Ativar</Badge>
-                      </DropdownMenuItem>
-                    )}
-                    {company.status !== 'pending' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(company, 'pending')}
-                        disabled={updatingStatus}
-                      >
-                        <Badge className="bg-yellow-100 text-yellow-800 mr-2">Marcar como Pendente</Badge>
-                      </DropdownMenuItem>
-                    )}
-                    {company.status !== 'inactive' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(company, 'inactive')}
-                        disabled={updatingStatus}
-                      >
-                        <Badge className="bg-gray-100 text-gray-800 mr-2">Inativar</Badge>
-                      </DropdownMenuItem>
+                        <CheckCircle className="h-4 w-4" />
+                      </Button>
                     )}
                     {company.status !== 'suspended' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(company, 'suspended')}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleStatusChange(company, 'suspended')} 
                         disabled={updatingStatus}
+                        className="h-8 w-8 text-red-600"
+                        title="Suspender"
                       >
-                        <Badge className="bg-red-100 text-red-800 mr-2">Suspender</Badge>
-                      </DropdownMenuItem>
+                        <AlertCircle className="h-4 w-4" />
+                      </Button>
                     )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleViewDetails(company)}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Ver Detalhes
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Editar Empresa
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
+                      {company.status !== 'active' && (
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(company, 'active')}
+                          disabled={updatingStatus}
+                        >
+                          <Badge className="bg-green-100 text-green-800 mr-2">Ativar</Badge>
+                        </DropdownMenuItem>
+                      )}
+                      {company.status !== 'pending' && (
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(company, 'pending')}
+                          disabled={updatingStatus}
+                        >
+                          <Badge className="bg-yellow-100 text-yellow-800 mr-2">Marcar como Pendente</Badge>
+                        </DropdownMenuItem>
+                      )}
+                      {company.status !== 'inactive' && (
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(company, 'inactive')}
+                          disabled={updatingStatus}
+                        >
+                          <Badge className="bg-gray-100 text-gray-800 mr-2">Inativar</Badge>
+                        </DropdownMenuItem>
+                      )}
+                      {company.status !== 'suspended' && (
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(company, 'suspended')}
+                          disabled={updatingStatus}
+                        >
+                          <Badge className="bg-red-100 text-red-800 mr-2">Suspender</Badge>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        className="text-red-500"
+                        onClick={() => openDeleteDialog(company)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir Empresa
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a empresa "{companyToDelete?.name}"? Esta ação não poderá ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteCompany}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

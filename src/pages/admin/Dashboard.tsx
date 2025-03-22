@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from '@/hooks/useAuth';
 import TransitionEffect from '@/components/TransitionEffect';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,14 +13,19 @@ import DashboardStats from '@/components/admin/DashboardStats';
 import QueueDiagnostics from '@/components/admin/QueueDiagnostics';
 import TripRateSettings from '@/components/admin/TripRateSettings';
 import AppearanceSettings from '@/components/admin/AppearanceSettings';
-import { FileText, Settings, UserCheck, ChartBar, Loader2, LogOut, RefreshCw, TestTube, DollarSign, Paintbrush } from 'lucide-react';
+import { FileText, Settings, UserCheck, ChartBar, Loader2, LogOut, RefreshCw, TestTube, DollarSign, Paintbrush, Database, Bell, HelpCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useCompanyQueue } from '@/hooks/useCompanyQueue';
 
 const AdminDashboard: React.FC = () => {
   const { user, userRole, signOut, isAuthenticating } = useAuth();
-  const [activeTab, setActiveTab] = useState("overview");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const queryParams = new URLSearchParams(location.search);
+  const tabFromQuery = queryParams.get('tab');
+  
+  const [activeTab, setActiveTab] = useState(tabFromQuery || "overview");
   const [dashboardStats, setDashboardStats] = useState({
     companies: 0,
     drivers: 0,
@@ -29,6 +34,32 @@ const AdminDashboard: React.FC = () => {
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { fixQueuePositions, resetQueue } = useCompanyQueue();
+
+  // Effect to handle URL query params for tab
+  useEffect(() => {
+    if (tabFromQuery) {
+      setActiveTab(tabFromQuery);
+    }
+  }, [tabFromQuery]);
+
+  // Effect to update URL when tab changes
+  useEffect(() => {
+    const newParams = new URLSearchParams(location.search);
+    if (activeTab === "overview") {
+      newParams.delete('tab');
+    } else {
+      newParams.set('tab', activeTab);
+    }
+    
+    const newSearch = newParams.toString();
+    const newPath = newSearch ? `${location.pathname}?${newSearch}` : location.pathname;
+    
+    if (location.search !== `?${newSearch}` && location.search !== '' && newSearch === '') {
+      navigate(newPath, { replace: true });
+    } else if (location.search !== `?${newSearch}`) {
+      navigate(newPath, { replace: true });
+    }
+  }, [activeTab, location, navigate]);
 
   useEffect(() => {
     fetchDashboardStats();
@@ -113,8 +144,8 @@ const AdminDashboard: React.FC = () => {
             </Button>
             <Button asChild variant="outline">
               <Link to="/admin/database-setup">
-                <Settings className="mr-2 h-4 w-4" />
-                Configuração do Banco
+                <Database className="mr-2 h-4 w-4" />
+                Banco de Dados
               </Link>
             </Button>
             <Button asChild variant="outline">
@@ -135,37 +166,53 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-          <TabsList className="grid w-full grid-cols-1 md:grid-cols-6 h-auto">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-8 h-auto">
             <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ChartBar className="h-4 w-4 mr-2" />
-              Visão Geral
+              <span className="hidden sm:inline">Visão Geral</span>
+              <span className="sm:hidden">Geral</span>
             </TabsTrigger>
             <TabsTrigger value="companies" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <UserCheck className="h-4 w-4 mr-2" />
-              Empresas
+              <span className="hidden sm:inline">Empresas</span>
+              <span className="sm:hidden">Empresas</span>
             </TabsTrigger>
             <TabsTrigger value="orders" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileText className="h-4 w-4 mr-2" />
-              Ordens de Serviço
+              <span className="hidden sm:inline">Ordens de Serviço</span>
+              <span className="sm:hidden">Ordens</span>
+            </TabsTrigger>
+            <TabsTrigger value="drivers" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <UserCheck className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Motoristas</span>
+              <span className="sm:hidden">Motoristas</span>
             </TabsTrigger>
             <TabsTrigger value="rates" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <DollarSign className="h-4 w-4 mr-2" />
-              Taxas & Preços
+              <span className="hidden sm:inline">Taxas & Preços</span>
+              <span className="sm:hidden">Taxas</span>
             </TabsTrigger>
             <TabsTrigger value="appearance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Paintbrush className="h-4 w-4 mr-2" />
-              Aparência
+              <span className="hidden sm:inline">Aparência</span>
+              <span className="sm:hidden">Aparência</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Bell className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Notificações</span>
+              <span className="sm:hidden">Notif.</span>
             </TabsTrigger>
             <TabsTrigger value="reports" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ChartBar className="h-4 w-4 mr-2" />
-              Relatórios
+              <span className="hidden sm:inline">Relatórios</span>
+              <span className="sm:hidden">Relatórios</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
             <QueueDiagnostics />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Empresas</CardTitle>
@@ -225,7 +272,7 @@ const AdminDashboard: React.FC = () => {
                       <p className="text-sm text-muted-foreground">Total de motoristas registrados</p>
                       <Button 
                         className="mt-4 w-full"
-                        onClick={() => setActiveTab("orders")}
+                        onClick={() => setActiveTab("drivers")}
                       >
                         Ver Motoristas
                       </Button>
@@ -259,6 +306,44 @@ const AdminDashboard: React.FC = () => {
                   )}
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Suporte ao Sistema</CardTitle>
+                  <CardDescription>Acesso às ferramentas de suporte</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Button 
+                      variant="outline" 
+                      className="w-full flex items-center"
+                      asChild
+                    >
+                      <Link to="/admin/database-setup">
+                        <Database className="mr-2 h-4 w-4" />
+                        Configuração do Banco
+                      </Link>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full flex items-center"
+                      asChild
+                    >
+                      <Link to="/admin/test-workflow">
+                        <TestTube className="mr-2 h-4 w-4" />
+                        Ambiente de Testes
+                      </Link>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full flex items-center"
+                    >
+                      <HelpCircle className="mr-2 h-4 w-4" />
+                      Documentação do Admin
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             <DashboardStats />
@@ -272,12 +357,44 @@ const AdminDashboard: React.FC = () => {
             <ServiceOrderMonitoring />
           </TabsContent>
 
+          <TabsContent value="drivers">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gestão de Motoristas</CardTitle>
+                <CardDescription>Gerencie motoristas de todas as empresas na plataforma</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-center items-center h-60 flex-col space-y-4">
+                  <Settings className="h-16 w-16 text-muted-foreground" />
+                  <p className="text-muted-foreground">Funcionalidade em desenvolvimento</p>
+                  <Button>Explorar Motoristas</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="rates">
             <TripRateSettings />
           </TabsContent>
           
           <TabsContent value="appearance">
             <AppearanceSettings />
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gestão de Notificações</CardTitle>
+                <CardDescription>Configure e envie notificações para usuários da plataforma</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-center items-center h-60 flex-col space-y-4">
+                  <Bell className="h-16 w-16 text-muted-foreground" />
+                  <p className="text-muted-foreground">Funcionalidade em desenvolvimento</p>
+                  <Button>Configurar Notificações</Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="reports">

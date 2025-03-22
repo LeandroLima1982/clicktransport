@@ -4,11 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Building2, RefreshCw, PlusCircle } from 'lucide-react';
-import { supabase } from '@/main';
+import { Search, Building2, RefreshCw, PlusCircle, Download, Upload, FileSpreadsheet } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import CompanyManagementList from './CompanyManagementList';
+import CompanyDetail from './CompanyDetail';
+import CompanyCreateForm from './CompanyCreateForm';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Company {
   id: string;
@@ -35,6 +38,10 @@ const CompanyManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('list');
   const [stats, setStats] = useState<CompanyStats>({
     totalCompanies: 0,
     byStatus: {
@@ -119,6 +126,58 @@ const CompanyManagement: React.FC = () => {
     setStatusFilter('');
   };
 
+  const handleViewCompanyDetail = (company: Company) => {
+    setSelectedCompany(company);
+    setIsDetailOpen(true);
+  };
+
+  const handleCreateCompany = () => {
+    setIsCreateOpen(true);
+  };
+
+  const handleCompanyCreated = () => {
+    setIsCreateOpen(false);
+    fetchCompanies();
+    toast.success('Empresa criada com sucesso');
+  };
+
+  const handleExportCompanies = async () => {
+    try {
+      // Convert companies to CSV
+      const headers = ['Nome', 'CNPJ', 'Status', 'Data de Cadastro'];
+      const csvRows = [
+        headers.join(','),
+        ...filteredCompanies.map(company => {
+          const formattedDate = new Date(company.created_at).toLocaleDateString('pt-BR');
+          return [
+            `"${company.name}"`,
+            `"${company.cnpj || ''}"`,
+            `"${translateStatus(company.status)}"`,
+            `"${formattedDate}"`
+          ].join(',');
+        })
+      ];
+      
+      const csvContent = csvRows.join('\n');
+      
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `empresas_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Dados exportados com sucesso');
+    } catch (error) {
+      console.error('Error exporting companies:', error);
+      toast.error('Falha ao exportar dados');
+    }
+  };
+
   const getStatusBadge = (status: keyof typeof stats.byStatus) => {
     const count = stats.byStatus[status];
     let className = '';
@@ -184,6 +243,7 @@ const CompanyManagement: React.FC = () => {
           <Button 
             variant="default" 
             size="sm"
+            onClick={handleCreateCompany}
           >
             <PlusCircle className="h-4 w-4 mr-2" />
             Nova Empresa
@@ -191,45 +251,177 @@ const CompanyManagement: React.FC = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-6 space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-grow">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Buscar por nome ou CNPJ..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+        <Tabs defaultValue="list" value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
+          <TabsList className="grid grid-cols-2 md:w-[400px]">
+            <TabsTrigger value="list">Lista de Empresas</TabsTrigger>
+            <TabsTrigger value="analytics">Análise & Relatórios</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="list" className="space-y-4">
+            <div className="mb-6 space-y-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-grow">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Buscar por nome ou CNPJ..."
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="md:w-64">
+                  <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filtrar por status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todos os status</SelectItem>
+                      <SelectItem value="active">Ativas</SelectItem>
+                      <SelectItem value="pending">Pendentes</SelectItem>
+                      <SelectItem value="inactive">Inativas</SelectItem>
+                      <SelectItem value="suspended">Suspensas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  {(searchTerm || statusFilter) && (
+                    <Button variant="outline" size="sm" onClick={clearFilters}>
+                      Limpar Filtros
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={handleExportCompanies}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            <CompanyManagementList 
+              companies={filteredCompanies} 
+              isLoading={isLoading}
+              onRefreshData={handleRefresh}
+              onViewDetail={handleViewCompanyDetail}
+            />
+            
+            {selectedCompany && (
+              <CompanyDetail
+                company={selectedCompany}
+                isOpen={isDetailOpen}
+                onClose={() => setIsDetailOpen(false)}
+                onStatusChange={handleRefresh}
               />
-            </div>
-            <div className="md:w-64">
-              <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filtrar por status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
-                  <SelectItem value="active">Ativas</SelectItem>
-                  <SelectItem value="pending">Pendentes</SelectItem>
-                  <SelectItem value="inactive">Inativas</SelectItem>
-                  <SelectItem value="suspended">Suspensas</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {(searchTerm || statusFilter) && (
-              <Button variant="outline" size="sm" onClick={clearFilters}>
-                Limpar Filtros
-              </Button>
             )}
-          </div>
-        </div>
-        
-        <CompanyManagementList 
-          companies={filteredCompanies} 
-          isLoading={isLoading}
-          onRefreshData={handleRefresh}
-        />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Distribuição por Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px] flex items-center justify-center">
+                    <div className="space-y-2 w-full">
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                        <div className="flex-1">Ativas</div>
+                        <div className="font-bold">{stats.byStatus.active}</div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 ml-2">
+                          <div className="bg-green-500 h-2.5 rounded-full" style={{ 
+                            width: `${stats.totalCompanies ? (stats.byStatus.active / stats.totalCompanies * 100) : 0}%` 
+                          }}></div>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                        <div className="flex-1">Pendentes</div>
+                        <div className="font-bold">{stats.byStatus.pending}</div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 ml-2">
+                          <div className="bg-yellow-500 h-2.5 rounded-full" style={{ 
+                            width: `${stats.totalCompanies ? (stats.byStatus.pending / stats.totalCompanies * 100) : 0}%` 
+                          }}></div>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-gray-500 mr-2"></div>
+                        <div className="flex-1">Inativas</div>
+                        <div className="font-bold">{stats.byStatus.inactive}</div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 ml-2">
+                          <div className="bg-gray-500 h-2.5 rounded-full" style={{ 
+                            width: `${stats.totalCompanies ? (stats.byStatus.inactive / stats.totalCompanies * 100) : 0}%` 
+                          }}></div>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                        <div className="flex-1">Suspensas</div>
+                        <div className="font-bold">{stats.byStatus.suspended}</div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 ml-2">
+                          <div className="bg-red-500 h-2.5 rounded-full" style={{ 
+                            width: `${stats.totalCompanies ? (stats.byStatus.suspended / stats.totalCompanies * 100) : 0}%` 
+                          }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Ações em Lote</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium">Importar/Exportar</h3>
+                    <div className="flex flex-col space-y-2">
+                      <Button variant="outline" size="sm" onClick={handleExportCompanies}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Exportar Empresas (CSV)
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Importar Empresas (CSV)
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <FileSpreadsheet className="h-4 w-4 mr-2" />
+                        Relatório Detalhado (Excel)
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium">Ações em Massa</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="outline" size="sm">
+                        Ativar Selecionadas
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Suspender Selecionadas
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Enviar E-mail
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Notificar Todas
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {isCreateOpen && (
+          <CompanyCreateForm
+            isOpen={isCreateOpen}
+            onClose={() => setIsCreateOpen(false)}
+            onSuccess={handleCompanyCreated}
+          />
+        )}
       </CardContent>
     </Card>
   );
