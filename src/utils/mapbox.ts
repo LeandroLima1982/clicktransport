@@ -115,8 +115,102 @@ export const buildMapboxParams = (query: string) => {
   };
 };
 
+// Verifica se o texto é um CEP brasileiro válido
+export const isBrazilianCEP = (text: string): boolean => {
+  // Remover qualquer caractere que não seja número
+  const numbersOnly = text.replace(/\D/g, '');
+  
+  // CEP brasileiro deve ter 8 dígitos
+  return /^\d{8}$/.test(numbersOnly);
+};
+
+// Formatar CEP com hífen para exibição
+export const formatCEP = (cep: string): string => {
+  // Remover qualquer caractere que não seja número
+  const numbersOnly = cep.replace(/\D/g, '');
+  
+  // Retornar no formato xxxxx-xxx
+  if (numbersOnly.length === 8) {
+    return `${numbersOnly.substring(0, 5)}-${numbersOnly.substring(5)}`;
+  }
+  
+  return numbersOnly;
+};
+
+// Função para buscar endereço pelo CEP usando a API ViaCEP
+export const fetchAddressByCEP = async (cep: string): Promise<any | null> => {
+  try {
+    // Remover caracteres não numéricos
+    const cepNumbers = cep.replace(/\D/g, '');
+    
+    if (cepNumbers.length !== 8) {
+      console.warn('CEP inválido para consulta:', cep);
+      return null;
+    }
+    
+    console.log("Buscando endereço pelo CEP:", cepNumbers);
+    
+    const response = await fetch(`https://viacep.com.br/ws/${cepNumbers}/json/`);
+    if (!response.ok) {
+      console.error('Erro na API ViaCEP:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    // Verificar se retornou erro
+    if (data.erro) {
+      console.warn('CEP não encontrado:', cep);
+      return null;
+    }
+    
+    console.log("Dados do CEP recebidos:", data);
+    
+    // Construir um objeto no formato esperado pelo app
+    const addressResult = {
+      place_name: `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}, ${cepNumbers}`,
+      text: data.logradouro,
+      place_type: ['address'],
+      id: `cep-${cepNumbers}`,
+      context: [
+        { id: 'neighborhood', text: data.bairro },
+        { id: 'place', text: data.localidade },
+        { id: 'region', text: data.uf },
+        { id: 'country', text: 'Brasil' }
+      ],
+      properties: {
+        address: data.logradouro,
+        cep: cepNumbers
+      }
+    };
+    
+    return addressResult;
+  } catch (error) {
+    console.error('Erro ao consultar CEP:', error);
+    return null;
+  }
+};
+
+// Detecta padrões comuns em endereços brasileiros completos
+export const parseAndNormalizeBrazilianAddress = (address: string): string => {
+  let normalized = address.trim();
+  
+  // Melhora a busca em casos específicos do Brasil
+  if (!/\d+/.test(normalized) && /rua|avenida|av\.|av|alameda|travessa|estrada|rodovia/i.test(normalized)) {
+    normalized += ' número';
+  }
+  
+  // Adiciona termos de busca para melhorar precisão se não houver cidade/estado
+  if (!/(brasil|brazil)/i.test(normalized) && 
+      !/([A-Z]{2}|Acre|Alagoas|Amapá|Amazonas|Bahia|Ceará|Distrito Federal|Espírito Santo|Goiás|Maranhão|Mato Grosso|Mato Grosso do Sul|Minas Gerais|Pará|Paraíba|Paraná|Pernambuco|Piauí|Rio de Janeiro|Rio Grande do Norte|Rio Grande do Sul|Rondônia|Roraima|Santa Catarina|São Paulo|Sergipe|Tocantins)/i.test(normalized)) {
+    normalized += ' Brasil';
+  }
+  
+  return normalized;
+};
+
 // Função melhorada para buscar sugestões de endereços do Mapbox API
-export const fetchAddressSuggestions = async (query: string) => {
+export const fetchAddressSuggestions = async (query: string): Promise<any[]> => {
   if (query.length < 3) return [];
   
   if (!isValidMapboxToken(MAPBOX_TOKEN)) {
@@ -127,21 +221,16 @@ export const fetchAddressSuggestions = async (query: string) => {
   try {
     console.log("Buscando sugestões de endereço para:", query);
     
+    // Verificar se é um CEP
+    if (isBrazilianCEP(query)) {
+      const cepResult = await fetchAddressByCEP(query);
+      if (cepResult) {
+        return [cepResult];
+      }
+    }
+    
     // Adiciona termos que melhoram a busca para endereços brasileiros
-    let searchQuery = query;
-    
-    // Verifica se o endereço já tem número (padrão brasileiro: "rua x, 123")
-    const hasNumber = /\d+/.test(query);
-    
-    // Se não tiver número e tiver "rua", "av", etc., adiciona um marcador para melhorar a precisão
-    if (!hasNumber && /rua|avenida|av\.|av|alameda|travessa|estrada|rodovia/i.test(query)) {
-      searchQuery += ' endereço'; 
-    }
-    
-    // Adiciona país se não estiver especificado
-    if (!query.toLowerCase().includes('brasil') && !query.toLowerCase().includes('brazil')) {
-      searchQuery += ' Brasil';
-    }
+    let searchQuery = parseAndNormalizeBrazilianAddress(query);
     
     const endpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json`;
     
