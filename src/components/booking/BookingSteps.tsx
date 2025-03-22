@@ -15,6 +15,7 @@ import RegisterForm from './RegisterForm';
 import BookingComplete from './steps/BookingComplete';
 import PassengerInfoFields from './PassengerInfoFields';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const defaultVehicleOptions: Vehicle[] = [
   {
@@ -86,8 +87,10 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [passengerData, setPassengerData] = useState<{name: string; phone: string}[]>([]);
   const [vehicleOptions, setVehicleOptions] = useState<Vehicle[]>(defaultVehicleOptions);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
+  const [pendingBooking, setPendingBooking] = useState(false);
 
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const passengerCount = parseInt(bookingData.passengers, 10) || 0;
@@ -209,6 +212,8 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       }
       
       if (!user) {
+        console.log('User not logged in, setting pending booking and showing login form');
+        setPendingBooking(true);
         setShowLoginForm(true);
       } else {
         handleSubmitBooking();
@@ -225,20 +230,40 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   };
 
   const handleLoginSuccess = () => {
+    console.log('Login successful, handling pending booking:', pendingBooking);
     setShowLoginForm(false);
-    handleSubmitBooking();
+    
+    if (pendingBooking) {
+      handleSubmitBooking();
+    }
   };
 
   const handleRegisterSuccess = () => {
+    console.log('Registration successful, handling pending booking:', pendingBooking);
     setShowRegisterForm(false);
     setShowLoginForm(false);
-    handleSubmitBooking();
+    
+    if (pendingBooking) {
+      handleSubmitBooking();
+    }
   };
 
   const handleSubmitBooking = async () => {
+    console.log('Submitting booking, user:', user);
     setIsSubmitting(true);
     
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const currentUser = sessionData.session?.user || user;
+      
+      if (!currentUser) {
+        console.log('No user available for booking, showing login form');
+        setPendingBooking(true);
+        setShowLoginForm(true);
+        setIsSubmitting(false);
+        return;
+      }
+      
       const reference = 'TRF-' + Math.floor(100000 + Math.random() * 900000);
       const selectedVehicleDetails = vehicleOptions.find(v => v.id === selectedVehicle);
       
@@ -253,10 +278,12 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
         passengers: parseInt(bookingData.passengers),
         vehicle_type: selectedVehicleDetails?.name || '',
         status: 'confirmed' as const,
-        user_id: user?.id || '',
+        user_id: currentUser.id,
         additional_notes: `${bookingData.time ? 'Horário ida: ' + bookingData.time : ''} 
                           ${bookingData.returnTime ? 'Horário volta: ' + bookingData.returnTime : ''}`
       };
+      
+      console.log('Creating booking with data:', bookingObject);
       
       const { booking, error } = await createBooking(bookingObject);
       
@@ -282,6 +309,8 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       setBookingComplete(true);
       
       toast.success('Reserva confirmada com sucesso!');
+      
+      setPendingBooking(false);
     } catch (error) {
       console.error('Booking error:', error);
       toast.error('Erro ao confirmar reserva. Tente novamente.');
@@ -298,7 +327,12 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setBookingReference('');
     setShowLoginForm(false);
     setShowRegisterForm(false);
+    setPendingBooking(false);
     onClose();
+    
+    if (bookingComplete && user) {
+      navigate('/bookings');
+    }
   };
 
   const selectedVehicleDetails = vehicleOptions.find(v => v.id === selectedVehicle);

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 interface RegisterFormProps {
   onRegisterSuccess: () => void;
@@ -40,11 +41,27 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
       
       if (data?.session) {
         toast.success('Cadastro realizado com sucesso!');
-        onRegisterSuccess();
+        console.log('User registered and logged in automatically, proceeding with booking');
+        onRegisterSuccess(); // This should proceed with the booking now that we're logged in
       } else {
         // No session yet, but registration in progress
         toast.info('Verifique seu email para confirmar o cadastro');
-        onShowLogin();
+        
+        // Try to automatically log in the user to complete the booking flow
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (!loginError && loginData.session) {
+          toast.success('Login automático realizado com sucesso');
+          console.log('Auto-login successful, proceeding with booking');
+          onRegisterSuccess();
+        } else {
+          // If auto-login fails, show login form
+          console.log('Auto-login failed, showing login form', loginError);
+          onShowLogin();
+        }
       }
     } catch (error: any) {
       console.error('Register error:', error);
@@ -109,7 +126,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
         </div>
         
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? 'Processando...' : 'Cadastrar'}
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processando...
+            </>
+          ) : 'Cadastrar'}
         </Button>
       </form>
       

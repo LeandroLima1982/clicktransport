@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -26,14 +27,17 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
       });
       
       if (error) throw error;
       
       if (data?.session) {
+        console.log('Login successful, session established');
         toast.success('Login realizado com sucesso!');
-        onLoginSuccess();
+        onLoginSuccess(); // Proceed with booking flow
+      } else {
+        throw new Error('Não foi possível estabelecer sessão após login');
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -46,9 +50,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
   return (
     <div className="space-y-4 py-2 pb-4">
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Faça login para continuar</h2>
+        <h2 className="text-2xl font-bold">Entrar na sua conta</h2>
         <p className="text-sm text-muted-foreground">
-          Entre com sua conta para confirmar a reserva
+          Faça login para concluir sua reserva
         </p>
       </div>
       
@@ -63,7 +67,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
-            type="email" 
+            type="email"
             placeholder="seu-email@exemplo.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -72,16 +76,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
         </div>
         
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Senha</Label>
-            <button
-              type="button"
-              className="text-sm font-medium text-primary hover:underline"
-              onClick={() => toast.info('Função de recuperação em breve!')}
-            >
-              Esqueceu a senha?
-            </button>
-          </div>
+          <Label htmlFor="password">Senha</Label>
           <Input
             id="password"
             type="password"
@@ -92,7 +87,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
         </div>
         
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? 'Processando...' : 'Entrar'}
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Entrando...
+            </>
+          ) : 'Entrar'}
         </Button>
       </form>
       
