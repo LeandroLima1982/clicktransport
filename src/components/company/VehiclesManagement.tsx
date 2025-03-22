@@ -9,7 +9,7 @@ import {
 import { Car, Plus } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/utils/supabaseClient';
+import { supabase } from '@/main';
 import { toast } from 'sonner';
 
 // Import components

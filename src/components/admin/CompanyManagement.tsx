@@ -5,10 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Building2, RefreshCw, PlusCircle } from 'lucide-react';
-import { supabase } from '@/utils/supabaseClient';
+import { supabase } from '@/main';
 import { toast } from 'sonner';
 import CompanyManagementList from './CompanyManagementList';
-import CompanyDetail from './CompanyDetail';
 import { Badge } from '@/components/ui/badge';
 
 interface Company {
@@ -36,8 +35,6 @@ const CompanyManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [stats, setStats] = useState<CompanyStats>({
     totalCompanies: 0,
     byStatus: {
@@ -122,36 +119,6 @@ const CompanyManagement: React.FC = () => {
     setStatusFilter('');
   };
 
-  const openCompanyDetail = (company: Company) => {
-    setSelectedCompany(company);
-    setIsDetailOpen(true);
-  };
-
-  const handleCreateCompany = async () => {
-    const name = prompt('Digite o nome da nova empresa:');
-    if (!name) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('companies')
-        .insert({
-          name,
-          status: 'pending',
-          created_at: new Date().toISOString()
-        })
-        .select('*')
-        .single();
-      
-      if (error) throw error;
-      
-      toast.success(`Empresa "${name}" criada com sucesso!`);
-      fetchCompanies();
-    } catch (error) {
-      console.error('Error creating company:', error);
-      toast.error('Falha ao criar empresa');
-    }
-  };
-
   const getStatusBadge = (status: keyof typeof stats.byStatus) => {
     const count = stats.byStatus[status];
     let className = '';
@@ -217,7 +184,6 @@ const CompanyManagement: React.FC = () => {
           <Button 
             variant="default" 
             size="sm"
-            onClick={handleCreateCompany}
           >
             <PlusCircle className="h-4 w-4 mr-2" />
             Nova Empresa
@@ -243,7 +209,7 @@ const CompanyManagement: React.FC = () => {
                   <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="">Todos os status</SelectItem>
                   <SelectItem value="active">Ativas</SelectItem>
                   <SelectItem value="pending">Pendentes</SelectItem>
                   <SelectItem value="inactive">Inativas</SelectItem>
@@ -263,18 +229,8 @@ const CompanyManagement: React.FC = () => {
           companies={filteredCompanies} 
           isLoading={isLoading}
           onRefreshData={handleRefresh}
-          onViewDetails={openCompanyDetail}
         />
       </CardContent>
-
-      {selectedCompany && (
-        <CompanyDetail
-          company={selectedCompany}
-          isOpen={isDetailOpen}
-          onClose={() => setIsDetailOpen(false)}
-          onStatusChange={handleRefresh}
-        />
-      )}
     </Card>
   );
 };

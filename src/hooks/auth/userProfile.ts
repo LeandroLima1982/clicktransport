@@ -1,6 +1,6 @@
 
+import { supabase } from '../../main';
 import { UserRole } from './types';
-import { supabase } from '@/utils/supabaseClient';
 
 // Function to fetch user role from profiles table with timeout
 export const fetchUserRole = async (userId: string): Promise<UserRole> => {

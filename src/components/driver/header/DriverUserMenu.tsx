@@ -13,15 +13,13 @@ import {
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { supabase } from '@/main';
 
 const DriverUserMenu: React.FC = () => {
-  const { user, companyContext } = useAuth();
+  const { signOut, isAuthenticating, user, companyContext } = useAuth();
   const navigate = useNavigate();
   const [driverData, setDriverData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [localLoading, setLocalLoading] = useState(false);
   
   useEffect(() => {
     if (user) {
@@ -56,29 +54,17 @@ const DriverUserMenu: React.FC = () => {
   
   const handleSignOut = async () => {
     try {
-      setLocalLoading(true);
       console.log('Driver logging out...');
-      
-      // Clear any driver-specific data
-      localStorage.removeItem('driverCompanyId');
-      localStorage.removeItem('driverCompanyName');
-      
-      // Perform the logout
-      await supabase.auth.signOut();
-      console.log('Driver direct logout successful');
-      
-      toast.success('Logout realizado com sucesso');
+      await signOut();
+      // Navigate immediately after calling signOut, don't wait for the promise to resolve
       navigate('/', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
-      toast.error('Erro ao fazer logout');
-    } finally {
-      setLocalLoading(false);
+      // Error will be displayed by the AuthProvider
     }
   };
 
   const companyName = companyContext?.name || driverData?.company?.name;
-  const isSigningOut = localLoading;
 
   return (
     <DropdownMenu>
@@ -129,8 +115,8 @@ const DriverUserMenu: React.FC = () => {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut} disabled={isSigningOut}>
-          {isSigningOut ? (
+        <DropdownMenuItem onClick={handleSignOut} disabled={isAuthenticating}>
+          {isAuthenticating ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Saindo...

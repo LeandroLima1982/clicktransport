@@ -10,13 +10,6 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { VehicleForm as VehicleFormType } from './types';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface VehicleFormProps {
   isEditing: boolean;
@@ -31,18 +24,6 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
   handleInputChange,
   handleSaveVehicle
 }) => {
-  const handleStatusChange = (value: string) => {
-    // Create a synthetic event to work with existing handleInputChange
-    const syntheticEvent = {
-      target: {
-        name: 'status',
-        value
-      }
-    } as React.ChangeEvent<HTMLSelectElement>;
-    
-    handleInputChange(syntheticEvent);
-  };
-
   return (
     <>
       <SheetHeader>
@@ -99,19 +80,17 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
           <label htmlFor="status" className="block text-sm font-medium mb-1">
             Status
           </label>
-          <Select 
+          <select
+            id="status"
+            name="status"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             value={vehicleForm.status}
-            onValueChange={handleStatusChange}
+            onChange={handleInputChange}
           >
-            <SelectTrigger id="status" className="w-full">
-              <SelectValue placeholder="Selecione o status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="active">Ativo</SelectItem>
-              <SelectItem value="maintenance">Em manutenção</SelectItem>
-              <SelectItem value="inactive">Inativo</SelectItem>
-            </SelectContent>
-          </Select>
+            <option value="active">Ativo</option>
+            <option value="maintenance">Em manutenção</option>
+            <option value="inactive">Inativo</option>
+          </select>
         </div>
       </div>
       

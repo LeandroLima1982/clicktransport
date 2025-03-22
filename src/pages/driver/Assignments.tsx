@@ -7,7 +7,7 @@ import DriverHeader from '@/components/driver/DriverHeader';
 import AssignedOrderList from '@/components/driver/AssignedOrderList';
 import { useServiceOrders } from '@/components/driver/hooks/useServiceOrders';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/utils/supabaseClient';
+import { supabase } from '@/main';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 

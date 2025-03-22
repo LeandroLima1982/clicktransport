@@ -104,7 +104,7 @@ const CompanySelector: React.FC<CompanySelectorProps> = ({
               </SelectItem>
             ))
           ) : (
-            <SelectItem value="no-companies-found" disabled>
+            <SelectItem value="no-companies" disabled>
               {fetchingCompanies ? 'Carregando empresas...' : 'Nenhuma empresa encontrada'}
             </SelectItem>
           )}

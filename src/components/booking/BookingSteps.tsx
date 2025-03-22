@@ -4,7 +4,6 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 import { calculateRoute, calculateTripPrice, calculateTripPriceSync, RouteInfo, getVehicleRates, VehicleRate } from '@/utils/routeUtils';
 import { createBooking, createServiceOrderFromBooking } from '@/services/booking/bookingService';
 import VehicleSelection, { Vehicle } from './steps/VehicleSelection';
@@ -87,11 +86,8 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [passengerData, setPassengerData] = useState<{name: string; phone: string}[]>([]);
   const [vehicleOptions, setVehicleOptions] = useState<Vehicle[]>(defaultVehicleOptions);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
-  const [pendingBookingData, setPendingBookingData] = useState<any>(null);
-  const [isProcessingAuth, setIsProcessingAuth] = useState(false);
-  
-  const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+
+  const { user } = useAuth();
 
   useEffect(() => {
     const passengerCount = parseInt(bookingData.passengers, 10) || 0;
@@ -212,14 +208,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
         }
       }
       
-      if (!isAuthenticated) {
-        setPendingBookingData({
-          selectedVehicle,
-          selectedPaymentMethod,
-          totalPrice,
-          passengerData,
-          bookingData
-        });
+      if (!user) {
         setShowLoginForm(true);
       } else {
         handleSubmitBooking();
@@ -236,55 +225,20 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   };
 
   const handleLoginSuccess = () => {
-    if (isProcessingAuth) return;
-    setIsProcessingAuth(true);
-    
     setShowLoginForm(false);
-    
-    if (pendingBookingData) {
-      console.log("Login successful, proceeding with booking submission:", pendingBookingData);
-      // Add a small delay to ensure auth state is updated
-      setTimeout(() => {
-        handleSubmitBooking();
-        setIsProcessingAuth(false);
-      }, 1500);
-    } else {
-      setIsProcessingAuth(false);
-    }
+    handleSubmitBooking();
   };
 
   const handleRegisterSuccess = () => {
-    if (isProcessingAuth) return;
-    setIsProcessingAuth(true);
-    
     setShowRegisterForm(false);
     setShowLoginForm(false);
-    
-    if (pendingBookingData) {
-      console.log("Registration successful, proceeding with booking submission:", pendingBookingData);
-      // Add a small delay to ensure auth state is updated
-      setTimeout(() => {
-        handleSubmitBooking();
-        setIsProcessingAuth(false);
-      }, 1500);
-    } else {
-      setIsProcessingAuth(false);
-    }
+    handleSubmitBooking();
   };
 
   const handleSubmitBooking = async () => {
-    if (isSubmitting) return;
     setIsSubmitting(true);
     
     try {
-      const currentUser = await supabase.auth.getUser();
-      
-      if (!currentUser || !currentUser.data.user) {
-        console.error("Attempted to submit booking without user");
-        toast.error('É necessário estar logado para finalizar a reserva');
-        return;
-      }
-      
       const reference = 'TRF-' + Math.floor(100000 + Math.random() * 900000);
       const selectedVehicleDetails = vehicleOptions.find(v => v.id === selectedVehicle);
       
@@ -299,12 +253,10 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
         passengers: parseInt(bookingData.passengers),
         vehicle_type: selectedVehicleDetails?.name || '',
         status: 'confirmed' as const,
-        user_id: currentUser.data.user.id,
+        user_id: user?.id || '',
         additional_notes: `${bookingData.time ? 'Horário ida: ' + bookingData.time : ''} 
                           ${bookingData.returnTime ? 'Horário volta: ' + bookingData.returnTime : ''}`
       };
-      
-      console.log("Submitting booking with data:", bookingObject);
       
       const { booking, error } = await createBooking(bookingObject);
       
@@ -347,11 +299,6 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setShowLoginForm(false);
     setShowRegisterForm(false);
     onClose();
-  };
-
-  const handleCloseAndRedirect = () => {
-    onClose();
-    navigate('/bookings');
   };
 
   const selectedVehicleDetails = vehicleOptions.find(v => v.id === selectedVehicle);
@@ -450,7 +397,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
             bookingData={{...bookingData, passengerData: passengerData}}
             totalPrice={totalPrice}
             formatCurrency={formatCurrency}
-            onClose={handleCloseAndRedirect}
+            onClose={handleCloseAndReset}
           />
         ) : (
           <>

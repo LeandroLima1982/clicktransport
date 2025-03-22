@@ -25,7 +25,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
     setError(null);
     
     try {
-      console.log('Starting registration process...');
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -39,23 +38,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
       
       if (error) throw error;
       
-      if (data?.user) {
-        console.log('Registration successful, user created:', data.user.id);
+      if (data?.session) {
         toast.success('Cadastro realizado com sucesso!');
-        
-        // If session exists, it means no email confirmation is required
-        if (data.session) {
-          console.log('Session available, proceeding with reservation...');
-          // Small delay to ensure auth state is updated before proceeding
-          setTimeout(() => {
-            onRegisterSuccess();
-          }, 1500);
-        } else {
-          // If email confirmation is enabled, this might happen
-          console.log('Email confirmation required, redirecting to login');
-          toast.info('Verifique seu email para confirmar o cadastro');
-          onShowLogin();
-        }
+        onRegisterSuccess();
+      } else {
+        // No session yet, but registration in progress
+        toast.info('Verifique seu email para confirmar o cadastro');
+        onShowLogin();
       }
     } catch (error: any) {
       console.error('Register error:', error);
@@ -120,7 +109,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
         </div>
         
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? 'Processando...' : 'Cadastrar e Concluir Reserva'}
+          {isLoading ? 'Processando...' : 'Cadastrar'}
         </Button>
       </form>
       

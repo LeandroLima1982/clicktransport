@@ -9,8 +9,7 @@ export const signOut = async () => {
   
   try {
     // Clear any local storage or session storage if needed
-    localStorage.removeItem('driverCompanyId');
-    localStorage.removeItem('driverCompanyName');
+    // localStorage.removeItem('yourAuthItem');
     
     // Perform the actual sign out
     const result = await supabase.auth.signOut();
@@ -21,11 +20,9 @@ export const signOut = async () => {
     }
     
     console.log('User signed out successfully from Supabase');
-    toast.success('Logout realizado com sucesso');
     return { error: null };
   } catch (err) {
     console.error('Exception during sign out:', err);
-    toast.error('Erro ao fazer logout');
     return { error: err as AuthError | Error };
   }
 };

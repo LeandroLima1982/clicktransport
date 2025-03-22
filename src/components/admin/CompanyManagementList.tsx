@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/main';
 
 interface Company {
   id: string;
@@ -35,19 +35,20 @@ interface CompanyManagementListProps {
   companies: Company[];
   isLoading: boolean;
   onRefreshData: () => void;
-  onViewDetails: (company: Company) => void;
 }
 
 const CompanyManagementList: React.FC<CompanyManagementListProps> = ({
   companies,
   isLoading,
-  onRefreshData,
-  onViewDetails
+  onRefreshData
 }) => {
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const handleViewDetails = (company: Company) => {
-    onViewDetails(company);
+    setSelectedCompany(company);
+    // In the future, this could open a modal with detailed information
+    toast.info(`Detalhes da empresa: ${company.name}`);
   };
 
   const handleStatusChange = async (company: Company, newStatus: string) => {

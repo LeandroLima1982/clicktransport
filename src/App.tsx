@@ -1,21 +1,27 @@
+
+// Add imports for authentication context
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider } from './hooks/auth/AuthProvider';
+import { AuthProvider } from './hooks/useAuth';
 import { Toaster } from 'sonner';
-import { useAuth } from './hooks/auth/useAuth';
+import { useAuth } from './hooks/useAuth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+// Import pages and components
 import Index from './pages/Index';
 import Auth from './pages/Auth';
 import NotFound from './pages/NotFound';
 import ForgotPassword from './pages/ForgotPassword';
 
+// Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
 import DatabaseSetup from './pages/admin/DatabaseSetup';
 import CreateAdmin from './pages/admin/CreateAdmin';
 import TestWorkflow from './pages/admin/TestWorkflow';
 
+// Company pages
 import CompanyDashboard from './pages/company/Dashboard';
 
+// Driver pages
 import DriverDashboard from './pages/driver/Dashboard';
 import DriverPanel from './pages/driver/Panel';
 import DriverAssignments from './pages/driver/Assignments';
@@ -25,21 +31,17 @@ import DriverProfile from './pages/driver/Profile';
 import DriverSettings from './pages/driver/Settings';
 import DriverTrips from './pages/driver/Trips';
 
+// Client pages
 import Bookings from './pages/client/Bookings';
 import Profile from './pages/client/Profile';
 import PaymentMethods from './pages/client/PaymentMethods';
 
 import './App.css';
 
+// Create a client
 const queryClient = new QueryClient();
 
-const LoadingScreen = () => (
-  <div className="flex items-center justify-center h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-    <span className="ml-3 text-lg">Carregando...</span>
-  </div>
-);
-
+// Enhanced Protected Route component with strict role checking
 const ProtectedRoute = ({ 
   children, 
   requiredRole = null,
@@ -53,20 +55,24 @@ const ProtectedRoute = ({
   const location = useLocation();
   
   if (isLoading) {
-    return <LoadingScreen />;
+    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
   }
   
+  // If no user is logged in, redirect to auth
   if (!user) {
     return <Navigate to={`/auth?return_to=${location.pathname}`} replace />;
   }
   
+  // STRICT ROLE CHECK: If role is required and user doesn't have it, deny access
   if (requiredRole && userRole !== requiredRole) {
     console.log(`Access denied: User role ${userRole} doesn't match required role ${requiredRole}`);
     
+    // Custom redirect if provided
     if (redirectTo) {
       return <Navigate to={redirectTo} replace />;
     }
     
+    // Otherwise redirect based on user role
     if (userRole === 'admin') {
       return <Navigate to="/admin/dashboard" replace />;
     } else if (userRole === 'company') {
@@ -77,23 +83,26 @@ const ProtectedRoute = ({
       return <Navigate to="/bookings" replace />;
     }
     
+    // Fallback to home
     return <Navigate to="/" replace />;
   }
   
   return <>{children}</>;
 };
 
+// Component to redirect based on user role
 const RoleBasedRedirect = () => {
   const { user, userRole, isLoading } = useAuth();
   
   if (isLoading) {
-    return <LoadingScreen />;
+    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
   }
   
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
   
+  // Strictly redirect based on user role
   if (userRole === 'admin') {
     return <Navigate to="/admin/dashboard" replace />;
   } else if (userRole === 'company') {
@@ -104,17 +113,20 @@ const RoleBasedRedirect = () => {
     return <Navigate to="/bookings" replace />;
   }
   
+  // Default for unknown roles
   return <Navigate to="/" replace />;
 };
 
+// Special component to handle root path with role-based access
 const HomeRedirect = () => {
-  const { user, userRole, isLoading, isAuthenticated } = useAuth();
+  const { user, userRole, isLoading } = useAuth();
   
   if (isLoading) {
-    return <LoadingScreen />;
+    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
   }
   
-  if (isAuthenticated) {
+  // If user is logged in, redirect based on role
+  if (user) {
     if (userRole === 'company') {
       console.log("HomeRedirect: Redirecting company user to dashboard");
       return <Navigate to="/company/dashboard" replace />;
@@ -125,8 +137,10 @@ const HomeRedirect = () => {
       console.log("HomeRedirect: Redirecting admin user to dashboard");
       return <Navigate to="/admin/dashboard" replace />;
     }
+    // Clients can access the home page
   }
   
+  // Otherwise show the normal index page
   return <Index />;
 };
 
@@ -136,13 +150,16 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* Public routes with special handling for logged in users */}
             <Route path="/" element={<HomeRedirect />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/admin/create" element={<CreateAdmin />} />
             
+            {/* Dashboard redirect based on role */}
             <Route path="/dashboard" element={<RoleBasedRedirect />} />
             
+            {/* Admin routes - strictly for admin users */}
             <Route path="/admin/dashboard" element={
               <ProtectedRoute requiredRole="admin">
                 <AdminDashboard />
@@ -159,12 +176,14 @@ function App() {
               </ProtectedRoute>
             } />
             
+            {/* Company routes - strictly for company users */}
             <Route path="/company/dashboard" element={
               <ProtectedRoute requiredRole="company">
                 <CompanyDashboard />
               </ProtectedRoute>
             } />
             
+            {/* Driver routes - strictly for driver users */}
             <Route path="/driver/dashboard" element={
               <ProtectedRoute requiredRole="driver">
                 <DriverDashboard />
@@ -201,6 +220,7 @@ function App() {
               </ProtectedRoute>
             } />
             
+            {/* Client routes - strictly for client users */}
             <Route path="/bookings" element={
               <ProtectedRoute requiredRole="client">
                 <Bookings />
@@ -217,6 +237,7 @@ function App() {
               </ProtectedRoute>
             } />
             
+            {/* 404 route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster richColors position="top-right" />
