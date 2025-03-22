@@ -1,5 +1,5 @@
+
 import React from 'react';
-import { MapboxMap } from './mapUtils';
 import { Button } from '@/components/ui/button';
 import { Layers } from 'lucide-react';
 
@@ -12,9 +12,12 @@ export interface RouteTrackerProps {
   routeGeometry: any;
   routeDistance: number;
   routeDuration: number;
-  mapInstance?: MapboxMap;
+  mapInstance?: any; // Changed from MapboxMap type
   isLoading: boolean;
+  originAddress?: string;
+  destinationAddress?: string;
   onToggleMapType?: () => void;
+  onMapLoadFailure?: () => void;
 }
 
 const RouteTracker: React.FC<RouteTrackerProps> = ({
@@ -28,7 +31,10 @@ const RouteTracker: React.FC<RouteTrackerProps> = ({
   routeDuration,
   mapInstance,
   isLoading,
+  originAddress,
+  destinationAddress,
   onToggleMapType,
+  onMapLoadFailure,
 }) => {
   // Format distance and duration for display
   const formatDistance = (meters: number) => {
