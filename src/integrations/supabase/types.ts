@@ -60,45 +60,6 @@ export type Database = {
         }
         Relationships: []
       }
-      cities: {
-        Row: {
-          country: string | null
-          created_at: string
-          created_by: string | null
-          id: string
-          is_active: boolean | null
-          latitude: number
-          longitude: number
-          name: string
-          state: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          country?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean | null
-          latitude: number
-          longitude: number
-          name: string
-          state?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          country?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean | null
-          latitude?: number
-          longitude?: number
-          name?: string
-          state?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       companies: {
         Row: {
           cnpj: string | null

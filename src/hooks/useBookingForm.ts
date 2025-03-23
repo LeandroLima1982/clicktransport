@@ -1,7 +1,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
-import { cityService, City } from '@/services/db/cityService';
+import { fetchAddressSuggestions } from '@/utils/mapbox';
 
 export interface PassengerInfo {
   name: string;
@@ -11,8 +11,8 @@ export interface PassengerInfo {
 export interface BookingFormData {
   originValue: string;
   destinationValue: string;
-  originCity?: string;
-  destinationCity?: string;
+  originNumber?: string;
+  destinationNumber?: string;
   date: Date | undefined;
   returnDate: Date | undefined;
   tripType: 'oneway' | 'roundtrip';
@@ -25,8 +25,8 @@ export interface BookingFormData {
 export const useBookingForm = () => {
   const [originValue, setOriginValue] = useState('');
   const [destinationValue, setDestinationValue] = useState('');
-  const [originCity, setOriginCity] = useState('');
-  const [destinationCity, setDestinationCity] = useState('');
+  const [originNumber, setOriginNumber] = useState('');
+  const [destinationNumber, setDestinationNumber] = useState('');
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
   const [tripType, setTripType] = useState<'oneway' | 'roundtrip'>('oneway');
@@ -35,44 +35,33 @@ export const useBookingForm = () => {
   const [showBookingSteps, setShowBookingSteps] = useState(false);
   const [time, setTime] = useState<string>('');
   const [returnTime, setReturnTime] = useState<string>('');
-  const [availableCities, setAvailableCities] = useState<City[]>([]);
-  const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [errorCount, setErrorCount] = useState(0);
   
+  const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Reset error count after a period to allow retrying
   useEffect(() => {
-    fetchAvailableCities();
-  }, []);
-  
-  const fetchAvailableCities = async () => {
-    setIsLoadingCities(true);
-    try {
-      const cities = await cityService.getActiveCities();
-      setAvailableCities(cities);
-    } catch (error) {
-      console.error('Error fetching cities:', error);
-      toast.error('Erro ao carregar cidades disponíveis');
-    } finally {
-      setIsLoadingCities(false);
+    if (errorCount > 0) {
+      const timer = setTimeout(() => {
+        setErrorCount(0);
+      }, 30000); // Reset after 30 seconds
+      
+      return () => clearTimeout(timer);
     }
-  };
+  }, [errorCount]);
   
   const handleBooking = () => {
     if (!originValue) {
-      toast.error('Por favor, informe o endereço de origem.');
-      return;
-    }
-    
-    if (!originCity) {
-      toast.error('Por favor, selecione a cidade de origem.');
+      toast.error('Por favor, informe o local de origem.');
       return;
     }
     
     if (!destinationValue) {
-      toast.error('Por favor, informe o endereço de destino.');
-      return;
-    }
-    
-    if (!destinationCity) {
-      toast.error('Por favor, selecione a cidade de destino.');
+      toast.error('Por favor, informe o local de destino.');
       return;
     }
     
@@ -102,18 +91,107 @@ export const useBookingForm = () => {
   const handleOriginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setOriginValue(value);
+    
+    if (originTimeoutRef.current) {
+      clearTimeout(originTimeoutRef.current);
+    }
+    
+    // Só buscar sugestões se o usuário já digitou pelo menos 3 caracteres
+    // e não tivemos muitos erros recentes
+    if (value.length >= 3 && errorCount < 5) {
+      setIsLoadingSuggestions(true);
+      
+      originTimeoutRef.current = setTimeout(async () => {
+        try {
+          const suggestions = await fetchAddressSuggestions(value);
+          setOriginSuggestions(suggestions);
+          
+          // Se não encontrou nada, sugerir adicionar mais informações
+          if (suggestions.length === 0 && value.length > 5) {
+            console.log("Sem resultados para: " + value);
+          }
+        } catch (error) {
+          console.error('Erro ao buscar sugestões:', error);
+          setErrorCount(prev => prev + 1);
+          
+          // Avisar o usuário apenas na primeira falha
+          if (errorCount === 0) {
+            toast.error('Erro ao buscar sugestões de endereço. Tente um formato diferente.', {
+              description: 'Exemplo: "Rua Nome, 123, Bairro, Cidade"'
+            });
+          }
+        } finally {
+          setIsLoadingSuggestions(false);
+        }
+      }, 300);
+    } else {
+      setOriginSuggestions([]);
+    }
   };
 
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setDestinationValue(value);
+    
+    if (destinationTimeoutRef.current) {
+      clearTimeout(destinationTimeoutRef.current);
+    }
+    
+    if (value.length >= 3 && errorCount < 5) {
+      setIsLoadingSuggestions(true);
+      
+      destinationTimeoutRef.current = setTimeout(async () => {
+        try {
+          const suggestions = await fetchAddressSuggestions(value);
+          setDestinationSuggestions(suggestions);
+        } catch (error) {
+          console.error('Erro ao buscar sugestões:', error);
+          setErrorCount(prev => prev + 1);
+        } finally {
+          setIsLoadingSuggestions(false);
+        }
+      }, 300);
+    } else {
+      setDestinationSuggestions([]);
+    }
+  };
+
+  const handleOriginNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOriginNumber(e.target.value);
+  };
+
+  const handleDestinationNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDestinationNumber(e.target.value);
+  };
+
+  const selectSuggestion = (suggestion: any, isOrigin: boolean) => {
+    const placeName = suggestion.place_name;
+    if (isOrigin) {
+      setOriginValue(placeName);
+      setOriginSuggestions([]);
+    } else {
+      setDestinationValue(placeName);
+      setDestinationSuggestions([]);
+    }
+  };
+
+  const clearOrigin = () => {
+    setOriginValue('');
+    setOriginNumber('');
+    setOriginSuggestions([]);
+  };
+
+  const clearDestination = () => {
+    setDestinationValue('');
+    setDestinationNumber('');
+    setDestinationSuggestions([]);
   };
 
   const bookingData: BookingFormData = {
     originValue,
     destinationValue,
-    originCity,
-    destinationCity,
+    originNumber,
+    destinationNumber,
     date,
     returnDate,
     tripType,
@@ -123,30 +201,11 @@ export const useBookingForm = () => {
     passengerData
   };
 
-  // Calculate distance between cities if both are selected
-  const calculateDistanceBetweenCities = (): number | null => {
-    if (!originCity || !destinationCity) return null;
-    
-    const originCityObj = availableCities.find(city => city.id === originCity);
-    const destCityObj = availableCities.find(city => city.id === destinationCity);
-    
-    if (!originCityObj || !destCityObj) return null;
-    
-    return cityService.calculateDistance(
-      originCityObj.latitude, 
-      originCityObj.longitude, 
-      destCityObj.latitude, 
-      destCityObj.longitude
-    );
-  };
-
-  const estimatedDistance = calculateDistanceBetweenCities();
-
   return {
     originValue,
     destinationValue,
-    originCity,
-    destinationCity,
+    originNumber,
+    destinationNumber,
     date,
     returnDate,
     tripType,
@@ -154,12 +213,10 @@ export const useBookingForm = () => {
     passengerData,
     time,
     returnTime,
+    originSuggestions,
+    destinationSuggestions,
+    isLoadingSuggestions,
     showBookingSteps,
-    availableCities,
-    isLoadingCities,
-    estimatedDistance,
-    setOriginCity,
-    setDestinationCity,
     setTripType,
     setDate,
     setReturnDate,
@@ -169,9 +226,13 @@ export const useBookingForm = () => {
     setReturnTime,
     handleOriginChange,
     handleDestinationChange,
+    handleOriginNumberChange,
+    handleDestinationNumberChange,
+    selectSuggestion,
     handleBooking,
     setShowBookingSteps,
-    fetchAvailableCities,
     bookingData,
+    clearOrigin,
+    clearDestination
   };
 };
