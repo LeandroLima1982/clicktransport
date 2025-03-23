@@ -2,13 +2,16 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { City } from '@/services/db/cityService';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface CitySelectorProps {
   id: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
-  cities: { id: string; name: string }[];
+  cities: City[];
+  isLoading?: boolean;
 }
 
 const CitySelector: React.FC<CitySelectorProps> = ({
@@ -16,8 +19,18 @@ const CitySelector: React.FC<CitySelectorProps> = ({
   label,
   value,
   onChange,
-  cities
+  cities,
+  isLoading = false
 }) => {
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-11 w-full rounded-lg" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       <Label htmlFor={id} className="text-gray-700 block text-sm font-medium">
@@ -30,7 +43,7 @@ const CitySelector: React.FC<CitySelectorProps> = ({
         <SelectContent>
           {cities.map((city) => (
             <SelectItem key={city.id} value={city.id}>
-              {city.name}
+              {city.name}{city.state ? `, ${city.state}` : ''}
             </SelectItem>
           ))}
         </SelectContent>

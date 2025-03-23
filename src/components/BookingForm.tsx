@@ -12,23 +12,14 @@ import PassengerSelector from './booking/PassengerSelector';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
-// Temporary mock data for available cities - this would come from an admin panel in the future
-const availableCities = [
-  { id: "rio", name: "Rio de Janeiro" },
-  { id: "sao-paulo", name: "São Paulo" },
-  { id: "belo-horizonte", name: "Belo Horizonte" },
-  { id: "brasilia", name: "Brasília" },
-  { id: "salvador", name: "Salvador" },
-  { id: "fortaleza", name: "Fortaleza" },
-  { id: "recife", name: "Recife" },
-  { id: "porto-alegre", name: "Porto Alegre" }
-];
+import { Badge } from '@/components/ui/badge';
 
 const BookingForm: React.FC = () => {
   const {
     originValue,
     destinationValue,
+    originCity,
+    destinationCity,
     date,
     returnDate,
     tripType,
@@ -36,6 +27,9 @@ const BookingForm: React.FC = () => {
     returnTime,
     passengers,
     passengerData,
+    availableCities,
+    isLoadingCities,
+    estimatedDistance,
     setPassengers,
     setPassengerData,
     setTripType,
@@ -49,10 +43,9 @@ const BookingForm: React.FC = () => {
     setShowBookingSteps,
     bookingData,
     showBookingSteps,
+    setOriginCity,
+    setDestinationCity
   } = useBookingForm();
-
-  const [originCity, setOriginCity] = useState('');
-  const [destinationCity, setDestinationCity] = useState('');
   
   const isMobile = useIsMobile();
 
@@ -91,6 +84,7 @@ const BookingForm: React.FC = () => {
                   value={originCity} 
                   onChange={handleOriginCityChange} 
                   cities={availableCities} 
+                  isLoading={isLoadingCities}
                 />
               </div>
               
@@ -109,10 +103,20 @@ const BookingForm: React.FC = () => {
                   value={destinationCity} 
                   onChange={handleDestinationCityChange} 
                   cities={availableCities} 
+                  isLoading={isLoadingCities}
                 />
               </div>
             </div>
           </div>
+
+          {/* Display estimated distance if available */}
+          {estimatedDistance && (
+            <div className="flex justify-center">
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                Distância estimada: {Math.round(estimatedDistance)} km
+              </Badge>
+            </div>
+          )}
 
           {/* Combined Date & Time selector with Passengers */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

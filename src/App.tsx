@@ -1,239 +1,189 @@
-// Add imports for authentication context
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Toaster } from 'sonner';
-import { useAuth } from './hooks/useAuth';
+import React, { Suspense, useEffect, useState } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { initializeSupabase, isAuthenticated, getUserRole } from './utils/supabaseClient';
+import { toast } from 'sonner';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import Loading from './components/Loading';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import CompanyManagementPage from './pages/admin/CompanyManagementPage';
+import DriverManagementPage from './pages/admin/DriverManagementPage';
+import VehicleManagementPage from './pages/admin/VehicleManagementPage';
+import UserManagementPage from './pages/admin/UserManagementPage';
+import ConfigManagementPage from './pages/admin/ConfigManagementPage';
+import LandingPage from './pages/LandingPage';
+import CitiesManagementPage from './pages/admin/CitiesManagement';
 
-// Import pages and components
-import Index from './pages/Index';
-import Auth from './pages/Auth';
-import NotFound from './pages/NotFound';
-import ForgotPassword from './pages/ForgotPassword';
+// Lazy-loaded components
+const LoginPage = React.lazy(() => import('./pages/LoginPage'));
+const RegisterPage = React.lazy(() => import('./pages/RegisterPage'));
+const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
 
-// Admin pages
-import AdminDashboard from './pages/admin/Dashboard';
-import DatabaseSetup from './pages/admin/DatabaseSetup';
-import CreateAdmin from './pages/admin/CreateAdmin';
-import TestWorkflow from './pages/admin/TestWorkflow';
+// Protected Route Component
+const ProtectedRoute = ({ children, roles }: { children: React.ReactNode; roles?: string[] }) => {
+  const [isAuth, setIsAuth] = useState<boolean | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-// Company pages
-import CompanyDashboard from './pages/company/Dashboard';
+  useEffect(() => {
+    const checkAuth = async () => {
+      const auth = await isAuthenticated();
+      setIsAuth(auth);
 
-// Driver pages
-import DriverDashboard from './pages/driver/Dashboard';
-import DriverPanel from './pages/driver/Panel';
-import DriverAssignments from './pages/driver/Assignments';
-import DriverSchedule from './pages/driver/Schedule';
-import DriverNavigation from './pages/driver/Navigation';
-import DriverProfile from './pages/driver/Profile';
-import DriverSettings from './pages/driver/Settings';
-import DriverTrips from './pages/driver/Trips';
+      if (auth) {
+        const role = await getUserRole();
+        setUserRole(role);
+      }
 
-// Client pages
-import Bookings from './pages/client/Bookings';
-import Profile from './pages/client/Profile';
-import PaymentMethods from './pages/client/PaymentMethods';
+      setIsLoading(false);
+    };
 
-import './App.css';
+    checkAuth();
+  }, []);
 
-// Enhanced Protected Route component with strict role checking
-const ProtectedRoute = ({ 
-  children, 
-  requiredRole = null,
-  redirectTo = null
-}: { 
-  children: React.ReactNode, 
-  requiredRole?: string | null,
-  redirectTo?: string | null
-}) => {
-  const { user, userRole, isLoading } = useAuth();
-  const location = useLocation();
-  
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+    return <Loading />;
   }
-  
-  // If no user is logged in, redirect to auth
-  if (!user) {
-    return <Navigate to={`/auth?return_to=${location.pathname}`} replace />;
-  }
-  
-  // STRICT ROLE CHECK: If role is required and user doesn't have it, deny access
-  if (requiredRole && userRole !== requiredRole) {
-    console.log(`Access denied: User role ${userRole} doesn't match required role ${requiredRole}`);
-    
-    // Custom redirect if provided
-    if (redirectTo) {
-      return <Navigate to={redirectTo} replace />;
-    }
-    
-    // Otherwise redirect based on user role
-    if (userRole === 'admin') {
-      return <Navigate to="/admin/dashboard" replace />;
-    } else if (userRole === 'company') {
-      return <Navigate to="/company/dashboard" replace />;
-    } else if (userRole === 'driver') {
-      return <Navigate to="/driver/dashboard" replace />;
-    } else if (userRole === 'client') {
-      return <Navigate to="/bookings" replace />;
-    }
-    
-    // Fallback to home
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-};
 
-// Component to redirect based on user role
-const RoleBasedRedirect = () => {
-  const { user, userRole, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+  if (!isAuth) {
+    toast.info('Por favor, faça login para acessar esta página.');
+    return <Navigate to="/login" />;
   }
-  
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  // Strictly redirect based on user role
-  if (userRole === 'admin') {
-    return <Navigate to="/admin/dashboard" replace />;
-  } else if (userRole === 'company') {
-    return <Navigate to="/company/dashboard" replace />;
-  } else if (userRole === 'driver') {
-    return <Navigate to="/driver/dashboard" replace />;
-  } else if (userRole === 'client') {
-    return <Navigate to="/bookings" replace />;
-  }
-  
-  // Default for unknown roles
-  return <Navigate to="/" replace />;
-};
 
-// Special component to handle root path with role-based access
-const HomeRedirect = () => {
-  const { user, userRole, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+  if (roles && !roles.includes(userRole || '')) {
+    toast.error('Você não tem permissão para acessar esta página.');
+    return <Navigate to="/" />;
   }
-  
-  // If user is logged in, redirect based on role
-  if (user) {
-    if (userRole === 'company') {
-      console.log("HomeRedirect: Redirecting company user to dashboard");
-      return <Navigate to="/company/dashboard" replace />;
-    } else if (userRole === 'driver') {
-      console.log("HomeRedirect: Redirecting driver user to dashboard");
-      return <Navigate to="/driver/dashboard" replace />;
-    } else if (userRole === 'admin') {
-      console.log("HomeRedirect: Redirecting admin user to dashboard");
-      return <Navigate to="/admin/dashboard" replace />;
-    }
-    // Clients can access the home page
-  }
-  
-  // Otherwise show the normal index page
-  return <Index />;
+
+  return children;
 };
 
 function App() {
+  const [isSupabaseReady, setIsSupabaseReady] = useState(false);
+
+  useEffect(() => {
+    const initialize = async () => {
+      const ready = await initializeSupabase();
+      setIsSupabaseReady(ready);
+
+      if (ready) {
+        toast.success('Supabase inicializado com sucesso!', { duration: 3000 });
+      } else {
+        toast.error('Falha ao inicializar Supabase. Verifique o console para mais detalhes.', { duration: 5000 });
+      }
+    };
+
+    initialize();
+  }, []);
+
   return (
-    <>
-      <Routes>
-        {/* Public routes with special handling for logged in users */}
-        <Route path="/" element={<HomeRedirect />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/admin/create" element={<CreateAdmin />} />
-        
-        {/* Dashboard redirect based on role */}
-        <Route path="/dashboard" element={<RoleBasedRedirect />} />
-        
-        {/* Admin routes - strictly for admin users */}
-        <Route path="/admin/dashboard" element={
-          <ProtectedRoute requiredRole="admin">
-            <AdminDashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/database-setup" element={
-          <ProtectedRoute requiredRole="admin">
-            <DatabaseSetup />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/test-workflow" element={
-          <ProtectedRoute requiredRole="admin">
-            <TestWorkflow />
-          </ProtectedRoute>
-        } />
-        
-        {/* Company routes - strictly for company users */}
-        <Route path="/company/dashboard" element={
-          <ProtectedRoute requiredRole="company">
-            <CompanyDashboard />
-          </ProtectedRoute>
-        } />
-        
-        {/* Driver routes - strictly for driver users */}
-        <Route path="/driver/dashboard" element={
-          <ProtectedRoute requiredRole="driver">
-            <DriverDashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/driver/assignments" element={
-          <ProtectedRoute requiredRole="driver">
-            <DriverAssignments />
-          </ProtectedRoute>
-        } />
-        <Route path="/driver/trips" element={
-          <ProtectedRoute requiredRole="driver">
-            <DriverTrips />
-          </ProtectedRoute>
-        } />
-        <Route path="/driver/schedule" element={
-          <ProtectedRoute requiredRole="driver">
-            <DriverSchedule />
-          </ProtectedRoute>
-        } />
-        <Route path="/driver/navigation" element={
-          <ProtectedRoute requiredRole="driver">
-            <DriverNavigation />
-          </ProtectedRoute>
-        } />
-        <Route path="/driver/profile" element={
-          <ProtectedRoute requiredRole="driver">
-            <DriverProfile />
-          </ProtectedRoute>
-        } />
-        <Route path="/driver/settings" element={
-          <ProtectedRoute requiredRole="driver">
-            <DriverSettings />
-          </ProtectedRoute>
-        } />
-        
-        {/* Client routes - strictly for client users */}
-        <Route path="/bookings" element={
-          <ProtectedRoute requiredRole="client">
-            <Bookings />
-          </ProtectedRoute>
-        } />
-        <Route path="/profile" element={
-          <ProtectedRoute requiredRole="client">
-            <Profile />
-          </ProtectedRoute>
-        } />
-        <Route path="/payment-methods" element={
-          <ProtectedRoute requiredRole="client">
-            <PaymentMethods />
-          </ProtectedRoute>
-        } />
-        
-        {/* 404 route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <Toaster richColors position="top-right" />
-    </>
+    <Router>
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+
+        <main className="flex-1">
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route
+              path="/login"
+              element={
+                <Suspense fallback={<Loading />}>
+                  <LoginPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <Suspense fallback={<Loading />}>
+                  <RegisterPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<Loading />}>
+                    <ProfilePage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/companies"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <Suspense fallback={<Loading />}>
+                    <CompanyManagementPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/drivers"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <Suspense fallback={<Loading />}>
+                    <DriverManagementPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/vehicles"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <Suspense fallback={<Loading />}>
+                    <VehicleManagementPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <Suspense fallback={<Loading />}>
+                    <UserManagementPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/config"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <Suspense fallback={<Loading />}>
+                    <ConfigManagementPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route path="/admin/cities" element={
+              <ProtectedRoute roles={['admin']}>
+                <Suspense fallback={<Loading />}>
+                  <CitiesManagementPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </main>
+
+        <Footer />
+      </div>
+    </Router>
   );
 }
 

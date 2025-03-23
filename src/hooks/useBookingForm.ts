@@ -1,6 +1,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
+import { cityService, City } from '@/services/db/cityService';
 
 export interface PassengerInfo {
   name: string;
@@ -34,6 +35,25 @@ export const useBookingForm = () => {
   const [showBookingSteps, setShowBookingSteps] = useState(false);
   const [time, setTime] = useState<string>('');
   const [returnTime, setReturnTime] = useState<string>('');
+  const [availableCities, setAvailableCities] = useState<City[]>([]);
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
+  
+  useEffect(() => {
+    fetchAvailableCities();
+  }, []);
+  
+  const fetchAvailableCities = async () => {
+    setIsLoadingCities(true);
+    try {
+      const cities = await cityService.getActiveCities();
+      setAvailableCities(cities);
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      toast.error('Erro ao carregar cidades disponíveis');
+    } finally {
+      setIsLoadingCities(false);
+    }
+  };
   
   const handleBooking = () => {
     if (!originValue) {
@@ -103,6 +123,25 @@ export const useBookingForm = () => {
     passengerData
   };
 
+  // Calculate distance between cities if both are selected
+  const calculateDistanceBetweenCities = (): number | null => {
+    if (!originCity || !destinationCity) return null;
+    
+    const originCityObj = availableCities.find(city => city.id === originCity);
+    const destCityObj = availableCities.find(city => city.id === destinationCity);
+    
+    if (!originCityObj || !destCityObj) return null;
+    
+    return cityService.calculateDistance(
+      originCityObj.latitude, 
+      originCityObj.longitude, 
+      destCityObj.latitude, 
+      destCityObj.longitude
+    );
+  };
+
+  const estimatedDistance = calculateDistanceBetweenCities();
+
   return {
     originValue,
     destinationValue,
@@ -116,6 +155,9 @@ export const useBookingForm = () => {
     time,
     returnTime,
     showBookingSteps,
+    availableCities,
+    isLoadingCities,
+    estimatedDistance,
     setOriginCity,
     setDestinationCity,
     setTripType,
@@ -129,6 +171,7 @@ export const useBookingForm = () => {
     handleDestinationChange,
     handleBooking,
     setShowBookingSteps,
+    fetchAvailableCities,
     bookingData,
   };
 };
