@@ -59,7 +59,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
         <PopoverTrigger asChild>
           <Button 
             variant="outline" 
-            className={`w-full justify-start text-left font-normal py-6 border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 ${getConnectedClasses()}`}
+            className={`w-full justify-start text-left font-normal py-5 md:py-6 border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 ${getConnectedClasses()}`}
           >
             <CalendarIcon className="mr-2 h-5 w-5 text-amber-400" />
             {date ? (
@@ -69,7 +69,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align={isMobile ? "center" : "start"}>
+        <PopoverContent className="w-auto p-0" align={isMobile ? "center" : "start"} sideOffset={5}>
           <Calendar 
             mode="single" 
             selected={date} 
@@ -84,6 +84,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
               nav_button_previous: "hover:bg-amber-50",
               nav_button_next: "hover:bg-amber-50",
               caption: "text-amber-800",
+              head_cell: "text-amber-600 font-medium",
             }}
           />
         </PopoverContent>

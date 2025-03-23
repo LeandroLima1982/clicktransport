@@ -59,7 +59,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
   return (
     <Select value={value} onValueChange={handleValueChange} open={open} onOpenChange={setOpen}>
       <SelectTrigger 
-        className={`w-full py-6 border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 ${getConnectedClasses()}`}
+        className={`w-full py-5 md:py-6 border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 ${getConnectedClasses()}`}
       >
         <div className="flex items-center">
           <Clock className="mr-2 h-5 w-5 text-amber-400" />
@@ -74,8 +74,8 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
           )}
         </div>
       </SelectTrigger>
-      <SelectContent className="max-h-[300px]">
-        <div className="py-1 px-2 bg-amber-50 border-b border-amber-100 text-xs font-medium text-amber-700">
+      <SelectContent className="max-h-[300px]" position={isMobile ? "popper" : "item-aligned"} sideOffset={5}>
+        <div className="py-1 px-2 bg-amber-50/80 border-b border-amber-100 sticky top-0 z-10 text-xs font-medium text-amber-700">
           Manhã (7:00 - 11:30)
         </div>
         {timeOptions.slice(0, 10).map((time) => (
@@ -84,7 +84,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
           </SelectItem>
         ))}
         
-        <div className="py-1 px-2 bg-amber-50 border-b border-amber-100 text-xs font-medium text-amber-700">
+        <div className="py-1 px-2 bg-amber-50/80 border-b border-amber-100 sticky top-[34px] z-10 text-xs font-medium text-amber-700">
           Tarde (12:00 - 17:30)
         </div>
         {timeOptions.slice(10, 22).map((time) => (
@@ -93,7 +93,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
           </SelectItem>
         ))}
         
-        <div className="py-1 px-2 bg-amber-50 border-b border-amber-100 text-xs font-medium text-amber-700">
+        <div className="py-1 px-2 bg-amber-50/80 border-b border-amber-100 sticky top-[68px] z-10 text-xs font-medium text-amber-700">
           Noite (18:00 - 23:30)
         </div>
         {timeOptions.slice(22, 34).map((time) => (
@@ -102,7 +102,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
           </SelectItem>
         ))}
         
-        <div className="py-1 px-2 bg-amber-50 border-b border-amber-100 text-xs font-medium text-amber-700">
+        <div className="py-1 px-2 bg-amber-50/80 border-b border-amber-100 sticky top-[102px] z-10 text-xs font-medium text-amber-700">
           Madrugada (00:00 - 06:30)
         </div>
         {timeOptions.slice(34).map((time) => (
