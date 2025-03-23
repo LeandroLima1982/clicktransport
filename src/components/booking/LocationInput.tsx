@@ -139,7 +139,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
         {label}
       </Label>
       
-      <div className="flex flex-col md:flex-row gap-2">
+      <div className="flex items-center gap-2">
         {/* Address input with integrated suggestions */}
         <div className="relative flex-grow">
           <div className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -158,7 +158,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
               // Pequeno atraso para permitir que o clique em uma sugestão seja registrado
               setTimeout(() => setIsFocused(false), 200);
             }}
-            className={`pl-10 pr-${value ? '24' : '10'} py-6 rounded-lg border ${isCEP ? 'border-green-200 bg-green-50' : 'border-gray-100'} shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300`}
+            className={`pl-10 pr-10 py-3 md:h-12 rounded-lg border ${isCEP ? 'border-green-200 bg-green-50' : 'border-gray-100'} shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300`}
           />
           
           {/* Botão de colar do clipboard */}
@@ -196,9 +196,10 @@ const LocationInput: React.FC<LocationInputProps> = ({
               variant="ghost"
               size="icon"
               onClick={onClear}
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0 hover:bg-gray-100"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0 bg-gray-100 hover:bg-gray-200"
+              aria-label="Limpar campo"
             >
-              <X className="h-4 w-4 text-gray-400" />
+              <X className="h-4 w-4 text-gray-600" />
             </Button>
           )}
           
@@ -241,13 +242,13 @@ const LocationInput: React.FC<LocationInputProps> = ({
         
         {/* Number input */}
         {showNumberField && onNumberChange && (
-          <div className="w-full md:w-24">
+          <div className="w-20">
             <Input
               id={`${id}-number`}
               type="text"
               value={numberValue}
               onChange={onNumberChange}
-              className="py-6 rounded-lg border border-gray-100 h-full"
+              className="text-center py-3 md:h-12 rounded-lg border border-gray-100 shadow-sm"
               placeholder="Nº"
             />
           </div>
