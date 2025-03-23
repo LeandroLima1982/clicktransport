@@ -13,10 +13,10 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({ value, onChange }) => {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   
-  // Generate time options in 30 minute intervals from 00:00 to 23:30
+  // Generate time options starting from 07:00 in 30 minute intervals until 23:30
   const generateTimeOptions = () => {
     const options = [];
-    for (let hour = 0; hour < 24; hour++) {
+    for (let hour = 7; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const formattedHour = hour.toString().padStart(2, '0');
         const formattedMinute = minute.toString().padStart(2, '0');

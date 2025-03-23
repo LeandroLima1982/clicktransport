@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,19 +39,14 @@ const LocationInput: React.FC<LocationInputProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const hasPasted = useRef(false);
 
-  // Verifica se o valor atual é um CEP
   useEffect(() => {
     setIsCEP(isBrazilianCEP(value));
   }, [value]);
 
-  // Função que mostra indicador de carregamento quando
-  // o usuário está digitando e a consulta está em andamento
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     
-    // Se for um CEP, formatar
     if (isBrazilianCEP(newValue)) {
-      // Simular um novo evento com o CEP formatado
       const formattedEvent = {
         ...e,
         target: {
@@ -68,19 +62,14 @@ const LocationInput: React.FC<LocationInputProps> = ({
       onChange(e);
     }
     
-    // Se o input ficar vazio, garantir que o indicador de carregamento desaparece
     if (newValue.length === 0) {
       setIsLoading(false);
       hasPasted.current = false;
     }
   };
 
-  // Função especial para lidar com colagem (paste)
   const handlePaste = () => {
-    // Marcamos que houve uma colagem para buscar sugestões imediatamente
     hasPasted.current = true;
-    
-    // Damos um tempo para o valor ser atualizado antes de verificar
     setTimeout(() => {
       if (inputRef.current && inputRef.current.value.length > 5) {
         setIsLoading(true);
@@ -88,15 +77,12 @@ const LocationInput: React.FC<LocationInputProps> = ({
     }, 100);
   };
 
-  // Atualizar estado de carregamento quando as sugestões mudam
   useEffect(() => {
     if (suggestions.length > 0 || !value || value.length < 3) {
       setIsLoading(false);
     }
     
-    // Se foi colado um endereço completo e recebemos sugestões
     if (hasPasted.current && suggestions.length > 0) {
-      // Seleciona automaticamente a primeira sugestão se for um endereço muito completo
       if (value.length > 20 && suggestions[0].place_type?.includes('address')) {
         onSelectSuggestion(suggestions[0]);
         hasPasted.current = false;
@@ -105,12 +91,10 @@ const LocationInput: React.FC<LocationInputProps> = ({
     }
   }, [suggestions, value, onSelectSuggestion]);
 
-  // Função para obter dados da área de transferência
   const handlePasteFromClipboard = async () => {
     try {
       const clipboardText = await navigator.clipboard.readText();
       if (clipboardText && clipboardText.length > 3) {
-        // Simular um evento de input com o texto copiado
         const mockEvent = {
           target: {
             name: id,
@@ -122,7 +106,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
         hasPasted.current = true;
         setIsLoading(true);
         
-        // Focar no input
         if (inputRef.current) {
           inputRef.current.focus();
         }
@@ -139,8 +122,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
         {label}
       </Label>
       
-      <div className="flex items-center gap-2">
-        {/* Address input with integrated suggestions */}
+      <div className="flex items-center">
         <div className="relative flex-grow">
           <div className="absolute left-3 top-1/2 -translate-y-1/2">
             <MapPin className="h-5 w-5 text-amber-400" />
@@ -155,13 +137,11 @@ const LocationInput: React.FC<LocationInputProps> = ({
             onPaste={handlePaste}
             onFocus={() => setIsFocused(true)}
             onBlur={() => {
-              // Pequeno atraso para permitir que o clique em uma sugestão seja registrado
               setTimeout(() => setIsFocused(false), 200);
             }}
-            className={`pl-10 pr-10 py-3 md:h-12 rounded-lg border ${isCEP ? 'border-green-200 bg-green-50' : 'border-gray-100'} shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300`}
+            className={`pl-10 pr-10 py-3 md:h-12 ${showNumberField ? 'rounded-r-none' : 'rounded-lg'} border ${isCEP ? 'border-green-200 bg-green-50' : 'border-gray-100'} shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300`}
           />
           
-          {/* Botão de colar do clipboard */}
           {!value && (
             <Button
               type="button"
@@ -175,21 +155,18 @@ const LocationInput: React.FC<LocationInputProps> = ({
             </Button>
           )}
           
-          {/* Indicador de CEP válido */}
           {isCEP && (
             <div className="absolute right-10 top-1/2 -translate-y-1/2">
               <Check className="h-4 w-4 text-green-500" />
             </div>
           )}
           
-          {/* Indicador de carregamento */}
           {isLoading && !isCEP && (
             <div className="absolute right-10 top-1/2 -translate-y-1/2">
               <Loader2 className="h-4 w-4 text-gray-400 animate-spin" />
             </div>
           )}
           
-          {/* Botão de limpar */}
           {value && (
             <Button
               type="button"
@@ -203,7 +180,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
             </Button>
           )}
           
-          {/* Lista de sugestões */}
           {suggestions.length > 0 && (isFocused || isLoading) && (
             <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-md shadow-lg max-h-60 overflow-auto">
               <ul className="py-1">
@@ -232,7 +208,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
             </div>
           )}
           
-          {/* Mensagem de nenhum resultado */}
           {value && suggestions.length === 0 && !isLoading && isFocused && value.length >= 3 && (
             <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-md shadow-lg p-4 text-sm text-center text-gray-500">
               Nenhum resultado encontrado. Tente adicionar mais detalhes como número, bairro ou cidade.
@@ -240,22 +215,18 @@ const LocationInput: React.FC<LocationInputProps> = ({
           )}
         </div>
         
-        {/* Number input */}
         {showNumberField && onNumberChange && (
-          <div className="w-20">
-            <Input
-              id={`${id}-number`}
-              type="text"
-              value={numberValue}
-              onChange={onNumberChange}
-              className="text-center py-3 md:h-12 rounded-lg border border-gray-100 shadow-sm"
-              placeholder="Nº"
-            />
-          </div>
+          <Input
+            id={`${id}-number`}
+            type="text"
+            value={numberValue}
+            onChange={onNumberChange}
+            className="w-20 text-center py-3 md:h-12 rounded-l-none rounded-r-lg border-l-0 border border-gray-100 shadow-sm"
+            placeholder="Nº"
+          />
         )}
       </div>
       
-      {/* Dicas para o usuário */}
       <div className="text-xs text-gray-500 mt-1">
         {isCEP ? 
           "CEP detectado! Selecione nas sugestões para completar o endereço" : 

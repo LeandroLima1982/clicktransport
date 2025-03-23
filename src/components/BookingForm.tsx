@@ -96,15 +96,30 @@ const BookingForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Date, Time and Passengers in one row */}
+          {/* Date, Time and Passengers in one row - with connected date/time */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <DateSelector label="Vai quando?" date={date} onSelect={setDate} disabledDates={date => date < new Date()} />
-
-            <div className="space-y-2">
-              <label className="text-gray-700 block text-sm font-medium">
-                Horário de ida
-              </label>
-              <TimeSelector value={time} onChange={setTime} />
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-0">
+              {/* Date selector - visually connected to time selector */}
+              <div className="md:pr-0">
+                <DateSelector 
+                  label="Vai quando?" 
+                  date={date} 
+                  onSelect={setDate} 
+                  disabledDates={date => date < new Date()}
+                  isConnected={true}
+                  position="left" 
+                />
+              </div>
+              
+              {/* Time selector - visually connected to date selector */}
+              <div className="md:pl-0 space-y-2">
+                <label className="text-gray-700 block text-sm font-medium">
+                  Horário de ida
+                </label>
+                <div className="md:border-l-0 md:rounded-l-none md:pl-0">
+                  <TimeSelector value={time} onChange={setTime} />
+                </div>
+              </div>
             </div>
 
             <PassengerSelector value={passengers} onChange={setPassengers} />
@@ -113,18 +128,24 @@ const BookingForm: React.FC = () => {
           {/* Return trip fields */}
           {tripType === 'roundtrip' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 mt-1 border-t border-amber-200">
-              <DateSelector 
-                label="Volta quando?" 
-                date={returnDate} 
-                onSelect={setReturnDate} 
-                disabledDates={currentDate => currentDate < (date || new Date())} 
-              />
+              <div className="md:pr-0">
+                <DateSelector 
+                  label="Volta quando?" 
+                  date={returnDate} 
+                  onSelect={setReturnDate} 
+                  disabledDates={currentDate => currentDate < (date || new Date())}
+                  isConnected={true}
+                  position="left"
+                />
+              </div>
               
-              <div className="space-y-2">
+              <div className="md:pl-0 space-y-2">
                 <label className="text-gray-700 block text-sm font-medium">
                   Horário de volta
                 </label>
-                <TimeSelector value={returnTime} onChange={setReturnTime} />
+                <div className="md:border-l-0 md:rounded-l-none md:pl-0">
+                  <TimeSelector value={returnTime} onChange={setReturnTime} />
+                </div>
               </div>
             </div>
           )}

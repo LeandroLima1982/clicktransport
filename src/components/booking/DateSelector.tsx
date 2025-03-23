@@ -15,13 +15,17 @@ interface DateSelectorProps {
   date: Date | undefined;
   onSelect: (date: Date | undefined) => void;
   disabledDates?: (date: Date) => boolean;
+  isConnected?: boolean;
+  position?: 'left' | 'right';
 }
 
 const DateSelector: React.FC<DateSelectorProps> = ({
   label,
   date,
   onSelect,
-  disabledDates
+  disabledDates,
+  isConnected = false,
+  position = 'left'
 }) => {
   const isMobile = useIsMobile();
   const [open, setOpen] = React.useState(false);
@@ -33,6 +37,15 @@ const DateSelector: React.FC<DateSelectorProps> = ({
     setOpen(false);
   };
   
+  // Define classes for connected appearance
+  const getConnectedClasses = () => {
+    if (!isConnected) return '';
+    
+    return position === 'left' 
+      ? 'md:rounded-r-none md:border-r-0' 
+      : 'md:rounded-l-none md:border-l-0';
+  };
+  
   return (
     <div className="space-y-2">
       <Label className="text-gray-700 block text-sm font-medium">
@@ -42,7 +55,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
         <PopoverTrigger asChild>
           <Button 
             variant="outline" 
-            className="w-full justify-start text-left font-normal py-6 rounded-lg border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700"
+            className={`w-full justify-start text-left font-normal py-6 rounded-lg border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 ${getConnectedClasses()}`}
           >
             <CalendarIcon className="mr-2 h-5 w-5 text-amber-400" />
             {date ? (
