@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -56,7 +57,8 @@ const BookingForm: React.FC = () => {
   const {
     cities,
     loading: citiesLoading,
-    fetchCities
+    fetchCities,
+    getDistanceBetweenCities
   } = useDestinationsService();
   const [originCityId, setOriginCityId] = useState<string>('');
   const [destinationCityId, setDestinationCityId] = useState<string>('');
@@ -64,6 +66,8 @@ const BookingForm: React.FC = () => {
     distance: number;
     duration: number;
   } | null>(null);
+  const [originCity, setOriginCity] = useState<string>('');
+  const [destinationCity, setDestinationCity] = useState<string>('');
   const isMobile = useIsMobile();
   useEffect(() => {
     fetchCities();
@@ -71,12 +75,29 @@ const BookingForm: React.FC = () => {
   useEffect(() => {
     const calculateDistance = async () => {
       if (originCityId && destinationCityId) {
-        const originCity = cities.find(city => city.id === originCityId);
-        const destinationCity = cities.find(city => city.id === destinationCityId);
-        if (originCity && destinationCity) {
+        const originCityObj = cities.find(city => city.id === originCityId);
+        const destinationCityObj = cities.find(city => city.id === destinationCityId);
+        
+        if (originCityObj && destinationCityObj) {
+          // Set city names for later use in the combined address
+          setOriginCity(formatCityLabel(originCityObj));
+          setDestinationCity(formatCityLabel(destinationCityObj));
+          
           try {
-            const originCoords = `${originCity.longitude},${originCity.latitude}`;
-            const destinationCoords = `${destinationCity.longitude},${destinationCity.latitude}`;
+            // First check if we have this distance in our database
+            const savedDistance = await getDistanceBetweenCities(originCityId, destinationCityId);
+            
+            if (savedDistance && savedDistance.exists) {
+              setDistanceInfo({
+                distance: savedDistance.distance,
+                duration: savedDistance.duration
+              });
+              return;
+            }
+            
+            // If not in database, calculate using the API
+            const originCoords = `${originCityObj.longitude},${originCityObj.latitude}`;
+            const destinationCoords = `${destinationCityObj.longitude},${destinationCityObj.latitude}`;
             const routeInfo = await calculateRoute(originCoords, destinationCoords);
             if (routeInfo) {
               setDistanceInfo({
@@ -94,7 +115,7 @@ const BookingForm: React.FC = () => {
       }
     };
     calculateDistance();
-  }, [originCityId, destinationCityId, cities]);
+  }, [originCityId, destinationCityId, cities, getDistanceBetweenCities]);
   const formatCityLabel = (city: any) => {
     return `${city.name}${city.state ? `, ${city.state}` : ''}`;
   };
@@ -107,6 +128,22 @@ const BookingForm: React.FC = () => {
   const handleManualDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDestinationValue(e.target.value);
   };
+  
+  // Get the full address combining the manual input with the selected city
+  const getFullOriginAddress = () => {
+    if (originValue && originCity) {
+      return `${originValue}, ${originCity}`;
+    }
+    return originValue;
+  };
+  
+  const getFullDestinationAddress = () => {
+    if (destinationValue && destinationCity) {
+      return `${destinationValue}, ${destinationCity}`;
+    }
+    return destinationValue;
+  };
+  
   return <div className="w-full bg-[#FEF7E4] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
       <div className="pt-5 md:pt-7 pb-6 md:pb-8 bg-gradient-to-b from-amber-300 to-amber-200 py-0 px-[20px] md:px-[54px] bg-amber-500">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0">
@@ -227,8 +264,8 @@ const BookingForm: React.FC = () => {
         </Button>
 
         {bookingData && showBookingSteps && <BookingSteps bookingData={{
-        origin: originValue,
-        destination: destinationValue,
+        origin: getFullOriginAddress(),
+        destination: getFullDestinationAddress(),
         date: date,
         returnDate: returnDate,
         tripType: tripType,
