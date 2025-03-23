@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Calendar, MapPin, Users, Clock, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Vehicle } from './VehicleSelection';
+import { useDestinationsService } from '@/hooks/useDestinationsService';
 
 interface TripDetailsProps {
   selectedVehicle: Vehicle | undefined;
@@ -33,6 +34,17 @@ const TripDetails: React.FC<TripDetailsProps> = ({
   formatCurrency,
   isCalculatingRoute
 }) => {
+  const { cities, fetchCities } = useDestinationsService();
+  const [isCheckingCityDistance, setIsCheckingCityDistance] = useState(false);
+  const [usingSavedDistance, setUsingSavedDistance] = useState(false);
+
+  useEffect(() => {
+    // Make sure cities are loaded
+    if (cities.length === 0) {
+      fetchCities();
+    }
+  }, [fetchCities, cities.length]);
+
   const formatDate = (date: Date | undefined) => {
     if (!date) return '';
     return format(date, 'dd/MM/yyyy', { locale: ptBR });
@@ -41,7 +53,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return `${hours}h ${mins}min`;
+    return `${hours}h ${mins > 0 ? `${mins}min` : ''}`;
   };
 
   return (
@@ -128,7 +140,14 @@ const TripDetails: React.FC<TripDetailsProps> = ({
                 </svg>
                 <span className="font-medium">Distância</span>
               </div>
-              <div>{estimatedDistance} km</div>
+              <div className="flex items-center">
+                <span>{estimatedDistance.toFixed(1)} km</span>
+                {usingSavedDistance && (
+                  <span className="ml-2 text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">
+                    Verificada
+                  </span>
+                )}
+              </div>
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg">

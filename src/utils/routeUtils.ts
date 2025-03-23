@@ -1,4 +1,3 @@
-
 import { MAPBOX_TOKEN } from './mapbox';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,7 +19,17 @@ export const calculateRoute = async (
   destination: string
 ): Promise<RouteInfo | null> => {
   try {
-    // First, geocode the origin and destination to get coordinates
+    // First check if this is a city pair with stored distance
+    const cityDistance = await getCityDistanceFromDb(origin, destination);
+    if (cityDistance) {
+      console.log("Using stored city distance:", cityDistance);
+      return {
+        distance: cityDistance.distance,
+        duration: cityDistance.duration
+      };
+    }
+    
+    // If no stored distance, geocode the addresses and calculate route
     const originCoords = await geocodeAddress(origin);
     const destinationCoords = await geocodeAddress(destination);
 
@@ -34,6 +43,77 @@ export const calculateRoute = async (
     return route;
   } catch (error) {
     console.error('Error calculating route:', error);
+    return null;
+  }
+};
+
+// Function to check if we have a saved distance between city names
+const getCityDistanceFromDb = async (origin: string, destination: string): Promise<RouteInfo | null> => {
+  try {
+    // Extract city names from addresses (assuming they're in the format "Street, City, State")
+    const originCity = extractCityFromAddress(origin);
+    const destinationCity = extractCityFromAddress(destination);
+    
+    if (!originCity || !destinationCity) {
+      return null;
+    }
+    
+    console.log("Checking distance between cities:", originCity, destinationCity);
+    
+    // Find city IDs from names
+    const { data: citiesData, error: citiesError } = await supabase
+      .from('cities')
+      .select('id, name, state')
+      .or(`name.ilike.${originCity}%,name.ilike.${destinationCity}%`);
+    
+    if (citiesError || !citiesData || citiesData.length < 2) {
+      console.log("Could not find both cities in database:", citiesError);
+      return null;
+    }
+    
+    const originCityData = citiesData.find(c => c.name.toLowerCase().includes(originCity.toLowerCase()));
+    const destinationCityData = citiesData.find(c => c.name.toLowerCase().includes(destinationCity.toLowerCase()));
+    
+    if (!originCityData || !destinationCityData) {
+      console.log("Could not match cities from address to database");
+      return null;
+    }
+    
+    // Look up distance between these cities
+    const { data: distanceData, error: distanceError } = await supabase
+      .from('city_distances')
+      .select('*')
+      .or(`and(origin_id.eq.${originCityData.id},destination_id.eq.${destinationCityData.id}),and(origin_id.eq.${destinationCityData.id},destination_id.eq.${originCityData.id})`)
+      .limit(1);
+    
+    if (distanceError || !distanceData || distanceData.length === 0) {
+      console.log("No stored distance found between cities");
+      return null;
+    }
+    
+    // Return the stored distance data
+    return {
+      distance: distanceData[0].distance,
+      duration: distanceData[0].duration
+    };
+  } catch (error) {
+    console.error("Error checking city distance:", error);
+    return null;
+  }
+};
+
+// Helper function to extract city name from address
+const extractCityFromAddress = (address: string): string | null => {
+  try {
+    // Try to extract city from address format like "Street, City, State"
+    const parts = address.split(',');
+    if (parts.length >= 2) {
+      // City is usually the second-to-last part before the state
+      return parts[parts.length - 2].trim();
+    }
+    return null;
+  } catch (error) {
+    console.error("Error extracting city from address:", error);
     return null;
   }
 };

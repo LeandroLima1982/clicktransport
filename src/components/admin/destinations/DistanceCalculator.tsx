@@ -10,9 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Route } from 'lucide-react';
+import { Loader2, Route, Save } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { calculateRoute } from '@/utils/routeUtils';
+import { useDestinationsService } from '@/hooks/useDestinationsService';
 
 interface City {
   id: string;
@@ -29,22 +30,51 @@ interface DistanceCalculatorProps {
 
 const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({ cities }) => {
   const { toast } = useToast();
+  const { getDistanceBetweenCities, saveDistanceBetweenCities } = useDestinationsService();
   const [originCityId, setOriginCityId] = useState<string>('');
   const [destinationCityId, setDestinationCityId] = useState<string>('');
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
   const [duration, setDuration] = useState<number | null>(null);
+  const [hasStoredDistance, setHasStoredDistance] = useState(false);
 
   const activeCities = cities.filter(city => city.is_active !== false);
 
   const resetResults = () => {
     setDistance(null);
     setDuration(null);
+    setHasStoredDistance(false);
   };
 
   useEffect(() => {
     resetResults();
-  }, [originCityId, destinationCityId]);
+    
+    // Check if there's already a stored distance between the selected cities
+    const checkStoredDistance = async () => {
+      if (originCityId && destinationCityId) {
+        try {
+          const distanceData = await getDistanceBetweenCities(originCityId, destinationCityId);
+          if (distanceData) {
+            setDistance(distanceData.distance);
+            setDuration(distanceData.duration);
+            setHasStoredDistance(true);
+            
+            toast({
+              title: "Distância existente",
+              description: "Usando distância já calculada anteriormente",
+            });
+          } else {
+            setHasStoredDistance(false);
+          }
+        } catch (error) {
+          console.error("Error checking stored distance:", error);
+        }
+      }
+    };
+    
+    checkStoredDistance();
+  }, [originCityId, destinationCityId, getDistanceBetweenCities]);
 
   const handleCalculate = async () => {
     if (!originCityId || !destinationCityId) {
@@ -72,7 +102,7 @@ const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({ cities }) => {
     resetResults();
 
     try {
-      // Convertemos as coordenadas para strings com o formato de endereço
+      // Use city coordinates for more accurate route calculation
       const originCoords = `${originCity.longitude},${originCity.latitude}`;
       const destinationCoords = `${destinationCity.longitude},${destinationCity.latitude}`;
       
@@ -81,6 +111,7 @@ const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({ cities }) => {
       if (routeInfo) {
         setDistance(routeInfo.distance);
         setDuration(routeInfo.duration);
+        setHasStoredDistance(false);
         
         toast({
           title: "Cálculo concluído",
@@ -102,6 +133,33 @@ const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({ cities }) => {
       });
     } finally {
       setIsCalculating(false);
+    }
+  };
+
+  const handleSaveDistance = async () => {
+    if (!originCityId || !destinationCityId || distance === null || duration === null) {
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      await saveDistanceBetweenCities(originCityId, destinationCityId, distance, duration);
+      setHasStoredDistance(true);
+      
+      toast({
+        title: "Distância salva",
+        description: "A distância entre as cidades foi salva com sucesso",
+      });
+    } catch (error) {
+      console.error("Error saving distance:", error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar a distância entre as cidades",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -155,7 +213,7 @@ const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({ cities }) => {
           </div>
         </div>
         
-        <div className="flex justify-center">
+        <div className="flex justify-center gap-3">
           <Button 
             onClick={handleCalculate} 
             disabled={isCalculating || !originCityId || !destinationCityId}
@@ -173,6 +231,27 @@ const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({ cities }) => {
               </>
             )}
           </Button>
+          
+          {distance !== null && duration !== null && !hasStoredDistance && (
+            <Button 
+              onClick={handleSaveDistance} 
+              variant="outline"
+              disabled={isSaving}
+              className="w-full md:w-auto"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Salvar Distância
+                </>
+              )}
+            </Button>
+          )}
         </div>
         
         {(distance !== null || duration !== null) && (
@@ -180,6 +259,11 @@ const DistanceCalculator: React.FC<DistanceCalculatorProps> = ({ cities }) => {
             <h3 className="font-semibold mb-2 flex items-center">
               <Route className="mr-2 h-5 w-5 text-blue-500" />
               Resultados do Cálculo
+              {hasStoredDistance && (
+                <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                  Distância armazenada
+                </span>
+              )}
             </h3>
             
             <div className="grid gap-4 md:grid-cols-2">

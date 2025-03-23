@@ -125,7 +125,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
           <Input 
             ref={inputRef}
             id={id}
-            placeholder={placeholder}
+            placeholder="Rua Nome da Rua, nº 123, Bairro, Referência"
             value={value}
             onChange={handleChange}
             onPaste={handlePaste}

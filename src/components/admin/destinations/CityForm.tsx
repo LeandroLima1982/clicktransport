@@ -55,11 +55,12 @@ const CityForm: React.FC<CityFormProps> = ({ initialData, onSubmit, onCancel }) 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Convert state to uppercase if it's a state field and limit to 2 characters
+    // Handle state field (convert to uppercase, limit to 2 chars, remove dots/spaces)
     if (name === 'state') {
+      const cleanState = value.replace(/[.\s]/g, '');
       setFormData(prev => ({ 
         ...prev, 
-        [name]: value.toUpperCase().substring(0, 2)
+        [name]: cleanState.toUpperCase().substring(0, 2)
       }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -77,9 +78,12 @@ const CityForm: React.FC<CityFormProps> = ({ initialData, onSubmit, onCancel }) 
 
   const handleLocationSelected = (location: any) => {
     // Extract the state abbreviation when a location is selected
-    const stateAbbreviation = location.state 
-      ? location.state.substring(0, 2).toUpperCase() 
-      : '';
+    let stateAbbreviation = '';
+    
+    // If location has state, use it (but ensure it's a 2-letter code)
+    if (location.state) {
+      stateAbbreviation = location.state.replace(/[.\s]/g, '').substring(0, 2).toUpperCase();
+    }
       
     setFormData(prev => ({
       ...prev,
@@ -100,6 +104,11 @@ const CityForm: React.FC<CityFormProps> = ({ initialData, onSubmit, onCancel }) 
     
     if (formData.latitude === 0 && formData.longitude === 0) {
       newErrors.location = 'Coordenadas válidas são obrigatórias';
+    }
+    
+    // Validate state format
+    if (formData.state && formData.state.length !== 2) {
+      newErrors.state = 'UF deve ter exatamente 2 letras';
     }
     
     setErrors(newErrors);

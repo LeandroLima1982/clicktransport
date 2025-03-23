@@ -56,12 +56,14 @@ export const useDestinationsService = () => {
 
   const addCity = async (cityData: Omit<City, 'id' | 'created_at'>) => {
     try {
-      // Process state to ensure it's abbreviated
+      // Ensure state is a valid two-letter abbreviation in uppercase
       if (cityData.state) {
-        cityData.state = cityData.state.substring(0, 2).toUpperCase();
+        // Remove any accidental dots or spaces
+        const cleanState = cityData.state.replace(/[.\s]/g, '');
+        cityData.state = cleanState.substring(0, 2).toUpperCase();
       }
 
-      // Remover o ID se for uma nova cidade
+      // Remove the ID if it's a new city
       const { id, ...cityDataWithoutId } = cityData as any;
       
       const { data, error } = await supabase
@@ -71,7 +73,7 @@ export const useDestinationsService = () => {
       
       if (error) throw new Error(error.message);
       
-      // Atualizar a lista de cidades
+      // Update the list of cities
       setCities(prevCities => [...prevCities, data[0]]);
       
       return data[0];
@@ -85,9 +87,11 @@ export const useDestinationsService = () => {
     try {
       if (!cityData.id) throw new Error('City ID is required for update');
       
-      // Process state to ensure it's abbreviated
+      // Ensure state is a valid two-letter abbreviation in uppercase
       if (cityData.state) {
-        cityData.state = cityData.state.substring(0, 2).toUpperCase();
+        // Remove any accidental dots or spaces
+        const cleanState = cityData.state.replace(/[.\s]/g, '');
+        cityData.state = cleanState.substring(0, 2).toUpperCase();
       }
 
       const { data, error } = await supabase
@@ -98,7 +102,7 @@ export const useDestinationsService = () => {
       
       if (error) throw new Error(error.message);
       
-      // Atualizar a lista de cidades
+      // Update the list of cities
       setCities(prevCities => 
         prevCities.map(city => 
           city.id === cityData.id ? data[0] : city
@@ -121,7 +125,7 @@ export const useDestinationsService = () => {
       
       if (error) throw new Error(error.message);
       
-      // Atualizar a lista de cidades
+      // Update the list of cities
       setCities(prevCities => 
         prevCities.filter(city => city.id !== cityId)
       );
@@ -133,24 +137,24 @@ export const useDestinationsService = () => {
     }
   };
 
-  // Função para buscar distância entre cidades
+  // Function to fetch distance between cities using stored data or API
   const getDistanceBetweenCities = async (originId: string, destinationId: string) => {
     try {
       const originCity = cities.find(city => city.id === originId);
       const destinationCity = cities.find(city => city.id === destinationId);
       
       if (!originCity || !destinationCity) {
-        throw new Error('Cidades não encontradas');
+        throw new Error('Cities not found');
       }
       
-      // Verifica se já existe um registro de distância entre essas cidades
+      // Check if there's already a distance record between these cities
       const { data, error } = await supabase
         .from('city_distances')
         .select('*')
         .or(`and(origin_id.eq.${originId},destination_id.eq.${destinationId}),and(origin_id.eq.${destinationId},destination_id.eq.${originId})`)
         .single();
       
-      if (error && error.code !== 'PGRST116') { // PGRST116 é o código para "não encontrado"
+      if (error && error.code !== 'PGRST116') { // PGRST116 is the code for "not found"
         throw new Error(error.message);
       }
       
@@ -162,10 +166,34 @@ export const useDestinationsService = () => {
         };
       }
       
-      // Se não existe, retorna null
+      // If no record exists, return null
       return null;
     } catch (err) {
       console.error('Error getting distance between cities:', err);
+      throw err;
+    }
+  };
+
+  // Function to save calculated distance between cities
+  const saveDistanceBetweenCities = async (originId: string, destinationId: string, distance: number, duration: number) => {
+    try {
+      const { data, error } = await supabase
+        .from('city_distances')
+        .insert([
+          {
+            origin_id: originId,
+            destination_id: destinationId,
+            distance: distance,
+            duration: duration
+          }
+        ])
+        .select();
+      
+      if (error) throw new Error(error.message);
+      
+      return data[0];
+    } catch (err) {
+      console.error('Error saving distance between cities:', err);
       throw err;
     }
   };
@@ -178,6 +206,7 @@ export const useDestinationsService = () => {
     addCity,
     updateCity,
     deleteCity,
-    getDistanceBetweenCities
+    getDistanceBetweenCities,
+    saveDistanceBetweenCities
   };
 };
