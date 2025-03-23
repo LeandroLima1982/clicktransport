@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,8 @@ import DashboardStats from '@/components/admin/DashboardStats';
 import QueueDiagnostics from '@/components/admin/QueueDiagnostics';
 import TripRateSettings from '@/components/admin/TripRateSettings';
 import AppearanceSettings from '@/components/admin/AppearanceSettings';
-import { FileText, Settings, UserCheck, ChartBar, Loader2, LogOut, RefreshCw, TestTube, DollarSign, Paintbrush, Database, Bell, HelpCircle } from 'lucide-react';
+import DestinationManagement from '@/components/admin/destinations/DestinationManagement';
+import { FileText, Settings, UserCheck, ChartBar, Loader2, LogOut, RefreshCw, TestTube, DollarSign, Paintbrush, Database, Bell, HelpCircle, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useCompanyQueue } from '@/hooks/useCompanyQueue';
@@ -35,14 +35,12 @@ const AdminDashboard: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { fixQueuePositions, resetQueue } = useCompanyQueue();
 
-  // Effect to handle URL query params for tab
   useEffect(() => {
     if (tabFromQuery) {
       setActiveTab(tabFromQuery);
     }
   }, [tabFromQuery]);
 
-  // Effect to update URL when tab changes
   useEffect(() => {
     const newParams = new URLSearchParams(location.search);
     if (activeTab === "overview") {
@@ -166,7 +164,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-8 h-auto">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-9 h-auto">
             <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ChartBar className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Visão Geral</span>
@@ -186,6 +184,11 @@ const AdminDashboard: React.FC = () => {
               <UserCheck className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Motoristas</span>
               <span className="sm:hidden">Motoristas</span>
+            </TabsTrigger>
+            <TabsTrigger value="destinations" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <MapPin className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Destinos</span>
+              <span className="sm:hidden">Destinos</span>
             </TabsTrigger>
             <TabsTrigger value="rates" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <DollarSign className="h-4 w-4 mr-2" />
@@ -371,6 +374,10 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="destinations">
+            <DestinationManagement />
           </TabsContent>
 
           <TabsContent value="rates">
