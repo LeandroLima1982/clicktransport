@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -77,16 +76,13 @@ const BookingForm: React.FC = () => {
       if (originCityId && destinationCityId) {
         const originCityObj = cities.find(city => city.id === originCityId);
         const destinationCityObj = cities.find(city => city.id === destinationCityId);
-        
         if (originCityObj && destinationCityObj) {
           // Set city names for later use in the combined address
           setOriginCity(formatCityLabel(originCityObj));
           setDestinationCity(formatCityLabel(destinationCityObj));
-          
           try {
             // First check if we have this distance in our database
             const savedDistance = await getDistanceBetweenCities(originCityId, destinationCityId);
-            
             if (savedDistance && savedDistance.exists) {
               setDistanceInfo({
                 distance: savedDistance.distance,
@@ -94,7 +90,7 @@ const BookingForm: React.FC = () => {
               });
               return;
             }
-            
+
             // If not in database, calculate using the API
             const originCoords = `${originCityObj.longitude},${originCityObj.latitude}`;
             const destinationCoords = `${destinationCityObj.longitude},${destinationCityObj.latitude}`;
@@ -128,7 +124,7 @@ const BookingForm: React.FC = () => {
   const handleManualDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDestinationValue(e.target.value);
   };
-  
+
   // Get the full address combining the manual input with the selected city
   const getFullOriginAddress = () => {
     if (originValue && originCity) {
@@ -136,14 +132,12 @@ const BookingForm: React.FC = () => {
     }
     return originValue;
   };
-  
   const getFullDestinationAddress = () => {
     if (destinationValue && destinationCity) {
       return `${destinationValue}, ${destinationCity}`;
     }
     return destinationValue;
   };
-  
   return <div className="w-full bg-[#FEF7E4] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
       <div className="pt-5 md:pt-7 pb-6 md:pb-8 bg-gradient-to-b from-amber-300 to-amber-200 py-0 px-[20px] md:px-[54px] bg-amber-500">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0">
@@ -216,9 +210,7 @@ const BookingForm: React.FC = () => {
             </div>
           </div>
           
-          {distanceInfo && <div className="text-sm font-medium text-amber-800 p-2 rounded-md border border-amber-100 bg-amber-50/15">
-              <p>Distância: {distanceInfo.distance.toFixed(2)} km • Tempo estimado: {Math.floor(distanceInfo.duration / 60) > 0 ? `${Math.floor(distanceInfo.duration / 60)}h ` : ''}{Math.round(distanceInfo.duration % 60)}min</p>
-            </div>}
+          {distanceInfo}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
