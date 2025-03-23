@@ -57,8 +57,9 @@ const BookingForm: React.FC = () => {
         </div>
 
         <div className="space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-            <div className="md:col-span-3">
+          {/* Origin location with inline number */}
+          <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:space-x-4">
+            <div className="flex-1">
               <LocationInput 
                 id="origin" 
                 label="De onde vai sair? (CEP recomendado)" 
@@ -67,27 +68,17 @@ const BookingForm: React.FC = () => {
                 onChange={handleOriginChange} 
                 suggestions={originSuggestions} 
                 onSelectSuggestion={suggestion => selectSuggestion(suggestion, true)} 
-                onClear={clearOrigin} 
+                onClear={clearOrigin}
+                showNumberField={true}
+                numberValue={originNumber}
+                onNumberChange={handleOriginNumberChange}
               />
             </div>
-            
-            <div className="md:col-span-1">
-              <div className="space-y-2">
-                <Label htmlFor="originNumber" className="text-gray-700 block text-sm font-medium">
-                  Número
-                </Label>
-                <Input
-                  id="originNumber"
-                  type="text"
-                  value={originNumber}
-                  onChange={handleOriginNumberChange}
-                  className="py-6 rounded-lg border border-gray-100"
-                  placeholder="Nº"
-                />
-              </div>
-            </div>
-            
-            <div className="md:col-span-3">
+          </div>
+          
+          {/* Destination location with inline number */}
+          <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:space-x-4">
+            <div className="flex-1">
               <LocationInput 
                 id="destination" 
                 label="Para onde vai? (CEP recomendado)" 
@@ -96,27 +87,15 @@ const BookingForm: React.FC = () => {
                 onChange={handleDestinationChange} 
                 suggestions={destinationSuggestions} 
                 onSelectSuggestion={suggestion => selectSuggestion(suggestion, false)} 
-                onClear={clearDestination} 
+                onClear={clearDestination}
+                showNumberField={true}
+                numberValue={destinationNumber}
+                onNumberChange={handleDestinationNumberChange}
               />
-            </div>
-            
-            <div className="md:col-span-1">
-              <div className="space-y-2">
-                <Label htmlFor="destinationNumber" className="text-gray-700 block text-sm font-medium">
-                  Número
-                </Label>
-                <Input
-                  id="destinationNumber"
-                  type="text"
-                  value={destinationNumber}
-                  onChange={handleDestinationNumberChange}
-                  className="py-6 rounded-lg border border-gray-100"
-                  placeholder="Nº"
-                />
-              </div>
             </div>
           </div>
 
+          {/* Date, Time and Passengers in one row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <DateSelector label="Vai quando?" date={date} onSelect={setDate} disabledDates={date => date < new Date()} />
 
@@ -130,6 +109,7 @@ const BookingForm: React.FC = () => {
             <PassengerSelector value={passengers} onChange={setPassengers} />
           </div>
 
+          {/* Return trip fields */}
           {tripType === 'roundtrip' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 mt-1 border-t border-amber-200">
               <DateSelector 
@@ -151,7 +131,7 @@ const BookingForm: React.FC = () => {
 
         <Button 
           onClick={handleBooking} 
-          className="w-full rounded-lg mt-7 text-black text-lg font-medium h-14 bg-amber-400 hover:bg-amber-500 transition-all duration-300 my-[49px]"
+          className="w-full rounded-lg mt-7 text-black text-lg font-medium h-14 bg-amber-400 hover:bg-amber-500 transition-all duration-300"
         >
           <span className="relative z-10 flex items-center justify-center">
             Buscar
