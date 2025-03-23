@@ -57,38 +57,41 @@ const BookingForm: React.FC = () => {
         </div>
 
         <div className="space-y-5">
-          {/* Origin location with inline number */}
-          <div className="flex-1">
-            <LocationInput 
-              id="origin" 
-              label="De onde vai sair? (CEP recomendado)" 
-              placeholder="CEP ou endereço" 
-              value={originValue} 
-              onChange={handleOriginChange} 
-              suggestions={originSuggestions} 
-              onSelectSuggestion={suggestion => selectSuggestion(suggestion, true)} 
-              onClear={clearOrigin}
-              showNumberField={true}
-              numberValue={originNumber}
-              onNumberChange={handleOriginNumberChange}
-            />
-          </div>
-          
-          {/* Destination location with inline number */}
-          <div className="flex-1">
-            <LocationInput 
-              id="destination" 
-              label="Para onde vai? (CEP recomendado)" 
-              placeholder="CEP ou endereço" 
-              value={destinationValue} 
-              onChange={handleDestinationChange} 
-              suggestions={destinationSuggestions} 
-              onSelectSuggestion={suggestion => selectSuggestion(suggestion, false)} 
-              onClear={clearDestination}
-              showNumberField={true}
-              numberValue={destinationNumber}
-              onNumberChange={handleDestinationNumberChange}
-            />
+          {/* Address inputs with reduced width on larger screens */}
+          <div className="md:max-w-2xl lg:max-w-3xl mx-auto">
+            {/* Origin location with inline number */}
+            <div className="flex-1">
+              <LocationInput 
+                id="origin" 
+                label="De onde vai sair? (CEP recomendado)" 
+                placeholder="CEP ou endereço" 
+                value={originValue} 
+                onChange={handleOriginChange} 
+                suggestions={originSuggestions} 
+                onSelectSuggestion={suggestion => selectSuggestion(suggestion, true)} 
+                onClear={clearOrigin}
+                showNumberField={true}
+                numberValue={originNumber}
+                onNumberChange={handleOriginNumberChange}
+              />
+            </div>
+            
+            {/* Destination location with inline number */}
+            <div className="flex-1 mt-5">
+              <LocationInput 
+                id="destination" 
+                label="Para onde vai? (CEP recomendado)" 
+                placeholder="CEP ou endereço" 
+                value={destinationValue} 
+                onChange={handleDestinationChange} 
+                suggestions={destinationSuggestions} 
+                onSelectSuggestion={suggestion => selectSuggestion(suggestion, false)} 
+                onClear={clearDestination}
+                showNumberField={true}
+                numberValue={destinationNumber}
+                onNumberChange={handleDestinationNumberChange}
+              />
+            </div>
           </div>
 
           {/* Date, Time and Passengers in one row */}
