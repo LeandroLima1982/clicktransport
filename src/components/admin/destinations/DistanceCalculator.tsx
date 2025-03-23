@@ -20,6 +20,7 @@ interface City {
   state?: string;
   latitude: number;
   longitude: number;
+  is_active?: boolean;
 }
 
 interface DistanceCalculatorProps {

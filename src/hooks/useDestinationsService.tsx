@@ -3,8 +3,32 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// Define TypeScript interfaces
+interface City {
+  id: string;
+  name: string;
+  state?: string;
+  country?: string;
+  latitude: number;
+  longitude: number;
+  is_active?: boolean;
+  created_at: string;
+  updated_at?: string;
+  created_by?: string;
+}
+
+interface CityDistance {
+  id: string;
+  origin_id: string;
+  destination_id: string;
+  distance: number;
+  duration: number;
+  created_at: string;
+  updated_at?: string;
+}
+
 export const useDestinationsService = () => {
-  const [cities, setCities] = useState<any[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -29,10 +53,10 @@ export const useDestinationsService = () => {
     }
   }, []);
 
-  const addCity = async (cityData: any) => {
+  const addCity = async (cityData: Omit<City, 'id' | 'created_at'>) => {
     try {
       // Remover o ID se for uma nova cidade
-      const { id, ...cityDataWithoutId } = cityData;
+      const { id, ...cityDataWithoutId } = cityData as any;
       
       const { data, error } = await supabase
         .from('cities')
@@ -51,7 +75,7 @@ export const useDestinationsService = () => {
     }
   };
 
-  const updateCity = async (cityData: any) => {
+  const updateCity = async (cityData: City) => {
     try {
       if (!cityData.id) throw new Error('City ID is required for update');
       

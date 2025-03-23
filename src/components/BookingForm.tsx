@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -20,6 +19,19 @@ import {
 } from '@/components/ui/select';
 import { useDestinationsService } from '@/hooks/useDestinationsService';
 import { calculateRoute } from '@/utils/routeUtils';
+
+interface BookingData {
+  origin: string;
+  destination: string;
+  date: Date;
+  returnDate: Date;
+  tripType: "oneway" | "roundtrip";
+  passengers: string;
+  time?: string;
+  returnTime?: string;
+  passengerData?: { name: string; phone: string; }[];
+  distance?: number;
+}
 
 const BookingForm: React.FC = () => {
   const {
@@ -66,12 +78,10 @@ const BookingForm: React.FC = () => {
   
   const isMobile = useIsMobile();
 
-  // Carrega as cidades ao iniciar
   useEffect(() => {
     fetchCities();
   }, [fetchCities]);
 
-  // Atualiza a origem quando uma cidade é selecionada
   useEffect(() => {
     if (originCityId && useCitySelection) {
       const selectedCity = cities.find(city => city.id === originCityId);
@@ -82,7 +92,6 @@ const BookingForm: React.FC = () => {
     }
   }, [originCityId, cities, useCitySelection]);
 
-  // Atualiza o destino quando uma cidade é selecionada
   useEffect(() => {
     if (destinationCityId && useCitySelection) {
       const selectedCity = cities.find(city => city.id === destinationCityId);
@@ -93,7 +102,6 @@ const BookingForm: React.FC = () => {
     }
   }, [destinationCityId, cities, useCitySelection]);
 
-  // Calcula a rota quando origem e destino são selecionados
   useEffect(() => {
     const calculateDistance = async () => {
       if (originCityId && destinationCityId && useCitySelection) {
@@ -102,7 +110,6 @@ const BookingForm: React.FC = () => {
         
         if (originCity && destinationCity) {
           try {
-            // Convertemos as coordenadas para strings com o formato de endereço
             const originCoords = `${originCity.longitude},${originCity.latitude}`;
             const destinationCoords = `${destinationCity.longitude},${destinationCity.latitude}`;
             
@@ -127,7 +134,6 @@ const BookingForm: React.FC = () => {
     calculateDistance();
   }, [originCityId, destinationCityId, cities, useCitySelection]);
 
-  // Formata o nome da cidade para exibição
   const formatCityLabel = (city: any) => {
     return `${city.name}${city.state ? `, ${city.state}` : ''}`;
   };
@@ -140,7 +146,6 @@ const BookingForm: React.FC = () => {
         </div>
 
         <div className="space-y-4 md:space-y-5">
-          {/* Toggle between city selection and address input */}
           <div className="flex items-center space-x-2 mb-2">
             <Label htmlFor="use-cities" className="cursor-pointer select-none">
               Usar cidades cadastradas
@@ -154,11 +159,9 @@ const BookingForm: React.FC = () => {
             />
           </div>
 
-          {/* City selection or address inputs based on toggle */}
           {useCitySelection ? (
             <div className="md:max-w-5xl mx-auto">
               <div className="flex flex-col md:flex-row md:gap-4 space-y-4 md:space-y-0">
-                {/* Origin city selection */}
                 <div className="flex-1">
                   <Label htmlFor="origin-city" className="block text-sm font-medium text-gray-700 mb-1">
                     De onde vai sair?
@@ -180,7 +183,6 @@ const BookingForm: React.FC = () => {
                   </Select>
                 </div>
                 
-                {/* Destination city selection */}
                 <div className="flex-1">
                   <Label htmlFor="destination-city" className="block text-sm font-medium text-gray-700 mb-1">
                     Para onde vai?
@@ -203,7 +205,6 @@ const BookingForm: React.FC = () => {
                 </div>
               </div>
               
-              {/* Display distance information if available */}
               {distanceInfo && (
                 <div className="mt-2 text-sm text-gray-600">
                   <p>Distância: {distanceInfo.distance.toFixed(2)} km • Tempo estimado: {Math.floor(distanceInfo.duration / 60) > 0 ? `${Math.floor(distanceInfo.duration / 60)}h ` : ''}{Math.round(distanceInfo.duration % 60)}min</p>
@@ -213,12 +214,10 @@ const BookingForm: React.FC = () => {
           ) : (
             <div className="md:max-w-5xl mx-auto">
               <div className="flex flex-col md:flex-row md:gap-4 space-y-4 md:space-y-0">
-                {/* Origin location */}
                 <div className="flex-1">
                   <LocationInput id="origin" label="De onde vai sair?" placeholder="CEP ou endereço" value={originValue} onChange={handleOriginChange} suggestions={originSuggestions} onSelectSuggestion={suggestion => selectSuggestion(suggestion, true)} onClear={clearOrigin} showNumberField={true} numberValue={originNumber} onNumberChange={handleOriginNumberChange} />
                 </div>
                 
-                {/* Destination location */}
                 <div className="flex-1">
                   <LocationInput id="destination" label="Para onde vai?" placeholder="CEP ou endereço" value={destinationValue} onChange={handleDestinationChange} suggestions={destinationSuggestions} onSelectSuggestion={suggestion => selectSuggestion(suggestion, false)} onClear={clearDestination} showNumberField={true} numberValue={destinationNumber} onNumberChange={handleDestinationNumberChange} />
                 </div>
@@ -226,9 +225,7 @@ const BookingForm: React.FC = () => {
             </div>
           )}
 
-          {/* Combined Date & Time selector with Passengers */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Date & Time combined inline */}
             <div>
               <Label className="text-gray-700 block text-sm font-medium mb-2">
                 Vai quando?
@@ -248,7 +245,6 @@ const BookingForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Return trip fields */}
           {tripType === 'roundtrip' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-amber-200">
               <div>
                 <Label className="text-gray-700 block text-sm font-medium mb-2">
@@ -273,17 +269,17 @@ const BookingForm: React.FC = () => {
         </Button>
 
         {bookingData && showBookingSteps && <BookingSteps bookingData={{
-        origin: originValue + (originNumber ? `, ${originNumber}` : ''),
-        destination: destinationValue + (destinationNumber ? `, ${destinationNumber}` : ''),
-        date: date,
-        returnDate: returnDate,
-        tripType: tripType,
-        passengers: passengers,
-        time: time,
-        returnTime: returnTime,
-        passengerData: passengerData,
-        distance: distanceInfo?.distance
-      }} isOpen={showBookingSteps} onClose={() => setShowBookingSteps(false)} />}
+          origin: originValue + (originNumber ? `, ${originNumber}` : ''),
+          destination: destinationValue + (destinationNumber ? `, ${destinationNumber}` : ''),
+          date: date,
+          returnDate: returnDate,
+          tripType: tripType,
+          passengers: passengers,
+          time: time,
+          returnTime: returnTime,
+          passengerData: passengerData,
+          distance: distanceInfo?.distance
+        } as BookingData} isOpen={showBookingSteps} onClose={() => setShowBookingSteps(false)} />}
       </div>
     </div>;
 };

@@ -99,6 +99,51 @@ export type Database = {
         }
         Relationships: []
       }
+      city_distances: {
+        Row: {
+          created_at: string | null
+          destination_id: string
+          distance: number
+          duration: number
+          id: string
+          origin_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          destination_id: string
+          distance: number
+          duration: number
+          id?: string
+          origin_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          destination_id?: string
+          distance?: number
+          duration?: number
+          id?: string
+          origin_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_distances_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "city_distances_origin_id_fkey"
+            columns: ["origin_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           cnpj: string | null
