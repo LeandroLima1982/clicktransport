@@ -143,9 +143,7 @@ const BookingForm: React.FC = () => {
                           </SelectItem>)}
                       </SelectContent>
                     </Select>
-                    <Button variant="ghost" size="icon" className="h-11 w-11 ml-1 bg-white border border-gray-100" onClick={handleRefreshCities}>
-                      <RotateCw className="h-4 w-4" />
-                    </Button>
+                    
                   </div>
                 </div>
               </div>
