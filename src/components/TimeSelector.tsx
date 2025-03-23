@@ -21,7 +21,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
   const [open, setOpen] = useState(false);
   
   // Generate time options for a full 24 hour day in 30 minute intervals
-  // but reordered to center around 7:00 AM
+  // centered around 7:00 AM
   const generateTimeOptions = () => {
     const options = [];
     
@@ -34,7 +34,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
       }
     }
     
-    // Reorder to center around 07:00
+    // Find the index of 7:00 AM
     const sevenAmIndex = options.findIndex(time => time === '07:00');
     
     // Get times before 7:00 AM (in reverse order)
