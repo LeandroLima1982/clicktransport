@@ -83,31 +83,39 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
   };
 
   return (
-    <Select value={value} onValueChange={handleValueChange} open={open} onOpenChange={setOpen}>
-      <SelectTrigger 
-        className={`w-full py-5 md:py-6 border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 ${getConnectedClasses()}`}
-      >
-        <div className="flex items-center">
-          <Clock className="mr-2 h-5 w-5 text-amber-400" />
-          {value ? (
-            <span className="flex items-center">
-              {value}
-            </span>
-          ) : (
-            <span className="flex items-center text-gray-400">
-              Selecione o horário
-            </span>
-          )}
-        </div>
-      </SelectTrigger>
-      <SelectContent className="max-h-[300px]" position={isMobile ? "popper" : "item-aligned"} sideOffset={5}>
-        {timeOptions.map((time) => (
-          <SelectItem key={time} value={time} className="cursor-pointer hover:bg-amber-50">
-            {time}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="relative w-full">
+      <Select value={value} onValueChange={handleValueChange} open={open} onOpenChange={setOpen}>
+        <SelectTrigger 
+          className={`w-full py-5 md:py-6 border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 ${getConnectedClasses()}`}
+        >
+          <div className="flex items-center">
+            <Clock className="mr-2 h-5 w-5 text-amber-400" />
+            {value ? (
+              <span className="flex items-center">
+                {value}
+              </span>
+            ) : (
+              <span className="flex items-center text-gray-400">
+                Selecione o horário
+              </span>
+            )}
+          </div>
+        </SelectTrigger>
+        <SelectContent 
+          className="max-h-[300px]" 
+          position="popper" 
+          align="start"
+          side="bottom"
+          sideOffset={0}
+        >
+          {timeOptions.map((time) => (
+            <SelectItem key={time} value={time} className="cursor-pointer hover:bg-amber-50">
+              {time}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 };
 
