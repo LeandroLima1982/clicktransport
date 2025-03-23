@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -22,7 +21,7 @@ import {
 import { useDestinationsService } from '@/hooks/useDestinationsService';
 import { calculateRoute } from '@/utils/routeUtils';
 import { Check, ChevronDown, MapPin, RotateCw } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface BookingData {
   origin: string;
@@ -177,7 +176,7 @@ const BookingForm: React.FC = () => {
             <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="search" className="text-xs sm:text-sm">
                 <MapPin className="h-3.5 w-3.5 mr-1.5" />
-                Buscar endereço
+                Buscar endere��o
               </TabsTrigger>
               <TabsTrigger value="cities" className="text-xs sm:text-sm">
                 <Check className="h-3.5 w-3.5 mr-1.5" />
@@ -189,7 +188,7 @@ const BookingForm: React.FC = () => {
               </TabsTrigger>
             </TabsList>
 
-            {inputType === 'search' && (
+            <TabsContent value="search">
               <div className="md:max-w-5xl mx-auto">
                 <div className="flex flex-col md:flex-row md:gap-4 space-y-4 md:space-y-0">
                   <div className="flex-1">
@@ -225,9 +224,9 @@ const BookingForm: React.FC = () => {
                   </div>
                 </div>
               </div>
-            )}
+            </TabsContent>
 
-            {inputType === 'cities' && (
+            <TabsContent value="cities">
               <div className="md:max-w-5xl mx-auto">
                 <div className="flex flex-col md:flex-row md:gap-4 space-y-4 md:space-y-0">
                   <div className="flex-1">
@@ -290,9 +289,9 @@ const BookingForm: React.FC = () => {
                   </div>
                 )}
               </div>
-            )}
+            </TabsContent>
 
-            {inputType === 'manual' && (
+            <TabsContent value="manual">
               <div className="md:max-w-5xl mx-auto">
                 <div className="flex flex-col md:flex-row md:gap-4 space-y-4 md:space-y-0">
                   <div className="flex-1">
@@ -322,7 +321,8 @@ const BookingForm: React.FC = () => {
                   </div>
                 </div>
               </div>
-            )}
+            </TabsContent>
+          </Tabs>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
