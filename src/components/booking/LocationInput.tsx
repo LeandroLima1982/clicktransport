@@ -5,7 +5,6 @@ import { MapPin, X, Loader2, Check, Clipboard } from 'lucide-react';
 import { getPlaceIcon, formatPlaceName, isBrazilianCEP, formatCEP } from '@/utils/mapbox';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-
 interface LocationInputProps {
   id: string;
   label: string;
@@ -19,7 +18,6 @@ interface LocationInputProps {
   numberValue?: string;
   onNumberChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
-
 const LocationInput: React.FC<LocationInputProps> = ({
   id,
   label,
@@ -38,14 +36,11 @@ const LocationInput: React.FC<LocationInputProps> = ({
   const [isCEP, setIsCEP] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasPasted = useRef(false);
-
   useEffect(() => {
     setIsCEP(isBrazilianCEP(value));
   }, [value]);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    
     if (isBrazilianCEP(newValue)) {
       const formattedEvent = {
         ...e,
@@ -54,20 +49,17 @@ const LocationInput: React.FC<LocationInputProps> = ({
           value: formatCEP(newValue)
         }
       };
-      
       setIsLoading(true);
       onChange(formattedEvent);
     } else {
       setIsLoading(newValue.length >= 3);
       onChange(e);
     }
-    
     if (newValue.length === 0) {
       setIsLoading(false);
       hasPasted.current = false;
     }
   };
-
   const handlePaste = () => {
     hasPasted.current = true;
     setTimeout(() => {
@@ -76,12 +68,10 @@ const LocationInput: React.FC<LocationInputProps> = ({
       }
     }, 100);
   };
-
   useEffect(() => {
     if (suggestions.length > 0 || !value || value.length < 3) {
       setIsLoading(false);
     }
-    
     if (hasPasted.current && suggestions.length > 0) {
       if (value.length > 20 && suggestions[0].place_type?.includes('address')) {
         onSelectSuggestion(suggestions[0]);
@@ -90,7 +80,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
       }
     }
   }, [suggestions, value, onSelectSuggestion]);
-
   const handlePasteFromClipboard = async () => {
     try {
       const clipboardText = await navigator.clipboard.readText();
@@ -101,11 +90,9 @@ const LocationInput: React.FC<LocationInputProps> = ({
             value: clipboardText
           }
         } as React.ChangeEvent<HTMLInputElement>;
-        
         handleChange(mockEvent);
         hasPasted.current = true;
         setIsLoading(true);
-        
         if (inputRef.current) {
           inputRef.current.focus();
         }
@@ -115,9 +102,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
       toast.error("Não foi possível acessar a área de transferência");
     }
   };
-
-  return (
-    <div className="space-y-2">
+  return <div className="space-y-2">
       <Label htmlFor={id} className="text-gray-700 block text-sm font-medium">
         {label}
       </Label>
@@ -128,67 +113,29 @@ const LocationInput: React.FC<LocationInputProps> = ({
             <MapPin className="h-5 w-5 text-amber-400" />
           </div>
           
-          <Input
-            ref={inputRef}
-            id={id}
-            placeholder={placeholder}
-            value={value}
-            onChange={handleChange}
-            onPaste={handlePaste}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => {
-              setTimeout(() => setIsFocused(false), 200);
-            }}
-            className={`pl-10 pr-10 py-3 md:h-12 ${showNumberField ? 'rounded-r-none' : 'rounded-lg'} border ${isCEP ? 'border-green-200 bg-green-50' : 'border-gray-100'} shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300`}
-          />
+          <Input ref={inputRef} id={id} placeholder={placeholder} value={value} onChange={handleChange} onPaste={handlePaste} onFocus={() => setIsFocused(true)} onBlur={() => {
+          setTimeout(() => setIsFocused(false), 200);
+        }} className={`pl-10 pr-10 py-3 md:h-12 ${showNumberField ? 'rounded-r-none' : 'rounded-lg'} border ${isCEP ? 'border-green-200 bg-green-50' : 'border-gray-100'} shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300`} />
           
-          {!value && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={handlePasteFromClipboard}
-              className="absolute right-10 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0 hover:bg-gray-100"
-              title="Colar da área de transferência"
-            >
+          {!value && <Button type="button" variant="ghost" size="icon" onClick={handlePasteFromClipboard} className="absolute right-10 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0 hover:bg-gray-100" title="Colar da área de transferência">
               <Clipboard className="h-4 w-4 text-gray-400" />
-            </Button>
-          )}
+            </Button>}
           
-          {isCEP && (
-            <div className="absolute right-10 top-1/2 -translate-y-1/2">
+          {isCEP && <div className="absolute right-10 top-1/2 -translate-y-1/2">
               <Check className="h-4 w-4 text-green-500" />
-            </div>
-          )}
+            </div>}
           
-          {isLoading && !isCEP && (
-            <div className="absolute right-10 top-1/2 -translate-y-1/2">
+          {isLoading && !isCEP && <div className="absolute right-10 top-1/2 -translate-y-1/2">
               <Loader2 className="h-4 w-4 text-gray-400 animate-spin" />
-            </div>
-          )}
+            </div>}
           
-          {value && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={onClear}
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0 bg-gray-100 hover:bg-gray-200"
-              aria-label="Limpar campo"
-            >
+          {value && <Button type="button" variant="ghost" size="icon" onClick={onClear} className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0 bg-gray-100 hover:bg-gray-200" aria-label="Limpar campo">
               <X className="h-4 w-4 text-gray-600" />
-            </Button>
-          )}
+            </Button>}
           
-          {suggestions.length > 0 && (isFocused || isLoading) && (
-            <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-md shadow-lg max-h-60 overflow-auto">
+          {suggestions.length > 0 && (isFocused || isLoading) && <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-md shadow-lg max-h-60 overflow-auto">
               <ul className="py-1">
-                {suggestions.map((suggestion) => (
-                  <li
-                    key={suggestion.id}
-                    className="px-3 py-3 text-sm hover:bg-amber-50 cursor-pointer border-b border-gray-50 last:border-0"
-                    onClick={() => onSelectSuggestion(suggestion)}
-                  >
+                {suggestions.map(suggestion => <li key={suggestion.id} className="px-3 py-3 text-sm hover:bg-amber-50 cursor-pointer border-b border-gray-50 last:border-0" onClick={() => onSelectSuggestion(suggestion)}>
                     <div className="flex items-start gap-2">
                       <div className="mt-0.5">
                         {getPlaceIcon(suggestion)}
@@ -202,38 +149,19 @@ const LocationInput: React.FC<LocationInputProps> = ({
                         </div>
                       </div>
                     </div>
-                  </li>
-                ))}
+                  </li>)}
               </ul>
-            </div>
-          )}
+            </div>}
           
-          {value && suggestions.length === 0 && !isLoading && isFocused && value.length >= 3 && (
-            <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-md shadow-lg p-4 text-sm text-center text-gray-500">
+          {value && suggestions.length === 0 && !isLoading && isFocused && value.length >= 3 && <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-md shadow-lg p-4 text-sm text-center text-gray-500">
               Nenhum resultado encontrado. Tente adicionar mais detalhes como número, bairro ou cidade.
-            </div>
-          )}
+            </div>}
         </div>
         
-        {showNumberField && onNumberChange && (
-          <Input
-            id={`${id}-number`}
-            type="text"
-            value={numberValue}
-            onChange={onNumberChange}
-            className="w-20 text-center py-3 md:h-12 rounded-l-none rounded-r-lg border-l-0 border border-gray-100 shadow-sm"
-            placeholder="Nº"
-          />
-        )}
+        {showNumberField && onNumberChange && <Input id={`${id}-number`} type="text" value={numberValue} onChange={onNumberChange} className="w-20 text-center py-3 md:h-12 rounded-l-none rounded-r-lg border-l-0 border border-gray-100 shadow-sm" placeholder="Nº" />}
       </div>
       
-      <div className="text-xs text-gray-500 mt-1">
-        {isCEP ? 
-          "CEP detectado! Selecione nas sugestões para completar o endereço" : 
-          "Digite um CEP, rua ou endereço completo para melhores resultados"}
-      </div>
-    </div>
-  );
+      
+    </div>;
 };
-
 export default LocationInput;
