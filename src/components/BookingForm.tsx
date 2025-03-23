@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -13,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useDestinationsService } from '@/hooks/useDestinationsService';
 import { calculateRoute } from '@/utils/routeUtils';
 import { MapPin, RotateCw } from 'lucide-react';
+
 interface BookingData {
   origin: string;
   destination: string;
@@ -28,6 +30,7 @@ interface BookingData {
   }[];
   distance?: number;
 }
+
 const BookingForm: React.FC = () => {
   const {
     originValue,
@@ -53,12 +56,14 @@ const BookingForm: React.FC = () => {
     setOriginValue,
     setDestinationValue
   } = useBookingForm();
+  
   const {
     cities,
     loading: citiesLoading,
     fetchCities,
     getDistanceBetweenCities
   } = useDestinationsService();
+  
   const [originCityId, setOriginCityId] = useState<string>('');
   const [destinationCityId, setDestinationCityId] = useState<string>('');
   const [distanceInfo, setDistanceInfo] = useState<{
@@ -67,19 +72,24 @@ const BookingForm: React.FC = () => {
   } | null>(null);
   const [originCity, setOriginCity] = useState<string>('');
   const [destinationCity, setDestinationCity] = useState<string>('');
+  
   const isMobile = useIsMobile();
+
   useEffect(() => {
     fetchCities();
   }, [fetchCities]);
+
   useEffect(() => {
     const calculateDistance = async () => {
       if (originCityId && destinationCityId) {
         const originCityObj = cities.find(city => city.id === originCityId);
         const destinationCityObj = cities.find(city => city.id === destinationCityId);
+        
         if (originCityObj && destinationCityObj) {
           // Set city names for later use in the combined address
           setOriginCity(formatCityLabel(originCityObj));
           setDestinationCity(formatCityLabel(destinationCityObj));
+          
           try {
             // First check if we have this distance in our database
             const savedDistance = await getDistanceBetweenCities(originCityId, destinationCityId);
@@ -112,17 +122,21 @@ const BookingForm: React.FC = () => {
     };
     calculateDistance();
   }, [originCityId, destinationCityId, cities, getDistanceBetweenCities]);
+
   const formatCityLabel = (city: any) => {
     // Format with state as abbreviation
     const stateAbbreviation = city.state ? city.state.length > 2 ? city.state.substring(0, 2).toUpperCase() : city.state.toUpperCase() : '';
     return `${city.name}${stateAbbreviation ? `, ${stateAbbreviation}` : ''}`;
   };
+
   const handleRefreshCities = () => {
     fetchCities();
   };
+
   const handleManualOriginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOriginValue(e.target.value);
   };
+
   const handleManualDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDestinationValue(e.target.value);
   };
@@ -134,12 +148,26 @@ const BookingForm: React.FC = () => {
     }
     return originValue;
   };
+
   const getFullDestinationAddress = () => {
     if (destinationValue && destinationCity) {
       return `${destinationValue}, ${destinationCity}`;
     }
     return destinationValue;
   };
+  
+  // Format the distance info for display
+  const renderDistanceInfo = () => {
+    if (!distanceInfo) return null;
+    
+    return (
+      <div className="mt-2 px-3 py-2 bg-amber-100 text-amber-800 rounded-md text-sm">
+        <p>Distância: {distanceInfo.distance} km</p>
+        <p>Tempo estimado: {Math.round(distanceInfo.duration)} minutos</p>
+      </div>
+    );
+  };
+
   return <div className="w-full bg-[#FEF7E4] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
       <div className="pt-5 md:pt-7 pb-6 md:pb-8 bg-gradient-to-b from-amber-300 to-amber-200 py-0 px-[20px] md:px-[54px] bg-amber-500">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0">
@@ -211,7 +239,8 @@ const BookingForm: React.FC = () => {
             </div>
           </div>
           
-          {distanceInfo}
+          {/* Render distance info instead of directly using the object */}
+          {renderDistanceInfo()}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -271,4 +300,5 @@ const BookingForm: React.FC = () => {
       </div>
     </div>;
 };
+
 export default BookingForm;
