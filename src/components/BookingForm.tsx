@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -12,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDestinationsService } from '@/hooks/useDestinationsService';
 import { calculateRoute } from '@/utils/routeUtils';
-import { MapPin, RotateCw, ArrowDown } from 'lucide-react';
+import { MapPin, RotateCw, ArrowDown, ArrowRight } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 interface BookingData {
@@ -160,7 +161,7 @@ const BookingForm: React.FC = () => {
     return (
       <div className="mt-3 px-3 py-2 text-amber-800 rounded-md text-sm bg-amber-100/[0.81]">
         <p>Distância: {distanceInfo.distance} km</p>
-        <p>Tempo estimado: {formattedTime} (aproximadamente {hours} hora{hours !== 1 ? 's' : ''} e {minutes} minuto{minutes !== 1 ? 's' : ''})</p>
+        <p>Tempo estimado: {formattedTime}</p>
       </div>
     );
   };
@@ -172,29 +173,69 @@ const BookingForm: React.FC = () => {
           <TripTypeTabs value={tripType} onChange={setTripType} />
         </div>
 
-        <div className="space-y-5 md:space-y-6">
-          <div className="rounded-lg border border-amber-300/50 bg-amber-50/50 p-3">
-            <Label className="block text-sm font-semibold text-gray-700 mb-3">
-              De onde vai sair?
-            </Label>
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-              <div className="flex-1">
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                    <MapPin className="h-4 w-4 text-amber-400" />
+        <div className="space-y-4 md:space-y-5">
+          {/* Locations section - combined when screen allows */}
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Origin section */}
+            <div className="rounded-lg border border-amber-300/50 bg-amber-50/50 p-3">
+              <Label className="block text-sm font-semibold text-gray-700 mb-2">
+                De onde vai sair?
+              </Label>
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <div className="flex-1">
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                      <MapPin className="h-4 w-4 text-amber-400" />
+                    </div>
+                    <Input 
+                      placeholder="Av, Rua, Travessa, n., Bairro, Referência" 
+                      value={originValue} 
+                      onChange={handleManualOriginChange} 
+                      className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-10 focus:border-amber-300 focus:ring-amber-300" 
+                    />
                   </div>
-                  <Input 
-                    placeholder="Av, Rua, Travessa, n., Bairro, Referência" 
-                    value={originValue} 
-                    onChange={handleManualOriginChange} 
-                    className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-11 focus:border-amber-300 focus:ring-amber-300" 
-                  />
+                </div>
+                <div className="w-full sm:w-[180px]">
+                  <div className="flex">
+                    <Select value={originCityId} onValueChange={setOriginCityId}>
+                      <SelectTrigger className="h-10 bg-white">
+                        <SelectValue placeholder="Cidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cities.filter(city => city.is_active !== false).map(city => (
+                          <SelectItem key={city.id} value={city.id}>
+                            {formatCityLabel(city)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
-              <div className="w-full sm:w-[180px]">
-                <div className="flex">
-                  <Select value={originCityId} onValueChange={setOriginCityId}>
-                    <SelectTrigger className="h-11 bg-white">
+            </div>
+
+            {/* Destination section */}
+            <div className="rounded-lg border border-amber-300/50 bg-amber-50/50 p-3">
+              <Label className="block text-sm font-semibold text-gray-700 mb-2">
+                Para onde vai?
+              </Label>
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <div className="flex-1">
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                      <MapPin className="h-4 w-4 text-amber-400" />
+                    </div>
+                    <Input 
+                      placeholder="Av, Rua, Travessa, n., Bairro, Referência" 
+                      value={destinationValue} 
+                      onChange={handleManualDestinationChange} 
+                      className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-10 focus:border-amber-300 focus:ring-amber-300" 
+                    />
+                  </div>
+                </div>
+                <div className="w-full sm:w-[180px]">
+                  <Select value={destinationCityId} onValueChange={setDestinationCityId}>
+                    <SelectTrigger className="h-10 bg-white">
                       <SelectValue placeholder="Cidade" />
                     </SelectTrigger>
                     <SelectContent>
@@ -210,49 +251,22 @@ const BookingForm: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-center items-center h-6 relative">
+          {/* Direction arrow and distance info */}
+          <div className="hidden md:flex justify-center items-center h-6 relative">
+            <Separator className="w-full bg-amber-300/60" />
+            <div className="absolute bg-amber-100 rounded-full p-1">
+              <ArrowRight className="h-4 w-4 text-amber-500" />
+            </div>
+          </div>
+
+          <div className="flex md:hidden justify-center items-center h-6 relative mb-2">
             <Separator className="w-full bg-amber-300/60" />
             <div className="absolute bg-amber-100 rounded-full p-1">
               <ArrowDown className="h-4 w-4 text-amber-500" />
             </div>
           </div>
 
-          <div className="rounded-lg border border-amber-300/50 bg-amber-50/50 p-3">
-            <Label className="block text-sm font-semibold text-gray-700 mb-3">
-              Para onde vai?
-            </Label>
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-              <div className="flex-1">
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                    <MapPin className="h-4 w-4 text-amber-400" />
-                  </div>
-                  <Input 
-                    placeholder="Av, Rua, Travessa, n., Bairro, Referência" 
-                    value={destinationValue} 
-                    onChange={handleManualDestinationChange} 
-                    className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-11 focus:border-amber-300 focus:ring-amber-300" 
-                  />
-                </div>
-              </div>
-              <div className="w-full sm:w-[180px]">
-                <Select value={destinationCityId} onValueChange={setDestinationCityId}>
-                  <SelectTrigger className="h-11 bg-white">
-                    <SelectValue placeholder="Cidade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cities.filter(city => city.is_active !== false).map(city => (
-                      <SelectItem key={city.id} value={city.id}>
-                        {formatCityLabel(city)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {renderDistanceInfo()}
-          </div>
+          {renderDistanceInfo()}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
