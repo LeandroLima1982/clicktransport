@@ -7,7 +7,7 @@ const NavbarLogo: React.FC = () => {
   return <Link to="/" className="flex items-center space-x-2 animate-fade-in">
       <Car className={`${isMobile ? 'h-5 w-5' : 'h-6 w-6'} text-primary`} />
       <span className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold tracking-tight`}>
-        Click<span className="text-primary">Transfer</span>
+        Click<span className="text-primary">Transport</span>
       </span>
     </Link>;
 };
