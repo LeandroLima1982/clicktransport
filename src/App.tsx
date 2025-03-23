@@ -1,10 +1,11 @@
+
 import React, { Suspense, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 import { initializeSupabase, isAuthenticated, getUserRole } from './utils/supabaseClient';
 import { toast } from 'sonner';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import Loading from './components/Loading';
+import Loading from '@/components/ui/spinner';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import CompanyManagementPage from './pages/admin/CompanyManagementPage';
 import DriverManagementPage from './pages/admin/DriverManagementPage';
@@ -24,6 +25,7 @@ const ProtectedRoute = ({ children, roles }: { children: React.ReactNode; roles?
   const [isAuth, setIsAuth] = useState<boolean | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -55,7 +57,7 @@ const ProtectedRoute = ({ children, roles }: { children: React.ReactNode; roles?
     return <Navigate to="/" />;
   }
 
-  return children;
+  return <>{children}</>;
 };
 
 function App() {
@@ -77,113 +79,111 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
 
-        <main className="flex-1">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route
-              path="/login"
-              element={
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/login"
+            element={
+              <Suspense fallback={<Loading />}>
+                <LoginPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <Suspense fallback={<Loading />}>
+                <RegisterPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
                 <Suspense fallback={<Loading />}>
-                  <LoginPage />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <Suspense fallback={<Loading />}>
-                  <RegisterPage />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<Loading />}>
-                    <ProfilePage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/dashboard"
-              element={
-                <ProtectedRoute roles={['admin']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/companies"
-              element={
-                <ProtectedRoute roles={['admin']}>
-                  <Suspense fallback={<Loading />}>
-                    <CompanyManagementPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/drivers"
-              element={
-                <ProtectedRoute roles={['admin']}>
-                  <Suspense fallback={<Loading />}>
-                    <DriverManagementPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/vehicles"
-              element={
-                <ProtectedRoute roles={['admin']}>
-                  <Suspense fallback={<Loading />}>
-                    <VehicleManagementPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/users"
-              element={
-                <ProtectedRoute roles={['admin']}>
-                  <Suspense fallback={<Loading />}>
-                    <UserManagementPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/config"
-              element={
-                <ProtectedRoute roles={['admin']}>
-                  <Suspense fallback={<Loading />}>
-                    <ConfigManagementPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route path="/admin/cities" element={
-              <ProtectedRoute roles={['admin']}>
-                <Suspense fallback={<Loading />}>
-                  <CitiesManagementPage />
+                  <ProfilePage />
                 </Suspense>
               </ProtectedRoute>
-            } />
-            
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </main>
+            }
+          />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/companies"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <Suspense fallback={<Loading />}>
+                  <CompanyManagementPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/drivers"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <Suspense fallback={<Loading />}>
+                  <DriverManagementPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/vehicles"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <Suspense fallback={<Loading />}>
+                  <VehicleManagementPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <Suspense fallback={<Loading />}>
+                  <UserManagementPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/config"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <Suspense fallback={<Loading />}>
+                  <ConfigManagementPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route path="/admin/cities" element={
+            <ProtectedRoute roles={['admin']}>
+              <Suspense fallback={<Loading />}>
+                <CitiesManagementPage />
+              </Suspense>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </main>
 
-        <Footer />
-      </div>
-    </Router>
+      <Footer />
+    </div>
   );
 }
 
