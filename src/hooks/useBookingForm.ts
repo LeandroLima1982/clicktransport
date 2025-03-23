@@ -20,6 +20,7 @@ export interface BookingFormData {
   time: string;
   returnTime: string;
   passengerData: PassengerInfo[];
+  distance?: number;
 }
 
 export const useBookingForm = () => {
@@ -217,6 +218,8 @@ export const useBookingForm = () => {
     destinationSuggestions,
     isLoadingSuggestions,
     showBookingSteps,
+    setOriginValue,
+    setDestinationValue,
     setTripType,
     setDate,
     setReturnDate,

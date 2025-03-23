@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MdDashboard, MdAdminPanelSettings, MdBusiness, MdVerifiedUser, MdOutlineDirectionsCar, MdPeopleAlt } from 'react-icons/md';
+import { MdDashboard, MdAdminPanelSettings, MdBusiness, MdVerifiedUser, MdOutlineDirectionsCar, MdPeopleAlt, MdLocationCity } from 'react-icons/md';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -15,7 +15,7 @@ const AdminTabItems = () => {
 
   return (
     <Tabs defaultValue={currentPath} className="w-full" onValueChange={handleTabChange}>
-      <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full">
+      <TabsList className="grid grid-cols-3 md:grid-cols-7 w-full">
         <TabsTrigger value="/admin/dashboard" className="flex items-center">
           <MdDashboard className="mr-2 h-4 w-4" />
           <span className="hidden md:inline">Dashboard</span>
@@ -35,6 +35,10 @@ const AdminTabItems = () => {
         <TabsTrigger value="/admin/users" className="flex items-center">
           <MdVerifiedUser className="mr-2 h-4 w-4" />
           <span className="hidden md:inline">Usuários</span>
+        </TabsTrigger>
+        <TabsTrigger value="/admin/destinations" className="flex items-center">
+          <MdLocationCity className="mr-2 h-4 w-4" />
+          <span className="hidden md:inline">Destinos</span>
         </TabsTrigger>
         <TabsTrigger value="/admin/config" className="flex items-center">
           <MdAdminPanelSettings className="mr-2 h-4 w-4" />

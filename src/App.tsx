@@ -14,6 +14,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import DatabaseSetup from './pages/admin/DatabaseSetup';
 import CreateAdmin from './pages/admin/CreateAdmin';
 import TestWorkflow from './pages/admin/TestWorkflow';
+import DestinationsPage from './pages/admin/DestinationsPage';
 
 // Company pages
 import CompanyDashboard from './pages/company/Dashboard';
@@ -34,6 +35,9 @@ import Profile from './pages/client/Profile';
 import PaymentMethods from './pages/client/PaymentMethods';
 
 import './App.css';
+import React, { Suspense } from 'react';
+
+const Loading = () => <div>Loading...</div>;
 
 // Enhanced Protected Route component with strict role checking
 const ProtectedRoute = ({ 
@@ -226,6 +230,15 @@ function App() {
         <Route path="/payment-methods" element={
           <ProtectedRoute requiredRole="client">
             <PaymentMethods />
+          </ProtectedRoute>
+        } />
+        
+        {/* Add the new destinations route */}
+        <Route path="/admin/destinations" element={
+          <ProtectedRoute requiredRole="admin">
+            <Suspense fallback={<Loading />}>
+              <DestinationsPage />
+            </Suspense>
           </ProtectedRoute>
         } />
         
