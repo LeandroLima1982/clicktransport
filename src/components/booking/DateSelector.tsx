@@ -11,7 +11,8 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DateSelectorProps {
-  label: string;
+  label?: string;
+  hideLabel?: boolean;
   date: Date | undefined;
   onSelect: (date: Date | undefined) => void;
   disabledDates?: (date: Date) => boolean;
@@ -21,6 +22,7 @@ interface DateSelectorProps {
 
 const DateSelector: React.FC<DateSelectorProps> = ({
   label,
+  hideLabel = false,
   date,
   onSelect,
   disabledDates,
@@ -42,20 +44,22 @@ const DateSelector: React.FC<DateSelectorProps> = ({
     if (!isConnected) return '';
     
     return position === 'left' 
-      ? 'md:rounded-r-none md:border-r-0' 
-      : 'md:rounded-l-none md:border-l-0';
+      ? 'rounded-r-none border-r-0' 
+      : 'rounded-l-none border-l-0';
   };
   
   return (
-    <div className="space-y-2">
-      <Label className="text-gray-700 block text-sm font-medium">
-        {label}
-      </Label>
+    <div className={hideLabel ? "" : "space-y-2"}>
+      {!hideLabel && label && (
+        <Label className="text-gray-700 block text-sm font-medium">
+          {label}
+        </Label>
+      )}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button 
             variant="outline" 
-            className={`w-full justify-start text-left font-normal py-6 rounded-lg border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 ${getConnectedClasses()}`}
+            className={`w-full justify-start text-left font-normal py-6 border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 ${getConnectedClasses()}`}
           >
             <CalendarIcon className="mr-2 h-5 w-5 text-amber-400" />
             {date ? (

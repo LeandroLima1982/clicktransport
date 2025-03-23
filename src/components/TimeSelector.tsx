@@ -7,9 +7,16 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface TimeSelectorProps {
   value: string;
   onChange: (value: string) => void;
+  connected?: boolean;
+  position?: 'left' | 'right';
 }
 
-const TimeSelector: React.FC<TimeSelectorProps> = ({ value, onChange }) => {
+const TimeSelector: React.FC<TimeSelectorProps> = ({ 
+  value, 
+  onChange, 
+  connected = false,
+  position = 'left'
+}) => {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   
@@ -40,10 +47,19 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({ value, onChange }) => {
     setOpen(false);
   };
 
+  // Define classes for connected appearance
+  const getConnectedClasses = () => {
+    if (!connected) return '';
+    
+    return position === 'left' 
+      ? 'rounded-r-none border-r-0' 
+      : 'rounded-l-none border-l-0';
+  };
+
   return (
     <Select value={value} onValueChange={handleValueChange} open={open} onOpenChange={setOpen}>
       <SelectTrigger 
-        className="w-full py-6 rounded-lg border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700"
+        className={`w-full py-6 border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 ${getConnectedClasses()}`}
       >
         <div className="flex items-center">
           <Clock className="mr-2 h-5 w-5 text-amber-400" />
@@ -58,8 +74,38 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({ value, onChange }) => {
           )}
         </div>
       </SelectTrigger>
-      <SelectContent className="max-h-[200px]">
-        {timeOptions.map((time) => (
+      <SelectContent className="max-h-[300px]">
+        <div className="py-1 px-2 bg-amber-50 border-b border-amber-100 text-xs font-medium text-amber-700">
+          Manhã (7:00 - 11:30)
+        </div>
+        {timeOptions.slice(0, 10).map((time) => (
+          <SelectItem key={time} value={time} className="cursor-pointer hover:bg-amber-50">
+            {time}
+          </SelectItem>
+        ))}
+        
+        <div className="py-1 px-2 bg-amber-50 border-b border-amber-100 text-xs font-medium text-amber-700">
+          Tarde (12:00 - 17:30)
+        </div>
+        {timeOptions.slice(10, 22).map((time) => (
+          <SelectItem key={time} value={time} className="cursor-pointer hover:bg-amber-50">
+            {time}
+          </SelectItem>
+        ))}
+        
+        <div className="py-1 px-2 bg-amber-50 border-b border-amber-100 text-xs font-medium text-amber-700">
+          Noite (18:00 - 23:30)
+        </div>
+        {timeOptions.slice(22, 34).map((time) => (
+          <SelectItem key={time} value={time} className="cursor-pointer hover:bg-amber-50">
+            {time}
+          </SelectItem>
+        ))}
+        
+        <div className="py-1 px-2 bg-amber-50 border-b border-amber-100 text-xs font-medium text-amber-700">
+          Madrugada (00:00 - 06:30)
+        </div>
+        {timeOptions.slice(34).map((time) => (
           <SelectItem key={time} value={time} className="cursor-pointer hover:bg-amber-50">
             {time}
           </SelectItem>

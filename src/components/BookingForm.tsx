@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -97,26 +98,29 @@ const BookingForm: React.FC = () => {
 
           {/* Combined Date & Time selector with Passengers */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Date & Time combined in one column */}
-            <div className="space-y-5">
-              {/* Date selector */}
-              <DateSelector 
-                label="Vai quando?" 
-                date={date} 
-                onSelect={setDate} 
-                disabledDates={date => date < new Date()}
-              />
-              
-              {/* Time selector directly below date */}
-              <div className="space-y-2">
-                <Label className="text-gray-700 block text-sm font-medium">
-                  Horário de ida
-                </Label>
-                <TimeSelector value={time} onChange={setTime} />
+            {/* Date & Time combined inline */}
+            <div>
+              <Label className="text-gray-700 block text-sm font-medium mb-2">
+                Vai quando?
+              </Label>
+              <div className="flex flex-col sm:flex-row sm:space-x-0">
+                <div className="sm:w-1/2 mb-5 sm:mb-0">
+                  <DateSelector 
+                    hideLabel
+                    date={date} 
+                    onSelect={setDate} 
+                    disabledDates={date => date < new Date()}
+                    isConnected={true}
+                    position="left"
+                  />
+                </div>
+                <div className="sm:w-1/2">
+                  <TimeSelector value={time} onChange={setTime} connected position="right" />
+                </div>
               </div>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-2">
               <PassengerSelector value={passengers} onChange={setPassengers} />
             </div>
           </div>
@@ -124,21 +128,24 @@ const BookingForm: React.FC = () => {
           {/* Return trip fields */}
           {tripType === 'roundtrip' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 mt-1 border-t border-amber-200">
-              <div className="space-y-5">
-                {/* Return date selector */}
-                <DateSelector 
-                  label="Volta quando?" 
-                  date={returnDate} 
-                  onSelect={setReturnDate} 
-                  disabledDates={currentDate => currentDate < (date || new Date())}
-                />
-                
-                {/* Return time selector */}
-                <div className="space-y-2">
-                  <Label className="text-gray-700 block text-sm font-medium">
-                    Horário de volta
-                  </Label>
-                  <TimeSelector value={returnTime} onChange={setReturnTime} />
+              <div>
+                <Label className="text-gray-700 block text-sm font-medium mb-2">
+                  Volta quando?
+                </Label>
+                <div className="flex flex-col sm:flex-row sm:space-x-0">
+                  <div className="sm:w-1/2 mb-5 sm:mb-0">
+                    <DateSelector 
+                      hideLabel
+                      date={returnDate} 
+                      onSelect={setReturnDate} 
+                      disabledDates={currentDate => currentDate < (date || new Date())}
+                      isConnected={true}
+                      position="left"
+                    />
+                  </div>
+                  <div className="sm:w-1/2">
+                    <TimeSelector value={returnTime} onChange={setReturnTime} connected position="right" />
+                  </div>
                 </div>
               </div>
             </div>
