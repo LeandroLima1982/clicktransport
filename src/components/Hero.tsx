@@ -1,11 +1,15 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import BookingForm from './BookingForm';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
-  return <section className="relative overflow-hidden w-full bg-slate-50">
+  
+  return (
+    <section className="relative overflow-hidden w-full bg-slate-50">
       {/* Yellow background that extends full width */}
       <div className="absolute inset-0 bg-[#F8D748] -z-10 w-full" />
       
@@ -16,14 +20,22 @@ const Hero: React.FC = () => {
             <span className="block text-amber-400 mt-1 md:mt-2 my-0 text-5xl font-extrabold">Inteligente</span>
           </h1>
           
-          <p style={{
-          animationDelay: '0.2s'
-        }} className="mb-6 md:mb-8 animate-fade-in opacity-90 text-gray-600 max-w-2xl mx-auto font-light md:text-lg text-base">Conectamos motoristas executivos a empresas offshore,
- agências de turismo, hotéis e pousadas. Sempre com pontualida,eficiência e segurança.</p>
+          <p 
+            style={{
+              animationDelay: '0.2s'
+            }} 
+            className="mb-6 md:mb-8 animate-fade-in opacity-90 text-gray-600 max-w-2xl mx-auto font-light md:text-lg text-base"
+          >
+            Conectamos motoristas executivos a empresas offshore,
+            agências de turismo, hotéis e pousadas. Sempre com pontualida,eficiência e segurança.
+          </p>
           
-          <div className="flex justify-center animate-fade-in" style={{
-          animationDelay: '0.3s'
-        }}>
+          <div 
+            className="flex justify-center animate-fade-in" 
+            style={{
+              animationDelay: '0.3s'
+            }}
+          >
             <a href="#request-service" className="w-full max-w-xs md:max-w-none md:w-auto">
             </a>
           </div>
@@ -36,6 +48,8 @@ const Hero: React.FC = () => {
           </div>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
+
 export default Hero;
