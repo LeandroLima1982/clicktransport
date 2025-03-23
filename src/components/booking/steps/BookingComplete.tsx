@@ -57,7 +57,8 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
       </div>
       
       <h2 className="text-2xl font-bold mb-2">Reserva Confirmada!</h2>
-      <p className="text-gray-500 mb-6">Sua reserva foi confirmada com sucesso.</p>
+      <p className="text-gray-500 mb-2">Sua reserva foi confirmada com sucesso.</p>
+      <p className="text-amber-600 mb-6">Você será redirecionado para suas reservas em instantes...</p>
       
       <Card className="mx-auto max-w-md">
         <CardContent className="pt-6">

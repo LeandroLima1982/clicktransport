@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -311,6 +311,10 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       toast.success('Reserva confirmada com sucesso!');
       
       setPendingBooking(false);
+      
+      setTimeout(() => {
+        navigate('/bookings');
+      }, 2000);
     } catch (error) {
       console.error('Booking error:', error);
       toast.error('Erro ao confirmar reserva. Tente novamente.');
@@ -330,7 +334,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setPendingBooking(false);
     onClose();
     
-    if (bookingComplete && user) {
+    if (bookingComplete) {
       navigate('/bookings');
     }
   };
@@ -436,7 +440,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
         ) : (
           <>
             <div className="flex flex-col">
-              <div className="text-2xl font-bold">Finalize sua reserva</div>
+              <DialogTitle className="text-2xl font-bold">Finalize sua reserva</DialogTitle>
               <div className="text-gray-500 mt-1">
                 Sua viagem de {bookingData.origin} para {bookingData.destination}
               </div>
