@@ -117,9 +117,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
           setTimeout(() => setIsFocused(false), 200);
         }} className={`pl-10 pr-10 py-3 md:h-12 ${showNumberField ? 'rounded-r-none' : 'rounded-lg'} border ${isCEP ? 'border-green-200 bg-green-50' : 'border-gray-100'} shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300`} />
           
-          {!value && <Button type="button" variant="ghost" size="icon" onClick={handlePasteFromClipboard} className="absolute right-10 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0 hover:bg-gray-100" title="Colar da área de transferência">
-              <Clipboard className="h-4 w-4 text-gray-400" />
-            </Button>}
+          {!value}
           
           {isCEP && <div className="absolute right-10 top-1/2 -translate-y-1/2">
               <Check className="h-4 w-4 text-green-500" />
