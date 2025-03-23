@@ -21,6 +21,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
   const [open, setOpen] = useState(false);
   
   // Generate time options for a full 24 hour day in 30 minute intervals
+  // but reordered to center around 7:00 AM
   const generateTimeOptions = () => {
     const options = [];
     
@@ -33,9 +34,34 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
       }
     }
     
-    // Reorder to start from 07:00 (move 00:00-06:30 to the end)
-    const morningStart = options.findIndex(time => time === '07:00');
-    const reordered = [...options.slice(morningStart), ...options.slice(0, morningStart)];
+    // Reorder to center around 07:00
+    const sevenAmIndex = options.findIndex(time => time === '07:00');
+    
+    // Get times before 7:00 AM (in reverse order)
+    const beforeSeven = options.slice(0, sevenAmIndex).reverse();
+    
+    // Get times from 7:00 AM onwards
+    const fromSevenOnwards = options.slice(sevenAmIndex);
+    
+    // Interleave the times, starting with 7:00 AM and alternating before/after
+    const reordered = [];
+    
+    // Start with 7:00 AM
+    reordered.push(fromSevenOnwards[0]);
+    
+    // Add the rest in alternating order
+    const maxLength = Math.max(beforeSeven.length, fromSevenOnwards.length - 1);
+    for (let i = 0; i < maxLength; i++) {
+      // Add a time before 7:00 AM if available
+      if (i < beforeSeven.length) {
+        reordered.push(beforeSeven[i]);
+      }
+      
+      // Add a time after 7:00 AM if available
+      if (i + 1 < fromSevenOnwards.length) {
+        reordered.push(fromSevenOnwards[i + 1]);
+      }
+    }
     
     return reordered;
   };
@@ -75,37 +101,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
         </div>
       </SelectTrigger>
       <SelectContent className="max-h-[300px]" position={isMobile ? "popper" : "item-aligned"} sideOffset={5}>
-        <div className="py-1 px-2 bg-amber-50/80 border-b border-amber-100 sticky top-0 z-10 text-xs font-medium text-amber-700">
-          Manhã (7:00 - 11:30)
-        </div>
-        {timeOptions.slice(0, 10).map((time) => (
-          <SelectItem key={time} value={time} className="cursor-pointer hover:bg-amber-50">
-            {time}
-          </SelectItem>
-        ))}
-        
-        <div className="py-1 px-2 bg-amber-50/80 border-b border-amber-100 sticky top-[34px] z-10 text-xs font-medium text-amber-700">
-          Tarde (12:00 - 17:30)
-        </div>
-        {timeOptions.slice(10, 22).map((time) => (
-          <SelectItem key={time} value={time} className="cursor-pointer hover:bg-amber-50">
-            {time}
-          </SelectItem>
-        ))}
-        
-        <div className="py-1 px-2 bg-amber-50/80 border-b border-amber-100 sticky top-[68px] z-10 text-xs font-medium text-amber-700">
-          Noite (18:00 - 23:30)
-        </div>
-        {timeOptions.slice(22, 34).map((time) => (
-          <SelectItem key={time} value={time} className="cursor-pointer hover:bg-amber-50">
-            {time}
-          </SelectItem>
-        ))}
-        
-        <div className="py-1 px-2 bg-amber-50/80 border-b border-amber-100 sticky top-[102px] z-10 text-xs font-medium text-amber-700">
-          Madrugada (00:00 - 06:30)
-        </div>
-        {timeOptions.slice(34).map((time) => (
+        {timeOptions.map((time) => (
           <SelectItem key={time} value={time} className="cursor-pointer hover:bg-amber-50">
             {time}
           </SelectItem>
