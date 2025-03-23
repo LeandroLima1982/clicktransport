@@ -12,6 +12,7 @@ interface City {
   latitude: number;
   longitude: number;
   is_active?: boolean;
+  address?: string;
   created_at: string;
   updated_at?: string;
   created_by?: string;
@@ -55,6 +56,11 @@ export const useDestinationsService = () => {
 
   const addCity = async (cityData: Omit<City, 'id' | 'created_at'>) => {
     try {
+      // Process state to ensure it's abbreviated
+      if (cityData.state) {
+        cityData.state = cityData.state.substring(0, 2).toUpperCase();
+      }
+
       // Remover o ID se for uma nova cidade
       const { id, ...cityDataWithoutId } = cityData as any;
       
@@ -79,6 +85,11 @@ export const useDestinationsService = () => {
     try {
       if (!cityData.id) throw new Error('City ID is required for update');
       
+      // Process state to ensure it's abbreviated
+      if (cityData.state) {
+        cityData.state = cityData.state.substring(0, 2).toUpperCase();
+      }
+
       const { data, error } = await supabase
         .from('cities')
         .update(cityData)

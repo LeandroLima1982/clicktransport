@@ -62,6 +62,7 @@ export type Database = {
       }
       cities: {
         Row: {
+          address: string | null
           country: string | null
           created_at: string
           created_by: string | null
@@ -74,6 +75,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          address?: string | null
           country?: string | null
           created_at?: string
           created_by?: string | null
@@ -86,6 +88,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          address?: string | null
           country?: string | null
           created_at?: string
           created_by?: string | null

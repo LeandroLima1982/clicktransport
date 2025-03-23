@@ -36,7 +36,6 @@ const CityForm: React.FC<CityFormProps> = ({ initialData, onSubmit, onCancel }) 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [useManualAddress, setUseManualAddress] = useState(!!initialData?.address);
 
   useEffect(() => {
     if (initialData) {
@@ -50,13 +49,21 @@ const CityForm: React.FC<CityFormProps> = ({ initialData, onSubmit, onCancel }) 
         is_active: initialData.is_active !== undefined ? initialData.is_active : true,
         address: initialData.address || '',
       });
-      setUseManualAddress(!!initialData.address);
     }
   }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Convert state to uppercase if it's a state field and limit to 2 characters
+    if (name === 'state') {
+      setFormData(prev => ({ 
+        ...prev, 
+        [name]: value.toUpperCase().substring(0, 2)
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
     
     // Clear error for this field if it exists
     if (errors[name]) {
@@ -69,10 +76,15 @@ const CityForm: React.FC<CityFormProps> = ({ initialData, onSubmit, onCancel }) 
   };
 
   const handleLocationSelected = (location: any) => {
+    // Extract the state abbreviation when a location is selected
+    const stateAbbreviation = location.state 
+      ? location.state.substring(0, 2).toUpperCase() 
+      : '';
+      
     setFormData(prev => ({
       ...prev,
       name: location.name || prev.name,
-      state: location.state || prev.state,
+      state: stateAbbreviation,
       country: location.country || 'Brasil',
       latitude: location.latitude || prev.latitude,
       longitude: location.longitude || prev.longitude,
@@ -136,13 +148,15 @@ const CityForm: React.FC<CityFormProps> = ({ initialData, onSubmit, onCancel }) 
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="state" className="text-gray-700">Estado</Label>
+            <Label htmlFor="state" className="text-gray-700">UF</Label>
             <Input
               id="state"
               name="state"
               value={formData.state}
               onChange={handleChange}
-              placeholder="Estado"
+              placeholder="UF"
+              maxLength={2}
+              className="uppercase"
             />
           </div>
         </div>
@@ -158,30 +172,17 @@ const CityForm: React.FC<CityFormProps> = ({ initialData, onSubmit, onCancel }) 
           />
         </div>
 
-        <div className="pt-4 flex items-center space-x-2">
-          <Switch
-            id="use-manual-address"
-            checked={useManualAddress}
-            onCheckedChange={setUseManualAddress}
+        <div className="space-y-2">
+          <Label htmlFor="address" className="text-gray-700">Endereço Completo (opcional)</Label>
+          <Textarea
+            id="address"
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            placeholder="Digite o endereço completo da cidade (rua, número, bairro, etc.)"
+            className="min-h-[100px] resize-y"
           />
-          <Label htmlFor="use-manual-address" className="cursor-pointer">
-            Adicionar endereço manual
-          </Label>
         </div>
-
-        {useManualAddress && (
-          <div className="space-y-2">
-            <Label htmlFor="address" className="text-gray-700">Endereço Completo</Label>
-            <Textarea
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="Digite o endereço completo da cidade (rua, número, bairro, etc.)"
-              className="min-h-[100px] resize-y"
-            />
-          </div>
-        )}
 
         <div className="space-y-2">
           <Label className="text-gray-700">Coordenadas*</Label>
@@ -262,4 +263,3 @@ const CityForm: React.FC<CityFormProps> = ({ initialData, onSubmit, onCancel }) 
 };
 
 export default CityForm;
-

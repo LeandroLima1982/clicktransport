@@ -4,7 +4,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPinIcon, PlusIcon, SearchIcon, TrashIcon, PencilIcon, SaveIcon, XIcon } from 'lucide-react';
+import { MapPinIcon, PlusIcon, SearchIcon, TrashIcon, PencilIcon, XIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -66,6 +66,7 @@ const DestinationManagement = () => {
     try {
       await updateCity(cityData);
       setSelectedCity(null);
+      setShowForm(false);
       toast({
         title: "Cidade atualizada",
         description: `${cityData.name} foi atualizada com sucesso.`,
@@ -189,7 +190,7 @@ const DestinationManagement = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nome</TableHead>
-                      <TableHead>Estado</TableHead>
+                      <TableHead>UF</TableHead>
                       <TableHead>País</TableHead>
                       <TableHead>Coordenadas</TableHead>
                       <TableHead>Status</TableHead>
@@ -200,7 +201,9 @@ const DestinationManagement = () => {
                     {filteredCities.map((city) => (
                       <TableRow key={city.id}>
                         <TableCell className="font-medium">{city.name}</TableCell>
-                        <TableCell>{city.state || '-'}</TableCell>
+                        <TableCell className="uppercase">
+                          {city.state ? (city.state.length > 2 ? city.state.substring(0, 2) : city.state) : '-'}
+                        </TableCell>
                         <TableCell>{city.country || 'Brasil'}</TableCell>
                         <TableCell>
                           <div className="flex items-center">
