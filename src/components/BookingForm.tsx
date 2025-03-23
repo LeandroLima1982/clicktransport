@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -10,6 +11,7 @@ import PassengerSelector from './booking/PassengerSelector';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Select,
   SelectContent,
@@ -19,6 +21,8 @@ import {
 } from '@/components/ui/select';
 import { useDestinationsService } from '@/hooks/useDestinationsService';
 import { calculateRoute } from '@/utils/routeUtils';
+import { Check, ChevronDown, MapPin, RotateCw } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface BookingData {
   origin: string;
@@ -74,7 +78,11 @@ const BookingForm: React.FC = () => {
   const [originCityId, setOriginCityId] = useState<string>('');
   const [destinationCityId, setDestinationCityId] = useState<string>('');
   const [useCitySelection, setUseCitySelection] = useState(false);
+  const [manualAddressInput, setManualAddressInput] = useState(false);
+  const [manualOriginAddress, setManualOriginAddress] = useState('');
+  const [manualDestinationAddress, setManualDestinationAddress] = useState('');
   const [distanceInfo, setDistanceInfo] = useState<{ distance: number, duration: number } | null>(null);
+  const [inputType, setInputType] = useState<'search' | 'cities' | 'manual'>('search');
   
   const isMobile = useIsMobile();
 
@@ -83,28 +91,28 @@ const BookingForm: React.FC = () => {
   }, [fetchCities]);
 
   useEffect(() => {
-    if (originCityId && useCitySelection) {
+    if (originCityId && inputType === 'cities') {
       const selectedCity = cities.find(city => city.id === originCityId);
       if (selectedCity) {
         const cityAddress = `${selectedCity.name}${selectedCity.state ? `, ${selectedCity.state}` : ''}`;
         setOriginValue(cityAddress);
       }
     }
-  }, [originCityId, cities, useCitySelection]);
+  }, [originCityId, cities, inputType]);
 
   useEffect(() => {
-    if (destinationCityId && useCitySelection) {
+    if (destinationCityId && inputType === 'cities') {
       const selectedCity = cities.find(city => city.id === destinationCityId);
       if (selectedCity) {
         const cityAddress = `${selectedCity.name}${selectedCity.state ? `, ${selectedCity.state}` : ''}`;
         setDestinationValue(cityAddress);
       }
     }
-  }, [destinationCityId, cities, useCitySelection]);
+  }, [destinationCityId, cities, inputType]);
 
   useEffect(() => {
     const calculateDistance = async () => {
-      if (originCityId && destinationCityId && useCitySelection) {
+      if (originCityId && destinationCityId && inputType === 'cities') {
         const originCity = cities.find(city => city.id === originCityId);
         const destinationCity = cities.find(city => city.id === destinationCityId);
         
@@ -132,98 +140,189 @@ const BookingForm: React.FC = () => {
     };
     
     calculateDistance();
-  }, [originCityId, destinationCityId, cities, useCitySelection]);
+  }, [originCityId, destinationCityId, cities, inputType]);
 
   const formatCityLabel = (city: any) => {
     return `${city.name}${city.state ? `, ${city.state}` : ''}`;
   };
 
-  return <div className="w-full bg-[#FEF7E4] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
+  const handleManualOriginChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setManualOriginAddress(e.target.value);
+    setOriginValue(e.target.value);
+  };
+
+  const handleManualDestinationChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setManualDestinationAddress(e.target.value);
+    setDestinationValue(e.target.value);
+  };
+
+  const handleRefreshCities = () => {
+    fetchCities();
+  };
+
+  return (
+    <div className="w-full bg-[#FEF7E4] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
       <div className="pt-5 md:pt-7 pb-6 md:pb-8 bg-gradient-to-b from-amber-300 to-amber-200 py-0 px-[20px] md:px-[54px] bg-amber-500">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0">
-          <h3 className="font-extrabold text-xl md:text-2xl text-stone-700 mx-[19px] my-[14px]">Agendar viagem</h3>
+          <h3 className="font-extrabold text-xl md:text-2xl text-stone-700">Agendar viagem</h3>
           <TripTypeTabs value={tripType} onChange={setTripType} />
         </div>
 
-        <div className="space-y-4 md:space-y-5">
-          <div className="flex items-center space-x-2 mb-2">
-            <Label htmlFor="use-cities" className="cursor-pointer select-none">
-              Usar cidades cadastradas
-            </Label>
-            <input
-              type="checkbox"
-              id="use-cities"
-              checked={useCitySelection}
-              onChange={(e) => setUseCitySelection(e.target.checked)}
-              className="rounded text-amber-500 focus:ring-amber-500"
-            />
-          </div>
+        <div className="space-y-5 md:space-y-6">
+          <Tabs
+            value={inputType}
+            onValueChange={(value) => setInputType(value as 'search' | 'cities' | 'manual')}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsTrigger value="search" className="text-xs sm:text-sm">
+                <MapPin className="h-3.5 w-3.5 mr-1.5" />
+                Buscar endereço
+              </TabsTrigger>
+              <TabsTrigger value="cities" className="text-xs sm:text-sm">
+                <Check className="h-3.5 w-3.5 mr-1.5" />
+                Cidades cadastradas
+              </TabsTrigger>
+              <TabsTrigger value="manual" className="text-xs sm:text-sm">
+                <ChevronDown className="h-3.5 w-3.5 mr-1.5" />
+                Entrada manual
+              </TabsTrigger>
+            </TabsList>
 
-          {useCitySelection ? (
-            <div className="md:max-w-5xl mx-auto">
-              <div className="flex flex-col md:flex-row md:gap-4 space-y-4 md:space-y-0">
-                <div className="flex-1">
-                  <Label htmlFor="origin-city" className="block text-sm font-medium text-gray-700 mb-1">
-                    De onde vai sair?
-                  </Label>
-                  <Select
-                    value={originCityId}
-                    onValueChange={setOriginCityId}
-                  >
-                    <SelectTrigger id="origin-city">
-                      <SelectValue placeholder="Selecione a cidade de origem" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities.filter(city => city.is_active !== false).map((city) => (
-                        <SelectItem key={city.id} value={city.id}>
-                          {formatCityLabel(city)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex-1">
-                  <Label htmlFor="destination-city" className="block text-sm font-medium text-gray-700 mb-1">
-                    Para onde vai?
-                  </Label>
-                  <Select
-                    value={destinationCityId}
-                    onValueChange={setDestinationCityId}
-                  >
-                    <SelectTrigger id="destination-city">
-                      <SelectValue placeholder="Selecione a cidade de destino" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities.filter(city => city.is_active !== false).map((city) => (
-                        <SelectItem key={city.id} value={city.id}>
-                          {formatCityLabel(city)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            {inputType === 'search' && (
+              <div className="md:max-w-5xl mx-auto">
+                <div className="flex flex-col md:flex-row md:gap-4 space-y-4 md:space-y-0">
+                  <div className="flex-1">
+                    <LocationInput 
+                      id="origin" 
+                      label="De onde vai sair?" 
+                      placeholder="CEP ou endereço" 
+                      value={originValue} 
+                      onChange={handleOriginChange} 
+                      suggestions={originSuggestions} 
+                      onSelectSuggestion={suggestion => selectSuggestion(suggestion, true)} 
+                      onClear={clearOrigin} 
+                      showNumberField={true} 
+                      numberValue={originNumber} 
+                      onNumberChange={handleOriginNumberChange} 
+                    />
+                  </div>
+                  
+                  <div className="flex-1">
+                    <LocationInput 
+                      id="destination" 
+                      label="Para onde vai?" 
+                      placeholder="CEP ou endereço" 
+                      value={destinationValue} 
+                      onChange={handleDestinationChange} 
+                      suggestions={destinationSuggestions} 
+                      onSelectSuggestion={suggestion => selectSuggestion(suggestion, false)} 
+                      onClear={clearDestination} 
+                      showNumberField={true} 
+                      numberValue={destinationNumber} 
+                      onNumberChange={handleDestinationNumberChange} 
+                    />
+                  </div>
                 </div>
               </div>
-              
-              {distanceInfo && (
-                <div className="mt-2 text-sm text-gray-600">
-                  <p>Distância: {distanceInfo.distance.toFixed(2)} km • Tempo estimado: {Math.floor(distanceInfo.duration / 60) > 0 ? `${Math.floor(distanceInfo.duration / 60)}h ` : ''}{Math.round(distanceInfo.duration % 60)}min</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="md:max-w-5xl mx-auto">
-              <div className="flex flex-col md:flex-row md:gap-4 space-y-4 md:space-y-0">
-                <div className="flex-1">
-                  <LocationInput id="origin" label="De onde vai sair?" placeholder="CEP ou endereço" value={originValue} onChange={handleOriginChange} suggestions={originSuggestions} onSelectSuggestion={suggestion => selectSuggestion(suggestion, true)} onClear={clearOrigin} showNumberField={true} numberValue={originNumber} onNumberChange={handleOriginNumberChange} />
+            )}
+
+            {inputType === 'cities' && (
+              <div className="md:max-w-5xl mx-auto">
+                <div className="flex flex-col md:flex-row md:gap-4 space-y-4 md:space-y-0">
+                  <div className="flex-1">
+                    <div className="mb-1.5 flex justify-between items-center">
+                      <Label htmlFor="origin-city" className="block text-sm font-medium text-gray-700">
+                        De onde vai sair?
+                      </Label>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-xs text-amber-700"
+                        onClick={handleRefreshCities}
+                      >
+                        <RotateCw className="h-3 w-3 mr-1" />
+                        Atualizar
+                      </Button>
+                    </div>
+                    <Select
+                      value={originCityId}
+                      onValueChange={setOriginCityId}
+                    >
+                      <SelectTrigger id="origin-city" className="bg-white">
+                        <SelectValue placeholder="Selecione a cidade de origem" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cities.filter(city => city.is_active !== false).map((city) => (
+                          <SelectItem key={city.id} value={city.id}>
+                            {formatCityLabel(city)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <Label htmlFor="destination-city" className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Para onde vai?
+                    </Label>
+                    <Select
+                      value={destinationCityId}
+                      onValueChange={setDestinationCityId}
+                    >
+                      <SelectTrigger id="destination-city" className="bg-white">
+                        <SelectValue placeholder="Selecione a cidade de destino" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cities.filter(city => city.is_active !== false).map((city) => (
+                          <SelectItem key={city.id} value={city.id}>
+                            {formatCityLabel(city)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 
-                <div className="flex-1">
-                  <LocationInput id="destination" label="Para onde vai?" placeholder="CEP ou endereço" value={destinationValue} onChange={handleDestinationChange} suggestions={destinationSuggestions} onSelectSuggestion={suggestion => selectSuggestion(suggestion, false)} onClear={clearDestination} showNumberField={true} numberValue={destinationNumber} onNumberChange={handleDestinationNumberChange} />
+                {distanceInfo && (
+                  <div className="mt-2 text-sm font-medium text-amber-800 bg-amber-50 p-2 rounded-md border border-amber-100">
+                    <p>Distância: {distanceInfo.distance.toFixed(2)} km • Tempo estimado: {Math.floor(distanceInfo.duration / 60) > 0 ? `${Math.floor(distanceInfo.duration / 60)}h ` : ''}{Math.round(distanceInfo.duration % 60)}min</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {inputType === 'manual' && (
+              <div className="md:max-w-5xl mx-auto">
+                <div className="flex flex-col md:flex-row md:gap-4 space-y-4 md:space-y-0">
+                  <div className="flex-1">
+                    <Label htmlFor="manual-origin" className="block text-sm font-medium text-gray-700 mb-1.5">
+                      De onde vai sair? (Endereço completo)
+                    </Label>
+                    <Textarea
+                      id="manual-origin"
+                      placeholder="Digite o endereço completo de origem"
+                      value={manualOriginAddress}
+                      onChange={handleManualOriginChange}
+                      className="resize-none bg-white border-gray-200 min-h-[80px]"
+                    />
+                  </div>
+                  
+                  <div className="flex-1">
+                    <Label htmlFor="manual-destination" className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Para onde vai? (Endereço completo)
+                    </Label>
+                    <Textarea
+                      id="manual-destination"
+                      placeholder="Digite o endereço completo de destino"
+                      value={manualDestinationAddress}
+                      onChange={handleManualDestinationChange}
+                      className="resize-none bg-white border-gray-200 min-h-[80px]"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -281,6 +380,8 @@ const BookingForm: React.FC = () => {
           distance: distanceInfo?.distance
         } as BookingData} isOpen={showBookingSteps} onClose={() => setShowBookingSteps(false)} />}
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default BookingForm;

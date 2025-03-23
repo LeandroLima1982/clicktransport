@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Loader2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, MapPin } from 'lucide-react';
 import CityLookup from './CityLookup';
 
 interface CityFormProps {
@@ -16,6 +17,7 @@ interface CityFormProps {
     latitude: number;
     longitude: number;
     is_active?: boolean;
+    address?: string;
   } | null;
   onSubmit: (data: any) => void;
   onCancel: () => void;
@@ -30,9 +32,11 @@ const CityForm: React.FC<CityFormProps> = ({ initialData, onSubmit, onCancel }) 
     latitude: initialData?.latitude || 0,
     longitude: initialData?.longitude || 0,
     is_active: initialData?.is_active !== undefined ? initialData.is_active : true,
+    address: initialData?.address || '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [useManualAddress, setUseManualAddress] = useState(!!initialData?.address);
 
   useEffect(() => {
     if (initialData) {
@@ -44,11 +48,13 @@ const CityForm: React.FC<CityFormProps> = ({ initialData, onSubmit, onCancel }) 
         latitude: initialData.latitude || 0,
         longitude: initialData.longitude || 0,
         is_active: initialData.is_active !== undefined ? initialData.is_active : true,
+        address: initialData.address || '',
       });
+      setUseManualAddress(!!initialData.address);
     }
   }, [initialData]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
@@ -104,90 +110,149 @@ const CityForm: React.FC<CityFormProps> = ({ initialData, onSubmit, onCancel }) 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-2">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid gap-6 p-6 bg-white shadow-sm rounded-lg border border-gray-100">
         <div className="space-y-2">
-          <Label htmlFor="name">Nome da Cidade*</Label>
-          <Input
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Nome da cidade"
-            required
-            className={errors.name ? 'border-red-500' : ''}
-          />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+          <h3 className="text-lg font-semibold text-gray-900">Dados da Cidade</h3>
+          <p className="text-sm text-gray-500">Adicione as informações básicas da cidade</p>
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="state">Estado</Label>
-          <Input
-            id="state"
-            name="state"
-            value={formData.state}
-            onChange={handleChange}
-            placeholder="Estado"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="country">País</Label>
-        <Input
-          id="country"
-          name="country"
-          value={formData.country}
-          onChange={handleChange}
-          placeholder="País"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Coordenadas*</Label>
         <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-gray-700">Nome da Cidade*</Label>
+            <div className="relative">
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Nome da cidade"
+                required
+                className={`pl-9 ${errors.name ? 'border-red-500' : ''}`}
+              />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            </div>
+            {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="state" className="text-gray-700">Estado</Label>
+            <Input
+              id="state"
+              name="state"
+              value={formData.state}
+              onChange={handleChange}
+              placeholder="Estado"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="country" className="text-gray-700">País</Label>
           <Input
-            name="latitude"
-            type="number"
-            step="any"
-            value={formData.latitude}
+            id="country"
+            name="country"
+            value={formData.country}
             onChange={handleChange}
-            placeholder="Latitude"
-            required
-            className={errors.location ? 'border-red-500' : ''}
-          />
-          <Input
-            name="longitude"
-            type="number"
-            step="any"
-            value={formData.longitude}
-            onChange={handleChange}
-            placeholder="Longitude"
-            required
-            className={errors.location ? 'border-red-500' : ''}
+            placeholder="País"
           />
         </div>
-        {errors.location && <p className="text-red-500 text-sm">{errors.location}</p>}
+
+        <div className="pt-4 flex items-center space-x-2">
+          <Switch
+            id="use-manual-address"
+            checked={useManualAddress}
+            onCheckedChange={setUseManualAddress}
+          />
+          <Label htmlFor="use-manual-address" className="cursor-pointer">
+            Adicionar endereço manual
+          </Label>
+        </div>
+
+        {useManualAddress && (
+          <div className="space-y-2">
+            <Label htmlFor="address" className="text-gray-700">Endereço Completo</Label>
+            <Textarea
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              placeholder="Digite o endereço completo da cidade (rua, número, bairro, etc.)"
+              className="min-h-[100px] resize-y"
+            />
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label className="text-gray-700">Coordenadas*</Label>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <Label htmlFor="latitude" className="text-xs text-gray-500">Latitude</Label>
+              <Input
+                id="latitude"
+                name="latitude"
+                type="number"
+                step="any"
+                value={formData.latitude}
+                onChange={handleChange}
+                placeholder="Latitude"
+                required
+                className={errors.location ? 'border-red-500' : ''}
+              />
+            </div>
+            <div>
+              <Label htmlFor="longitude" className="text-xs text-gray-500">Longitude</Label>
+              <Input
+                name="longitude"
+                id="longitude"
+                type="number"
+                step="any"
+                value={formData.longitude}
+                onChange={handleChange}
+                placeholder="Longitude"
+                required
+                className={errors.location ? 'border-red-500' : ''}
+              />
+            </div>
+          </div>
+          {errors.location && <p className="text-red-500 text-sm">{errors.location}</p>}
+        </div>
       </div>
 
       <div className="pt-2">
         <CityLookup onLocationSelected={handleLocationSelected} />
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Switch
-          id="is-active"
-          checked={formData.is_active}
-          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
-        />
-        <Label htmlFor="is-active">Cidade Ativa</Label>
+      <div className="bg-white p-4 shadow-sm rounded-lg border border-gray-100 space-y-4">
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="is-active"
+            checked={formData.is_active}
+            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
+          />
+          <Label htmlFor="is-active" className="cursor-pointer">Cidade Ativa</Label>
+        </div>
+        
+        <p className="text-sm text-gray-500">
+          Cidades inativas não aparecerão nas opções de seleção para os usuários.
+        </p>
       </div>
 
-      <div className="flex justify-end space-x-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+      <div className="flex justify-end space-x-3 pt-4">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onCancel} 
+          disabled={isSubmitting}
+          className="px-4"
+        >
           Cancelar
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="px-5"
+        >
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {initialData ? 'Atualizar' : 'Adicionar'} Cidade
         </Button>
@@ -197,3 +262,4 @@ const CityForm: React.FC<CityFormProps> = ({ initialData, onSubmit, onCancel }) 
 };
 
 export default CityForm;
+
