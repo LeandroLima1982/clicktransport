@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -96,54 +95,49 @@ const BookingForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Date, Time and Passengers in one row - with connected date/time */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-0">
-              {/* Date selector - visually connected to time selector */}
-              <div className="md:pr-0">
-                <DateSelector 
-                  label="Vai quando?" 
-                  date={date} 
-                  onSelect={setDate} 
-                  disabledDates={date => date < new Date()}
-                  isConnected={true}
-                  position="left" 
-                />
-              </div>
+          {/* Combined Date & Time selector with Passengers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Date & Time combined in one column */}
+            <div className="space-y-5">
+              {/* Date selector */}
+              <DateSelector 
+                label="Vai quando?" 
+                date={date} 
+                onSelect={setDate} 
+                disabledDates={date => date < new Date()}
+              />
               
-              {/* Time selector - visually connected to date selector */}
-              <div className="md:pl-0 space-y-2">
-                <label className="text-gray-700 block text-sm font-medium">
+              {/* Time selector directly below date */}
+              <div className="space-y-2">
+                <Label className="text-gray-700 block text-sm font-medium">
                   Horário de ida
-                </label>
-                <div className="md:border-l-0 md:rounded-l-none md:pl-0">
-                  <TimeSelector value={time} onChange={setTime} />
-                </div>
+                </Label>
+                <TimeSelector value={time} onChange={setTime} />
               </div>
             </div>
 
-            <PassengerSelector value={passengers} onChange={setPassengers} />
+            <div className="space-y-5">
+              <PassengerSelector value={passengers} onChange={setPassengers} />
+            </div>
           </div>
 
           {/* Return trip fields */}
           {tripType === 'roundtrip' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 mt-1 border-t border-amber-200">
-              <div className="md:pr-0">
+              <div className="space-y-5">
+                {/* Return date selector */}
                 <DateSelector 
                   label="Volta quando?" 
                   date={returnDate} 
                   onSelect={setReturnDate} 
                   disabledDates={currentDate => currentDate < (date || new Date())}
-                  isConnected={true}
-                  position="left"
                 />
-              </div>
-              
-              <div className="md:pl-0 space-y-2">
-                <label className="text-gray-700 block text-sm font-medium">
-                  Horário de volta
-                </label>
-                <div className="md:border-l-0 md:rounded-l-none md:pl-0">
+                
+                {/* Return time selector */}
+                <div className="space-y-2">
+                  <Label className="text-gray-700 block text-sm font-medium">
+                    Horário de volta
+                  </Label>
                   <TimeSelector value={returnTime} onChange={setReturnTime} />
                 </div>
               </div>
