@@ -11,6 +11,8 @@ export interface PassengerInfo {
 export interface BookingFormData {
   originValue: string;
   destinationValue: string;
+  originNumber?: string;
+  destinationNumber?: string;
   date: Date | undefined;
   returnDate: Date | undefined;
   tripType: 'oneway' | 'roundtrip';
@@ -23,6 +25,8 @@ export interface BookingFormData {
 export const useBookingForm = () => {
   const [originValue, setOriginValue] = useState('');
   const [destinationValue, setDestinationValue] = useState('');
+  const [originNumber, setOriginNumber] = useState('');
+  const [destinationNumber, setDestinationNumber] = useState('');
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
   const [tripType, setTripType] = useState<'oneway' | 'roundtrip'>('oneway');
@@ -152,6 +156,14 @@ export const useBookingForm = () => {
     }
   };
 
+  const handleOriginNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOriginNumber(e.target.value);
+  };
+
+  const handleDestinationNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDestinationNumber(e.target.value);
+  };
+
   const selectSuggestion = (suggestion: any, isOrigin: boolean) => {
     const placeName = suggestion.place_name;
     if (isOrigin) {
@@ -165,17 +177,21 @@ export const useBookingForm = () => {
 
   const clearOrigin = () => {
     setOriginValue('');
+    setOriginNumber('');
     setOriginSuggestions([]);
   };
 
   const clearDestination = () => {
     setDestinationValue('');
+    setDestinationNumber('');
     setDestinationSuggestions([]);
   };
 
   const bookingData: BookingFormData = {
     originValue,
     destinationValue,
+    originNumber,
+    destinationNumber,
     date,
     returnDate,
     tripType,
@@ -188,6 +204,8 @@ export const useBookingForm = () => {
   return {
     originValue,
     destinationValue,
+    originNumber,
+    destinationNumber,
     date,
     returnDate,
     tripType,
@@ -208,6 +226,8 @@ export const useBookingForm = () => {
     setReturnTime,
     handleOriginChange,
     handleDestinationChange,
+    handleOriginNumberChange,
+    handleDestinationNumberChange,
     selectSuggestion,
     handleBooking,
     setShowBookingSteps,

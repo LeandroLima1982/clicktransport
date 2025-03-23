@@ -27,19 +27,30 @@ export const useLocationSuggestions = () => {
       clearTimeout(originTimeoutRef.current);
     }
     
-    // Verifica se é um CEP primeiro (com delay menor)
+    // Priorize CEPs - busca quase imediata para CEPs
     if (isBrazilianCEP(value)) {
       setIsLoadingSuggestions(true);
       originTimeoutRef.current = setTimeout(async () => {
-        const suggestions = await fetchAddressSuggestions(value);
-        setOriginSuggestions(suggestions);
-        setIsLoadingSuggestions(false);
-        setRequestCount(prev => prev + 1);
-      }, 200); // Delay menor para CEP
+        try {
+          const suggestions = await fetchAddressSuggestions(value);
+          setOriginSuggestions(suggestions);
+          
+          if (suggestions.length === 0) {
+            toast.info("CEP válido, mas sem endereços encontrados. Tente adicionar mais detalhes.");
+          }
+        } catch (error) {
+          console.error('Erro ao buscar sugestões de CEP:', error);
+          toast.error('Erro ao buscar o CEP. Verifique se o formato está correto.');
+        } finally {
+          setIsLoadingSuggestions(false);
+          setRequestCount(prev => prev + 1);
+        }
+      }, 100); // Delay menor para CEP (100ms)
     } 
-    // Caso contrário, espera um pouco mais para o usuário terminar de digitar
+    // Para endereços comuns, espera um pouco mais para o usuário terminar de digitar
     else if (value.length >= 3) {
       setIsLoadingSuggestions(true);
+      
       originTimeoutRef.current = setTimeout(async () => {
         try {
           const suggestions = await fetchAddressSuggestions(value);
@@ -55,7 +66,7 @@ export const useLocationSuggestions = () => {
         } finally {
           setIsLoadingSuggestions(false);
         }
-      }, 500);
+      }, 500); // 500ms para endereços normais
     } else {
       setOriginSuggestions([]);
     }
@@ -66,16 +77,27 @@ export const useLocationSuggestions = () => {
       clearTimeout(destinationTimeoutRef.current);
     }
     
-    // Verificação similar para destino
+    // Priorize CEPs - busca quase imediata
     if (isBrazilianCEP(value)) {
       setIsLoadingSuggestions(true);
       destinationTimeoutRef.current = setTimeout(async () => {
-        const suggestions = await fetchAddressSuggestions(value);
-        setDestinationSuggestions(suggestions);
-        setIsLoadingSuggestions(false);
-        setRequestCount(prev => prev + 1);
-      }, 200);
+        try {
+          const suggestions = await fetchAddressSuggestions(value);
+          setDestinationSuggestions(suggestions);
+          
+          if (suggestions.length === 0) {
+            toast.info("CEP válido, mas sem endereços encontrados. Tente adicionar mais detalhes.");
+          }
+        } catch (error) {
+          console.error('Erro ao buscar sugestões de CEP:', error);
+          toast.error('Erro ao buscar o CEP. Verifique se o formato está correto.');
+        } finally {
+          setIsLoadingSuggestions(false);
+          setRequestCount(prev => prev + 1);
+        }
+      }, 100); // Delay menor para CEP (100ms)
     }
+    // Para endereços comuns, espera um pouco mais
     else if (value.length >= 3) {
       setIsLoadingSuggestions(true);
       
@@ -93,7 +115,7 @@ export const useLocationSuggestions = () => {
         } finally {
           setIsLoadingSuggestions(false);
         }
-      }, 500);
+      }, 500); // 500ms para endereços normais
     } else {
       setDestinationSuggestions([]);
     }

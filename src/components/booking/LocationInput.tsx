@@ -234,7 +234,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
       <div className="text-xs text-gray-500 mt-1">
         {isCEP ? 
           "CEP detectado! Selecione nas sugestões para completar o endereço" : 
-          "Digite um endereço completo com número, bairro e cidade para melhores resultados"}
+          "Digite um CEP, rua ou endereço completo para melhores resultados"}
       </div>
     </div>
   );
