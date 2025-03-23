@@ -30,7 +30,7 @@ const Hero: React.FC = () => {
         </div>
         
         {/* Modernized Booking Form */}
-        <div className="relative -mb-28 md:-mb-32 max-w-[1000px] mx-auto px-4 md:px-6">
+        <div className="relative -mb-28 md:-mb-32 max-w-[1000px] mx-auto md:px-6 py-0 px-0">
           <div className="shadow-xl animate-scale-in">
             <BookingForm />
           </div>
