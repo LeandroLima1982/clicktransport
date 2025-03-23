@@ -1,27 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, MapPin, RefreshCw, PlusCircle, AlertTriangle } from 'lucide-react';
+
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Pencil, Trash2, MapPin, ToggleLeft, ToggleRight, Plus } from 'lucide-react';
 import { cityService, City, CityInput } from '@/services/db/cityService';
 import CityLookup from './CityLookup';
 
 const CityManagement: React.FC = () => {
-  const [cities, setCities] = useState<City[]>([]);
-  const [filteredCities, setFilteredCities] = useState<City[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  
-  const [cityForm, setCityForm] = useState<CityInput>({
+  const [newCity, setNewCity] = useState<CityInput>({
     name: '',
     state: '',
     country: 'Brasil',
@@ -30,38 +24,105 @@ const CityManagement: React.FC = () => {
     is_active: true
   });
 
-  useEffect(() => {
-    fetchCities();
-  }, []);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = cities.filter(city => 
-        city.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (city.state && city.state.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-      setFilteredCities(filtered);
-    } else {
-      setFilteredCities(cities);
-    }
-  }, [searchTerm, cities]);
+  const { data: cities = [], isLoading } = useQuery({
+    queryKey: ['cities'],
+    queryFn: cityService.getAllCities
+  });
 
-  const fetchCities = async () => {
-    setIsLoading(true);
-    try {
-      const data = await cityService.getAllCities();
-      setCities(data);
-      setFilteredCities(data);
-    } catch (error) {
-      toast.error('Erro ao carregar cidades');
-      console.error(error);
-    } finally {
-      setIsLoading(false);
+  const createCityMutation = useMutation({
+    mutationFn: cityService.createCity,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cities'] });
+      toast.success('Cidade adicionada com sucesso!');
+      setIsAddDialogOpen(false);
+      resetNewCity();
+    },
+    onError: (error) => {
+      console.error('Error creating city:', error);
+      toast.error('Erro ao adicionar cidade.');
     }
-  };
+  });
+
+  const updateCityMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<CityInput> }) => 
+      cityService.updateCity(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cities'] });
+      toast.success('Cidade atualizada com sucesso!');
+      setIsEditDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error('Error updating city:', error);
+      toast.error('Erro ao atualizar cidade.');
+    }
+  });
+
+  const deleteCityMutation = useMutation({
+    mutationFn: (id: string) => cityService.deleteCity(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cities'] });
+      toast.success('Cidade removida com sucesso!');
+      setIsDeleteDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error('Error deleting city:', error);
+      toast.error('Erro ao remover cidade.');
+    }
+  });
+
+  const toggleStatusMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => 
+      cityService.toggleCityStatus(id, isActive),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['cities'] });
+      toast.success(`Cidade ${data.is_active ? 'ativada' : 'desativada'} com sucesso!`);
+    },
+    onError: (error) => {
+      console.error('Error toggling city status:', error);
+      toast.error('Erro ao alterar status da cidade.');
+    }
+  });
 
   const handleAddCity = () => {
-    setCityForm({
+    if (!newCity.name || !newCity.latitude || !newCity.longitude) {
+      toast.error('Por favor, preencha todos os campos obrigatórios.');
+      return;
+    }
+    
+    createCityMutation.mutate(newCity);
+  };
+
+  const handleUpdateCity = () => {
+    if (!selectedCity) return;
+    
+    updateCityMutation.mutate({ 
+      id: selectedCity.id, 
+      data: {
+        name: selectedCity.name,
+        state: selectedCity.state || undefined,
+        country: selectedCity.country || undefined,
+        latitude: selectedCity.latitude,
+        longitude: selectedCity.longitude,
+      } 
+    });
+  };
+
+  const handleDeleteCity = () => {
+    if (!selectedCity) return;
+    deleteCityMutation.mutate(selectedCity.id);
+  };
+
+  const handleToggleStatus = (city: City) => {
+    toggleStatusMutation.mutate({ 
+      id: city.id, 
+      isActive: !city.is_active 
+    });
+  };
+
+  const resetNewCity = () => {
+    setNewCity({
       name: '',
       state: '',
       country: 'Brasil',
@@ -69,328 +130,258 @@ const CityManagement: React.FC = () => {
       longitude: 0,
       is_active: true
     });
-    setShowAddDialog(true);
   };
 
-  const handleEditCity = (city: City) => {
+  const openEditDialog = (city: City) => {
     setSelectedCity(city);
-    setCityForm({
-      name: city.name,
-      state: city.state || '',
-      country: city.country || 'Brasil',
-      latitude: city.latitude,
-      longitude: city.longitude,
-      is_active: city.is_active
+    setIsEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (city: City) => {
+    setSelectedCity(city);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleMapLocationSelect = (location: { lat: number; lng: number; name?: string; state?: string; country?: string }) => {
+    setNewCity({
+      ...newCity,
+      latitude: location.lat,
+      longitude: location.lng,
+      name: location.name || newCity.name,
+      state: location.state || newCity.state,
+      country: location.country || newCity.country || 'Brasil'
     });
-    setShowEditDialog(true);
   };
 
-  const handleSaveCity = async () => {
-    try {
-      if (!cityForm.name || !cityForm.latitude || !cityForm.longitude) {
-        toast.error('Por favor, preencha todos os campos obrigatórios');
-        return;
-      }
-
-      if (showAddDialog) {
-        await cityService.createCity(cityForm);
-        toast.success('Cidade adicionada com sucesso');
-        setShowAddDialog(false);
-      } else if (showEditDialog && selectedCity) {
-        await cityService.updateCity(selectedCity.id, cityForm);
-        toast.success('Cidade atualizada com sucesso');
-        setShowEditDialog(false);
-      }
-      
-      fetchCities();
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao salvar cidade');
-      console.error(error);
+  const handleEditMapLocationSelect = (location: { lat: number; lng: number; name?: string; state?: string; country?: string }) => {
+    if (selectedCity) {
+      setSelectedCity({
+        ...selectedCity,
+        latitude: location.lat,
+        longitude: location.lng,
+        name: location.name || selectedCity.name,
+        state: location.state || selectedCity.state,
+        country: location.country || selectedCity.country || 'Brasil'
+      });
     }
-  };
-
-  const handleToggleStatus = async (city: City) => {
-    try {
-      await cityService.toggleCityStatus(city.id, !city.is_active);
-      toast.success(`Cidade ${!city.is_active ? 'ativada' : 'desativada'} com sucesso`);
-      fetchCities();
-    } catch (error) {
-      toast.error('Erro ao alterar status da cidade');
-      console.error(error);
-    }
-  };
-
-  const handleDeleteCity = async (city: City) => {
-    if (confirm(`Tem certeza que deseja excluir a cidade ${city.name}?`)) {
-      try {
-        await cityService.deleteCity(city.id);
-        toast.success('Cidade excluída com sucesso');
-        fetchCities();
-      } catch (error) {
-        toast.error('Erro ao excluir cidade');
-        console.error(error);
-      }
-    }
-  };
-
-  const handleLocationSelect = (name: string, lat: number, lng: number) => {
-    setCityForm({
-      ...cityForm,
-      name,
-      latitude: lat,
-      longitude: lng
-    });
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="text-xl flex items-center">
-            <MapPin className="mr-2 h-5 w-5" />
-            Gestão de Cidades
-          </CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gerencie as cidades disponíveis para reservas
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={fetchCities}
-            disabled={isLoading}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </Button>
-          <Button 
-            variant="default" 
-            size="sm"
-            onClick={handleAddCity}
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Nova Cidade
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-6 space-y-4">
-          <div className="relative flex-grow">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar cidade..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-bold">Cidades Disponíveis</h3>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Adicionar Cidade
+        </Button>
+      </div>
 
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : filteredCities.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <AlertTriangle className="h-8 w-8 text-amber-500 mb-2" />
-            <h3 className="text-lg font-medium">Nenhuma cidade encontrada</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {searchTerm ? 'Tente uma busca diferente ou ' : ''}
-              <Button variant="link" className="p-0 h-auto" onClick={handleAddCity}>
-                adicione uma nova cidade
-              </Button>
-            </p>
-          </div>
-        ) : (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Coordenadas</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCities.map((city) => (
-                  <TableRow key={city.id}>
-                    <TableCell className="font-medium">{city.name}</TableCell>
-                    <TableCell>{city.state || '-'}</TableCell>
-                    <TableCell>
-                      <span className="text-xs text-muted-foreground">
-                        Lat: {city.latitude.toFixed(6)}, Lng: {city.longitude.toFixed(6)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={city.is_active ? "success" : "secondary"}
-                        className={city.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
-                      >
-                        {city.is_active ? 'Ativa' : 'Inativa'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEditCity(city)}>
-                          Editar
-                        </Button>
-                        <Switch
-                          checked={city.is_active}
-                          onCheckedChange={() => handleToggleStatus(city)}
-                        />
-                        <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleDeleteCity(city)}>
-                          Excluir
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Adicionar Nova Cidade</DialogTitle>
-              <DialogDescription>
-                Preencha as informações da nova cidade. As coordenadas geográficas são necessárias para cálculos de distância.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Nome da Cidade*</Label>
-                  <Input
-                    id="name"
-                    value={cityForm.name}
-                    onChange={(e) => setCityForm({ ...cityForm, name: e.target.value })}
-                    placeholder="Ex: Rio de Janeiro"
-                  />
+      {isLoading ? (
+        <div className="text-center py-10">Carregando cidades...</div>
+      ) : (
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {cities.map((city) => (
+            <div 
+              key={city.id}
+              className={`p-4 rounded-lg border ${city.is_active ? 'bg-white' : 'bg-gray-50'}`}
+            >
+              <div className="flex justify-between">
+                <h4 className="font-semibold text-lg">{city.name}</h4>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={() => openEditDialog(city)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={() => openDeleteDialog(city)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant={city.is_active ? "secondary" : "outline"}
+                    size="icon" 
+                    onClick={() => handleToggleStatus(city)}
+                  >
+                    {city.is_active ? 
+                      <ToggleRight className="h-4 w-4" /> : 
+                      <ToggleLeft className="h-4 w-4" />
+                    }
+                  </Button>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="state">Estado</Label>
-                  <Input
-                    id="state"
-                    value={cityForm.state}
-                    onChange={(e) => setCityForm({ ...cityForm, state: e.target.value })}
-                    placeholder="Ex: RJ"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Coordenadas*</Label>
-                  <div className="flex items-center gap-2">
-                    <div className="grid grid-cols-2 gap-2 flex-1">
-                      <Input
-                        id="latitude"
-                        type="number"
-                        step="0.000001"
-                        value={cityForm.latitude}
-                        onChange={(e) => setCityForm({ ...cityForm, latitude: parseFloat(e.target.value) })}
-                        placeholder="Latitude"
-                      />
-                      <Input
-                        id="longitude"
-                        type="number"
-                        step="0.000001"
-                        value={cityForm.longitude}
-                        onChange={(e) => setCityForm({ ...cityForm, longitude: parseFloat(e.target.value) })}
-                        placeholder="Longitude"
-                      />
-                    </div>
-                    <CityLookup onSelectLocation={handleLocationSelect} />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="is-active"
-                    checked={cityForm.is_active}
-                    onCheckedChange={(checked) => setCityForm({ ...cityForm, is_active: checked })}
-                  />
-                  <Label htmlFor="is-active">Cidade Ativa</Label>
+              </div>
+              
+              <div className="mt-2 text-sm text-gray-600">
+                {city.state && <div>{city.state}, {city.country || 'Brasil'}</div>}
+                <div className="flex items-center mt-1">
+                  <MapPin className="h-3 w-3 mr-1" />
+                  <span>
+                    {city.latitude.toFixed(4)}, {city.longitude.toFixed(4)}
+                  </span>
                 </div>
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancelar</Button>
-              <Button onClick={handleSaveCity}>Salvar Cidade</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          ))}
+        </div>
+      )}
 
-        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Editar Cidade</DialogTitle>
-              <DialogDescription>
-                Atualize as informações da cidade.
-              </DialogDescription>
-            </DialogHeader>
+      {/* Add City Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Adicionar Nova Cidade</DialogTitle>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <Label htmlFor="city-lookup">Buscar cidade no mapa</Label>
+            <CityLookup onLocationSelect={handleMapLocationSelect} />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome da Cidade *</Label>
+                <Input 
+                  id="name" 
+                  value={newCity.name} 
+                  onChange={(e) => setNewCity({...newCity, name: e.target.value})}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="state">Estado</Label>
+                <Input 
+                  id="state" 
+                  value={newCity.state || ''} 
+                  onChange={(e) => setNewCity({...newCity, state: e.target.value})}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="latitude">Latitude *</Label>
+                <Input 
+                  id="latitude" 
+                  type="number" 
+                  step="0.000001"
+                  value={newCity.latitude} 
+                  onChange={(e) => setNewCity({...newCity, latitude: parseFloat(e.target.value)})}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="longitude">Longitude *</Label>
+                <Input 
+                  id="longitude" 
+                  type="number" 
+                  step="0.000001"
+                  value={newCity.longitude} 
+                  onChange={(e) => setNewCity({...newCity, longitude: parseFloat(e.target.value)})}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleAddCity}>Adicionar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit City Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Editar Cidade</DialogTitle>
+          </DialogHeader>
+          
+          {selectedCity && (
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-name">Nome da Cidade*</Label>
-                  <Input
-                    id="edit-name"
-                    value={cityForm.name}
-                    onChange={(e) => setCityForm({ ...cityForm, name: e.target.value })}
+              <Label htmlFor="edit-city-lookup">Ajustar localização no mapa</Label>
+              <CityLookup 
+                initialLocation={{ 
+                  lat: selectedCity.latitude, 
+                  lng: selectedCity.longitude,
+                  name: selectedCity.name
+                }} 
+                onLocationSelect={handleEditMapLocationSelect} 
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Nome da Cidade *</Label>
+                  <Input 
+                    id="edit-name" 
+                    value={selectedCity.name} 
+                    onChange={(e) => setSelectedCity({...selectedCity, name: e.target.value})}
                   />
                 </div>
-                <div className="grid gap-2">
+                
+                <div className="space-y-2">
                   <Label htmlFor="edit-state">Estado</Label>
-                  <Input
-                    id="edit-state"
-                    value={cityForm.state}
-                    onChange={(e) => setCityForm({ ...cityForm, state: e.target.value })}
+                  <Input 
+                    id="edit-state" 
+                    value={selectedCity.state || ''} 
+                    onChange={(e) => setSelectedCity({...selectedCity, state: e.target.value})}
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label>Coordenadas*</Label>
-                  <div className="flex items-center gap-2">
-                    <div className="grid grid-cols-2 gap-2 flex-1">
-                      <Input
-                        id="edit-latitude"
-                        type="number"
-                        step="0.000001"
-                        value={cityForm.latitude}
-                        onChange={(e) => setCityForm({ ...cityForm, latitude: parseFloat(e.target.value) })}
-                        placeholder="Latitude"
-                      />
-                      <Input
-                        id="edit-longitude"
-                        type="number"
-                        step="0.000001"
-                        value={cityForm.longitude}
-                        onChange={(e) => setCityForm({ ...cityForm, longitude: parseFloat(e.target.value) })}
-                        placeholder="Longitude"
-                      />
-                    </div>
-                    <CityLookup onSelectLocation={handleLocationSelect} />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="edit-is-active"
-                    checked={cityForm.is_active}
-                    onCheckedChange={(checked) => setCityForm({ ...cityForm, is_active: checked })}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-latitude">Latitude *</Label>
+                  <Input 
+                    id="edit-latitude" 
+                    type="number" 
+                    step="0.000001"
+                    value={selectedCity.latitude} 
+                    onChange={(e) => setSelectedCity({...selectedCity, latitude: parseFloat(e.target.value)})}
                   />
-                  <Label htmlFor="edit-is-active">Cidade Ativa</Label>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-longitude">Longitude *</Label>
+                  <Input 
+                    id="edit-longitude" 
+                    type="number" 
+                    step="0.000001"
+                    value={selectedCity.longitude} 
+                    onChange={(e) => setSelectedCity({...selectedCity, longitude: parseFloat(e.target.value)})}
+                  />
                 </div>
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancelar</Button>
-              <Button onClick={handleSaveCity}>Atualizar Cidade</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </CardContent>
-    </Card>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleUpdateCity}>Salvar Alterações</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete City Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p>Tem certeza que deseja excluir a cidade {selectedCity?.name}?</p>
+            <p className="text-sm text-gray-500 mt-2">Esta ação não poderá ser desfeita.</p>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteCity}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 
