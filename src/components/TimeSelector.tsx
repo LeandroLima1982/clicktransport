@@ -20,12 +20,11 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   
-  // Generate time options for a full 24 hour day in 30 minute intervals
-  // centered around 7:00 AM
+  // Generate time options for a full 24 hour day in 30 minute intervals in sequential order
   const generateTimeOptions = () => {
     const options = [];
     
-    // Generate all hours from 00:00 to 23:30
+    // Generate all hours from 00:00 to 23:30 in sequential order
     for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const formattedHour = hour.toString().padStart(2, '0');
@@ -34,36 +33,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
       }
     }
     
-    // Find the index of 7:00 AM
-    const sevenAmIndex = options.findIndex(time => time === '07:00');
-    
-    // Get times before 7:00 AM (in reverse order)
-    const beforeSeven = options.slice(0, sevenAmIndex).reverse();
-    
-    // Get times from 7:00 AM onwards
-    const fromSevenOnwards = options.slice(sevenAmIndex);
-    
-    // Interleave the times, starting with 7:00 AM and alternating before/after
-    const reordered = [];
-    
-    // Start with 7:00 AM
-    reordered.push(fromSevenOnwards[0]);
-    
-    // Add the rest in alternating order
-    const maxLength = Math.max(beforeSeven.length, fromSevenOnwards.length - 1);
-    for (let i = 0; i < maxLength; i++) {
-      // Add a time before 7:00 AM if available
-      if (i < beforeSeven.length) {
-        reordered.push(beforeSeven[i]);
-      }
-      
-      // Add a time after 7:00 AM if available
-      if (i + 1 < fromSevenOnwards.length) {
-        reordered.push(fromSevenOnwards[i + 1]);
-      }
-    }
-    
-    return reordered;
+    return options;
   };
 
   const timeOptions = generateTimeOptions();
