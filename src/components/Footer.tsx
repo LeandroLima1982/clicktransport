@@ -1,18 +1,15 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Car, Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
-
 const Footer: React.FC = () => {
-  return (
-    <footer className="bg-secondary text-white pt-16 pb-8 w-full">
+  return <footer className="bg-secondary text-white pt-16 pb-8 w-full">
       <div className="content-container">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           <div>
             <div className="flex items-center space-x-2 mb-6">
               <Car className="h-6 w-6 text-primary" />
               <span className="text-xl font-bold tracking-tight">
-                Click<span className="text-primary">Transfer</span>
+                Click<span className="text-primary">Transport</span>
               </span>
             </div>
             <p className="text-gray-300 mb-4">
@@ -127,8 +124,6 @@ const Footer: React.FC = () => {
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;
