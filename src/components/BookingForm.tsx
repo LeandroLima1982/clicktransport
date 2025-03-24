@@ -140,10 +140,7 @@ const BookingForm: React.FC = () => {
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    return <div className="mt-3 px-3 py-2 text-amber-800 rounded-md text-sm bg-amber-100/[0.81]">
-        <p>Distância: {distanceInfo.distance} km</p>
-        <p>Tempo estimado: {formattedTime}</p>
-      </div>;
+    return;
   };
   return <div className="w-full bg-[#FEF7E4] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
       <div className="pt-5 md:pt-7 pb-6 md:pb-8 bg-gradient-to-b from-amber-300 to-amber-200 py-0 px-[20px] md:px-[54px] bg-amber-500">
