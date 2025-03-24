@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,9 +21,15 @@ import AdminSidebar from '@/components/admin/AdminSidebar';
 import VehicleCategoriesSettings from '@/components/admin/VehicleCategoriesSettings';
 import DriverManagement from '@/components/admin/drivers/DriverManagement';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AuthError } from '@supabase/supabase-js';
 
 const AdminDashboard: React.FC = () => {
-  const { user, userRole, signOut, isAuthenticating } = useAuth();
+  const { user, userRole, signOut: authSignOut, isAuthenticating } = useAuth();
+  
+  const handleSignOut = async (): Promise<{ error: AuthError | Error | null }> => {
+    return await authSignOut();
+  };
+
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
@@ -335,7 +340,7 @@ const AdminDashboard: React.FC = () => {
     <TransitionEffect>
       <SidebarProvider defaultOpen={true}>
         <div className="flex w-full">
-          <AdminSidebar signOut={signOut} />
+          <AdminSidebar signOut={handleSignOut} />
           <SidebarInset className="p-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <div>
