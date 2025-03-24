@@ -1,52 +1,103 @@
-
 import React from 'react';
-import { MdDashboard, MdAdminPanelSettings, MdBusiness, MdVerifiedUser, MdOutlineDirectionsCar, MdPeopleAlt, MdLocationCity } from 'react-icons/md';
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNavigate, useLocation } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Settings, 
+  FileText, 
+  Map, 
+  Building, 
+  Car, 
+  Palette,
+  Bell,
+  CalendarClock
+} from 'lucide-react';
 
-const AdminTabItems = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const currentPath = location.pathname;
+export interface AdminTab {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  href: string;
+  roles?: string[];
+}
 
-  const handleTabChange = (path: string) => {
-    navigate(path);
-  };
+export const adminTabs: AdminTab[] = [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: <LayoutDashboard className="h-5 w-5" />,
+    href: '/admin',
+    roles: ['admin', 'manager']
+  },
+  {
+    id: 'bookings',
+    label: 'Reservas',
+    icon: <CalendarClock className="h-5 w-5" />,
+    href: '/admin/bookings',
+    roles: ['admin', 'manager', 'dispatcher']
+  },
+  {
+    id: 'users',
+    label: 'Usuários',
+    icon: <Users className="h-5 w-5" />,
+    href: '/admin/users',
+    roles: ['admin']
+  },
+  {
+    id: 'companies',
+    label: 'Empresas',
+    icon: <Building className="h-5 w-5" />,
+    href: '/admin/companies',
+    roles: ['admin', 'manager']
+  },
+  {
+    id: 'vehicles',
+    label: 'Veículos',
+    icon: <Car className="h-5 w-5" />,
+    href: '/admin/vehicles',
+    roles: ['admin', 'manager', 'dispatcher']
+  },
+  {
+    id: 'vehicle-categories',
+    label: 'Categorias de Veículos',
+    icon: <Car className="h-5 w-5" />,
+    href: '/admin/vehicle-categories',
+    roles: ['admin']
+  },
+  {
+    id: 'destinations',
+    label: 'Destinos',
+    icon: <Map className="h-5 w-5" />,
+    href: '/admin/destinations',
+    roles: ['admin', 'manager']
+  },
+  {
+    id: 'notifications',
+    label: 'Notificações',
+    icon: <Bell className="h-5 w-5" />,
+    href: '/admin/notifications',
+    roles: ['admin', 'manager']
+  },
+  {
+    id: 'appearance',
+    label: 'Aparência',
+    icon: <Palette className="h-5 w-5" />,
+    href: '/admin/appearance',
+    roles: ['admin']
+  },
+  {
+    id: 'content',
+    label: 'Conteúdo',
+    icon: <FileText className="h-5 w-5" />,
+    href: '/admin/content',
+    roles: ['admin']
+  },
+  {
+    id: 'settings',
+    label: 'Configurações',
+    icon: <Settings className="h-5 w-5" />,
+    href: '/admin/settings',
+    roles: ['admin']
+  }
+];
 
-  return (
-    <Tabs defaultValue={currentPath} className="w-full" onValueChange={handleTabChange}>
-      <TabsList className="grid grid-cols-3 md:grid-cols-7 w-full">
-        <TabsTrigger value="/admin/dashboard" className="flex items-center">
-          <MdDashboard className="mr-2 h-4 w-4" />
-          <span className="hidden md:inline">Dashboard</span>
-        </TabsTrigger>
-        <TabsTrigger value="/admin/companies" className="flex items-center">
-          <MdBusiness className="mr-2 h-4 w-4" />
-          <span className="hidden md:inline">Empresas</span>
-        </TabsTrigger>
-        <TabsTrigger value="/admin/drivers" className="flex items-center">
-          <MdPeopleAlt className="mr-2 h-4 w-4" />
-          <span className="hidden md:inline">Motoristas</span>
-        </TabsTrigger>
-        <TabsTrigger value="/admin/vehicles" className="flex items-center">
-          <MdOutlineDirectionsCar className="mr-2 h-4 w-4" />
-          <span className="hidden md:inline">Veículos</span>
-        </TabsTrigger>
-        <TabsTrigger value="/admin/users" className="flex items-center">
-          <MdVerifiedUser className="mr-2 h-4 w-4" />
-          <span className="hidden md:inline">Usuários</span>
-        </TabsTrigger>
-        <TabsTrigger value="/admin/destinations" className="flex items-center">
-          <MdLocationCity className="mr-2 h-4 w-4" />
-          <span className="hidden md:inline">Destinos</span>
-        </TabsTrigger>
-        <TabsTrigger value="/admin/config" className="flex items-center">
-          <MdAdminPanelSettings className="mr-2 h-4 w-4" />
-          <span className="hidden md:inline">Config</span>
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
-  );
-};
-
-export default AdminTabItems;
+export default adminTabs;

@@ -1,13 +1,21 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Label } from "@/components/ui/label";
 import { Car, Bus, Truck, Tractor, CarTaxiFront, Bike } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Vehicle {
   id: string;
   model: string;
   license_plate: string;
   type?: string;
+  capacity?: number;
+}
+
+interface VehicleCategory {
+  id: string;
+  name: string;
+  capacity: number;
 }
 
 interface VehicleSelectorProps {
@@ -25,6 +33,39 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   label = "Veículo",
   className = ""
 }) => {
+  const [vehicleCategories, setVehicleCategories] = useState<Record<string, VehicleCategory>>({});
+  
+  useEffect(() => {
+    const loadVehicleCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('vehicle_rates')
+          .select('id, name, capacity');
+        
+        if (error) {
+          console.error('Error loading vehicle categories:', error);
+          return;
+        }
+        
+        if (data) {
+          const categoriesMap: Record<string, VehicleCategory> = {};
+          data.forEach((category: any) => {
+            categoriesMap[category.id] = {
+              id: category.id,
+              name: category.name,
+              capacity: category.capacity || 4
+            };
+          });
+          setVehicleCategories(categoriesMap);
+        }
+      } catch (err) {
+        console.error('Failed to load vehicle categories:', err);
+      }
+    };
+    
+    loadVehicleCategories();
+  }, []);
+
   // Função para determinar qual ícone exibir baseado no tipo do veículo
   const getVehicleIcon = (type?: string, size: number = 16) => {
     switch(type?.toLowerCase()) {
@@ -46,6 +87,13 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
       default:
         return <Car className={`h-${size} w-${size} text-gray-700 inline-block mr-2`} />;
     }
+  };
+
+  const getVehicleCapacity = (vehicle: Vehicle) => {
+    if (vehicle.type && vehicleCategories[vehicle.type]) {
+      return vehicleCategories[vehicle.type].capacity;
+    }
+    return vehicle.capacity || 4; // Default fallback
   };
 
   return (
@@ -70,9 +118,16 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
           <div className="mr-3 flex justify-center items-center">
             {getVehicleIcon(vehicles.find(v => v.id === selectedVehicleId)?.type, 6)}
           </div>
-          <span>
-            {vehicles.find(v => v.id === selectedVehicleId)?.model} ({vehicles.find(v => v.id === selectedVehicleId)?.license_plate})
-          </span>
+          <div className="flex flex-col">
+            <span>
+              {vehicles.find(v => v.id === selectedVehicleId)?.model} ({vehicles.find(v => v.id === selectedVehicleId)?.license_plate})
+            </span>
+            {vehicles.find(v => v.id === selectedVehicleId) && (
+              <span className="text-xs text-gray-400">
+                Capacidade: {getVehicleCapacity(vehicles.find(v => v.id === selectedVehicleId)!)} passageiros
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>

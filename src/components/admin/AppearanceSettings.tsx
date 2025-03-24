@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,7 @@ interface ImageSection {
   description: string;
   currentImage: string;
   componentPath: string;
+  category?: string;
 }
 
 const imageSections: ImageSection[] = [
@@ -37,23 +37,26 @@ const imageSections: ImageSection[] = [
   {
     id: 'sedan',
     title: 'Sedan Executivo',
-    description: 'Imagem do veículo sedan executivo',
+    description: 'Imagem do veículo sedan executivo (recomendado: 300x200px)',
     currentImage: '/lovable-uploads/sedan-exec.jpg',
-    componentPath: 'src/components/booking/steps/VehicleSelection.tsx'
+    componentPath: 'src/components/booking/steps/VehicleSelection.tsx',
+    category: 'vehicle'
   },
   {
     id: 'suv',
     title: 'SUV Premium',
-    description: 'Imagem do veículo SUV premium',
+    description: 'Imagem do veículo SUV premium (recomendado: 300x200px)',
     currentImage: '/lovable-uploads/suv-premium.jpg',
-    componentPath: 'src/components/booking/steps/VehicleSelection.tsx'
+    componentPath: 'src/components/booking/steps/VehicleSelection.tsx',
+    category: 'vehicle'
   },
   {
     id: 'van',
     title: 'Van Executiva',
-    description: 'Imagem da van executiva',
+    description: 'Imagem da van executiva (recomendado: 300x200px)',
     currentImage: '/lovable-uploads/van-exec.jpg',
-    componentPath: 'src/components/booking/steps/VehicleSelection.tsx'
+    componentPath: 'src/components/booking/steps/VehicleSelection.tsx',
+    category: 'vehicle'
   },
   {
     id: 'offshore',
@@ -91,14 +94,12 @@ const AppearanceSettings: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    // Load current images from site_images table
     loadCurrentImages();
   }, []);
 
   const loadCurrentImages = async () => {
     setIsRefreshing(true);
     try {
-      // Get images from site_images table
       const { data, error } = await supabase
         .from('site_images')
         .select('*');
@@ -110,7 +111,6 @@ const AppearanceSettings: React.FC = () => {
       if (data) {
         const currentImages: Record<string, string> = {};
         
-        // Map image URLs from the database to their section IDs
         (data as SiteImage[]).forEach(image => {
           if (image.section_id && image.image_url) {
             currentImages[image.section_id] = image.image_url;
@@ -124,7 +124,6 @@ const AppearanceSettings: React.FC = () => {
       console.error('Error loading images:', error);
       toast.error('Erro ao carregar imagens');
       
-      // Fallback: load from storage if table query fails
       try {
         const { data: imageFiles, error } = await supabase.storage
           .from('site-images')
@@ -168,23 +167,19 @@ const AppearanceSettings: React.FC = () => {
     setUploading({ ...uploading, [sectionId]: true });
     
     try {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         toast.error('Arquivo inválido', { description: 'Por favor, selecione uma imagem.' });
         return;
       }
       
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error('Arquivo muito grande', { description: 'Tamanho máximo permitido: 5MB' });
         return;
       }
       
-      // Generate a unique file name
       const fileExt = file.name.split('.').pop();
       const fileName = `${sectionId}-${Date.now()}.${fileExt}`;
       
-      // Upload file to Supabase storage
       const { data, error } = await supabase.storage
         .from('site-images')
         .upload(fileName, file, {
@@ -195,14 +190,12 @@ const AppearanceSettings: React.FC = () => {
       if (error) throw error;
       
       if (data) {
-        // Get public URL
         const { data: publicUrlData } = supabase.storage
           .from('site-images')
           .getPublicUrl(fileName);
         
         const imageUrl = publicUrlData.publicUrl;
         
-        // Update the site_images table with the new image URL
         const { data: existingImage, error: checkError } = await supabase
           .from('site_images')
           .select('*')
@@ -211,7 +204,6 @@ const AppearanceSettings: React.FC = () => {
         
         if (checkError && checkError.code !== 'PGRST116') throw checkError;
         
-        // Insert or update the image URL in the database
         if (existingImage) {
           const { error: updateError } = await supabase
             .from('site_images')
@@ -231,7 +223,6 @@ const AppearanceSettings: React.FC = () => {
           if (insertError) throw insertError;
         }
         
-        // Update state with new image URL
         setUpdatedImages({
           ...updatedImages,
           [sectionId]: imageUrl
@@ -254,6 +245,18 @@ const AppearanceSettings: React.FC = () => {
   const getImageUrl = (section: ImageSection) => {
     return updatedImages[section.id] || section.currentImage;
   };
+
+  const groupedSections = () => {
+    const vehicleImages = imageSections.filter(section => section.category === 'vehicle');
+    const otherImages = imageSections.filter(section => section.category !== 'vehicle');
+    
+    return {
+      vehicleImages,
+      otherImages
+    };
+  };
+
+  const { vehicleImages, otherImages } = groupedSections();
 
   return (
     <div className="space-y-6">
@@ -279,8 +282,72 @@ const AppearanceSettings: React.FC = () => {
         </Button>
       </div>
 
+      {vehicleImages.length > 0 && (
+        <>
+          <h3 className="text-xl font-semibold mt-6">Imagens de Veículos</h3>
+          <p className="text-muted-foreground mb-4">
+            Estas imagens serão exibidas na seção de seleção de veículos durante o processo de reserva
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {vehicleImages.map((section) => (
+              <Card key={section.id} className="overflow-hidden">
+                <CardHeader className="pb-2">
+                  <CardTitle>{section.title}</CardTitle>
+                  <CardDescription>{section.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="relative aspect-video bg-muted rounded-md overflow-hidden">
+                    {getImageUrl(section) ? (
+                      <img 
+                        src={getImageUrl(section)} 
+                        alt={section.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor={`image-${section.id}`} className="text-sm font-medium">
+                      Carregar nova imagem
+                    </Label>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        id={`image-${section.id}`}
+                        type="file"
+                        accept="image/*"
+                        disabled={uploading[section.id]}
+                        onChange={(e) => handleFileChange(e, section.id)}
+                        className="flex-1"
+                      />
+                      {uploading[section.id] && (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      )}
+                      {updatedImages[section.id] && !uploading[section.id] && (
+                        <Check className="h-4 w-4 text-green-500" />
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Formato: JPG, PNG ou WebP. Tamanho máximo: 5MB
+                    </p>
+                    <p className="text-xs text-amber-500 flex items-center">
+                      <AlertTriangle className="h-3 w-3 mr-1" /> 
+                      Componente: {section.componentPath}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      <h3 className="text-xl font-semibold mt-6">Outras Imagens</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {imageSections.map((section) => (
+        {otherImages.map((section) => (
           <Card key={section.id} className="overflow-hidden">
             <CardHeader className="pb-2">
               <CardTitle>{section.title}</CardTitle>

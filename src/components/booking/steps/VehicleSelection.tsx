@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { Check, Users, Car, CarTaxiFront, Bus, Truck, Bike, Tractor } from 'lucide-react';
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from 'react';
 
 export interface Vehicle {
   id: string;
@@ -27,6 +29,38 @@ const VehicleSelection: React.FC<VehicleSelectionProps> = ({
   formatCurrency,
   isLoading = false
 }) => {
+  const [vehicleImages, setVehicleImages] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const loadVehicleImages = async () => {
+      try {
+        // Fetch vehicle images from site_images table
+        const { data, error } = await supabase
+          .from('site_images')
+          .select('section_id, image_url')
+          .in('section_id', ['sedan', 'suv', 'van']);
+        
+        if (error) {
+          console.error('Error loading vehicle images:', error);
+          return;
+        }
+        
+        if (data) {
+          const images: Record<string, string> = {};
+          data.forEach(item => {
+            images[item.section_id] = item.image_url;
+          });
+          setVehicleImages(images);
+          console.log('Loaded vehicle images:', images);
+        }
+      } catch (err) {
+        console.error('Failed to load vehicle images:', err);
+      }
+    };
+
+    loadVehicleImages();
+  }, []);
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-8">
@@ -71,8 +105,16 @@ const VehicleSelection: React.FC<VehicleSelectionProps> = ({
           >
             <div className="flex flex-col md:flex-row md:items-center">
               <div className="md:w-1/4 mb-4 md:mb-0 md:mr-4 flex justify-center items-center">
-                <div className="flex items-center justify-center bg-gray-50 rounded-lg p-4 w-24 h-24">
-                  {getVehicleIcon(vehicle.id)}
+                <div className="flex items-center justify-center bg-gray-50 rounded-lg p-2 w-24 h-24 overflow-hidden">
+                  {vehicleImages[vehicle.id] ? (
+                    <img 
+                      src={vehicleImages[vehicle.id]} 
+                      alt={vehicle.name}
+                      className="w-full h-full object-contain" 
+                    />
+                  ) : (
+                    getVehicleIcon(vehicle.id)
+                  )}
                 </div>
               </div>
               

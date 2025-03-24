@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Car } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 const NavbarLogo: React.FC = () => {
   const isMobile = useIsMobile();
   return <Link to="/" className="flex items-center space-x-2 animate-fade-in">
@@ -11,4 +13,5 @@ const NavbarLogo: React.FC = () => {
       </span>
     </Link>;
 };
+
 export default NavbarLogo;
