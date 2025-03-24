@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Car, ArrowLeft, Loader2 } from 'lucide-react';
+import { CarFront, Plane, ArrowLeft, Loader2 } from 'lucide-react';
 import TransitionEffect from '@/components/TransitionEffect';
 
 const ForgotPassword: React.FC = () => {
@@ -52,9 +52,12 @@ const ForgotPassword: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="flex justify-center items-center p-6">
           <Link to="/" className="flex items-center space-x-2">
-            <Car className="h-6 w-6 text-primary" />
+            <div className="relative">
+              <CarFront className="h-6 w-6 text-secondary" />
+              <Plane className="h-5 w-5 text-primary absolute -top-2 -right-2 transform rotate-45" />
+            </div>
             <span className="text-xl font-bold tracking-tight">
-              Click<span className="text-primary">Transfer</span>
+              La<span className="text-primary">Transfer</span>
             </span>
           </Link>
         </div>

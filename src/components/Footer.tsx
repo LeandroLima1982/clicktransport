@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Car, Plane, Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
+import { CarFront, Plane, Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return <footer className="bg-secondary text-white pt-16 pb-8 w-full">
@@ -9,8 +9,8 @@ const Footer: React.FC = () => {
           <div>
             <div className="flex items-center space-x-2 mb-6">
               <div className="relative">
-                <Car className="h-6 w-6 text-primary" />
-                <Plane className="h-5 w-5 text-white absolute -top-1 -right-1 transform rotate-45" />
+                <CarFront className="h-6 w-6 text-primary" />
+                <Plane className="h-5 w-5 text-white absolute -top-2 -right-2 transform rotate-45" />
               </div>
               <span className="text-xl font-bold tracking-tight">
                 La<span className="text-primary">Transfer</span>
