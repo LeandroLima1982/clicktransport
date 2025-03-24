@@ -14,6 +14,7 @@ import { useDestinationsService } from '@/hooks/useDestinationsService';
 import { calculateRoute } from '@/utils/routeUtils';
 import { MapPin, RotateCw, ArrowDown, ArrowRight } from 'lucide-react';
 import { Separator } from './ui/separator';
+
 interface BookingData {
   origin: string;
   destination: string;
@@ -29,6 +30,7 @@ interface BookingData {
   }[];
   distance?: number;
 }
+
 const BookingForm: React.FC = () => {
   const {
     originValue,
@@ -54,12 +56,14 @@ const BookingForm: React.FC = () => {
     setOriginValue,
     setDestinationValue
   } = useBookingForm();
+
   const {
     cities,
     loading: citiesLoading,
     fetchCities,
     getDistanceBetweenCities
   } = useDestinationsService();
+
   const [originCityId, setOriginCityId] = useState<string>('');
   const [destinationCityId, setDestinationCityId] = useState<string>('');
   const [distanceInfo, setDistanceInfo] = useState<{
@@ -69,9 +73,11 @@ const BookingForm: React.FC = () => {
   const [originCity, setOriginCity] = useState<string>('');
   const [destinationCity, setDestinationCity] = useState<string>('');
   const isMobile = useIsMobile();
+
   useEffect(() => {
     fetchCities();
   }, [fetchCities]);
+
   useEffect(() => {
     const calculateDistance = async () => {
       if (originCityId && destinationCityId) {
@@ -109,31 +115,38 @@ const BookingForm: React.FC = () => {
     };
     calculateDistance();
   }, [originCityId, destinationCityId, cities, getDistanceBetweenCities]);
+
   const formatCityLabel = (city: any) => {
     const stateAbbreviation = city.state ? city.state.length > 2 ? city.state.substring(0, 2).toUpperCase() : city.state.toUpperCase() : '';
     return `${city.name}${stateAbbreviation ? `, ${stateAbbreviation}` : ''}`;
   };
+
   const handleRefreshCities = () => {
     fetchCities();
   };
+
   const handleManualOriginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOriginValue(e.target.value);
   };
+
   const handleManualDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDestinationValue(e.target.value);
   };
+
   const getFullOriginAddress = () => {
     if (originValue && originCity) {
       return `${originValue}, ${originCity}`;
     }
     return originValue;
   };
+
   const getFullDestinationAddress = () => {
     if (destinationValue && destinationCity) {
       return `${destinationValue}, ${destinationCity}`;
     }
     return destinationValue;
   };
+
   const renderDistanceInfo = () => {
     if (!distanceInfo) return null;
     const totalMinutes = Math.round(distanceInfo.duration);
@@ -142,6 +155,7 @@ const BookingForm: React.FC = () => {
     const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     return;
   };
+
   return <div className="w-full bg-[#FEF7E4] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
       <div className="pt-5 md:pt-7 pb-6 md:pb-8 bg-gradient-to-b from-amber-300 to-amber-200 py-0 px-[20px] md:px-[54px] bg-amber-500">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0">
@@ -150,9 +164,7 @@ const BookingForm: React.FC = () => {
         </div>
 
         <div className="space-y-4 md:space-y-5">
-          {/* Locations section - combined when screen allows */}
           <div className="grid md:grid-cols-2 gap-4">
-            {/* Origin section */}
             <div className="rounded-lg border border-amber-300/50 p-3 bg-amber-50/[0.29]">
               <Label className="block text-sm font-semibold text-gray-700 mb-2">
                 De onde vai sair?
@@ -163,16 +175,21 @@ const BookingForm: React.FC = () => {
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
                       <MapPin className="h-4 w-4 text-amber-400" />
                     </div>
-                    <Input placeholder="Av, Rua, Travessa, n., Bairro, Referência" value={originValue} onChange={handleManualOriginChange} className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-10 focus:border-amber-300 focus:ring-amber-300" />
+                    <Input 
+                      placeholder="Digite seu endereço: rua, número, bairro" 
+                      value={originValue} 
+                      onChange={handleManualOriginChange} 
+                      className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-10 focus:border-amber-300 focus:ring-amber-300 placeholder:text-gray-400"
+                    />
                   </div>
                 </div>
                 <div className="w-full sm:w-[180px]">
                   <div className="flex">
                     <Select value={originCityId} onValueChange={setOriginCityId}>
-                      <SelectTrigger className="h-10 bg-white">
-                        <SelectValue placeholder="Cidade" />
+                      <SelectTrigger className="h-10 bg-white text-gray-700 border-gray-100 focus:border-amber-300 focus:ring-amber-300">
+                        <SelectValue placeholder="Selecione cidade" className="text-gray-500" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         {cities.filter(city => city.is_active !== false).map(city => <SelectItem key={city.id} value={city.id}>
                             {formatCityLabel(city)}
                           </SelectItem>)}
@@ -183,7 +200,6 @@ const BookingForm: React.FC = () => {
               </div>
             </div>
 
-            {/* Destination section */}
             <div className="rounded-lg border border-amber-300/50 p-3 bg-amber-50/35">
               <Label className="block text-sm font-semibold text-gray-700 mb-2">
                 Para onde vai?
@@ -194,15 +210,20 @@ const BookingForm: React.FC = () => {
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
                       <MapPin className="h-4 w-4 text-amber-400" />
                     </div>
-                    <Input placeholder="Av, Rua, Travessa, n., Bairro, Referência" value={destinationValue} onChange={handleManualDestinationChange} className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-10 focus:border-amber-300 focus:ring-amber-300" />
+                    <Input 
+                      placeholder="Digite seu destino: rua, número, bairro" 
+                      value={destinationValue} 
+                      onChange={handleManualDestinationChange} 
+                      className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-10 focus:border-amber-300 focus:ring-amber-300 placeholder:text-gray-400"
+                    />
                   </div>
                 </div>
                 <div className="w-full sm:w-[180px]">
                   <Select value={destinationCityId} onValueChange={setDestinationCityId}>
-                    <SelectTrigger className="h-10 bg-white">
-                      <SelectValue placeholder="Cidade" />
+                    <SelectTrigger className="h-10 bg-white text-gray-700 border-gray-100 focus:border-amber-300 focus:ring-amber-300">
+                      <SelectValue placeholder="Selecione cidade" className="text-gray-500" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white">
                       {cities.filter(city => city.is_active !== false).map(city => <SelectItem key={city.id} value={city.id}>
                           {formatCityLabel(city)}
                         </SelectItem>)}
@@ -213,7 +234,6 @@ const BookingForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Direction arrow and distance info */}
           <div className="hidden md:flex justify-center items-center h-6 relative">
             <Separator className="w-full bg-amber-300/60" />
             <div className="absolute bg-amber-100 rounded-full p-1">
@@ -288,4 +308,5 @@ const BookingForm: React.FC = () => {
       </div>
     </div>;
 };
+
 export default BookingForm;
