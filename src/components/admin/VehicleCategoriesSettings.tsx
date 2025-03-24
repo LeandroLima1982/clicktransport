@@ -34,6 +34,17 @@ interface VehicleCategory {
   updated_at?: string;
 }
 
+// Define the raw data structure from Supabase
+interface VehicleRateRaw {
+  id: string;
+  name: string;
+  capacity: number; // Added the capacity field from the migration
+  baseprice: number;
+  priceperkm: number;
+  updated_at: string;
+  created_at: string;
+}
+
 const VehicleCategoriesSettings: React.FC = () => {
   const [categories, setCategories] = useState<VehicleCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +54,7 @@ const VehicleCategoriesSettings: React.FC = () => {
   const [editForm, setEditForm] = useState<VehicleCategory>({
     id: '',
     name: '',
-    capacity: 0,
+    capacity: 4,
     basePrice: 0,
     pricePerKm: 0
   });
@@ -62,10 +73,13 @@ const VehicleCategoriesSettings: React.FC = () => {
       if (error) throw error;
       
       if (data) {
-        const formattedCategories: VehicleCategory[] = data.map(item => ({
+        // Type the raw data correctly
+        const rawData = data as VehicleRateRaw[];
+        
+        const formattedCategories: VehicleCategory[] = rawData.map(item => ({
           id: item.id,
           name: item.name,
-          capacity: item.capacity || 4, // Default to 4 if not specified
+          capacity: item.capacity || 4, // Use the capacity field, with fallback
           basePrice: Number(item.baseprice),
           pricePerKm: Number(item.priceperkm),
           updated_at: item.updated_at

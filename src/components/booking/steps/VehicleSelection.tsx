@@ -38,7 +38,7 @@ const VehicleSelection: React.FC<VehicleSelectionProps> = ({
         const { data, error } = await supabase
           .from('site_images')
           .select('section_id, image_url')
-          .in('section_id', ['sedan', 'suv', 'van']);
+          .in('section_id', vehicles.map(v => v.id));
         
         if (error) {
           console.error('Error loading vehicle images:', error);
@@ -58,8 +58,10 @@ const VehicleSelection: React.FC<VehicleSelectionProps> = ({
       }
     };
 
-    loadVehicleImages();
-  }, []);
+    if (vehicles.length > 0) {
+      loadVehicleImages();
+    }
+  }, [vehicles]);
 
   if (isLoading) {
     return (

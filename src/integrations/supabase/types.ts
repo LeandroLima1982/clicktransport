@@ -492,6 +492,7 @@ export type Database = {
       vehicle_rates: {
         Row: {
           baseprice: number
+          capacity: number
           created_at: string | null
           id: string
           name: string
@@ -500,6 +501,7 @@ export type Database = {
         }
         Insert: {
           baseprice?: number
+          capacity?: number
           created_at?: string | null
           id: string
           name: string
@@ -508,6 +510,7 @@ export type Database = {
         }
         Update: {
           baseprice?: number
+          capacity?: number
           created_at?: string | null
           id?: string
           name?: string
