@@ -72,7 +72,7 @@ const ProtectedRoute = ({
     
     // Otherwise redirect based on user role
     if (userRole === 'admin') {
-      return <Navigate to="/admin/dashboard" replace />;
+      return <Navigate to="/admin" replace />;
     } else if (userRole === 'company') {
       return <Navigate to="/company/dashboard" replace />;
     } else if (userRole === 'driver') {
@@ -102,7 +102,7 @@ const RoleBasedRedirect = () => {
   
   // Strictly redirect based on user role
   if (userRole === 'admin') {
-    return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/admin" replace />;
   } else if (userRole === 'company') {
     return <Navigate to="/company/dashboard" replace />;
   } else if (userRole === 'driver') {
@@ -133,7 +133,7 @@ const HomeRedirect = () => {
       return <Navigate to="/driver/dashboard" replace />;
     } else if (userRole === 'admin') {
       console.log("HomeRedirect: Redirecting admin user to dashboard");
-      return <Navigate to="/admin/dashboard" replace />;
+      return <Navigate to="/admin" replace />;
     }
     // Clients can access the home page
   }
@@ -156,9 +156,14 @@ function App() {
         <Route path="/dashboard" element={<RoleBasedRedirect />} />
         
         {/* Admin routes - strictly for admin users */}
-        <Route path="/admin/dashboard" element={
+        <Route path="/admin" element={
           <ProtectedRoute requiredRole="admin">
             <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/dashboard" element={
+          <ProtectedRoute requiredRole="admin">
+            <Navigate to="/admin" replace />
           </ProtectedRoute>
         } />
         <Route path="/admin/database-setup" element={
