@@ -30,8 +30,8 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
         <div className="flex justify-center items-center p-6">
           <Link to="/" className="flex items-center space-x-2">
             <div className="relative">
-              <Car className="h-6 w-6 text-primary" />
-              <Plane className="h-5 w-5 text-secondary absolute -top-1 -right-1 transform rotate-45" />
+              <Car className="h-6 w-6 text-secondary" />
+              <Plane className="h-5 w-5 text-primary absolute -top-1 -right-1 transform rotate-45" />
             </div>
             <span className="text-xl font-bold tracking-tight">
               La<span className="text-primary">Transfer</span>

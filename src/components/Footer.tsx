@@ -10,7 +10,7 @@ const Footer: React.FC = () => {
             <div className="flex items-center space-x-2 mb-6">
               <div className="relative">
                 <Car className="h-6 w-6 text-primary" />
-                <Plane className="h-5 w-5 text-primary absolute -top-1 -right-1 transform rotate-45" />
+                <Plane className="h-5 w-5 text-white absolute -top-1 -right-1 transform rotate-45" />
               </div>
               <span className="text-xl font-bold tracking-tight">
                 La<span className="text-primary">Transfer</span>

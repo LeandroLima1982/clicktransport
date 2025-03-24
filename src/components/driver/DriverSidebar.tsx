@@ -48,8 +48,8 @@ const DriverSidebar: React.FC = () => {
       <SidebarHeader>
         <Link to="/" className="flex items-center space-x-2">
           <div className="relative">
-            <Car className="h-6 w-6 text-primary" />
-            <Plane className="h-5 w-5 text-secondary absolute -top-1 -right-1 transform rotate-45" />
+            <Car className="h-6 w-6 text-secondary" />
+            <Plane className="h-5 w-5 text-primary absolute -top-1 -right-1 transform rotate-45" />
           </div>
           <span className="text-lg font-bold">LaTransfer</span>
         </Link>
