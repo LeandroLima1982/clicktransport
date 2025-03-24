@@ -38,7 +38,7 @@ interface VehicleCategory {
 interface VehicleRateRaw {
   id: string;
   name: string;
-  capacity: number; // Added the capacity field from the migration
+  capacity?: number; // Make capacity optional to handle older data
   baseprice: number;
   priceperkm: number;
   updated_at: string;
@@ -79,7 +79,7 @@ const VehicleCategoriesSettings: React.FC = () => {
         const formattedCategories: VehicleCategory[] = rawData.map(item => ({
           id: item.id,
           name: item.name,
-          capacity: item.capacity || 4, // Use the capacity field, with fallback
+          capacity: item.capacity || 4, // Use the capacity field with fallback
           basePrice: Number(item.baseprice),
           pricePerKm: Number(item.priceperkm),
           updated_at: item.updated_at
