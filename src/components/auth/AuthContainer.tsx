@@ -1,9 +1,11 @@
+
 import React, { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Car } from 'lucide-react';
+import { Car, Plane } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import TransitionEffect from '@/components/TransitionEffect';
+
 interface AuthContainerProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -13,6 +15,7 @@ interface AuthContainerProps {
   children: ReactNode;
   icon?: ReactNode;
 }
+
 const AuthContainer: React.FC<AuthContainerProps> = ({
   activeTab,
   setActiveTab,
@@ -26,9 +29,12 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="flex justify-center items-center p-6">
           <Link to="/" className="flex items-center space-x-2">
-            <Car className="h-6 w-6 text-primary" />
+            <div className="relative">
+              <Car className="h-6 w-6 text-primary" />
+              <Plane className="h-5 w-5 text-secondary absolute -top-1 -right-1 transform rotate-45" />
+            </div>
             <span className="text-xl font-bold tracking-tight">
-              Click<span className="text-primary">Transfer</span>
+              La<span className="text-primary">Transfer</span>
             </span>
           </Link>
         </div>
@@ -58,4 +64,5 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
       </div>
     </TransitionEffect>;
 };
+
 export default AuthContainer;
