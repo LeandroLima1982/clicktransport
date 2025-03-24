@@ -18,9 +18,10 @@ import {
 } from "@/components/ui/sidebar";
 import { Settings, LogOut, Database, TestTube, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { AuthError } from '@supabase/supabase-js';
 
 interface AdminSidebarProps {
-  signOut: () => Promise<void>;
+  signOut: () => Promise<{ error: AuthError | Error | null }>;
 }
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
