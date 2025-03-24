@@ -28,7 +28,7 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
           <Link to="/" className="flex items-center space-x-2">
             <Car className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold tracking-tight">
-              Click<span className="text-primary">Transport</span>
+              Click<span className="text-primary">Transfer</span>
             </span>
           </Link>
         </div>
