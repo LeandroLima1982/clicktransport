@@ -2,7 +2,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { adminTabs } from './AdminTabItems';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import {
   Sidebar,
@@ -29,6 +28,22 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
   const { userRole } = useAuth();
   
   const isActive = (path: string) => {
+    if (path === '/admin') {
+      // Check if we're on the dashboard with no tab or tab=overview
+      const queryParams = new URLSearchParams(location.search);
+      const currentTab = queryParams.get('tab');
+      return location.pathname === '/admin' && (!currentTab || currentTab === 'overview');
+    }
+    
+    // For tab routes
+    if (path.includes('?tab=')) {
+      const queryParams = new URLSearchParams(location.search);
+      const currentTab = queryParams.get('tab');
+      const tabInPath = path.split('?tab=')[1];
+      return location.pathname === '/admin' && currentTab === tabInPath;
+    }
+    
+    // For other routes
     return location.pathname === path || 
       (path !== '/admin' && location.pathname.startsWith(path));
   };
@@ -103,7 +118,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Documentação">
-                  <Link to="#">
+                  <Link to="/admin?tab=docs">
                     <HelpCircle className="h-5 w-5" />
                     <span>Documentação</span>
                   </Link>
@@ -120,7 +135,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Configurações">
-                  <Link to="/admin/settings">
+                  <Link to="/admin?tab=settings">
                     <Settings className="h-5 w-5" />
                     <span>Configurações</span>
                   </Link>

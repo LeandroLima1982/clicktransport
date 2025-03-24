@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   LayoutDashboard, 
@@ -32,70 +33,70 @@ export const adminTabs: AdminTab[] = [
     id: 'bookings',
     label: 'Reservas',
     icon: <CalendarClock className="h-5 w-5" />,
-    href: '/admin/bookings',
+    href: '/admin?tab=orders',
     roles: ['admin', 'manager', 'dispatcher']
   },
   {
     id: 'users',
     label: 'Usuários',
     icon: <Users className="h-5 w-5" />,
-    href: '/admin/users',
+    href: '/admin?tab=users',
     roles: ['admin']
   },
   {
     id: 'companies',
     label: 'Empresas',
     icon: <Building className="h-5 w-5" />,
-    href: '/admin/companies',
+    href: '/admin?tab=companies',
     roles: ['admin', 'manager']
   },
   {
     id: 'vehicles',
     label: 'Veículos',
     icon: <Car className="h-5 w-5" />,
-    href: '/admin/vehicles',
+    href: '/admin?tab=vehicles',
     roles: ['admin', 'manager', 'dispatcher']
   },
   {
     id: 'vehicle-categories',
     label: 'Categorias de Veículos',
     icon: <Car className="h-5 w-5" />,
-    href: '/admin/vehicle-categories',
+    href: '/admin?tab=vehicle-categories',
     roles: ['admin']
   },
   {
     id: 'destinations',
     label: 'Destinos',
     icon: <Map className="h-5 w-5" />,
-    href: '/admin/destinations',
+    href: '/admin?tab=destinations',
     roles: ['admin', 'manager']
   },
   {
     id: 'notifications',
     label: 'Notificações',
     icon: <Bell className="h-5 w-5" />,
-    href: '/admin/notifications',
+    href: '/admin?tab=notifications',
     roles: ['admin', 'manager']
   },
   {
     id: 'appearance',
     label: 'Aparência',
     icon: <Palette className="h-5 w-5" />,
-    href: '/admin/appearance',
+    href: '/admin?tab=appearance',
     roles: ['admin']
   },
   {
     id: 'content',
     label: 'Conteúdo',
     icon: <FileText className="h-5 w-5" />,
-    href: '/admin/content',
+    href: '/admin?tab=content',
     roles: ['admin']
   },
   {
     id: 'settings',
     label: 'Configurações',
     icon: <Settings className="h-5 w-5" />,
-    href: '/admin/settings',
+    href: '/admin?tab=settings',
     roles: ['admin']
   }
 ];

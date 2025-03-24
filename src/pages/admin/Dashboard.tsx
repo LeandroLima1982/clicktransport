@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,8 @@ import QueueDiagnostics from '@/components/admin/QueueDiagnostics';
 import TripRateSettings from '@/components/admin/TripRateSettings';
 import AppearanceSettings from '@/components/admin/AppearanceSettings';
 import DestinationManagement from '@/components/admin/destinations/DestinationManagement';
+import DocumentationContent from '@/components/admin/DocumentationContent';
+import SettingsContent from '@/components/admin/SettingsContent';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -281,6 +284,10 @@ const AdminDashboard: React.FC = () => {
         return <VehicleCategoriesSettings />;
       case 'appearance':
         return <AppearanceSettings />;
+      case 'docs':
+        return <DocumentationContent />;
+      case 'settings':
+        return <SettingsContent />;
       case 'notifications':
         return (
           <Card>
@@ -331,6 +338,161 @@ const AdminDashboard: React.FC = () => {
         );
       case 'reports':
         return <PerformanceReports />;
+      case 'content':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Gestão de Conteúdo</CardTitle>
+              <CardDescription>Gerencie páginas, textos e elementos visuais do sistema</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Páginas do Site</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Edite o conteúdo das páginas públicas do site
+                      </p>
+                      <Button className="w-full">Gerenciar Páginas</Button>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Mensagens de Sistema</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Personalize mensagens exibidas aos usuários
+                      </p>
+                      <Button className="w-full">Editar Mensagens</Button>
+                    </CardContent>
+                  </Card>
+                </div>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Recursos de Mídia</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Gerencie imagens, vídeos e outros recursos de mídia
+                    </p>
+                    <Button className="w-full">Biblioteca de Mídia</Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      case 'users':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Gestão de Usuários</CardTitle>
+              <CardDescription>Gerencie todos os usuários da plataforma</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Administradores</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Gerencie usuários com acesso administrativo
+                      </p>
+                      <Button className="w-full">Gerenciar Administradores</Button>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Clientes</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Gerencie usuários que utilizam o serviço
+                      </p>
+                      <Button className="w-full">Gerenciar Clientes</Button>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Permissões</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Configure níveis de acesso e permissões
+                      </p>
+                      <Button className="w-full">Configurar Permissões</Button>
+                    </CardContent>
+                  </Card>
+                </div>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Buscar Usuário</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-2">
+                      <Input placeholder="Email, nome ou ID do usuário" className="flex-1" />
+                      <Button>Buscar</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      case 'vehicles':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Gestão de Veículos</CardTitle>
+              <CardDescription>Gerencie a frota de veículos disponíveis</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Veículos Ativos</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Visualize e gerencie veículos em operação
+                      </p>
+                      <Button className="w-full">Ver Veículos Ativos</Button>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Manutenção</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Agende e acompanhe manutenções da frota
+                      </p>
+                      <Button className="w-full">Gerenciar Manutenções</Button>
+                    </CardContent>
+                  </Card>
+                </div>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Cadastrar Novo Veículo</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Adicione um novo veículo à frota
+                    </p>
+                    <Button className="w-full">Cadastrar Veículo</Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        );
       default:
         return <DashboardStats />;
     }
