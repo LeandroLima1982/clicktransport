@@ -45,7 +45,7 @@ const DriverSidebar: React.FC = () => {
     <Sidebar>
       <SidebarHeader>
         <Link to="/" className="flex items-center space-x-2">
-          <span className="text-lg font-bold">ClickTransfer</span>
+          <span className="text-lg font-bold">ConecTransfer</span>
         </Link>
       </SidebarHeader>
       

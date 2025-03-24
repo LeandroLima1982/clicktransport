@@ -9,7 +9,7 @@ const Footer: React.FC = () => {
             <div className="flex items-center space-x-2 mb-6">
               <Car className="h-6 w-6 text-primary" />
               <span className="text-xl font-bold tracking-tight">
-                Click<span className="text-primary">Transport</span>
+                Conec<span className="text-primary">Transfer</span>
               </span>
             </div>
             <p className="text-gray-300 mb-4">
@@ -99,7 +99,7 @@ const Footer: React.FC = () => {
               </li>
               <li className="flex items-center">
                 <Mail className="h-5 w-5 mr-3 text-primary" />
-                <span className="text-gray-300">contato@clicktransfer.com.br</span>
+                <span className="text-gray-300">contato@conectransfer.com.br</span>
               </li>
             </ul>
           </div>
@@ -108,7 +108,7 @@ const Footer: React.FC = () => {
         <div className="border-t border-gray-800 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm mb-4 md:mb-0">
-              &copy; {new Date().getFullYear()} ClickTransfer. Todos os direitos reservados.
+              &copy; {new Date().getFullYear()} ConecTransfer. Todos os direitos reservados.
             </p>
             <div className="flex space-x-6">
               <Link to="/privacy" className="text-gray-400 text-sm hover:text-primary transition-colors">
