@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
@@ -9,7 +10,7 @@ const Footer: React.FC = () => {
           <div>
             <div className="flex items-center mb-6">
               <img 
-                src="/lovable-uploads/286d67a1-0db4-4257-82de-d5c01b35452e.png" 
+                src="/lovable-uploads/4426e89f-4ae5-492a-84b3-eb7935af6e46.png" 
                 alt="LaTransfer Logo" 
                 className="h-10 w-auto" 
               />
