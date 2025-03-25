@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const currentTab = queryParams.get('tab') || 'overview';
 
@@ -49,12 +51,14 @@ const AdminDashboard: React.FC = () => {
   const { fixQueuePositions, resetQueue } = useCompanyQueue();
 
   useEffect(() => {
+    const tabFromQuery = queryParams.get('tab') || 'overview';
     if (tabFromQuery && tabFromQuery !== activeTab) {
       setActiveTab(tabFromQuery);
     }
-  }, [tabFromQuery]);
+  }, [queryParams, activeTab]);
 
   useEffect(() => {
+    const tabFromQuery = queryParams.get('tab') || 'overview';
     if ((tabFromQuery === activeTab) || 
         (activeTab === "overview" && !tabFromQuery)) {
       return;
@@ -72,7 +76,7 @@ const AdminDashboard: React.FC = () => {
     const newPath = newSearch ? `${location.pathname}?${newSearch}` : location.pathname;
     
     navigate(newPath, { replace: true });
-  }, [activeTab, navigate, location.pathname]);
+  }, [activeTab, navigate, location.pathname, location.search, queryParams]);
 
   useEffect(() => {
     fetchDashboardStats();
