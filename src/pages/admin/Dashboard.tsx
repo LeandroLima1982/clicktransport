@@ -133,7 +133,10 @@ const AdminDashboard: React.FC = () => {
   }
 
   const renderTabContent = () => {
-    switch (currentTab) {
+    // Get the current tab directly from queryParams to ensure consistency
+    const tabFromQuery = queryParams.get('tab') || 'overview';
+    
+    switch (tabFromQuery) {
       case 'overview':
         return (
           <>
