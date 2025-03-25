@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import TransitionEffect from '@/components/TransitionEffect';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, RefreshCw, TrendingUp, PieChart, BarChart3, CalendarDays, ListFilter } from 'lucide-react';
+import { Loader2, RefreshCw, TrendingUp, PieChart, BarChart3, CalendarDays, ListFilter, Building2 } from 'lucide-react';
 import RevenueChart from './RevenueChart';
 import CompanyPerformance from './CompanyPerformance';
 import InvestorPortfolio from './InvestorPortfolio';
@@ -224,7 +224,7 @@ const InvestorDashboard: React.FC = () => {
                         </CardHeader>
                         <CardContent>
                           <div className="flex items-center">
-                            <Building className="h-4 w-4 text-blue-500 mr-2" />
+                            <Building2 className="h-4 w-4 text-blue-500 mr-2" />
                             <span className="text-2xl font-bold">
                               {totals.activeCompanies}
                             </span>
