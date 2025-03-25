@@ -28,10 +28,34 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [logoUrl, setLogoUrl] = useState<string>('/lovable-uploads/8a9d78f7-0536-4e85-9c4b-0debc4c61fcf.png');
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchLogoSetting = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('site_images')
+          .select('image_url')
+          .eq('section_id', 'logo')
+          .single();
+        
+        if (error) {
+          console.error('Error fetching logo from settings:', error);
+          return;
+        }
+        
+        if (data && data.image_url) {
+          setLogoUrl(data.image_url);
+        }
+      } catch (error) {
+        console.error('Error loading logo from settings:', error);
+      }
+    };
+
+    fetchLogoSetting();
+    
     if (resolvedCompanyId) {
       fetchCompanyInfo();
     }
@@ -101,7 +125,7 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center">
             <img 
-              src="/lovable-uploads/286d67a1-0db4-4257-82de-d5c01b35452e.png" 
+              src={logoUrl}
               alt="LaTransfer Logo" 
               className="h-12 w-auto mr-4" 
             />

@@ -31,8 +31,16 @@ const imageSections: ImageSection[] = [
     id: 'logo',
     title: 'Logo do Site',
     description: 'Logo principal do LaTransfer usado em todo o site',
-    currentImage: '/lovable-uploads/286d67a1-0db4-4257-82de-d5c01b35452e.png',
+    currentImage: '/lovable-uploads/8a9d78f7-0536-4e85-9c4b-0debc4c61fcf.png',
     componentPath: 'src/components/navbar/NavbarLogo.tsx',
+    category: 'logo'
+  },
+  {
+    id: 'footer_logo',
+    title: 'Logo do Rodapé',
+    description: 'Logo específica exibida no rodapé do site',
+    currentImage: '/lovable-uploads/4426e89f-4ae5-492a-84b3-eb7935af6e46.png',
+    componentPath: 'src/components/Footer.tsx',
     category: 'logo'
   },
   {
