@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,9 +37,9 @@ const AdminDashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
-  const currentTab = queryParams.get('tab') || 'overview';
+  const tabFromUrl = queryParams.get('tab') || 'overview';
 
-  const [activeTab, setActiveTab] = useState(currentTab);
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
   const [dashboardStats, setDashboardStats] = useState({
     companies: 0,
     drivers: 0,
@@ -51,32 +50,29 @@ const AdminDashboard: React.FC = () => {
   const { fixQueuePositions, resetQueue } = useCompanyQueue();
 
   useEffect(() => {
-    const tabFromQuery = queryParams.get('tab') || 'overview';
-    if (tabFromQuery && tabFromQuery !== activeTab) {
-      setActiveTab(tabFromQuery);
+    const newTabFromUrl = queryParams.get('tab') || 'overview';
+    if (newTabFromUrl !== activeTab) {
+      setActiveTab(newTabFromUrl);
     }
-  }, [queryParams, activeTab]);
+  }, [location.search, queryParams]);
 
   useEffect(() => {
-    const tabFromQuery = queryParams.get('tab') || 'overview';
-    if ((tabFromQuery === activeTab) || 
-        (activeTab === "overview" && !tabFromQuery)) {
-      return;
+    const currentTabInUrl = queryParams.get('tab') || 'overview';
+    if (activeTab !== currentTabInUrl) {
+      const newParams = new URLSearchParams(location.search);
+      
+      if (activeTab === "overview") {
+        newParams.delete('tab');
+      } else {
+        newParams.set('tab', activeTab);
+      }
+      
+      const newSearch = newParams.toString();
+      const newPath = newSearch ? `${location.pathname}?${newSearch}` : location.pathname;
+      
+      navigate(newPath, { replace: true });
     }
-    
-    const newParams = new URLSearchParams(location.search);
-    
-    if (activeTab === "overview") {
-      newParams.delete('tab');
-    } else {
-      newParams.set('tab', activeTab);
-    }
-    
-    const newSearch = newParams.toString();
-    const newPath = newSearch ? `${location.pathname}?${newSearch}` : location.pathname;
-    
-    navigate(newPath, { replace: true });
-  }, [activeTab, navigate, location.pathname, location.search, queryParams]);
+  }, [activeTab]);
 
   useEffect(() => {
     fetchDashboardStats();
@@ -133,10 +129,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   const renderTabContent = () => {
-    // Get the current tab directly from queryParams to ensure consistency
-    const tabFromQuery = queryParams.get('tab') || 'overview';
-    
-    switch (tabFromQuery) {
+    switch (activeTab) {
       case 'overview':
         return (
           <>
