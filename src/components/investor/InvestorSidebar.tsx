@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -30,17 +29,14 @@ const InvestorSidebar: React.FC = () => {
   };
 
   const isActive = (path: string) => {
-    // Extrai a tab da URL se existir
     const searchParams = new URLSearchParams(location.search);
     const currentTab = searchParams.get('tab') || 'overview';
     
-    // Se o path contiver uma tab (formato: "path?tab=X"), extraia essa tab
     if (path.includes('?tab=')) {
       const tabPath = path.split('?tab=')[1];
       return currentTab === tabPath;
     }
     
-    // Caso contrário, compare com o pathname atual
     return location.pathname === path;
   };
 
