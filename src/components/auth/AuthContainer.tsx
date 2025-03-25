@@ -1,10 +1,11 @@
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CarFront, Plane } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import TransitionEffect from '@/components/TransitionEffect';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContainerProps {
   activeTab: string;
@@ -25,17 +26,42 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
   children,
   icon
 }) => {
+  const [logoUrl, setLogoUrl] = useState<string>('/lovable-uploads/8a9d78f7-0536-4e85-9c4b-0debc4c61fcf.png');
+
+  useEffect(() => {
+    const fetchLogoSetting = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('site_images')
+          .select('image_url')
+          .eq('section_id', 'logo')
+          .single();
+        
+        if (error) {
+          console.error('Error fetching logo from settings:', error);
+          return;
+        }
+        
+        if (data && data.image_url) {
+          setLogoUrl(data.image_url);
+        }
+      } catch (error) {
+        console.error('Error loading logo from settings:', error);
+      }
+    };
+
+    fetchLogoSetting();
+  }, []);
+
   return <TransitionEffect>
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="flex justify-center items-center p-6">
           <Link to="/" className="flex items-center space-x-2">
-            <div className="relative">
-              <CarFront className="h-6 w-6 text-secondary" />
-              <Plane className="h-5 w-5 text-primary absolute -top-2 -right-2 transform rotate-45" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">
-              La<span className="text-primary">Transfer</span>
-            </span>
+            <img 
+              src={logoUrl} 
+              alt="LaTransfer Logo" 
+              className="h-10 w-auto" 
+            />
           </Link>
         </div>
         

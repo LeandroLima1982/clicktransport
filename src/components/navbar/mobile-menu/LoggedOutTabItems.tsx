@@ -1,13 +1,41 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Home, Car, User, LogOut } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoggedOutTabItemsProps {
   onClose: () => void;
 }
 
 const LoggedOutTabItems: React.FC<LoggedOutTabItemsProps> = ({ onClose }) => {
+  const [logoUrl, setLogoUrl] = useState<string>('/lovable-uploads/8a9d78f7-0536-4e85-9c4b-0debc4c61fcf.png');
+
+  useEffect(() => {
+    const fetchLogoSetting = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('site_images')
+          .select('image_url')
+          .eq('section_id', 'logo')
+          .single();
+        
+        if (error) {
+          console.error('Error fetching logo from settings:', error);
+          return;
+        }
+        
+        if (data && data.image_url) {
+          setLogoUrl(data.image_url);
+        }
+      } catch (error) {
+        console.error('Error loading logo from settings:', error);
+      }
+    };
+
+    fetchLogoSetting();
+  }, []);
+
   return (
     <div className="tab-bar">
       <Link to="/" className="tab-item" onClick={onClose}>

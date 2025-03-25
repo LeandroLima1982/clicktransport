@@ -1,128 +1,132 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { useAuth } from '@/hooks/useAuth';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { CarFront, Plane, ArrowLeft, Loader2 } from 'lucide-react';
 import TransitionEffect from '@/components/TransitionEffect';
 
-const ForgotPassword: React.FC = () => {
+const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const { resetPassword } = useAuth();
+  const [sent, setSent] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string>('/lovable-uploads/8a9d78f7-0536-4e85-9c4b-0debc4c61fcf.png');
+
+  useEffect(() => {
+    const fetchLogoSetting = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('site_images')
+          .select('image_url')
+          .eq('section_id', 'logo')
+          .single();
+        
+        if (error) {
+          console.error('Error fetching logo from settings:', error);
+          return;
+        }
+        
+        if (data && data.image_url) {
+          setLogoUrl(data.image_url);
+        }
+      } catch (error) {
+        console.error('Error loading logo from settings:', error);
+      }
+    };
+
+    fetchLogoSetting();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email) {
-      toast.error('Por favor, informe seu email');
-      return;
-    }
-    
     setLoading(true);
     
     try {
-      const { error } = await resetPassword(email);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
       
       if (error) {
-        console.error('Password reset error:', error);
-        toast.error('Não foi possível enviar o link de recuperação', {
-          description: error.message
-        });
-      } else {
-        setSuccess(true);
-        toast.success('Link de recuperação enviado', {
-          description: 'Verifique seu email para redefinir sua senha'
-        });
+        toast.error('Erro ao enviar email de recuperação: ' + error.message);
+        return;
       }
-    } catch (err) {
-      console.error('Error in password reset:', err);
-      toast.error('Ocorreu um erro inesperado');
+      
+      setSent(true);
+      toast.success('Email de recuperação enviado com sucesso!');
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      toast.error('Erro ao processar solicitação');
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
     <TransitionEffect>
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-screen flex flex-col bg-gray-50">
         <div className="flex justify-center items-center p-6">
           <Link to="/" className="flex items-center space-x-2">
-            <div className="relative">
-              <CarFront className="h-6 w-6 text-secondary" />
-              <Plane className="h-5 w-5 text-primary absolute -top-2 -right-2 transform rotate-45" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">
-              La<span className="text-primary">Transfer</span>
-            </span>
+            <img 
+              src={logoUrl} 
+              alt="LaTransfer Logo" 
+              className="h-10 w-auto" 
+            />
           </Link>
         </div>
         
         <div className="flex-1 flex items-center justify-center px-6 py-12">
           <Card className="w-full max-w-md shadow-lg animate-fade-in">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">Recuperar Senha</CardTitle>
-              <CardDescription className="text-center">
-                {success 
-                  ? 'Link de recuperação enviado para seu email'
-                  : 'Informe seu email para receber um link de recuperação de senha'}
+            <CardHeader>
+              <CardTitle>Recuperação de Senha</CardTitle>
+              <CardDescription>
+                {sent 
+                  ? "Verifique seu email para instruções de recuperação de senha." 
+                  : "Insira seu email para receber um link de recuperação de senha."}
               </CardDescription>
             </CardHeader>
             
             <CardContent>
-              {success ? (
-                <div className="text-center space-y-4">
-                  <div className="bg-green-50 text-green-600 p-3 rounded-lg">
-                    Um link para redefinir sua senha foi enviado para {email}.
-                    Verifique sua caixa de entrada (e a pasta de spam).
+              {!sent ? (
+                <form onSubmit={handleSubmit}>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="seuemail@exemplo.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={loading}
+                    >
+                      {loading ? "Enviando..." : "Enviar Link de Recuperação"}
+                    </Button>
                   </div>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium">
-                      Email
-                    </label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="seu@email.com" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required 
-                    />
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full rounded-full" 
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Enviando...
-                      </>
-                    ) : (
-                      'Enviar link de recuperação'
-                    )}
-                  </Button>
                 </form>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">
+                    Se o email existir em nosso sistema, você receberá um link para redefinir sua senha em breve.
+                  </p>
+                </div>
               )}
             </CardContent>
             
-            <CardFooter className="flex justify-center">
-              <Link 
-                to="/auth" 
-                className="text-sm flex items-center text-primary hover:underline"
-              >
-                <ArrowLeft className="mr-1 h-4 w-4" />
-                Voltar para o login
-              </Link>
+            <CardFooter className="flex justify-center border-t pt-6">
+              <div className="text-sm text-center">
+                <Link to="/auth" className="text-primary hover:underline">
+                  Voltar para login
+                </Link>
+              </div>
             </CardFooter>
           </Card>
         </div>
