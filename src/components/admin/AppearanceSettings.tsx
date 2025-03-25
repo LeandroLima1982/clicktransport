@@ -116,7 +116,15 @@ const AppearanceSettings: React.FC = () => {
 
   useEffect(() => {
     loadCurrentImages();
-    loadCurrentLogos();
+    
+    // Set the logo uploads state to the static logo path
+    setLogoUploads({
+      light_mode: '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png',
+      dark_mode: '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png'
+    });
+    
+    // Force refresh logos to ensure the new logo is displayed
+    refreshLogos();
   }, []);
 
   const loadCurrentImages = async () => {
@@ -184,31 +192,23 @@ const AppearanceSettings: React.FC = () => {
   const loadCurrentLogos = async () => {
     setIsRefreshing(true);
     try {
+      // Set static logo path for immediate display
+      setLogoUploads({
+        light_mode: '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png',
+        dark_mode: '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png'
+      });
+      
+      // Still query database to maintain compatibility
       const { data, error } = await supabase
         .from('site_logos')
         .select('*');
       
       if (error) {
-        throw error;
+        console.error('Error loading logos:', error);
       }
       
-      if (data && data.length > 0) {
-        const logos: LogoUpload = {
-          light_mode: '',
-          dark_mode: ''
-        };
-        
-        data.forEach(logo => {
-          if (logo.mode === 'light') {
-            logos.light_mode = logo.logo_url;
-          } else if (logo.mode === 'dark') {
-            logos.dark_mode = logo.logo_url;
-          }
-        });
-        
-        setLogoUploads(logos);
-        toast.success('Logos carregadas com sucesso');
-      }
+      refreshLogos();
+      toast.success('Logos carregadas com sucesso');
     } catch (error) {
       console.error('Error loading logos:', error);
       toast.error('Erro ao carregar logos');

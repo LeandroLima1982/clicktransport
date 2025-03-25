@@ -26,45 +26,46 @@ export const useSiteLogo = () => {
       // Limpar o cache do navegador para as URLs das logos (timestamp approach)
       const timestamp = new Date().getTime();
       
-      // Buscar logo para modo claro
+      // Set static logos for immediate display while fetching from database
+      const staticLightLogo = '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
+      const staticDarkLogo = '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
+      
+      // Update logo data with static logos first
+      setLogoData({
+        light: `${staticLightLogo}?t=${timestamp}`,
+        dark: `${staticDarkLogo}?t=${timestamp}`,
+        isLoading: false,
+        error: null
+      });
+      
+      // Still query database to maintain compatibility with the logo upload feature
       const { data: lightLogoData, error: lightError } = await supabase
         .from('site_logos')
         .select('logo_url, updated_at')
         .eq('mode', 'light')
         .maybeSingle();
       
-      // Buscar logo para modo escuro
       const { data: darkLogoData, error: darkError } = await supabase
         .from('site_logos')
         .select('logo_url, updated_at')
         .eq('mode', 'dark')
         .maybeSingle();
       
-      if (lightError && lightError.code !== 'PGRST116') throw lightError;
-      if (darkError && darkError.code !== 'PGRST116') throw darkError;
+      if (lightError && lightError.code !== 'PGRST116') console.error(lightError);
+      if (darkError && darkError.code !== 'PGRST116') console.error(darkError);
       
-      // Adicionar timestamp às URLs para evitar cache
-      const lightUrl = lightLogoData?.logo_url ? `${lightLogoData.logo_url}?t=${timestamp}` : null;
-      const darkUrl = darkLogoData?.logo_url ? `${darkLogoData.logo_url}?t=${timestamp}` : null;
-      
-      console.log('Logo data fetched with timestamps:', { 
-        light: lightUrl, 
-        dark: darkUrl,
-        lightUpdated: lightLogoData?.updated_at,
-        darkUpdated: darkLogoData?.updated_at
+      console.log('Logo data fetched:', { 
+        staticLight: staticLightLogo,
+        staticDark: staticDarkLogo,
+        dbLight: lightLogoData?.logo_url,
+        dbDark: darkLogoData?.logo_url
       });
       
-      setLogoData({
-        light: lightUrl,
-        dark: darkUrl,
-        isLoading: false,
-        error: null
-      });
     } catch (error) {
       console.error('Error fetching logos:', error);
       setLogoData({
-        light: null,
-        dark: null,
+        light: '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png',
+        dark: '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png',
         isLoading: false,
         error: error as Error
       });
@@ -73,7 +74,7 @@ export const useSiteLogo = () => {
 
   useEffect(() => {
     fetchLogos();
-  }, [refreshKey]); // Dependência no refreshKey para forçar atualizações
+  }, [refreshKey, fetchLogos]); // Dependência no refreshKey para forçar atualizações
 
   // Método para forçar atualização das logos com efeito visual
   const refreshLogos = () => {
