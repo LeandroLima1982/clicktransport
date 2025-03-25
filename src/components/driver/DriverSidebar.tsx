@@ -28,11 +28,13 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
+import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 const DriverSidebar: React.FC = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { light: lightLogo } = useSiteLogo();
   
   const handleSignOut = async () => {
     try {
@@ -47,11 +49,21 @@ const DriverSidebar: React.FC = () => {
     <Sidebar>
       <SidebarHeader>
         <Link to="/" className="flex items-center space-x-2">
-          <div className="relative">
-            <CarFront className="h-6 w-6 text-secondary" />
-            <Plane className="h-5 w-5 text-primary absolute -top-2 -right-2 transform rotate-45" />
-          </div>
-          <span className="text-lg font-bold">LaTransfer</span>
+          {lightLogo ? (
+            <img 
+              src={lightLogo} 
+              alt="LaTransfer" 
+              className="h-8 w-auto"
+            />
+          ) : (
+            <>
+              <div className="relative">
+                <CarFront className="h-6 w-6 text-secondary" />
+                <Plane className="h-5 w-5 text-primary absolute -top-2 -right-2 transform rotate-45" />
+              </div>
+              <span className="text-lg font-bold">LaTransfer</span>
+            </>
+          )}
         </Link>
       </SidebarHeader>
       

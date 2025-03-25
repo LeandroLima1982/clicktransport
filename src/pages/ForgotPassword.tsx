@@ -8,12 +8,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { CarFront, Plane, ArrowLeft, Loader2 } from 'lucide-react';
 import TransitionEffect from '@/components/TransitionEffect';
+import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const { resetPassword } = useAuth();
+  const { light: lightLogo } = useSiteLogo();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,13 +54,23 @@ const ForgotPassword: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="flex justify-center items-center p-6">
           <Link to="/" className="flex items-center space-x-2">
-            <div className="relative">
-              <CarFront className="h-6 w-6 text-secondary" />
-              <Plane className="h-5 w-5 text-primary absolute -top-2 -right-2 transform rotate-45" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">
-              La<span className="text-primary">Transfer</span>
-            </span>
+            {lightLogo ? (
+              <img 
+                src={lightLogo} 
+                alt="LaTransfer" 
+                className="h-8 w-auto"
+              />
+            ) : (
+              <>
+                <div className="relative">
+                  <CarFront className="h-6 w-6 text-secondary" />
+                  <Plane className="h-5 w-5 text-primary absolute -top-2 -right-2 transform rotate-45" />
+                </div>
+                <span className="text-xl font-bold tracking-tight">
+                  La<span className="text-primary">Transfer</span>
+                </span>
+              </>
+            )}
           </Link>
         </div>
         
