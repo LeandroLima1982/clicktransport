@@ -28,8 +28,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
   const { userRole } = useAuth();
   
   const isActive = (path: string) => {
+    // For root admin path
     if (path === '/admin') {
-      // Check if we're on the dashboard with no tab or tab=overview
       const queryParams = new URLSearchParams(location.search);
       const currentTab = queryParams.get('tab');
       return location.pathname === '/admin' && (!currentTab || currentTab === 'overview');
@@ -43,18 +43,23 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
       return location.pathname === '/admin' && currentTab === tabInPath;
     }
     
-    // For other routes
+    // For other routes without query params
     return location.pathname === path || 
       (path !== '/admin' && location.pathname.startsWith(path));
   };
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      const { error } = await signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+        toast.error('Erro ao sair');
+        return;
+      }
       toast.success('Logout realizado com sucesso');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
-      toast.error('Erro ao fazer logout');
+      toast.error('Erro ao sair');
     }
   };
 
@@ -85,7 +90,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
                     isActive={isActive(tab.href)}
                     tooltip={tab.label}
                   >
-                    <Link to={tab.href}>
+                    <Link to={tab.href} onClick={(e) => {
+                      // For normal links, allow normal navigation
+                      // This prevents issues with the tab state getting out of sync
+                    }}>
                       {tab.icon}
                       <span>{tab.label}</span>
                     </Link>
@@ -101,7 +109,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Configuração do Banco">
+                <SidebarMenuButton asChild tooltip="Configuração do Banco" isActive={location.pathname === '/admin/database-setup'}>
                   <Link to="/admin/database-setup">
                     <Database className="h-5 w-5" />
                     <span>Banco de Dados</span>
@@ -109,7 +117,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Ambiente de Testes">
+                <SidebarMenuButton asChild tooltip="Ambiente de Testes" isActive={location.pathname === '/admin/test-workflow'}>
                   <Link to="/admin/test-workflow">
                     <TestTube className="h-5 w-5" />
                     <span>Testes</span>
@@ -117,7 +125,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Documentação">
+                <SidebarMenuButton asChild tooltip="Documentação" isActive={isActive('/admin?tab=docs')}>
                   <Link to="/admin?tab=docs">
                     <HelpCircle className="h-5 w-5" />
                     <span>Documentação</span>
@@ -134,7 +142,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Configurações">
+                <SidebarMenuButton asChild tooltip="Configurações" isActive={isActive('/admin?tab=settings')}>
                   <Link to="/admin?tab=settings">
                     <Settings className="h-5 w-5" />
                     <span>Configurações</span>

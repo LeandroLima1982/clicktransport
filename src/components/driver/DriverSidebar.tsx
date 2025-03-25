@@ -28,6 +28,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const DriverSidebar: React.FC = () => {
   const { signOut } = useAuth();
@@ -36,11 +37,23 @@ const DriverSidebar: React.FC = () => {
   
   const handleSignOut = async () => {
     try {
-      await signOut();
+      const { error } = await signOut();
+      if (error) {
+        console.error('Logout error:', error);
+        toast.error('Erro ao sair do sistema');
+        return;
+      }
       navigate('/', { replace: true });
+      toast.success('Logout realizado com sucesso');
     } catch (error) {
       console.error('Logout error:', error);
+      toast.error('Erro ao sair do sistema');
     }
+  };
+  
+  // Improved active route check to avoid re-renders
+  const isActive = (path: string) => {
+    return location.pathname === path;
   };
   
   return (
@@ -61,7 +74,7 @@ const DriverSidebar: React.FC = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/dashboard' ? 'bg-primary/10 text-primary' : '')}>
+                <SidebarMenuButton asChild isActive={isActive('/driver/dashboard')}>
                   <Link to="/driver/dashboard">
                     <LayoutDashboard className="h-5 w-5" />
                     <span>Dashboard</span>
@@ -70,7 +83,7 @@ const DriverSidebar: React.FC = () => {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/assignments' ? 'bg-primary/10 text-primary' : '')}>
+                <SidebarMenuButton asChild isActive={isActive('/driver/assignments')}>
                   <Link to="/driver/assignments">
                     <ListChecks className="h-5 w-5" />
                     <span>Atribuições</span>
@@ -79,7 +92,7 @@ const DriverSidebar: React.FC = () => {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/trips' ? 'bg-primary/10 text-primary' : '')}>
+                <SidebarMenuButton asChild isActive={isActive('/driver/trips')}>
                   <Link to="/driver/trips">
                     <Map className="h-5 w-5" />
                     <span>Minhas Viagens</span>
@@ -88,7 +101,7 @@ const DriverSidebar: React.FC = () => {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/schedule' ? 'bg-primary/10 text-primary' : '')}>
+                <SidebarMenuButton asChild isActive={isActive('/driver/schedule')}>
                   <Link to="/driver/schedule">
                     <Calendar className="h-5 w-5" />
                     <span>Agenda</span>
@@ -97,7 +110,7 @@ const DriverSidebar: React.FC = () => {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/navigation' ? 'bg-primary/10 text-primary' : '')}>
+                <SidebarMenuButton asChild isActive={isActive('/driver/navigation')}>
                   <Link to="/driver/navigation">
                     <Navigation className="h-5 w-5" />
                     <span>Navegação</span>
@@ -113,7 +126,7 @@ const DriverSidebar: React.FC = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/profile' ? 'bg-primary/10 text-primary' : '')}>
+                <SidebarMenuButton asChild isActive={isActive('/driver/profile')}>
                   <Link to="/driver/profile">
                     <User className="h-5 w-5" />
                     <span>Perfil</span>
@@ -122,7 +135,7 @@ const DriverSidebar: React.FC = () => {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className={cn(location.pathname === '/driver/settings' ? 'bg-primary/10 text-primary' : '')}>
+                <SidebarMenuButton asChild isActive={isActive('/driver/settings')}>
                   <Link to="/driver/settings">
                     <Settings className="h-5 w-5" />
                     <span>Configurações</span>

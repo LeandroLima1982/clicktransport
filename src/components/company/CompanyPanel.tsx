@@ -61,7 +61,12 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      const { error } = await signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+        toast.error('Erro ao sair');
+        return;
+      }
       toast.success('Você saiu com sucesso');
       navigate('/');
     } catch (error) {
@@ -72,6 +77,10 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
 
   const handleBackToHome = () => {
     navigate('/');
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
   };
 
   if (!resolvedCompanyId) {
@@ -111,7 +120,7 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
 
       <Card>
         <CardContent className="p-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="w-full justify-start rounded-b-none border-b">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="orders">Ordens de Serviço</TabsTrigger>
