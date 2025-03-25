@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input"; // Add this import
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from '@/hooks/useAuth';
 import TransitionEffect from '@/components/TransitionEffect';
@@ -49,22 +49,13 @@ const AdminDashboard: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { fixQueuePositions, resetQueue } = useCompanyQueue();
 
-  // Fix: Set activeTab only on the initial render or when tabFromQuery changes
   useEffect(() => {
-    if (tabFromQuery && tabFromQuery !== activeTab) {
+    if (tabFromQuery) {
       setActiveTab(tabFromQuery);
     }
   }, [tabFromQuery]);
 
-  // Fix: Update URL only when activeTab changes by user action, not when it's set from URL
   useEffect(() => {
-    // Skip the first render - only update if URL doesn't already match
-    const currentTabInUrl = queryParams.get('tab');
-    
-    if (activeTab === currentTabInUrl) {
-      return; // URL already matches, no need to update
-    }
-    
     const newParams = new URLSearchParams(location.search);
     if (activeTab === "overview") {
       newParams.delete('tab');
@@ -75,8 +66,12 @@ const AdminDashboard: React.FC = () => {
     const newSearch = newParams.toString();
     const newPath = newSearch ? `${location.pathname}?${newSearch}` : location.pathname;
     
-    navigate(newPath, { replace: true });
-  }, [activeTab]);
+    if (location.search !== `?${newSearch}` && location.search !== '' && newSearch === '') {
+      navigate(newPath, { replace: true });
+    } else if (location.search !== `?${newSearch}`) {
+      navigate(newPath, { replace: true });
+    }
+  }, [activeTab, location, navigate]);
 
   useEffect(() => {
     fetchDashboardStats();

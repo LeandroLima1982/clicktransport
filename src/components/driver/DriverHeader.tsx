@@ -6,28 +6,18 @@ import NotificationBell from './header/NotificationBell';
 import HeaderTitle from './header/HeaderTitle';
 import { Building2, CarFront, Plane } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 const DriverHeader: React.FC = () => {
   const { companyContext } = useAuth();
-  const { light: lightLogo } = useSiteLogo();
   
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
       <div className="flex items-center">
         <Link to="/" className="flex items-center space-x-2 mr-4">
-          {lightLogo ? (
-            <img 
-              src={lightLogo} 
-              alt="LaTransfer" 
-              className="h-6 w-auto"
-            />
-          ) : (
-            <div className="relative">
-              <CarFront className="h-5 w-5 text-secondary" />
-              <Plane className="h-4 w-4 text-primary absolute -top-2 -right-2 transform rotate-45" />
-            </div>
-          )}
+          <div className="relative">
+            <CarFront className="h-5 w-5 text-secondary" />
+            <Plane className="h-4 w-4 text-primary absolute -top-2 -right-2 transform rotate-45" />
+          </div>
         </Link>
         <HeaderTitle title="Driver Dashboard" />
       </div>
