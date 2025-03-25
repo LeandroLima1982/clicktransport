@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, ImageIcon, Loader2, RefreshCw, Check, AlertTriangle } from 'lucide-react';
+import { Upload, ImageIcon, Loader2, RefreshCw, Check, AlertTriangle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
@@ -104,6 +105,10 @@ const AppearanceSettings: React.FC = () => {
     dark_mode: ''
   });
   const [isUploadingLogo, setIsUploadingLogo] = useState<Record<string, boolean>>({
+    light_mode: false,
+    dark_mode: false
+  });
+  const [isDeletingLogo, setIsDeletingLogo] = useState<Record<string, boolean>>({
     light_mode: false,
     dark_mode: false
   });
@@ -317,10 +322,27 @@ const AppearanceSettings: React.FC = () => {
       const fileExt = file.name.split('.').pop();
       const fileName = `logo-${mode}-${Date.now()}.${fileExt}`;
       
+      // Primeiro apague o logo anterior se existir
+      if (logoUploads[mode]) {
+        try {
+          const oldFileName = logoUploads[mode].split('/').pop()?.split('?')[0];
+          if (oldFileName) {
+            await supabase.storage
+              .from('site-images')
+              .remove([oldFileName]);
+            console.log(`Antigo arquivo removido: ${oldFileName}`);
+          }
+        } catch (removeError) {
+          console.warn('Erro ao remover arquivo antigo:', removeError);
+          // Continue mesmo se houver erro na remoção
+        }
+      }
+      
+      // Agora faça o upload do novo arquivo
       const { data, error } = await supabase.storage
         .from('site-images')
         .upload(fileName, file, {
-          cacheControl: '3600',
+          cacheControl: '0', // Desabilitar cache
           upsert: true
         });
       
@@ -331,7 +353,9 @@ const AppearanceSettings: React.FC = () => {
           .from('site-images')
           .getPublicUrl(fileName);
         
-        const logoUrl = publicUrlData.publicUrl;
+        // Adicionar timestamp para evitar cache
+        const timestamp = new Date().getTime();
+        const logoUrl = `${publicUrlData.publicUrl}?t=${timestamp}`;
         
         const supabaseMode = mode === 'light_mode' ? 'light' : 'dark';
         
@@ -344,12 +368,23 @@ const AppearanceSettings: React.FC = () => {
         if (checkError && checkError.code !== 'PGRST116') throw checkError;
         
         if (existingLogo) {
-          const { error: updateError } = await supabase
+          // Deletar registro anterior antes de inserir o novo
+          const { error: deleteError } = await supabase
             .from('site_logos')
-            .update({ logo_url: logoUrl })
+            .delete()
             .eq('id', existingLogo.id);
           
-          if (updateError) throw updateError;
+          if (deleteError) throw deleteError;
+          
+          // Inserir novo registro
+          const { error: insertError } = await supabase
+            .from('site_logos')
+            .insert({
+              mode: supabaseMode,
+              logo_url: logoUrl
+            });
+          
+          if (insertError) throw insertError;
         } else {
           const { error: insertError } = await supabase
             .from('site_logos')
@@ -383,6 +418,57 @@ const AppearanceSettings: React.FC = () => {
     }
   };
 
+  const handleDeleteLogo = async (mode: 'light_mode' | 'dark_mode') => {
+    if (!logoUploads[mode]) return;
+    
+    setIsDeletingLogo(prev => ({ ...prev, [mode]: true }));
+    
+    try {
+      const supabaseMode = mode === 'light_mode' ? 'light' : 'dark';
+      
+      // Remover do banco de dados
+      const { error: deleteDbError } = await supabase
+        .from('site_logos')
+        .delete()
+        .eq('mode', supabaseMode);
+      
+      if (deleteDbError) throw deleteDbError;
+      
+      // Remover do storage
+      try {
+        const fileName = logoUploads[mode].split('/').pop()?.split('?')[0];
+        if (fileName) {
+          await supabase.storage
+            .from('site-images')
+            .remove([fileName]);
+        }
+      } catch (removeError) {
+        console.warn('Erro ao remover arquivo:', removeError);
+        // Continue mesmo se houver erro na remoção do arquivo
+      }
+      
+      // Atualizar estado
+      setLogoUploads(prev => ({
+        ...prev,
+        [mode]: ''
+      }));
+      
+      // Força a atualização dos logos em todo o site
+      refreshLogos();
+      
+      toast.success('Logo removida com sucesso', {
+        description: `A logo para modo ${mode === 'light_mode' ? 'claro' : 'escuro'} foi removida.`
+      });
+    } catch (error: any) {
+      console.error('Error deleting logo:', error);
+      toast.error('Erro ao remover logo', {
+        description: error.message || 'Tente novamente mais tarde.'
+      });
+    } finally {
+      setIsDeletingLogo(prev => ({ ...prev, [mode]: false }));
+    }
+  };
+
   const getImageUrl = (section: ImageSection) => {
     return updatedImages[section.id] || section.currentImage;
   };
@@ -413,6 +499,7 @@ const AppearanceSettings: React.FC = () => {
           onClick={() => {
             loadCurrentImages();
             loadCurrentLogos();
+            refreshLogos(); // Forçar atualização global de logos
           }} 
           disabled={isRefreshing}
           className="flex items-center gap-2"
@@ -448,6 +535,7 @@ const AppearanceSettings: React.FC = () => {
                       src={logoUploads.light_mode} 
                       alt="Logo (Fundo Claro)" 
                       className="max-h-16"
+                      key={`light-${logoUploads.light_mode}`} // Forçar re-renderização
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-muted-foreground">
@@ -458,22 +546,34 @@ const AppearanceSettings: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="logo-light">Carregar Logo (Fundo Claro)</Label>
+                  <Label htmlFor="logo-light" className="text-sm font-medium">
+                    Carregar Logo (Fundo Claro)
+                  </Label>
                   <div className="flex items-center space-x-2">
                     <Input
                       id="logo-light"
                       type="file"
                       accept="image/*"
-                      disabled={isUploadingLogo.light_mode}
+                      disabled={isUploadingLogo.light_mode || isDeletingLogo.light_mode}
                       onChange={(e) => handleLogoUpload(e, 'light_mode')}
                       className="flex-1"
                     />
-                    {isUploadingLogo.light_mode && (
+                    {isUploadingLogo.light_mode ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
-                    )}
-                    {logoUploads.light_mode && !isUploadingLogo.light_mode && (
-                      <Check className="h-4 w-4 text-green-500" />
-                    )}
+                    ) : logoUploads.light_mode ? (
+                      <Button 
+                        variant="destructive" 
+                        size="icon" 
+                        onClick={() => handleDeleteLogo('light_mode')}
+                        disabled={isDeletingLogo.light_mode}
+                      >
+                        {isDeletingLogo.light_mode ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    ) : null}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Formato: PNG ou SVG com transparência. Tamanho máximo: 2MB.<br />
@@ -497,6 +597,7 @@ const AppearanceSettings: React.FC = () => {
                       src={logoUploads.dark_mode} 
                       alt="Logo (Fundo Escuro)" 
                       className="max-h-16"
+                      key={`dark-${logoUploads.dark_mode}`} // Forçar re-renderização
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-white/60">
@@ -513,16 +614,26 @@ const AppearanceSettings: React.FC = () => {
                       id="logo-dark"
                       type="file"
                       accept="image/*"
-                      disabled={isUploadingLogo.dark_mode}
+                      disabled={isUploadingLogo.dark_mode || isDeletingLogo.dark_mode}
                       onChange={(e) => handleLogoUpload(e, 'dark_mode')}
                       className="flex-1"
                     />
-                    {isUploadingLogo.dark_mode && (
+                    {isUploadingLogo.dark_mode ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
-                    )}
-                    {logoUploads.dark_mode && !isUploadingLogo.dark_mode && (
-                      <Check className="h-4 w-4 text-green-500" />
-                    )}
+                    ) : logoUploads.dark_mode ? (
+                      <Button 
+                        variant="destructive" 
+                        size="icon" 
+                        onClick={() => handleDeleteLogo('dark_mode')}
+                        disabled={isDeletingLogo.dark_mode}
+                      >
+                        {isDeletingLogo.dark_mode ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    ) : null}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Formato: PNG ou SVG com transparência. Tamanho máximo: 2MB.<br />
