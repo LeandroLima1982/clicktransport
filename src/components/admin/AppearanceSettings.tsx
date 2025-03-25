@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, ImageIcon, Loader2, RefreshCw, Check, AlertTriangle, Trash2 } from 'lucide-react';
+import { Upload, ImageIcon, Loader2, RefreshCw, Check, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useSiteLogo } from '@/hooks/useSiteLogo';
 
+// Define types for site images
 interface SiteImage {
   id: string;
   section_id: string;
@@ -98,7 +98,7 @@ const AppearanceSettings: React.FC = () => {
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [updatedImages, setUpdatedImages] = useState<Record<string, string>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState("logo");
+  const [activeTab, setActiveTab] = useState("images");
   const [logoUploads, setLogoUploads] = useState<LogoUpload>({
     light_mode: '',
     dark_mode: ''
@@ -107,12 +107,6 @@ const AppearanceSettings: React.FC = () => {
     light_mode: false,
     dark_mode: false
   });
-  const [isDeletingLogo, setIsDeletingLogo] = useState<Record<string, boolean>>({
-    light_mode: false,
-    dark_mode: false
-  });
-  
-  const { light: currentLightLogo, dark: currentDarkLogo, refreshLogos } = useSiteLogo();
 
   useEffect(() => {
     loadCurrentImages();
@@ -184,27 +178,31 @@ const AppearanceSettings: React.FC = () => {
   const loadCurrentLogos = async () => {
     setIsRefreshing(true);
     try {
-      const { data: lightLogoData, error: lightError } = await supabase
+      const { data, error } = await supabase
         .from('site_logos')
-        .select('logo_url')
-        .eq('mode', 'light')
-        .maybeSingle();
+        .select('*');
       
-      const { data: darkLogoData, error: darkError } = await supabase
-        .from('site_logos')
-        .select('logo_url')
-        .eq('mode', 'dark')
-        .maybeSingle();
+      if (error) {
+        throw error;
+      }
       
-      setLogoUploads({
-        light_mode: lightLogoData?.logo_url || '',
-        dark_mode: darkLogoData?.logo_url || ''
-      });
-      
-      if (lightError && lightError.code !== 'PGRST116') console.error(lightError);
-      if (darkError && darkError.code !== 'PGRST116') console.error(darkError);
-      
-      toast.success('Logos carregadas com sucesso');
+      if (data && data.length > 0) {
+        const logos: LogoUpload = {
+          light_mode: '',
+          dark_mode: ''
+        };
+        
+        data.forEach(logo => {
+          if (logo.mode === 'light') {
+            logos.light_mode = logo.logo_url;
+          } else if (logo.mode === 'dark') {
+            logos.dark_mode = logo.logo_url;
+          }
+        });
+        
+        setLogoUploads(logos);
+        toast.success('Logos carregadas com sucesso');
+      }
     } catch (error) {
       console.error('Error loading logos:', error);
       toast.error('Erro ao carregar logos');
@@ -314,76 +312,60 @@ const AppearanceSettings: React.FC = () => {
         return;
       }
       
-      const supabaseMode = mode === 'light_mode' ? 'light' : 'dark';
-      
-      const { error: deleteError } = await supabase
-        .from('site_logos')
-        .delete()
-        .eq('mode', supabaseMode);
-      
-      if (deleteError) {
-        console.error('Error deleting existing logo record:', deleteError);
-      }
-      
-      try {
-        const { data: fileList } = await supabase.storage
-          .from('site-images')
-          .list();
-        
-        const oldLogoFiles = fileList.filter(file => 
-          file.name.startsWith(`logo-${supabaseMode}`)
-        );
-        
-        if (oldLogoFiles.length > 0) {
-          const filesToRemove = oldLogoFiles.map(file => file.name);
-          await supabase.storage
-            .from('site-images')
-            .remove(filesToRemove);
-              
-          console.log(`Old logo files removed: ${filesToRemove.join(', ')}`);
-        }
-      } catch (e) {
-        console.warn('Error removing old logo files, proceeding anyway:', e);
-      }
-      
       const fileExt = file.name.split('.').pop();
-      const fileName = `logo-${supabaseMode}-${Date.now()}.${fileExt}`;
+      const fileName = `logo-${mode}-${Date.now()}.${fileExt}`;
       
       const { data, error } = await supabase.storage
         .from('site-images')
         .upload(fileName, file, {
-          cacheControl: '0',
+          cacheControl: '3600',
           upsert: true
         });
       
       if (error) throw error;
       
-      const { data: publicUrlData } = supabase.storage
-        .from('site-images')
-        .getPublicUrl(fileName);
+      if (data) {
+        const { data: publicUrlData } = supabase.storage
+          .from('site-images')
+          .getPublicUrl(fileName);
         
-      const logoUrl = publicUrlData.publicUrl;
-      
-      const { error: insertError } = await supabase
-        .from('site_logos')
-        .insert({
-          mode: supabaseMode,
-          logo_url: logoUrl
+        const logoUrl = publicUrlData.publicUrl;
+        
+        const { data: existingLogo, error: checkError } = await supabase
+          .from('site_logos')
+          .select('*')
+          .eq('mode', mode === 'light_mode' ? 'light' : 'dark')
+          .maybeSingle();
+        
+        if (checkError && checkError.code !== 'PGRST116') throw checkError;
+        
+        if (existingLogo) {
+          const { error: updateError } = await supabase
+            .from('site_logos')
+            .update({ logo_url: logoUrl })
+            .eq('id', existingLogo.id);
+          
+          if (updateError) throw updateError;
+        } else {
+          const { error: insertError } = await supabase
+            .from('site_logos')
+            .insert({
+              mode: mode === 'light_mode' ? 'light' : 'dark',
+              logo_url: logoUrl
+            });
+          
+          if (insertError) throw insertError;
+        }
+        
+        setLogoUploads(prev => ({
+          ...prev,
+          [mode]: logoUrl
+        }));
+        
+        toast.success('Logo atualizada com sucesso', {
+          description: `A logo para modo ${mode === 'light_mode' ? 'claro' : 'escuro'} foi atualizada.`
         });
-      
-      if (insertError) throw insertError;
-      
-      setLogoUploads(prev => ({
-        ...prev,
-        [mode]: logoUrl
-      }));
-      
-      refreshLogos();
-      
-      toast.success('Logo atualizada com sucesso', {
-        description: `A logo para modo ${mode === 'light_mode' ? 'claro' : 'escuro'} foi atualizada.`
-      });
-      
+      }
     } catch (error: any) {
       console.error('Error uploading logo:', error);
       toast.error('Erro ao enviar logo', {
@@ -391,62 +373,6 @@ const AppearanceSettings: React.FC = () => {
       });
     } finally {
       setIsUploadingLogo(prev => ({ ...prev, [mode]: false }));
-    }
-  };
-
-  const handleDeleteLogo = async (mode: 'light_mode' | 'dark_mode') => {
-    if (!logoUploads[mode]) return;
-    
-    setIsDeletingLogo(prev => ({ ...prev, [mode]: true }));
-    
-    try {
-      const supabaseMode = mode === 'light_mode' ? 'light' : 'dark';
-      
-      const { error: deleteDbError } = await supabase
-        .from('site_logos')
-        .delete()
-        .eq('mode', supabaseMode);
-      
-      if (deleteDbError) throw deleteDbError;
-      
-      try {
-        const { data: fileList } = await supabase.storage
-          .from('site-images')
-          .list();
-        
-        const logoFiles = fileList.filter(file => 
-          file.name.startsWith(`logo-${supabaseMode}`)
-        );
-        
-        if (logoFiles.length > 0) {
-          const filesToRemove = logoFiles.map(file => file.name);
-          await supabase.storage
-            .from('site-images')
-            .remove(filesToRemove);
-              
-          console.log(`Logo files removed: ${filesToRemove.join(', ')}`);
-        }
-      } catch (removeError) {
-        console.warn('Error removing logo files:', removeError);
-      }
-      
-      setLogoUploads(prev => ({
-        ...prev,
-        [mode]: ''
-      }));
-      
-      refreshLogos();
-      
-      toast.success('Logo removida com sucesso', {
-        description: `A logo para modo ${mode === 'light_mode' ? 'claro' : 'escuro'} foi removida.`
-      });
-    } catch (error: any) {
-      console.error('Error deleting logo:', error);
-      toast.error('Erro ao remover logo', {
-        description: error.message || 'Tente novamente mais tarde.'
-      });
-    } finally {
-      setIsDeletingLogo(prev => ({ ...prev, [mode]: false }));
     }
   };
 
@@ -480,7 +406,6 @@ const AppearanceSettings: React.FC = () => {
           onClick={() => {
             loadCurrentImages();
             loadCurrentLogos();
-            refreshLogos();
           }} 
           disabled={isRefreshing}
           className="flex items-center gap-2"
@@ -516,7 +441,6 @@ const AppearanceSettings: React.FC = () => {
                       src={logoUploads.light_mode} 
                       alt="Logo (Fundo Claro)" 
                       className="max-h-16"
-                      key={`light-${logoUploads.light_mode}`}
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-muted-foreground">
@@ -527,34 +451,22 @@ const AppearanceSettings: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="logo-light" className="text-sm font-medium">
-                    Carregar Logo (Fundo Claro)
-                  </Label>
+                  <Label htmlFor="logo-light">Carregar Logo (Fundo Claro)</Label>
                   <div className="flex items-center space-x-2">
                     <Input
                       id="logo-light"
                       type="file"
                       accept="image/*"
-                      disabled={isUploadingLogo.light_mode || isDeletingLogo.light_mode}
+                      disabled={isUploadingLogo.light_mode}
                       onChange={(e) => handleLogoUpload(e, 'light_mode')}
                       className="flex-1"
                     />
-                    {isUploadingLogo.light_mode ? (
+                    {isUploadingLogo.light_mode && (
                       <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : logoUploads.light_mode ? (
-                      <Button 
-                        variant="destructive" 
-                        size="icon" 
-                        onClick={() => handleDeleteLogo('light_mode')}
-                        disabled={isDeletingLogo.light_mode}
-                      >
-                        {isDeletingLogo.light_mode ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    ) : null}
+                    )}
+                    {logoUploads.light_mode && !isUploadingLogo.light_mode && (
+                      <Check className="h-4 w-4 text-green-500" />
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Formato: PNG ou SVG com transparência. Tamanho máximo: 2MB.<br />
@@ -578,7 +490,6 @@ const AppearanceSettings: React.FC = () => {
                       src={logoUploads.dark_mode} 
                       alt="Logo (Fundo Escuro)" 
                       className="max-h-16"
-                      key={`dark-${logoUploads.dark_mode}`}
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-white/60">
@@ -595,26 +506,16 @@ const AppearanceSettings: React.FC = () => {
                       id="logo-dark"
                       type="file"
                       accept="image/*"
-                      disabled={isUploadingLogo.dark_mode || isDeletingLogo.dark_mode}
+                      disabled={isUploadingLogo.dark_mode}
                       onChange={(e) => handleLogoUpload(e, 'dark_mode')}
                       className="flex-1"
                     />
-                    {isUploadingLogo.dark_mode ? (
+                    {isUploadingLogo.dark_mode && (
                       <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : logoUploads.dark_mode ? (
-                      <Button 
-                        variant="destructive" 
-                        size="icon" 
-                        onClick={() => handleDeleteLogo('dark_mode')}
-                        disabled={isDeletingLogo.dark_mode}
-                      >
-                        {isDeletingLogo.dark_mode ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    ) : null}
+                    )}
+                    {logoUploads.dark_mode && !isUploadingLogo.dark_mode && (
+                      <Check className="h-4 w-4 text-green-500" />
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Formato: PNG ou SVG com transparência. Tamanho máximo: 2MB.<br />
@@ -770,4 +671,3 @@ const AppearanceSettings: React.FC = () => {
 };
 
 export default AppearanceSettings;
-

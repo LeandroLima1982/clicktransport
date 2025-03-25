@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -8,7 +9,9 @@ import {
   Navigation, 
   Settings, 
   LogOut, 
-  User
+  User,
+  CarFront,
+  Plane
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -46,15 +49,21 @@ const DriverSidebar: React.FC = () => {
     <Sidebar>
       <SidebarHeader>
         <Link to="/" className="flex items-center space-x-2">
-          <img 
-            src={lightLogo || '/lovable-uploads/483bbbb6-d9c0-4d56-ac5f-ac6abd2337c0.png'} 
-            alt="LaTransfer" 
-            className="h-8 w-auto"
-            onError={(e) => {
-              console.error('Error loading logo in DriverSidebar:', e);
-              e.currentTarget.src = '/lovable-uploads/483bbbb6-d9c0-4d56-ac5f-ac6abd2337c0.png';
-            }}
-          />
+          {lightLogo ? (
+            <img 
+              src={lightLogo} 
+              alt="LaTransfer" 
+              className="h-8 w-auto"
+            />
+          ) : (
+            <>
+              <div className="relative">
+                <CarFront className="h-6 w-6 text-secondary" />
+                <Plane className="h-5 w-5 text-primary absolute -top-2 -right-2 transform rotate-45" />
+              </div>
+              <span className="text-lg font-bold">LaTransfer</span>
+            </>
+          )}
         </Link>
       </SidebarHeader>
       

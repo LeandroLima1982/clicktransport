@@ -1,6 +1,7 @@
 
 import React, { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { CarFront, Plane } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import TransitionEffect from '@/components/TransitionEffect';
@@ -32,15 +33,23 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="flex justify-center items-center p-6">
           <Link to="/" className="flex items-center space-x-2">
-            <img 
-              src={lightLogo || '/lovable-uploads/483bbbb6-d9c0-4d56-ac5f-ac6abd2337c0.png'} 
-              alt="LaTransfer" 
-              className="h-8 w-auto"
-              onError={(e) => {
-                console.error('Error loading logo in AuthContainer:', e);
-                e.currentTarget.src = '/lovable-uploads/483bbbb6-d9c0-4d56-ac5f-ac6abd2337c0.png';
-              }}
-            />
+            {lightLogo ? (
+              <img 
+                src={lightLogo} 
+                alt="LaTransfer" 
+                className="h-8 w-auto"
+              />
+            ) : (
+              <>
+                <div className="relative">
+                  <CarFront className="h-6 w-6 text-secondary" />
+                  <Plane className="h-5 w-5 text-primary absolute -top-2 -right-2 transform rotate-45" />
+                </div>
+                <span className="text-xl font-bold tracking-tight">
+                  La<span className="text-primary">Transfer</span>
+                </span>
+              </>
+            )}
           </Link>
         </div>
         

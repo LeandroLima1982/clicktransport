@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 
 export const createTables = async () => {
@@ -130,27 +131,6 @@ export const createTables = async () => {
       console.log('Tabela site_images criada com sucesso.');
     }
 
-    // Verify if the site_logos table exists
-    const { data: siteLogosExist } = await supabase
-      .from('site_logos')
-      .select('count', { count: 'exact', head: true });
-
-    if (!siteLogosExist) {
-      // Create sample logo records
-      console.log('Creating table site_logos...');
-      await supabase.from('site_logos').insert([
-        {
-          mode: 'light',
-          logo_url: 'https://example.com/logo-light.png'
-        },
-        {
-          mode: 'dark',
-          logo_url: 'https://example.com/logo-dark.png'
-        }
-      ]).select();
-      console.log('Table site_logos created with sample data.');
-    }
-
     console.log('Todas as tabelas foram verificadas/criadas com sucesso!');
     return { success: true, message: 'Tabelas verificadas/criadas com sucesso!' };
   } catch (error) {
@@ -231,21 +211,5 @@ export const supabaseServices = {
         });
     },
     delete: (sectionId: string) => supabase.from('site_images').delete().eq('section_id', sectionId),
-  },
-  
-  // Site Logos
-  siteLogos: {
-    getAll: () => supabase.from('site_logos').select('*'),
-    getByMode: (mode: 'light' | 'dark') => supabase.from('site_logos').select('*').eq('mode', mode).single(),
-    updateOrCreate: (mode: 'light' | 'dark', logoUrl: string) => {
-      return supabase.from('site_logos')
-        .upsert({ 
-          mode: mode, 
-          logo_url: logoUrl
-        }, { 
-          onConflict: 'mode' 
-        });
-    },
-    delete: (mode: 'light' | 'dark') => supabase.from('site_logos').delete().eq('mode', mode),
   }
 };
