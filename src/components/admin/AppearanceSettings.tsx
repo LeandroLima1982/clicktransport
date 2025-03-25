@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, ImageIcon, Loader2, RefreshCw, Check, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 interface SiteImage {
   id: string;
@@ -97,7 +98,7 @@ const AppearanceSettings: React.FC = () => {
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [updatedImages, setUpdatedImages] = useState<Record<string, string>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState("images");
+  const [activeTab, setActiveTab] = useState("logo");
   const [logoUploads, setLogoUploads] = useState<LogoUpload>({
     light_mode: '',
     dark_mode: ''
@@ -106,6 +107,8 @@ const AppearanceSettings: React.FC = () => {
     light_mode: false,
     dark_mode: false
   });
+  
+  const { refreshLogos } = useSiteLogo();
 
   useEffect(() => {
     loadCurrentImages();
@@ -362,6 +365,8 @@ const AppearanceSettings: React.FC = () => {
           ...prev,
           [mode]: logoUrl
         }));
+        
+        refreshLogos();
         
         toast.success('Logo atualizada com sucesso', {
           description: `A logo para modo ${mode === 'light_mode' ? 'claro' : 'escuro'} foi atualizada.`
@@ -672,3 +677,4 @@ const AppearanceSettings: React.FC = () => {
 };
 
 export default AppearanceSettings;
+

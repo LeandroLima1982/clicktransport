@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import DriverUserMenu from './header/DriverUserMenu';
 import NotificationBell from './header/NotificationBell';
@@ -10,7 +10,12 @@ import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 const DriverHeader: React.FC = () => {
   const { companyContext } = useAuth();
-  const { light: lightLogo } = useSiteLogo();
+  const { light: lightLogo, refreshLogos } = useSiteLogo();
+  
+  // Ensure logos are refreshed when component mounts
+  useEffect(() => {
+    refreshLogos();
+  }, []);
   
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">

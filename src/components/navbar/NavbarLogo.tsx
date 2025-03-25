@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CarFront, Plane } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -7,7 +7,12 @@ import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 const NavbarLogo: React.FC = () => {
   const isMobile = useIsMobile();
-  const { light: lightLogo } = useSiteLogo();
+  const { light: lightLogo, refreshLogos } = useSiteLogo();
+  
+  // Ensure logos are refreshed when component mounts
+  useEffect(() => {
+    refreshLogos();
+  }, []);
   
   return (
     <Link to="/" className="flex items-center space-x-2 animate-fade-in">

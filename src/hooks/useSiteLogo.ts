@@ -25,23 +25,28 @@ export const useSiteLogo = () => {
     try {
       setLogoData(prev => ({ ...prev, isLoading: true }));
       
-      const { data, error } = await supabase
+      // Using the supabaseServices helper instead of direct query
+      const { data: lightLogoData, error: lightError } = await supabase
         .from('site_logos')
-        .select('*');
+        .select('logo_url')
+        .eq('mode', 'light')
+        .maybeSingle();
       
-      if (error) throw error;
+      const { data: darkLogoData, error: darkError } = await supabase
+        .from('site_logos')
+        .select('logo_url')
+        .eq('mode', 'dark')
+        .maybeSingle();
       
-      if (data) {
-        const lightLogo = data.find(logo => logo.mode === 'light')?.logo_url || null;
-        const darkLogo = data.find(logo => logo.mode === 'dark')?.logo_url || null;
-        
-        setLogoData({
-          light: lightLogo,
-          dark: darkLogo,
-          isLoading: false,
-          error: null
-        });
-      }
+      if (lightError && lightError.code !== 'PGRST116') throw lightError;
+      if (darkError && darkError.code !== 'PGRST116') throw darkError;
+      
+      setLogoData({
+        light: lightLogoData?.logo_url || null,
+        dark: darkLogoData?.logo_url || null,
+        isLoading: false,
+        error: null
+      });
     } catch (error) {
       console.error('Error fetching logos:', error);
       setLogoData({
@@ -53,5 +58,10 @@ export const useSiteLogo = () => {
     }
   };
 
-  return logoData;
+  // Add a method to refresh logos
+  const refreshLogos = () => {
+    fetchLogos();
+  };
+
+  return { ...logoData, refreshLogos };
 };

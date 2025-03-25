@@ -1,11 +1,14 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CarFront, Plane, Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 const Footer: React.FC = () => {
-  const { dark: darkLogo } = useSiteLogo();
+  const { dark: darkLogo, refreshLogos } = useSiteLogo();
+  
+  useEffect(() => {
+    refreshLogos();
+  }, []);
   
   return (
     <footer className="bg-secondary text-white pt-16 pb-8 w-full">
