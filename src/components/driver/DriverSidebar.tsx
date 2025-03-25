@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -9,9 +8,7 @@ import {
   Navigation, 
   Settings, 
   LogOut, 
-  User,
-  CarFront,
-  Plane
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -59,12 +56,12 @@ const DriverSidebar: React.FC = () => {
   return (
     <Sidebar>
       <SidebarHeader>
-        <Link to="/" className="flex items-center space-x-2">
-          <div className="relative">
-            <CarFront className="h-6 w-6 text-secondary" />
-            <Plane className="h-5 w-5 text-primary absolute -top-2 -right-2 transform rotate-45" />
-          </div>
-          <span className="text-lg font-bold">LaTransfer</span>
+        <Link to="/" className="flex items-center">
+          <img 
+            src="/lovable-uploads/286d67a1-0db4-4257-82de-d5c01b35452e.png" 
+            alt="LaTransfer Logo" 
+            className="h-8 w-auto" 
+          />
         </Link>
       </SidebarHeader>
       

@@ -100,9 +100,11 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
       {companyInfo && (
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center">
-            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xl mr-4">
-              {companyInfo.name.substring(0, 2).toUpperCase()}
-            </div>
+            <img 
+              src="/lovable-uploads/286d67a1-0db4-4257-82de-d5c01b35452e.png" 
+              alt="LaTransfer Logo" 
+              className="h-12 w-auto mr-4" 
+            />
             <h1 className="text-2xl font-bold">{companyInfo.name}</h1>
           </div>
           <div className="flex gap-2">

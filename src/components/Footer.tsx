@@ -1,20 +1,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CarFront, Plane, Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
+import { Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return <footer className="bg-secondary text-white pt-16 pb-8 w-full">
       <div className="content-container">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           <div>
-            <div className="flex items-center space-x-2 mb-6">
-              <div className="relative">
-                <CarFront className="h-6 w-6 text-primary" />
-                <Plane className="h-5 w-5 text-white absolute -top-2 -right-2 transform rotate-45" />
-              </div>
-              <span className="text-xl font-bold tracking-tight">
-                La<span className="text-primary">Transfer</span>
-              </span>
+            <div className="flex items-center mb-6">
+              <img 
+                src="/lovable-uploads/286d67a1-0db4-4257-82de-d5c01b35452e.png" 
+                alt="LaTransfer Logo" 
+                className="h-10 w-auto" 
+              />
             </div>
             <p className="text-gray-300 mb-4">
               A principal plataforma que conecta clientes com empresas de transporte para serviços de transfer corporativo e turístico.

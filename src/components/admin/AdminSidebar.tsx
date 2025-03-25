@@ -70,10 +70,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 bg-primary rounded-md flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">ADM</span>
-          </div>
+        <div className="flex items-center">
+          <img 
+            src="/lovable-uploads/286d67a1-0db4-4257-82de-d5c01b35452e.png" 
+            alt="LaTransfer Logo" 
+            className="h-10 w-auto mr-2" 
+          />
           <div className="font-semibold text-lg">Admin Panel</div>
         </div>
       </SidebarHeader>

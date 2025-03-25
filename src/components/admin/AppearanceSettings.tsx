@@ -28,6 +28,14 @@ interface ImageSection {
 
 const imageSections: ImageSection[] = [
   {
+    id: 'logo',
+    title: 'Logo do Site',
+    description: 'Logo principal do LaTransfer usado em todo o site',
+    currentImage: '/lovable-uploads/286d67a1-0db4-4257-82de-d5c01b35452e.png',
+    componentPath: 'src/components/navbar/NavbarLogo.tsx',
+    category: 'logo'
+  },
+  {
     id: 'hero',
     title: 'Banner Principal',
     description: 'Imagem de fundo da seção principal da página inicial',
@@ -247,16 +255,18 @@ const AppearanceSettings: React.FC = () => {
   };
 
   const groupedSections = () => {
+    const logoImages = imageSections.filter(section => section.category === 'logo');
     const vehicleImages = imageSections.filter(section => section.category === 'vehicle');
-    const otherImages = imageSections.filter(section => section.category !== 'vehicle');
+    const otherImages = imageSections.filter(section => !section.category || (section.category !== 'vehicle' && section.category !== 'logo'));
     
     return {
+      logoImages,
       vehicleImages,
       otherImages
     };
   };
 
-  const { vehicleImages, otherImages } = groupedSections();
+  const { logoImages, vehicleImages, otherImages } = groupedSections();
 
   return (
     <div className="space-y-6">
@@ -281,6 +291,69 @@ const AppearanceSettings: React.FC = () => {
           Atualizar
         </Button>
       </div>
+
+      {logoImages.length > 0 && (
+        <>
+          <h3 className="text-xl font-semibold mt-6">Logo do Site</h3>
+          <p className="text-muted-foreground mb-4">
+            Esta imagem será exibida como logo principal em todas as páginas do site
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {logoImages.map((section) => (
+              <Card key={section.id} className="overflow-hidden">
+                <CardHeader className="pb-2">
+                  <CardTitle>{section.title}</CardTitle>
+                  <CardDescription>{section.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="relative bg-muted rounded-md overflow-hidden p-4 flex justify-center">
+                    {getImageUrl(section) ? (
+                      <img 
+                        src={getImageUrl(section)} 
+                        alt={section.title}
+                        className="h-16 w-auto object-contain"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor={`image-${section.id}`} className="text-sm font-medium">
+                      Carregar nova logo
+                    </Label>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        id={`image-${section.id}`}
+                        type="file"
+                        accept="image/*"
+                        disabled={uploading[section.id]}
+                        onChange={(e) => handleFileChange(e, section.id)}
+                        className="flex-1"
+                      />
+                      {uploading[section.id] && (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      )}
+                      {updatedImages[section.id] && !uploading[section.id] && (
+                        <Check className="h-4 w-4 text-green-500" />
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Formato: PNG com fundo transparente recomendado
+                    </p>
+                    <p className="text-xs text-amber-500 flex items-center">
+                      <AlertTriangle className="h-3 w-3 mr-1" /> 
+                      Após atualizar, atualize a página para ver as mudanças
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
 
       {vehicleImages.length > 0 && (
         <>

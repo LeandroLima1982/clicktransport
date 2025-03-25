@@ -1,20 +1,19 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CarFront, Plane } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const NavbarLogo: React.FC = () => {
   const isMobile = useIsMobile();
-  return <Link to="/" className="flex items-center space-x-2 animate-fade-in">
-      <div className="relative">
-        <CarFront className={`${isMobile ? 'h-5 w-5' : 'h-6 w-6'} text-secondary`} />
-        <Plane className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-primary absolute -top-2 -right-2 transform rotate-45`} />
-      </div>
-      <span className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold tracking-tight`}>
-        La<span className="text-primary">Transfer</span>
-      </span>
-    </Link>;
+  return (
+    <Link to="/" className="flex items-center space-x-2 animate-fade-in">
+      <img 
+        src="/lovable-uploads/286d67a1-0db4-4257-82de-d5c01b35452e.png" 
+        alt="LaTransfer Logo" 
+        className={`${isMobile ? 'h-8' : 'h-10'} w-auto`} 
+      />
+    </Link>
+  );
 };
 
 export default NavbarLogo;

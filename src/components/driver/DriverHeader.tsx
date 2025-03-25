@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import DriverUserMenu from './header/DriverUserMenu';
 import NotificationBell from './header/NotificationBell';
 import HeaderTitle from './header/HeaderTitle';
-import { Building2, CarFront, Plane } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const DriverHeader: React.FC = () => {
@@ -13,11 +13,12 @@ const DriverHeader: React.FC = () => {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
       <div className="flex items-center">
-        <Link to="/" className="flex items-center space-x-2 mr-4">
-          <div className="relative">
-            <CarFront className="h-5 w-5 text-secondary" />
-            <Plane className="h-4 w-4 text-primary absolute -top-2 -right-2 transform rotate-45" />
-          </div>
+        <Link to="/" className="flex items-center mr-4">
+          <img 
+            src="/lovable-uploads/286d67a1-0db4-4257-82de-d5c01b35452e.png" 
+            alt="LaTransfer Logo" 
+            className="h-8 w-auto" 
+          />
         </Link>
         <HeaderTitle title="Driver Dashboard" />
       </div>
