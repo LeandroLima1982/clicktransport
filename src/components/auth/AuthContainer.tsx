@@ -5,6 +5,7 @@ import { CarFront, Plane } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import TransitionEffect from '@/components/TransitionEffect';
+import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 interface AuthContainerProps {
   activeTab: string;
@@ -25,17 +26,30 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
   children,
   icon
 }) => {
-  return <TransitionEffect>
+  const { light: lightLogo } = useSiteLogo();
+  
+  return (
+    <TransitionEffect>
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="flex justify-center items-center p-6">
           <Link to="/" className="flex items-center space-x-2">
-            <div className="relative">
-              <CarFront className="h-6 w-6 text-secondary" />
-              <Plane className="h-5 w-5 text-primary absolute -top-2 -right-2 transform rotate-45" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">
-              La<span className="text-primary">Transfer</span>
-            </span>
+            {lightLogo ? (
+              <img 
+                src={lightLogo} 
+                alt="LaTransfer" 
+                className="h-8 w-auto"
+              />
+            ) : (
+              <>
+                <div className="relative">
+                  <CarFront className="h-6 w-6 text-secondary" />
+                  <Plane className="h-5 w-5 text-primary absolute -top-2 -right-2 transform rotate-45" />
+                </div>
+                <span className="text-xl font-bold tracking-tight">
+                  La<span className="text-primary">Transfer</span>
+                </span>
+              </>
+            )}
           </Link>
         </div>
         
@@ -47,9 +61,11 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
               <p className="text-muted-foreground">{description}</p>
             </div>
             
-            {error && <div className="mx-6 mb-4 px-4 py-3 rounded-md bg-red-50 text-red-600 text-sm">
+            {error && (
+              <div className="mx-6 mb-4 px-4 py-3 rounded-md bg-red-50 text-red-600 text-sm">
                 {error}
-              </div>}
+              </div>
+            )}
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-2 w-full">
@@ -62,7 +78,8 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
           </Card>
         </div>
       </div>
-    </TransitionEffect>;
+    </TransitionEffect>
+  );
 };
 
 export default AuthContainer;
