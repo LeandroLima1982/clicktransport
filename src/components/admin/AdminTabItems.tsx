@@ -10,7 +10,8 @@ import {
   Car, 
   Palette,
   Bell,
-  CalendarClock
+  CalendarClock,
+  TrendingUp
 } from 'lucide-react';
 
 export interface AdminTab {
@@ -77,6 +78,13 @@ export const adminTabs: AdminTab[] = [
     icon: <Bell className="h-5 w-5" />,
     href: '/admin?tab=notifications',
     roles: ['admin', 'manager']
+  },
+  {
+    id: 'investors',
+    label: 'Investidores',
+    icon: <TrendingUp className="h-5 w-5" />,
+    href: '/admin?tab=investors',
+    roles: ['admin']
   },
   {
     id: 'appearance',

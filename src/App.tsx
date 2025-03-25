@@ -1,3 +1,4 @@
+
 // Add imports for authentication context
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -33,6 +34,10 @@ import DriverTrips from './pages/driver/Trips';
 import Bookings from './pages/client/Bookings';
 import Profile from './pages/client/Profile';
 import PaymentMethods from './pages/client/PaymentMethods';
+
+// Investor pages
+import InvestorDashboardPage from './pages/investor/Dashboard';
+import InvestorAuth from './pages/investor/Auth';
 
 import './App.css';
 import React, { Suspense } from 'react';
@@ -77,6 +82,8 @@ const ProtectedRoute = ({
       return <Navigate to="/company/dashboard" replace />;
     } else if (userRole === 'driver') {
       return <Navigate to="/driver/dashboard" replace />;
+    } else if (userRole === 'investor') {
+      return <Navigate to="/investor" replace />;
     } else if (userRole === 'client') {
       return <Navigate to="/bookings" replace />;
     }
@@ -107,6 +114,8 @@ const RoleBasedRedirect = () => {
     return <Navigate to="/company/dashboard" replace />;
   } else if (userRole === 'driver') {
     return <Navigate to="/driver/dashboard" replace />;
+  } else if (userRole === 'investor') {
+    return <Navigate to="/investor" replace />;
   } else if (userRole === 'client') {
     return <Navigate to="/bookings" replace />;
   }
@@ -134,6 +143,9 @@ const HomeRedirect = () => {
     } else if (userRole === 'admin') {
       console.log("HomeRedirect: Redirecting admin user to dashboard");
       return <Navigate to="/admin" replace />;
+    } else if (userRole === 'investor') {
+      console.log("HomeRedirect: Redirecting investor user to dashboard");
+      return <Navigate to="/investor" replace />;
     }
     // Clients can access the home page
   }
@@ -149,6 +161,7 @@ function App() {
         {/* Public routes with special handling for logged in users */}
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/auth/investor" element={<InvestorAuth />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/admin/create" element={<CreateAdmin />} />
         
@@ -218,6 +231,18 @@ function App() {
         <Route path="/driver/settings" element={
           <ProtectedRoute requiredRole="driver">
             <DriverSettings />
+          </ProtectedRoute>
+        } />
+        
+        {/* Investor routes - strictly for investor users */}
+        <Route path="/investor" element={
+          <ProtectedRoute requiredRole="investor">
+            <InvestorDashboardPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/investor/dashboard" element={
+          <ProtectedRoute requiredRole="investor">
+            <Navigate to="/investor" replace />
           </ProtectedRoute>
         } />
         
