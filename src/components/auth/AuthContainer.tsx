@@ -1,5 +1,5 @@
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CarFront, Plane } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,7 +26,12 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
   children,
   icon
 }) => {
-  const { light: lightLogo } = useSiteLogo();
+  const { light: lightLogo, refreshLogos } = useSiteLogo();
+  
+  useEffect(() => {
+    console.log('AuthContainer: Refreshing logos');
+    refreshLogos();
+  }, []);
   
   return (
     <TransitionEffect>
@@ -38,6 +43,7 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
                 src={lightLogo} 
                 alt="LaTransfer" 
                 className="h-8 w-auto"
+                key={lightLogo} // Forçar re-renderização quando URL mudar
               />
             ) : (
               <>

@@ -9,8 +9,9 @@ const NavbarLogo: React.FC = () => {
   const isMobile = useIsMobile();
   const { light: lightLogo, refreshLogos } = useSiteLogo();
   
-  // Ensure logos are refreshed when component mounts
+  // Garantir que logos sejam atualizadas quando o componente é montado
   useEffect(() => {
+    console.log('NavbarLogo: Refreshing logos');
     refreshLogos();
   }, []);
   
@@ -21,6 +22,7 @@ const NavbarLogo: React.FC = () => {
           src={lightLogo} 
           alt="LaTransfer" 
           className={`${isMobile ? 'h-7' : 'h-8'} w-auto`}
+          key={lightLogo} // Forçar re-renderização quando URL mudar
         />
       ) : (
         <>

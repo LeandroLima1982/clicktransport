@@ -17,21 +17,18 @@ export const useSiteLogo = () => {
     error: null
   });
 
-  useEffect(() => {
-    fetchLogos();
-  }, []);
-
   const fetchLogos = async () => {
     try {
       setLogoData(prev => ({ ...prev, isLoading: true }));
       
-      // Using the supabaseServices helper instead of direct query
+      // Buscar logo para modo claro
       const { data: lightLogoData, error: lightError } = await supabase
         .from('site_logos')
         .select('logo_url')
         .eq('mode', 'light')
         .maybeSingle();
       
+      // Buscar logo para modo escuro
       const { data: darkLogoData, error: darkError } = await supabase
         .from('site_logos')
         .select('logo_url')
@@ -40,6 +37,8 @@ export const useSiteLogo = () => {
       
       if (lightError && lightError.code !== 'PGRST116') throw lightError;
       if (darkError && darkError.code !== 'PGRST116') throw darkError;
+      
+      console.log('Logo data fetched:', { light: lightLogoData?.logo_url, dark: darkLogoData?.logo_url });
       
       setLogoData({
         light: lightLogoData?.logo_url || null,
@@ -58,7 +57,11 @@ export const useSiteLogo = () => {
     }
   };
 
-  // Add a method to refresh logos
+  useEffect(() => {
+    fetchLogos();
+  }, []);
+
+  // Método para forçar atualização das logos
   const refreshLogos = () => {
     fetchLogos();
   };

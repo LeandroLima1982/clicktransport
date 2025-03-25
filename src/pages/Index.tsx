@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Solutions from '@/components/Solutions';
@@ -12,9 +12,17 @@ import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 const Index = () => {
   const { isLoading, user } = useAuth();
+  const { refreshLogos } = useSiteLogo();
+
+  // Atualiza os logos quando a página inicial é carregada
+  useEffect(() => {
+    console.log('Index: Refreshing logos');
+    refreshLogos();
+  }, []);
 
   // Show a brief loading indicator only during initial authentication check
   if (isLoading) {

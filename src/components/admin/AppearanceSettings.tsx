@@ -366,6 +366,7 @@ const AppearanceSettings: React.FC = () => {
           [mode]: logoUrl
         }));
         
+        // Força a atualização dos logos em todo o site
         refreshLogos();
         
         toast.success('Logo atualizada com sucesso', {
@@ -677,4 +678,3 @@ const AppearanceSettings: React.FC = () => {
 };
 
 export default AppearanceSettings;
-

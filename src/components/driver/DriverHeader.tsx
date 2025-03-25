@@ -12,8 +12,9 @@ const DriverHeader: React.FC = () => {
   const { companyContext } = useAuth();
   const { light: lightLogo, refreshLogos } = useSiteLogo();
   
-  // Ensure logos are refreshed when component mounts
+  // Garantir que logos sejam atualizadas quando o componente é montado
   useEffect(() => {
+    console.log('DriverHeader: Refreshing logos');
     refreshLogos();
   }, []);
   
@@ -26,6 +27,7 @@ const DriverHeader: React.FC = () => {
               src={lightLogo} 
               alt="LaTransfer" 
               className="h-6 w-auto"
+              key={lightLogo} // Forçar re-renderização quando URL mudar
             />
           ) : (
             <div className="relative">
