@@ -9,7 +9,7 @@ const Footer: React.FC = () => {
   useEffect(() => {
     console.log('Footer: Refreshing logos');
     refreshLogos();
-  }, [refreshLogos]);
+  }, []);
   
   return (
     <footer className="bg-secondary text-white pt-16 pb-8 w-full">
@@ -22,7 +22,11 @@ const Footer: React.FC = () => {
                   src={darkLogo} 
                   alt="LaTransfer" 
                   className="h-8 w-auto"
-                  key={`footer-${darkLogo}`} // Forçar re-renderização com key mais específica
+                  key={`footer-${darkLogo}`}
+                  onError={(e) => {
+                    console.error('Error loading logo in Footer:', e);
+                    e.currentTarget.src = '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
+                  }}
                 />
               ) : (
                 <>

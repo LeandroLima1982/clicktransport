@@ -36,10 +36,12 @@ const DriverSidebar: React.FC = () => {
   const location = useLocation();
   const { light: lightLogo, refreshLogos } = useSiteLogo();
   
+  // Refresh logos once when component mounts
   useEffect(() => {
     console.log('DriverSidebar: Refreshing logos');
     refreshLogos();
-  }, [refreshLogos]);
+    // No dependence on refreshLogos to avoid loops
+  }, []);
   
   const handleSignOut = async () => {
     try {
@@ -59,7 +61,12 @@ const DriverSidebar: React.FC = () => {
               src={lightLogo} 
               alt="LaTransfer" 
               className="h-8 w-auto"
-              key={`driver-sidebar-${lightLogo}`} // Forçar re-renderização com key mais específica
+              key={`driver-sidebar-${lightLogo}`} // Force re-render with specific key
+              onError={(e) => {
+                console.error('Error loading logo in DriverSidebar:', e);
+                // In case of error, fall back to default
+                e.currentTarget.src = '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
+              }}
             />
           ) : (
             <>

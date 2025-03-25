@@ -112,19 +112,11 @@ const AppearanceSettings: React.FC = () => {
     dark_mode: false
   });
   
-  const { refreshLogos } = useSiteLogo();
+  const { light: currentLightLogo, dark: currentDarkLogo, refreshLogos } = useSiteLogo();
 
   useEffect(() => {
     loadCurrentImages();
-    
-    // Set the logo uploads state to the static logo path
-    setLogoUploads({
-      light_mode: '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png',
-      dark_mode: '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png'
-    });
-    
-    // Force refresh logos to ensure the new logo is displayed
-    refreshLogos();
+    loadCurrentLogos();
   }, []);
 
   const loadCurrentImages = async () => {
@@ -192,22 +184,26 @@ const AppearanceSettings: React.FC = () => {
   const loadCurrentLogos = async () => {
     setIsRefreshing(true);
     try {
-      // Set static logo path for immediate display
+      const { data: lightLogoData, error: lightError } = await supabase
+        .from('site_logos')
+        .select('logo_url')
+        .eq('mode', 'light')
+        .maybeSingle();
+      
+      const { data: darkLogoData, error: darkError } = await supabase
+        .from('site_logos')
+        .select('logo_url')
+        .eq('mode', 'dark')
+        .maybeSingle();
+      
       setLogoUploads({
-        light_mode: '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png',
-        dark_mode: '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png'
+        light_mode: lightLogoData?.logo_url || currentLightLogo || '',
+        dark_mode: darkLogoData?.logo_url || currentDarkLogo || ''
       });
       
-      // Still query database to maintain compatibility
-      const { data, error } = await supabase
-        .from('site_logos')
-        .select('*');
+      if (lightError && lightError.code !== 'PGRST116') console.error(lightError);
+      if (darkError && darkError.code !== 'PGRST116') console.error(darkError);
       
-      if (error) {
-        console.error('Error loading logos:', error);
-      }
-      
-      refreshLogos();
       toast.success('Logos carregadas com sucesso');
     } catch (error) {
       console.error('Error loading logos:', error);
@@ -329,25 +325,29 @@ const AppearanceSettings: React.FC = () => {
         console.error('Error deleting existing logo record:', deleteError);
       }
       
-      if (logoUploads[mode]) {
-        try {
-          const oldFileUrl = new URL(logoUploads[mode]);
-          const oldFileName = oldFileUrl.pathname.split('/').pop()?.split('?')[0];
-          
-          if (oldFileName) {
-            await supabase.storage
-              .from('site-images')
-              .remove([oldFileName]);
+      try {
+        const { data: fileList } = await supabase.storage
+          .from('site-images')
+          .list();
+        
+        const oldLogoFiles = fileList.filter(file => 
+          file.name.startsWith(`logo-${supabaseMode}`)
+        );
+        
+        if (oldLogoFiles.length > 0) {
+          const filesToRemove = oldLogoFiles.map(file => file.name);
+          await supabase.storage
+            .from('site-images')
+            .remove(filesToRemove);
               
-            console.log(`Arquivo antigo removido: ${oldFileName}`);
-          }
-        } catch (e) {
-          console.warn('Erro ao remover arquivo antigo, prosseguindo mesmo assim:', e);
+          console.log(`Old logo files removed: ${filesToRemove.join(', ')}`);
         }
+      } catch (e) {
+        console.warn('Error removing old logo files, proceeding anyway:', e);
       }
       
       const fileExt = file.name.split('.').pop();
-      const fileName = `logo-${mode}-${Date.now()}.${fileExt}`;
+      const fileName = `logo-${supabaseMode}-${Date.now()}.${fileExt}`;
       
       const { data, error } = await supabase.storage
         .from('site-images')
@@ -414,16 +414,24 @@ const AppearanceSettings: React.FC = () => {
       if (deleteDbError) throw deleteDbError;
       
       try {
-        const logoUrl = new URL(logoUploads[mode]);
-        const fileName = logoUrl.pathname.split('/').pop()?.split('?')[0];
+        const { data: fileList } = await supabase.storage
+          .from('site-images')
+          .list();
         
-        if (fileName) {
+        const logoFiles = fileList.filter(file => 
+          file.name.startsWith(`logo-${supabaseMode}`)
+        );
+        
+        if (logoFiles.length > 0) {
+          const filesToRemove = logoFiles.map(file => file.name);
           await supabase.storage
             .from('site-images')
-            .remove([fileName]);
+            .remove(filesToRemove);
+              
+          console.log(`Logo files removed: ${filesToRemove.join(', ')}`);
         }
       } catch (removeError) {
-        console.warn('Erro ao remover arquivo:', removeError);
+        console.warn('Error removing logo files:', removeError);
       }
       
       setLogoUploads(prev => ({
@@ -435,11 +443,10 @@ const AppearanceSettings: React.FC = () => {
       
       setTimeout(() => {
         refreshLogos();
-      }, 500);
-      
-      toast.success('Logo removida com sucesso', {
-        description: `A logo para modo ${mode === 'light_mode' ? 'claro' : 'escuro'} foi removida.`
-      });
+        toast.success('Logo removida com sucesso', {
+          description: `A logo para modo ${mode === 'light_mode' ? 'claro' : 'escuro'} foi removida.`
+        });
+      }, 1000);
     } catch (error: any) {
       console.error('Error deleting logo:', error);
       toast.error('Erro ao remover logo', {

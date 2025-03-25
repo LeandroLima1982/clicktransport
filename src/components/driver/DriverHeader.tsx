@@ -12,11 +12,12 @@ const DriverHeader: React.FC = () => {
   const { companyContext } = useAuth();
   const { light: lightLogo, refreshLogos } = useSiteLogo();
   
-  // Garantir que logos sejam atualizadas quando o componente é montado
+  // Refresh logos once when component mounts
   useEffect(() => {
     console.log('DriverHeader: Refreshing logos');
     refreshLogos();
-  }, [refreshLogos]);
+    // No dependence on refreshLogos to avoid loops
+  }, []);
   
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
@@ -27,7 +28,12 @@ const DriverHeader: React.FC = () => {
               src={lightLogo} 
               alt="LaTransfer" 
               className="h-6 w-auto"
-              key={`driver-header-${lightLogo}`} // Forçar re-renderização com key mais específica
+              key={`driver-header-${lightLogo}`} // Force re-render with specific key
+              onError={(e) => {
+                console.error('Error loading logo in DriverHeader:', e);
+                // In case of error, fall back to default
+                e.currentTarget.src = '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
+              }}
             />
           ) : (
             <div className="relative">

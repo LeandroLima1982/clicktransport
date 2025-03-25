@@ -1,5 +1,5 @@
 
-import React, { ReactNode, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CarFront, Plane } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -28,10 +28,12 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
 }) => {
   const { light: lightLogo, refreshLogos } = useSiteLogo();
   
+  // Refresh logos once when component mounts
   useEffect(() => {
     console.log('AuthContainer: Refreshing logos');
     refreshLogos();
-  }, [refreshLogos]);
+    // No dependence on refreshLogos to avoid loops
+  }, []);
   
   return (
     <TransitionEffect>
@@ -43,7 +45,12 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
                 src={lightLogo} 
                 alt="LaTransfer" 
                 className="h-8 w-auto"
-                key={`auth-container-${lightLogo}`} // Forçar re-renderização com key mais específica
+                key={`auth-container-${lightLogo}`} // Force re-render with specific key
+                onError={(e) => {
+                  console.error('Error loading logo in AuthContainer:', e);
+                  // In case of error, fall back to default
+                  e.currentTarget.src = '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
+                }}
               />
             ) : (
               <>

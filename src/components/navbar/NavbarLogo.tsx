@@ -9,11 +9,12 @@ const NavbarLogo: React.FC = () => {
   const isMobile = useIsMobile();
   const { light: lightLogo, refreshLogos } = useSiteLogo();
   
-  // Garantir que logos sejam atualizadas quando o componente é montado
+  // Refresh logos once when component mounts
   useEffect(() => {
     console.log('NavbarLogo: Refreshing logos');
     refreshLogos();
-  }, [refreshLogos]);
+    // No dependence on refreshLogos to avoid multiple refreshes
+  }, []);
   
   return (
     <Link to="/" className="flex items-center space-x-2 animate-fade-in">
@@ -22,7 +23,12 @@ const NavbarLogo: React.FC = () => {
           src={lightLogo} 
           alt="LaTransfer" 
           className={`${isMobile ? 'h-7' : 'h-8'} w-auto`}
-          key={`navbarlogo-${lightLogo}`} // Forçar re-renderização com key mais específica
+          key={`navbarlogo-${lightLogo}`} // Force re-render with specific key
+          onError={(e) => {
+            console.error('Error loading logo in NavbarLogo:', e);
+            // In case of error, fall back to default
+            e.currentTarget.src = '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
+          }}
         />
       ) : (
         <>
