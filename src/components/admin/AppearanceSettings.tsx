@@ -8,7 +8,6 @@ import { Upload, ImageIcon, Loader2, RefreshCw, Check, AlertTriangle } from 'luc
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-// Define types for site images
 interface SiteImage {
   id: string;
   section_id: string;
@@ -331,10 +330,12 @@ const AppearanceSettings: React.FC = () => {
         
         const logoUrl = publicUrlData.publicUrl;
         
+        const supabaseMode = mode === 'light_mode' ? 'light' : 'dark';
+        
         const { data: existingLogo, error: checkError } = await supabase
           .from('site_logos')
           .select('*')
-          .eq('mode', mode === 'light_mode' ? 'light' : 'dark')
+          .eq('mode', supabaseMode)
           .maybeSingle();
         
         if (checkError && checkError.code !== 'PGRST116') throw checkError;
@@ -350,7 +351,7 @@ const AppearanceSettings: React.FC = () => {
           const { error: insertError } = await supabase
             .from('site_logos')
             .insert({
-              mode: mode === 'light_mode' ? 'light' : 'dark',
+              mode: supabaseMode,
               logo_url: logoUrl
             });
           
