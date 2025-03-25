@@ -10,7 +10,8 @@ import {
   Car, 
   Palette,
   Bell,
-  CalendarClock
+  CalendarClock,
+  RefreshCw
 } from 'lucide-react';
 
 export interface AdminTab {
@@ -77,6 +78,13 @@ export const adminTabs: AdminTab[] = [
     icon: <Bell className="h-5 w-5" />,
     href: '/admin?tab=notifications',
     roles: ['admin', 'manager']
+  },
+  {
+    id: 'system-update',
+    label: 'Atualização do Sistema',
+    icon: <RefreshCw className="h-5 w-5" />,
+    href: '/admin?tab=system-update',
+    roles: ['admin']
   },
   {
     id: 'appearance',

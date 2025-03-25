@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,7 @@ import VehicleCategoriesSettings from '@/components/admin/VehicleCategoriesSetti
 import DriverManagement from '@/components/admin/drivers/DriverManagement';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AuthError } from '@supabase/supabase-js';
+import SystemUpdatePage from './SystemUpdatePage';
 
 const AdminDashboard: React.FC = () => {
   const { user, userRole, signOut: authSignOut, isAuthenticating } = useAuth();
@@ -35,11 +35,10 @@ const AdminDashboard: React.FC = () => {
   };
 
   const location = useLocation();
-  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
-  const tabFromQuery = queryParams.get('tab');
-  
-  const [activeTab, setActiveTab] = useState(tabFromQuery || "overview");
+  const currentTab = queryParams.get('tab') || 'overview';
+
+  const [activeTab, setActiveTab] = useState(currentTab);
   const [dashboardStats, setDashboardStats] = useState({
     companies: 0,
     drivers: 0,
@@ -49,16 +48,13 @@ const AdminDashboard: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { fixQueuePositions, resetQueue } = useCompanyQueue();
 
-  // Update active tab when URL query parameter changes
   useEffect(() => {
     if (tabFromQuery && tabFromQuery !== activeTab) {
       setActiveTab(tabFromQuery);
     }
   }, [tabFromQuery]);
 
-  // Update URL when active tab changes (but prevent circular updates)
   useEffect(() => {
-    // Skip URL update if we're currently in sync with the URL
     if ((tabFromQuery === activeTab) || 
         (activeTab === "overview" && !tabFromQuery)) {
       return;
@@ -133,7 +129,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   const renderTabContent = () => {
-    switch (activeTab) {
+    switch (currentTab) {
       case 'overview':
         return (
           <>
@@ -499,8 +495,12 @@ const AdminDashboard: React.FC = () => {
             </CardContent>
           </Card>
         );
+      case 'system-update':
+        return <SystemUpdatePage />;
       default:
-        return <DashboardStats />;
+        return (
+          <DashboardStats />
+        );
     }
   };
 
