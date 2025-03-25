@@ -19,8 +19,8 @@ export const useSiteLogo = () => {
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchLogos = useCallback(async () => {
-    if (isRefreshing) return; // Prevent multiple simultaneous refreshes
+  const fetchLogos = useCallback(async (forceRefresh = false) => {
+    if (isRefreshing && !forceRefresh) return; // Prevent multiple simultaneous refreshes
     
     try {
       setIsRefreshing(true);
@@ -42,19 +42,27 @@ export const useSiteLogo = () => {
       if (lightError && lightError.code !== 'PGRST116') console.error(lightError);
       if (darkError && darkError.code !== 'PGRST116') console.error(darkError);
       
-      // Adiciona timestamp para evitar cache
-      const timestamp = new Date().getTime();
+      // Use timestamp for cache-busting with force refresh
+      const timestamp = forceRefresh ? new Date().getTime() : null;
       
-      // Set the actual logo URLs from the database with cache-busting timestamps
-      const lightLogoUrl = lightLogoData?.logo_url ? `${lightLogoData.logo_url}?t=${timestamp}` : '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
-      const darkLogoUrl = darkLogoData?.logo_url ? `${darkLogoData.logo_url}?t=${timestamp}` : '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
+      // Set the actual logo URLs from the database with cache-busting timestamps if needed
+      const lightLogoUrl = lightLogoData?.logo_url 
+        ? timestamp ? `${lightLogoData.logo_url}?t=${timestamp}` : lightLogoData.logo_url 
+        : '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
+        
+      const darkLogoUrl = darkLogoData?.logo_url 
+        ? timestamp ? `${darkLogoData.logo_url}?t=${timestamp}` : darkLogoData.logo_url
+        : '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
       
-      console.log('Logo data fetched:', { 
-        dbLight: lightLogoData?.logo_url,
-        dbDark: darkLogoData?.logo_url,
-        lightWithTimestamp: lightLogoUrl,
-        darkWithTimestamp: darkLogoUrl
-      });
+      // Only log in development or when forcing refresh
+      if (process.env.NODE_ENV === 'development' || forceRefresh) {
+        console.log('Logo data fetched:', { 
+          dbLight: lightLogoData?.logo_url,
+          dbDark: darkLogoData?.logo_url,
+          lightWithTimestamp: lightLogoUrl,
+          darkWithTimestamp: darkLogoUrl
+        });
+      }
       
       // Update logo data with database values or defaults
       setLogoData({
@@ -82,11 +90,11 @@ export const useSiteLogo = () => {
     fetchLogos();
   }, [fetchLogos]);
 
-  // Método para atualização manual - usado APENAS pelo painel admin
+  // Method for manual refresh - used ONLY by admin panel
   const refreshLogos = () => {
     if (isRefreshing) return; // Prevent multiple refreshes
     console.log('Admin panel: Forcing logo refresh');
-    fetchLogos();
+    fetchLogos(true);
   };
 
   return { ...logoData, refreshLogos };

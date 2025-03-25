@@ -197,8 +197,8 @@ const AppearanceSettings: React.FC = () => {
         .maybeSingle();
       
       setLogoUploads({
-        light_mode: lightLogoData?.logo_url || currentLightLogo || '',
-        dark_mode: darkLogoData?.logo_url || currentDarkLogo || ''
+        light_mode: lightLogoData?.logo_url || '',
+        dark_mode: darkLogoData?.logo_url || ''
       });
       
       if (lightError && lightError.code !== 'PGRST116') console.error(lightError);
@@ -358,12 +358,11 @@ const AppearanceSettings: React.FC = () => {
       
       if (error) throw error;
       
-      const timestamp = new Date().getTime();
       const { data: publicUrlData } = supabase.storage
         .from('site-images')
         .getPublicUrl(fileName);
         
-      const logoUrl = `${publicUrlData.publicUrl}?t=${timestamp}`;
+      const logoUrl = publicUrlData.publicUrl;
       
       const { error: insertError } = await supabase
         .from('site_logos')
@@ -771,3 +770,4 @@ const AppearanceSettings: React.FC = () => {
 };
 
 export default AppearanceSettings;
+

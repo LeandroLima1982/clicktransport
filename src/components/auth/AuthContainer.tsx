@@ -1,5 +1,5 @@
 
-import React, { useEffect, ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { CarFront, Plane } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,14 +26,14 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
   children,
   icon
 }) => {
-  const { light: lightLogo } = useSiteLogo();
+  const { light: lightLogo, isLoading } = useSiteLogo();
   
   return (
     <TransitionEffect>
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="flex justify-center items-center p-6">
           <Link to="/" className="flex items-center space-x-2">
-            {lightLogo ? (
+            {!isLoading && lightLogo ? (
               <img 
                 src={lightLogo} 
                 alt="LaTransfer" 

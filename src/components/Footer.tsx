@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CarFront, Plane, Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 const Footer: React.FC = () => {
-  const { dark: darkLogo } = useSiteLogo();
+  const { dark: darkLogo, isLoading } = useSiteLogo();
   
   return (
     <footer className="bg-secondary text-white pt-16 pb-8 w-full">
@@ -12,7 +13,7 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           <div>
             <div className="flex items-center space-x-2 mb-6">
-              {darkLogo ? (
+              {!isLoading && darkLogo ? (
                 <img 
                   src={darkLogo} 
                   alt="LaTransfer" 

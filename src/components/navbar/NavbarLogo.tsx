@@ -7,11 +7,11 @@ import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 const NavbarLogo: React.FC = () => {
   const isMobile = useIsMobile();
-  const { light: lightLogo } = useSiteLogo();
+  const { light: lightLogo, isLoading } = useSiteLogo();
   
   return (
     <Link to="/" className="flex items-center space-x-2 animate-fade-in">
-      {lightLogo ? (
+      {!isLoading && lightLogo ? (
         <img 
           src={lightLogo} 
           alt="LaTransfer" 
