@@ -368,7 +368,7 @@ const AppearanceSettings: React.FC = () => {
         .from('site_logos')
         .insert({
           mode: supabaseMode,
-          logo_url: publicUrlData.publicUrl
+          logo_url: logoUrl
         });
       
       if (insertError) throw insertError;

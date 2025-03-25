@@ -12,8 +12,8 @@ interface LogoData {
 
 export const useSiteLogo = () => {
   const [logoData, setLogoData] = useState<LogoData>({
-    light: null,
-    dark: null,
+    light: '/lovable-uploads/483bbbb6-d9c0-4d56-ac5f-ac6abd2337c0.png', // Default to the new logo
+    dark: '/lovable-uploads/483bbbb6-d9c0-4d56-ac5f-ac6abd2337c0.png',  // Default to the new logo
     isLoading: true,
     error: null
   });
@@ -25,6 +25,9 @@ export const useSiteLogo = () => {
     try {
       setIsRefreshing(true);
       setLogoData(prev => ({ ...prev, isLoading: true }));
+      
+      // Set default logo to the new uploaded image
+      const defaultLogo = '/lovable-uploads/483bbbb6-d9c0-4d56-ac5f-ac6abd2337c0.png';
       
       // Fetch logos from database to ensure we're using the latest uploaded ones
       const { data: lightLogoData, error: lightError } = await supabase
@@ -48,11 +51,11 @@ export const useSiteLogo = () => {
       // Set the actual logo URLs from the database with cache-busting timestamps if needed
       const lightLogoUrl = lightLogoData?.logo_url 
         ? timestamp ? `${lightLogoData.logo_url}?t=${timestamp}` : lightLogoData.logo_url 
-        : '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
+        : defaultLogo;
         
       const darkLogoUrl = darkLogoData?.logo_url 
         ? timestamp ? `${darkLogoData.logo_url}?t=${timestamp}` : darkLogoData.logo_url
-        : '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
+        : defaultLogo;
       
       // Only log in development or when forcing refresh
       if (process.env.NODE_ENV === 'development' || forceRefresh) {
@@ -75,8 +78,8 @@ export const useSiteLogo = () => {
     } catch (error) {
       console.error('Error fetching logos:', error);
       setLogoData({
-        light: '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png',
-        dark: '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png',
+        light: '/lovable-uploads/483bbbb6-d9c0-4d56-ac5f-ac6abd2337c0.png', // Use new logo as fallback
+        dark: '/lovable-uploads/483bbbb6-d9c0-4d56-ac5f-ac6abd2337c0.png',  // Use new logo as fallback
         isLoading: false,
         error: error as Error
       });

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { CarFront, Plane, ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, CarFront, Plane } from 'lucide-react';
 import TransitionEffect from '@/components/TransitionEffect';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
 
@@ -16,7 +15,7 @@ const ForgotPassword: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const { resetPassword } = useAuth();
   const { light: lightLogo, refreshLogos } = useSiteLogo();
-  
+
   useEffect(() => {
     console.log('ForgotPassword: Refreshing logos');
     refreshLogos();

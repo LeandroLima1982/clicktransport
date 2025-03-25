@@ -8,9 +8,7 @@ import {
   Navigation, 
   Settings, 
   LogOut, 
-  User,
-  CarFront,
-  Plane
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -48,26 +46,15 @@ const DriverSidebar: React.FC = () => {
     <Sidebar>
       <SidebarHeader>
         <Link to="/" className="flex items-center space-x-2">
-          {lightLogo ? (
-            <img 
-              src={lightLogo} 
-              alt="LaTransfer" 
-              className="h-8 w-auto"
-              onError={(e) => {
-                console.error('Error loading logo in DriverSidebar:', e);
-                // In case of error, fall back to default
-                e.currentTarget.src = '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
-              }}
-            />
-          ) : (
-            <>
-              <div className="relative">
-                <CarFront className="h-6 w-6 text-secondary" />
-                <Plane className="h-5 w-5 text-primary absolute -top-2 -right-2 transform rotate-45" />
-              </div>
-              <span className="text-lg font-bold">LaTransfer</span>
-            </>
-          )}
+          <img 
+            src={lightLogo || '/lovable-uploads/483bbbb6-d9c0-4d56-ac5f-ac6abd2337c0.png'} 
+            alt="LaTransfer" 
+            className="h-8 w-auto"
+            onError={(e) => {
+              console.error('Error loading logo in DriverSidebar:', e);
+              e.currentTarget.src = '/lovable-uploads/483bbbb6-d9c0-4d56-ac5f-ac6abd2337c0.png';
+            }}
+          />
         </Link>
       </SidebarHeader>
       
