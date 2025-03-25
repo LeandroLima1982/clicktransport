@@ -1,15 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { CarFront, Plane, Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 const Footer: React.FC = () => {
-  const { dark: darkLogo, refreshLogos } = useSiteLogo();
-  
-  useEffect(() => {
-    console.log('Footer: Refreshing logos');
-    refreshLogos();
-  }, []);
+  const { dark: darkLogo } = useSiteLogo();
   
   return (
     <footer className="bg-secondary text-white pt-16 pb-8 w-full">
@@ -22,7 +17,6 @@ const Footer: React.FC = () => {
                   src={darkLogo} 
                   alt="LaTransfer" 
                   className="h-8 w-auto"
-                  key={`footer-${darkLogo}`}
                   onError={(e) => {
                     console.error('Error loading logo in Footer:', e);
                     e.currentTarget.src = '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';

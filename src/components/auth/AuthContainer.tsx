@@ -26,14 +26,7 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
   children,
   icon
 }) => {
-  const { light: lightLogo, refreshLogos } = useSiteLogo();
-  
-  // Refresh logos once when component mounts
-  useEffect(() => {
-    console.log('AuthContainer: Refreshing logos');
-    refreshLogos();
-    // No dependence on refreshLogos to avoid loops
-  }, []);
+  const { light: lightLogo } = useSiteLogo();
   
   return (
     <TransitionEffect>
@@ -45,7 +38,6 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
                 src={lightLogo} 
                 alt="LaTransfer" 
                 className="h-8 w-auto"
-                key={`auth-container-${lightLogo}`} // Force re-render with specific key
                 onError={(e) => {
                   console.error('Error loading logo in AuthContainer:', e);
                   // In case of error, fall back to default

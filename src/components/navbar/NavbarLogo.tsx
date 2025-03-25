@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { CarFront, Plane } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -7,14 +7,7 @@ import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 const NavbarLogo: React.FC = () => {
   const isMobile = useIsMobile();
-  const { light: lightLogo, refreshLogos } = useSiteLogo();
-  
-  // Refresh logos once when component mounts
-  useEffect(() => {
-    console.log('NavbarLogo: Refreshing logos');
-    refreshLogos();
-    // No dependence on refreshLogos to avoid multiple refreshes
-  }, []);
+  const { light: lightLogo } = useSiteLogo();
   
   return (
     <Link to="/" className="flex items-center space-x-2 animate-fade-in">
@@ -23,7 +16,6 @@ const NavbarLogo: React.FC = () => {
           src={lightLogo} 
           alt="LaTransfer" 
           className={`${isMobile ? 'h-7' : 'h-8'} w-auto`}
-          key={`navbarlogo-${lightLogo}`} // Force re-render with specific key
           onError={(e) => {
             console.error('Error loading logo in NavbarLogo:', e);
             // In case of error, fall back to default

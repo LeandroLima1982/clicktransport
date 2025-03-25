@@ -1,5 +1,4 @@
-
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -34,14 +33,7 @@ const DriverSidebar: React.FC = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { light: lightLogo, refreshLogos } = useSiteLogo();
-  
-  // Refresh logos once when component mounts
-  useEffect(() => {
-    console.log('DriverSidebar: Refreshing logos');
-    refreshLogos();
-    // No dependence on refreshLogos to avoid loops
-  }, []);
+  const { light: lightLogo } = useSiteLogo();
   
   const handleSignOut = async () => {
     try {
@@ -61,7 +53,6 @@ const DriverSidebar: React.FC = () => {
               src={lightLogo} 
               alt="LaTransfer" 
               className="h-8 w-auto"
-              key={`driver-sidebar-${lightLogo}`} // Force re-render with specific key
               onError={(e) => {
                 console.error('Error loading logo in DriverSidebar:', e);
                 // In case of error, fall back to default

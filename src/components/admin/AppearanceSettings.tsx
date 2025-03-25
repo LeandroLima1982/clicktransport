@@ -369,7 +369,7 @@ const AppearanceSettings: React.FC = () => {
         .from('site_logos')
         .insert({
           mode: supabaseMode,
-          logo_url: logoUrl
+          logo_url: publicUrlData.publicUrl
         });
       
       if (insertError) throw insertError;
@@ -381,12 +381,9 @@ const AppearanceSettings: React.FC = () => {
       
       refreshLogos();
       
-      setTimeout(() => {
-        refreshLogos();
-        toast.success('Logo atualizada com sucesso', {
-          description: `A logo para modo ${mode === 'light_mode' ? 'claro' : 'escuro'} foi atualizada.`
-        });
-      }, 500);
+      toast.success('Logo atualizada com sucesso', {
+        description: `A logo para modo ${mode === 'light_mode' ? 'claro' : 'escuro'} foi atualizada.`
+      });
       
     } catch (error: any) {
       console.error('Error uploading logo:', error);
@@ -441,12 +438,9 @@ const AppearanceSettings: React.FC = () => {
       
       refreshLogos();
       
-      setTimeout(() => {
-        refreshLogos();
-        toast.success('Logo removida com sucesso', {
-          description: `A logo para modo ${mode === 'light_mode' ? 'claro' : 'escuro'} foi removida.`
-        });
-      }, 1000);
+      toast.success('Logo removida com sucesso', {
+        description: `A logo para modo ${mode === 'light_mode' ? 'claro' : 'escuro'} foi removida.`
+      });
     } catch (error: any) {
       console.error('Error deleting logo:', error);
       toast.error('Erro ao remover logo', {

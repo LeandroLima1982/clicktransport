@@ -17,7 +17,6 @@ export const useSiteLogo = () => {
     isLoading: true,
     error: null
   });
-  const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchLogos = useCallback(async () => {
@@ -26,9 +25,6 @@ export const useSiteLogo = () => {
     try {
       setIsRefreshing(true);
       setLogoData(prev => ({ ...prev, isLoading: true }));
-      
-      // Limpar o cache do navegador para as URLs das logos (timestamp approach)
-      const timestamp = new Date().getTime();
       
       // Fetch logos from database to ensure we're using the latest uploaded ones
       const { data: lightLogoData, error: lightError } = await supabase
@@ -45,6 +41,9 @@ export const useSiteLogo = () => {
       
       if (lightError && lightError.code !== 'PGRST116') console.error(lightError);
       if (darkError && darkError.code !== 'PGRST116') console.error(darkError);
+      
+      // Adiciona timestamp para evitar cache
+      const timestamp = new Date().getTime();
       
       // Set the actual logo URLs from the database with cache-busting timestamps
       const lightLogoUrl = lightLogoData?.logo_url ? `${lightLogoData.logo_url}?t=${timestamp}` : '/lovable-uploads/a44df5bf-bb4f-4163-9b8c-12d1c36e6686.png';
@@ -78,17 +77,16 @@ export const useSiteLogo = () => {
     }
   }, [isRefreshing]);
 
+  // Fetch logos once when component mounts
   useEffect(() => {
     fetchLogos();
-  }, [refreshKey, fetchLogos]);
+  }, [fetchLogos]);
 
-  // Método para forçar atualização das logos com efeito visual
+  // Método para atualização manual - usado APENAS pelo painel admin
   const refreshLogos = () => {
     if (isRefreshing) return; // Prevent multiple refreshes
-    
-    console.log('Forcing logo refresh');
-    toast.info('Atualizando logos...', { duration: 1500 });
-    setRefreshKey(prev => prev + 1);
+    console.log('Admin panel: Forcing logo refresh');
+    fetchLogos();
   };
 
   return { ...logoData, refreshLogos };

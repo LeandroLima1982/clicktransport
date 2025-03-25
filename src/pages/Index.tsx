@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Solutions from '@/components/Solutions';
@@ -12,18 +12,9 @@ import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 const Index = () => {
   const { isLoading, user } = useAuth();
-  const { refreshLogos } = useSiteLogo();
-
-  // Refresh logos once when the page loads, not repeatedly
-  useEffect(() => {
-    console.log('Index: Refreshing logos');
-    refreshLogos();
-    // No dependence on refreshLogos to avoid loops
-  }, []);
 
   // Show a brief loading indicator only during initial authentication check
   if (isLoading) {
