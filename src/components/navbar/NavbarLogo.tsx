@@ -13,7 +13,7 @@ const NavbarLogo: React.FC = () => {
   useEffect(() => {
     console.log('NavbarLogo: Refreshing logos');
     refreshLogos();
-  }, []);
+  }, [refreshLogos]);
   
   return (
     <Link to="/" className="flex items-center space-x-2 animate-fade-in">
@@ -22,7 +22,7 @@ const NavbarLogo: React.FC = () => {
           src={lightLogo} 
           alt="LaTransfer" 
           className={`${isMobile ? 'h-7' : 'h-8'} w-auto`}
-          key={lightLogo} // Forçar re-renderização quando URL mudar
+          key={`navbarlogo-${lightLogo}`} // Forçar re-renderização com key mais específica
         />
       ) : (
         <>

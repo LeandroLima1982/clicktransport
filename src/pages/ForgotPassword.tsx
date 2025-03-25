@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,12 @@ const ForgotPassword: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const { resetPassword } = useAuth();
-  const { light: lightLogo } = useSiteLogo();
+  const { light: lightLogo, refreshLogos } = useSiteLogo();
+  
+  useEffect(() => {
+    console.log('ForgotPassword: Refreshing logos');
+    refreshLogos();
+  }, [refreshLogos]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +64,7 @@ const ForgotPassword: React.FC = () => {
                 src={lightLogo} 
                 alt="LaTransfer" 
                 className="h-8 w-auto"
+                key={`forgot-pwd-${lightLogo}`} // Forçar re-renderização com key mais específica
               />
             ) : (
               <>

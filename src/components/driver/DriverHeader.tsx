@@ -16,7 +16,7 @@ const DriverHeader: React.FC = () => {
   useEffect(() => {
     console.log('DriverHeader: Refreshing logos');
     refreshLogos();
-  }, []);
+  }, [refreshLogos]);
   
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
@@ -27,7 +27,7 @@ const DriverHeader: React.FC = () => {
               src={lightLogo} 
               alt="LaTransfer" 
               className="h-6 w-auto"
-              key={lightLogo} // Forçar re-renderização quando URL mudar
+              key={`driver-header-${lightLogo}`} // Forçar re-renderização com key mais específica
             />
           ) : (
             <div className="relative">

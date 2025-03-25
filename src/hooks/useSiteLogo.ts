@@ -82,5 +82,14 @@ export const useSiteLogo = () => {
     setRefreshKey(prev => prev + 1); // Incrementar a chave para forçar o re-fetch
   };
 
+  // Força atualização inicial quando o hook é montado
+  useEffect(() => {
+    const initialRefresh = setTimeout(() => {
+      refreshLogos();
+    }, 500); // Atraso pequeno para garantir que componentes estejam montados
+    
+    return () => clearTimeout(initialRefresh);
+  }, []);
+
   return { ...logoData, refreshLogos };
 };

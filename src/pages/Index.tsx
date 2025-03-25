@@ -18,11 +18,18 @@ const Index = () => {
   const { isLoading, user } = useAuth();
   const { refreshLogos } = useSiteLogo();
 
-  // Atualiza os logos quando a página inicial é carregada
+  // Forçar atualização das logos na carga inicial da página
   useEffect(() => {
     console.log('Index: Refreshing logos');
+    // Forçar atualização imediata e uma segunda vez após 1 segundo
     refreshLogos();
-  }, []);
+    
+    const timer = setTimeout(() => {
+      refreshLogos();
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [refreshLogos]);
 
   // Show a brief loading indicator only during initial authentication check
   if (isLoading) {

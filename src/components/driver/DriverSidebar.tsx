@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -34,7 +34,12 @@ const DriverSidebar: React.FC = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { light: lightLogo } = useSiteLogo();
+  const { light: lightLogo, refreshLogos } = useSiteLogo();
+  
+  useEffect(() => {
+    console.log('DriverSidebar: Refreshing logos');
+    refreshLogos();
+  }, [refreshLogos]);
   
   const handleSignOut = async () => {
     try {
@@ -54,6 +59,7 @@ const DriverSidebar: React.FC = () => {
               src={lightLogo} 
               alt="LaTransfer" 
               className="h-8 w-auto"
+              key={`driver-sidebar-${lightLogo}`} // Forçar re-renderização com key mais específica
             />
           ) : (
             <>

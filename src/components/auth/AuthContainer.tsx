@@ -31,7 +31,7 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
   useEffect(() => {
     console.log('AuthContainer: Refreshing logos');
     refreshLogos();
-  }, []);
+  }, [refreshLogos]);
   
   return (
     <TransitionEffect>
@@ -43,7 +43,7 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
                 src={lightLogo} 
                 alt="LaTransfer" 
                 className="h-8 w-auto"
-                key={lightLogo} // Forçar re-renderização quando URL mudar
+                key={`auth-container-${lightLogo}`} // Forçar re-renderização com key mais específica
               />
             ) : (
               <>

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CarFront, Plane, Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
@@ -10,7 +9,7 @@ const Footer: React.FC = () => {
   useEffect(() => {
     console.log('Footer: Refreshing logos');
     refreshLogos();
-  }, []);
+  }, [refreshLogos]);
   
   return (
     <footer className="bg-secondary text-white pt-16 pb-8 w-full">
@@ -23,7 +22,7 @@ const Footer: React.FC = () => {
                   src={darkLogo} 
                   alt="LaTransfer" 
                   className="h-8 w-auto"
-                  key={darkLogo} // Forçar re-renderização quando URL mudar
+                  key={`footer-${darkLogo}`} // Forçar re-renderização com key mais específica
                 />
               ) : (
                 <>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -319,95 +318,76 @@ const AppearanceSettings: React.FC = () => {
         return;
       }
       
-      const fileExt = file.name.split('.').pop();
-      const fileName = `logo-${mode}-${Date.now()}.${fileExt}`;
+      const supabaseMode = mode === 'light_mode' ? 'light' : 'dark';
       
-      // Primeiro apague o logo anterior se existir
+      const { error: deleteError } = await supabase
+        .from('site_logos')
+        .delete()
+        .eq('mode', supabaseMode);
+      
+      if (deleteError) {
+        console.error('Error deleting existing logo record:', deleteError);
+      }
+      
       if (logoUploads[mode]) {
         try {
-          const oldFileName = logoUploads[mode].split('/').pop()?.split('?')[0];
+          const oldFileUrl = new URL(logoUploads[mode]);
+          const oldFileName = oldFileUrl.pathname.split('/').pop()?.split('?')[0];
+          
           if (oldFileName) {
             await supabase.storage
               .from('site-images')
               .remove([oldFileName]);
-            console.log(`Antigo arquivo removido: ${oldFileName}`);
+              
+            console.log(`Arquivo antigo removido: ${oldFileName}`);
           }
-        } catch (removeError) {
-          console.warn('Erro ao remover arquivo antigo:', removeError);
-          // Continue mesmo se houver erro na remoção
+        } catch (e) {
+          console.warn('Erro ao remover arquivo antigo, prosseguindo mesmo assim:', e);
         }
       }
       
-      // Agora faça o upload do novo arquivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `logo-${mode}-${Date.now()}.${fileExt}`;
+      
       const { data, error } = await supabase.storage
         .from('site-images')
         .upload(fileName, file, {
-          cacheControl: '0', // Desabilitar cache
+          cacheControl: '0',
           upsert: true
         });
       
       if (error) throw error;
       
-      if (data) {
-        const { data: publicUrlData } = supabase.storage
-          .from('site-images')
-          .getPublicUrl(fileName);
+      const timestamp = new Date().getTime();
+      const { data: publicUrlData } = supabase.storage
+        .from('site-images')
+        .getPublicUrl(fileName);
         
-        // Adicionar timestamp para evitar cache
-        const timestamp = new Date().getTime();
-        const logoUrl = `${publicUrlData.publicUrl}?t=${timestamp}`;
-        
-        const supabaseMode = mode === 'light_mode' ? 'light' : 'dark';
-        
-        const { data: existingLogo, error: checkError } = await supabase
-          .from('site_logos')
-          .select('*')
-          .eq('mode', supabaseMode)
-          .maybeSingle();
-        
-        if (checkError && checkError.code !== 'PGRST116') throw checkError;
-        
-        if (existingLogo) {
-          // Deletar registro anterior antes de inserir o novo
-          const { error: deleteError } = await supabase
-            .from('site_logos')
-            .delete()
-            .eq('id', existingLogo.id);
-          
-          if (deleteError) throw deleteError;
-          
-          // Inserir novo registro
-          const { error: insertError } = await supabase
-            .from('site_logos')
-            .insert({
-              mode: supabaseMode,
-              logo_url: logoUrl
-            });
-          
-          if (insertError) throw insertError;
-        } else {
-          const { error: insertError } = await supabase
-            .from('site_logos')
-            .insert({
-              mode: supabaseMode,
-              logo_url: logoUrl
-            });
-          
-          if (insertError) throw insertError;
-        }
-        
-        setLogoUploads(prev => ({
-          ...prev,
-          [mode]: logoUrl
-        }));
-        
-        // Força a atualização dos logos em todo o site
+      const logoUrl = `${publicUrlData.publicUrl}?t=${timestamp}`;
+      
+      const { error: insertError } = await supabase
+        .from('site_logos')
+        .insert({
+          mode: supabaseMode,
+          logo_url: logoUrl
+        });
+      
+      if (insertError) throw insertError;
+      
+      setLogoUploads(prev => ({
+        ...prev,
+        [mode]: logoUrl
+      }));
+      
+      refreshLogos();
+      
+      setTimeout(() => {
         refreshLogos();
-        
         toast.success('Logo atualizada com sucesso', {
           description: `A logo para modo ${mode === 'light_mode' ? 'claro' : 'escuro'} foi atualizada.`
         });
-      }
+      }, 500);
+      
     } catch (error: any) {
       console.error('Error uploading logo:', error);
       toast.error('Erro ao enviar logo', {
@@ -426,7 +406,6 @@ const AppearanceSettings: React.FC = () => {
     try {
       const supabaseMode = mode === 'light_mode' ? 'light' : 'dark';
       
-      // Remover do banco de dados
       const { error: deleteDbError } = await supabase
         .from('site_logos')
         .delete()
@@ -434,9 +413,10 @@ const AppearanceSettings: React.FC = () => {
       
       if (deleteDbError) throw deleteDbError;
       
-      // Remover do storage
       try {
-        const fileName = logoUploads[mode].split('/').pop()?.split('?')[0];
+        const logoUrl = new URL(logoUploads[mode]);
+        const fileName = logoUrl.pathname.split('/').pop()?.split('?')[0];
+        
         if (fileName) {
           await supabase.storage
             .from('site-images')
@@ -444,17 +424,18 @@ const AppearanceSettings: React.FC = () => {
         }
       } catch (removeError) {
         console.warn('Erro ao remover arquivo:', removeError);
-        // Continue mesmo se houver erro na remoção do arquivo
       }
       
-      // Atualizar estado
       setLogoUploads(prev => ({
         ...prev,
         [mode]: ''
       }));
       
-      // Força a atualização dos logos em todo o site
       refreshLogos();
+      
+      setTimeout(() => {
+        refreshLogos();
+      }, 500);
       
       toast.success('Logo removida com sucesso', {
         description: `A logo para modo ${mode === 'light_mode' ? 'claro' : 'escuro'} foi removida.`
@@ -499,7 +480,7 @@ const AppearanceSettings: React.FC = () => {
           onClick={() => {
             loadCurrentImages();
             loadCurrentLogos();
-            refreshLogos(); // Forçar atualização global de logos
+            refreshLogos();
           }} 
           disabled={isRefreshing}
           className="flex items-center gap-2"
@@ -535,7 +516,7 @@ const AppearanceSettings: React.FC = () => {
                       src={logoUploads.light_mode} 
                       alt="Logo (Fundo Claro)" 
                       className="max-h-16"
-                      key={`light-${logoUploads.light_mode}`} // Forçar re-renderização
+                      key={`light-${logoUploads.light_mode}`}
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-muted-foreground">
@@ -597,7 +578,7 @@ const AppearanceSettings: React.FC = () => {
                       src={logoUploads.dark_mode} 
                       alt="Logo (Fundo Escuro)" 
                       className="max-h-16"
-                      key={`dark-${logoUploads.dark_mode}`} // Forçar re-renderização
+                      key={`dark-${logoUploads.dark_mode}`}
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-white/60">
