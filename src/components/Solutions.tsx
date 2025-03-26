@@ -39,10 +39,7 @@ const Solutions: React.FC = () => {
       <div className="w-full px-[24px]">
         <div className="text-center mb-12">
           <h2 className="section-title mb-6">Soluções de Transporte Personalizado</h2>
-          <p className="text-foreground/70 max-w-2xl mx-auto">
-            Oferecemos uma variedade de serviços de transfer personalizados para atender às necessidades específicas 
-            de cada cliente, garantindo conforto, segurança e pontualidade.
-          </p>
+          <p className="text-foreground/70 max-w-2xl mx-auto">Oferecemos uma variedade de serviços de transfer  para atender às necessidades específicas de cada cliente, garantindo conforto, segurança e pontualidade.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
