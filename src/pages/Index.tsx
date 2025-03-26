@@ -25,7 +25,7 @@ const Index = () => {
         <div className="ml-3 text-lg font-medium">Carregando...</div>
       </div>;
   }
-  return <main className="w-full">
+  return <main className="">
       <Navbar />
       <div className="w-full pt-10 py-0 mx-[78px]">
         <Hero />
