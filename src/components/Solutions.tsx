@@ -66,13 +66,7 @@ const Solutions: React.FC = () => {
             </Card>)}
         </div>
         
-        <div className="text-center mt-12">
-          <a href="#request-service">
-            <Button size="lg" className="rounded-md px-8 py-6 text-base font-bold">
-              Solicitar Orçamento <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </a>
-        </div>
+        
       </div>
     </section>;
 };
