@@ -27,7 +27,7 @@ const Index = () => {
   }
   return <main className="w-full bg-white/0">
       <Navbar />
-      <div className="w-full bg-slate-50 mx-[85px]">
+      <div className="w-full bg-white/[0.31] mx-0">
         <Hero />
         <TransportTypes />
         <div className="relative max-w-[1000px] mx-auto py-10 px-4 md:px-6">
