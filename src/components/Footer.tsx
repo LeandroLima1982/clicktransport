@@ -26,7 +26,7 @@ const Footer: React.FC = () => {
   }, []);
   return <footer className="text-white pt-16 pb-8 w-full bg-blue-950">
       <div className="">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+        <div className="mx-[49px]">
           <div>
             <div className="flex items-center mb-6">
               <img src={footerLogoUrl} alt="LaTransfer Logo" className="h-10 w-auto" />
@@ -108,9 +108,9 @@ const Footer: React.FC = () => {
               
               <li className="flex items-center">
                 <Phone className="h-5 w-5 mr-3 text-primary" />
-                <span className="text-gray-300">Rua Humberto de Campos 1107 Enseadas das Gaivotas
+                <span className="text-gray-300 text-center mx-0">Rua Humberto de Campos 1107
+Enseadas dasGaivotas
 Rio das Ostras -RJ
-
 (22) 98100-2904</span>
               </li>
               <li className="flex items-center">
@@ -122,7 +122,7 @@ Rio das Ostras -RJ
         </div>
         
         <div className="border-t border-gray-800 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="mx-[41px]">
             <p className="text-gray-400 text-sm mb-4 md:mb-0">
               &copy; {new Date().getFullYear()} LaTransfer. Todos os direitos reservados.
             </p>
