@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, ArrowRight, User, Building2, Users, Plane, CarFront, Clock } from 'lucide-react';
@@ -43,6 +44,8 @@ const solutions = [
 ];
 
 const SolutionCard = ({ solution, index }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  
   const scrollToBookingForm = () => {
     document.getElementById('request-service')?.scrollIntoView({
       behavior: 'smooth',
@@ -54,6 +57,9 @@ const SolutionCard = ({ solution, index }) => {
     <Card 
       key={index} 
       className="border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onTouchStart={() => setIsHovered(true)}
     >
       <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       <CardHeader>
@@ -72,15 +78,17 @@ const SolutionCard = ({ solution, index }) => {
         </ul>
       </CardContent>
       <CardFooter>
-        <Button 
-          variant="default"
-          className="w-full bg-primary text-white transition-all duration-300"
-          onClick={scrollToBookingForm}
-        >
-          <span className="flex items-center">
-            Solicitar <ArrowRight className="ml-2 h-4 w-4 animate-slide-right" />
-          </span>
-        </Button>
+        {isHovered && (
+          <Button 
+            variant="default"
+            className="w-full bg-primary text-white transition-all duration-300 animate-pulse"
+            onClick={scrollToBookingForm}
+          >
+            <span className="flex items-center">
+              Solicitar <ArrowRight className="ml-2 h-4 w-4 animate-slide-right" />
+            </span>
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
