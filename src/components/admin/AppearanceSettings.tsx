@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,6 @@ import { Upload, ImageIcon, Loader2, RefreshCw, Check, AlertTriangle } from 'luc
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-// Define types for site images
 interface SiteImage {
   id: string;
   section_id: string;
@@ -113,19 +111,16 @@ const AppearanceSettings: React.FC = () => {
   useEffect(() => {
     loadCurrentImages();
     
-    // Enable realtime for site_images
     enableRealtimeForSiteImages();
   }, []);
 
   const enableRealtimeForSiteImages = async () => {
     try {
-      // Enable full replica identity for the site_images table (needed for realtime)
-      await supabase.rpc('exec_sql', {
+      await supabase.rpc('exec_sql' as any, {
         query: 'ALTER TABLE public.site_images REPLICA IDENTITY FULL;'
       });
       
-      // Add site_images to the realtime publication
-      await supabase.rpc('exec_sql', {
+      await supabase.rpc('exec_sql' as any, {
         query: 'ALTER PUBLICATION supabase_realtime ADD TABLE public.site_images;'
       });
       

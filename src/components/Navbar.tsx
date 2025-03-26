@@ -26,25 +26,32 @@ const Navbar: React.FC = () => {
     const checkAndEnableRealtime = async () => {
       try {
         // Check if site_images table already has REPLICA IDENTITY FULL
-        const { data: replicaCheckData, error: replicaCheckError } = await supabase.rpc('exec_sql', {
+        const { data: replicaCheckData, error: replicaCheckError } = await supabase.rpc('exec_sql' as any, {
           query: "SELECT obj_description(oid, 'pg_class') FROM pg_class WHERE relname = 'site_images';"
         });
         
+        // Fix: Check if replicaCheckData is an array or string and use appropriate method
+        const replicaDataStr = typeof replicaCheckData === 'string' ? replicaCheckData : 
+                              (Array.isArray(replicaCheckData) ? JSON.stringify(replicaCheckData) : '');
+        
         // If not set, enable it
-        if (!replicaCheckError && (!replicaCheckData || !replicaCheckData.includes('REPLICA IDENTITY FULL'))) {
-          await supabase.rpc('exec_sql', {
+        if (!replicaCheckError && (!replicaDataStr || !replicaDataStr.includes('REPLICA IDENTITY FULL'))) {
+          await supabase.rpc('exec_sql' as any, {
             query: 'ALTER TABLE public.site_images REPLICA IDENTITY FULL;'
           });
         }
         
         // Check if site_images is in supabase_realtime publication
-        const { data: publicationCheckData, error: publicationCheckError } = await supabase.rpc('exec_sql', {
+        const { data: publicationCheckData, error: publicationCheckError } = await supabase.rpc('exec_sql' as any, {
           query: "SELECT tablename FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'site_images';"
         });
         
+        // Fix: Check if publicationCheckData is an array before using length
+        const hasPublicationData = Array.isArray(publicationCheckData) && publicationCheckData.length > 0;
+        
         // If not in publication, add it
-        if (!publicationCheckError && (!publicationCheckData || publicationCheckData.length === 0)) {
-          await supabase.rpc('exec_sql', {
+        if (!publicationCheckError && !hasPublicationData) {
+          await supabase.rpc('exec_sql' as any, {
             query: 'ALTER PUBLICATION supabase_realtime ADD TABLE public.site_images;'
           });
         }

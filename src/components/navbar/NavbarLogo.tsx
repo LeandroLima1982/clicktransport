@@ -32,7 +32,8 @@ const NavbarLogo: React.FC<NavbarLogoProps> = ({ logoUrl }) => {
           return;
         }
         
-        if (data && data.image_url) {
+        // Fix: Add a type check for data and check if image_url exists
+        if (data && typeof data === 'object' && 'image_url' in data && data.image_url) {
           console.log('NavbarLogo - Logo URL loaded:', data.image_url);
           setCurrentLogo(data.image_url);
         }
@@ -56,7 +57,7 @@ const NavbarLogo: React.FC<NavbarLogoProps> = ({ logoUrl }) => {
         },
         (payload) => {
           console.log('Logo updated in database:', payload);
-          if (payload.new && payload.new.image_url) {
+          if (payload.new && typeof payload.new === 'object' && 'image_url' in payload.new && payload.new.image_url) {
             setCurrentLogo(payload.new.image_url);
           }
         }

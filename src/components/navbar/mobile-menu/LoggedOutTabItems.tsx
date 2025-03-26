@@ -25,7 +25,8 @@ const LoggedOutTabItems: React.FC<LoggedOutTabItemsProps> = ({ onClose }) => {
           return;
         }
         
-        if (data && data.image_url) {
+        // Fix: Add a type check for data and check if image_url exists
+        if (data && typeof data === 'object' && 'image_url' in data && data.image_url) {
           setLogoUrl(data.image_url);
         }
       } catch (error) {
@@ -47,7 +48,7 @@ const LoggedOutTabItems: React.FC<LoggedOutTabItemsProps> = ({ onClose }) => {
           filter: 'section_id=eq.logo'
         },
         (payload) => {
-          if (payload.new && payload.new.image_url) {
+          if (payload.new && typeof payload.new === 'object' && 'image_url' in payload.new && payload.new.image_url) {
             setLogoUrl(payload.new.image_url);
           }
         }

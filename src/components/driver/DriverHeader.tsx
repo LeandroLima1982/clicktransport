@@ -27,7 +27,8 @@ const DriverHeader: React.FC = () => {
           return;
         }
         
-        if (data && data.image_url) {
+        // Fix: Add a type check for data and check if image_url exists
+        if (data && typeof data === 'object' && 'image_url' in data && data.image_url) {
           console.log('Driver header: Logo URL loaded from Supabase:', data.image_url);
           setLogoUrl(data.image_url);
         }
@@ -51,7 +52,7 @@ const DriverHeader: React.FC = () => {
         },
         (payload) => {
           console.log('Logo updated in database:', payload);
-          if (payload.new && payload.new.image_url) {
+          if (payload.new && typeof payload.new === 'object' && 'image_url' in payload.new && payload.new.image_url) {
             setLogoUrl(payload.new.image_url);
           }
         }
