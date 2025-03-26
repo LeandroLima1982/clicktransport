@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 
 // Definir tipo para os dados de transporte
 interface TransportType {
@@ -38,9 +39,11 @@ const defaultTransportTypes: TransportType[] = [{
   description: 'Soluções para transporte de grupos em eventos corporativos',
   duration: 'A partir de 4h • R$ 600,00'
 }];
+
 const TransportTypes: React.FC = () => {
   const [transportTypes, setTransportTypes] = useState<TransportType[]>(defaultTransportTypes);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const fetchImages = async () => {
       setLoading(true);
@@ -75,35 +78,53 @@ const TransportTypes: React.FC = () => {
     };
     fetchImages();
   }, []);
-  return <section className="w-full py-[8px] mx-[2px] my-[20px] bg-white">
-      <div className="max-w-[1400px] mx-auto px-4 w-full bg-white md:px-0 py-[4px]">
-        
 
+  return (
+    <section className="w-full py-[8px] mx-[2px] my-[20px] bg-white">
+      <div className="max-w-[1400px] mx-auto px-4 w-full bg-white md:px-0 py-[4px]">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {transportTypes.map((type, index) => <div key={index} className="card-service border border-[#D4AF37] shadow-[0_2px_8px_rgba(0,35,102,0.1)]">
-              <div className="relative">
-                <img src={type.image} alt={type.title} className="card-service-image" onError={e => {
-              // Fallback para imagem padrão em caso de erro
-              (e.target as HTMLImageElement).src = '/placeholder.svg';
-            }} />
-                <div className="absolute bottom-0 right-0 bg-[#002366] p-2 text-xs font-bold">
-                  <ArrowRight className="h-4 w-4 text-white" />
+          {transportTypes.map((type, index) => (
+            <Link 
+              to="/#request-service" 
+              key={index}
+              className="block transform transition-all duration-300 hover:translate-y-[-4px]"
+            >
+              <div className="h-full rounded-xl overflow-hidden bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <div className="relative">
+                  <img 
+                    src={type.image} 
+                    alt={type.title} 
+                    className="w-full h-48 object-cover"
+                    onError={e => {
+                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                    }}
+                  />
+                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black/50" />
+                  <div className="absolute bottom-4 right-4 bg-primary p-2 rounded-full shadow-lg">
+                    <ArrowRight className="h-5 w-5 text-white" />
+                  </div>
+                </div>
+                
+                <div className="p-4">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">{type.title}</h3>
+                  <p className="text-sm text-gray-600 mb-3">{type.description}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-500">{type.duration}</span>
+                    <Button 
+                      size="sm"
+                      className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 py-2 text-sm"
+                    >
+                      Agendar
+                    </Button>
+                  </div>
                 </div>
               </div>
-              <div className="card-service-content">
-                <h3 className="font-bold mb-2 text-[#002366]">{type.title}</h3>
-                <p className="text-sm text-[#2A2A2A] mb-3">{type.description}</p>
-                <p className="text-xs font-medium text-[#2A2A2A]">{type.duration}</p>
-              </div>
-            </div>)}
-        </div>
-
-        <div className="text-center mt-10">
-          <a href="#request-service">
-            
-          </a>
+            </Link>
+          ))}
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
+
 export default TransportTypes;
