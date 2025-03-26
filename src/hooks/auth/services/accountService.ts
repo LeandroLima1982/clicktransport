@@ -12,19 +12,33 @@ export const signOut = async () => {
     localStorage.removeItem('lastAuthRoute');
     localStorage.removeItem('userRole');
     
-    // Perform the actual sign out
-    const result = await supabase.auth.signOut();
+    // Check if there's a session first
+    const { data: sessionData } = await supabase.auth.getSession();
     
-    if (result.error) {
-      console.error('Error signing out from Supabase:', result.error);
-      toast.error('Erro ao sair', {
-        description: result.error.message
-      });
-      throw result.error;
+    // Only attempt to sign out if there's an active session
+    if (sessionData?.session) {
+      // Perform the actual sign out
+      const result = await supabase.auth.signOut();
+      
+      if (result.error) {
+        console.error('Error signing out from Supabase:', result.error);
+        toast.error('Erro ao sair', {
+          description: result.error.message
+        });
+        throw result.error;
+      }
+      
+      console.log('User signed out successfully from Supabase');
+      toast.success('Você saiu com sucesso');
+    } else {
+      // If no session exists, just inform the user they're logged out
+      console.log('No active session found, user is already signed out');
+      toast.success('Você já está desconectado');
+      
+      // Force clear any remaining auth state
+      localStorage.removeItem('sb-xxx-auth-token'); // Generic pattern that might catch Supabase tokens
     }
     
-    console.log('User signed out successfully from Supabase');
-    toast.success('Você saiu com sucesso');
     return { error: null };
   } catch (err) {
     console.error('Exception during sign out:', err);
