@@ -143,9 +143,9 @@ const BookingForm: React.FC = () => {
     return;
   };
   return <div className="w-full bg-[#f8f9fa] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
-      <div className="pt-5 md:pt-7 pb-6 md:pb-8 bg-gradient-to-b from-[#002366] to-[#003399] md:px-[54px] my-0 px-[10px] py-[21px]">
+      <div className="pt-5 md:pt-7 pb-6 md:pb-8 bg-gradient-to-b from-[#002366] to-[#003399] py-0 md:px-[54px] px-[29px]">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0">
-          <h3 className="font-extrabold text-xl md:text-2xl text-white">Agendar Transfer</h3>
+          <h3 className="font-extrabold text-xl md:text-2xl text-white">Agendar viagem</h3>
           <TripTypeTabs value={tripType} onChange={setTripType} />
         </div>
 
@@ -263,7 +263,7 @@ const BookingForm: React.FC = () => {
             </div>}
         </div>
 
-        <Button onClick={handleBooking} disabled={!originCityId || !destinationCityId} className="w-full rounded-lg mt-6 text-white text-lg font-medium h-12 md:h-14 transition-all duration-100 bg-amber-500 hover:bg-amber-400">
+        <Button onClick={handleBooking} disabled={!originCityId || !destinationCityId} className="w-full rounded-lg mt-6 text-white text-lg font-medium h-12 md:h-14 transition-all duration-300 shadow-md relative overflow-hidden my-[39px] bg-yellow-600 hover:bg-yellow-500">
           <span className="relative z-10 flex items-center justify-center">
             Buscar
           </span>

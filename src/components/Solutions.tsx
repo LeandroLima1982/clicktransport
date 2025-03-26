@@ -34,11 +34,11 @@ const solutions = [{
   features: ['Roteiros personalizados', 'Guias especializados', 'Experiência local']
 }];
 const Solutions: React.FC = () => {
-  return <section className="bg-white relative overflow-hidden w-full py-0">
+  return <section className="py-20 bg-white relative overflow-hidden w-full">
       <div className="absolute top-0 inset-0 bg-gradient-to-b from-white via-gray-50 to-white opacity-50 -z-10"></div>
       <div className="w-full px-[24px]">
         <div className="text-center mb-12">
-          <h2 className="section-title mb-6"> Transporte Personalizado</h2>
+          <h2 className="section-title mb-6">Soluções de Transporte Personalizado</h2>
           <p className="text-foreground/70 max-w-2xl mx-auto">Oferecemos uma variedade de serviços de transfer  para atender às necessidades específicas de cada cliente, garantindo conforto, segurança e pontualidade.</p>
         </div>
 
