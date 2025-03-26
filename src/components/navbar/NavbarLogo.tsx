@@ -30,20 +30,28 @@ const NavbarLogo: React.FC<NavbarLogoProps> = ({ logoUrl = '/lovable-uploads/318
       to={getHomeRoute()} 
       className="flex items-center focus:outline-none"
     >
-      <motion.img
-        src={logoUrl}
-        alt="LaTransfer Logo"
-        className="w-auto"
-        initial={{ height: 48 }}
-        animate={{ 
-          height: document.documentElement.scrollTop > 10 ? 36 : 48 
-        }}
-        transition={{ 
-          type: "spring", 
-          stiffness: 300, 
-          damping: 30 
-        }}
-      />
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="overflow-hidden"
+      >
+        <motion.img
+          src={logoUrl}
+          alt="LaTransfer Logo"
+          className="w-auto object-contain"
+          initial={{ height: 60 }}
+          animate={{ 
+            height: document.documentElement.scrollTop > 10 ? 45 : 60 
+          }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 400, 
+            damping: 25 
+          }}
+          whileHover={{ scale: 1.05 }}
+        />
+      </motion.div>
     </Link>
   );
 };

@@ -7,6 +7,7 @@ import HeaderTitle from './header/HeaderTitle';
 import { Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { motion } from 'framer-motion';
 
 const DriverHeader: React.FC = () => {
   const { companyContext } = useAuth();
@@ -42,10 +43,14 @@ const DriverHeader: React.FC = () => {
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
       <div className="flex items-center">
         <Link to="/" className="flex items-center mr-4">
-          <img 
+          <motion.img 
             src={logoUrl} 
             alt="LaTransfer Logo" 
             className="h-8 w-auto" 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            whileHover={{ scale: 1.05 }}
           />
         </Link>
         <HeaderTitle title="Driver Dashboard" />
