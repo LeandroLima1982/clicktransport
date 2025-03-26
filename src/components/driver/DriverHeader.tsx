@@ -14,7 +14,7 @@ const DriverHeader: React.FC = () => {
   const [logoUrl, setLogoUrl] = useState<string>('/lovable-uploads/318b76fe-b700-4667-b957-7da8cd9c254a.png');
 
   useEffect(() => {
-    const fetchLogoSetting = async () => {
+    const fetchLogoUrl = async () => {
       try {
         const { data, error } = await supabase
           .from('site_images')
@@ -36,7 +36,31 @@ const DriverHeader: React.FC = () => {
       }
     };
 
-    fetchLogoSetting();
+    fetchLogoUrl();
+
+    // Subscribe to logo changes
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'site_images',
+          filter: 'section_id=eq.logo'
+        },
+        (payload) => {
+          console.log('Logo updated in database:', payload);
+          if (payload.new && payload.new.image_url) {
+            setLogoUrl(payload.new.image_url);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
   
   return (

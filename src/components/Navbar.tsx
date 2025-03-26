@@ -12,6 +12,7 @@ import {
   MobileMenu
 } from './navbar';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 
 const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -19,6 +20,44 @@ const Navbar: React.FC = () => {
   const isMobile = useIsMobile();
   const { user, userRole, signOut, isAuthenticating } = useAuth();
   const navigate = useNavigate();
+
+  // When component mounts, check if realtime is enabled and set up if not
+  useEffect(() => {
+    const checkAndEnableRealtime = async () => {
+      try {
+        // Check if site_images table already has REPLICA IDENTITY FULL
+        const { data: replicaCheckData, error: replicaCheckError } = await supabase.rpc('exec_sql', {
+          query: "SELECT obj_description(oid, 'pg_class') FROM pg_class WHERE relname = 'site_images';"
+        });
+        
+        // If not set, enable it
+        if (!replicaCheckError && (!replicaCheckData || !replicaCheckData.includes('REPLICA IDENTITY FULL'))) {
+          await supabase.rpc('exec_sql', {
+            query: 'ALTER TABLE public.site_images REPLICA IDENTITY FULL;'
+          });
+        }
+        
+        // Check if site_images is in supabase_realtime publication
+        const { data: publicationCheckData, error: publicationCheckError } = await supabase.rpc('exec_sql', {
+          query: "SELECT tablename FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'site_images';"
+        });
+        
+        // If not in publication, add it
+        if (!publicationCheckError && (!publicationCheckData || publicationCheckData.length === 0)) {
+          await supabase.rpc('exec_sql', {
+            query: 'ALTER PUBLICATION supabase_realtime ADD TABLE public.site_images;'
+          });
+        }
+      } catch (error) {
+        console.error('Error checking/enabling realtime:', error);
+      }
+    };
+    
+    // Only try to enable realtime if user is admin (requires special privileges)
+    if (userRole === 'admin') {
+      checkAndEnableRealtime();
+    }
+  }, [userRole]);
 
   const handleSignOut = async () => {
     try {

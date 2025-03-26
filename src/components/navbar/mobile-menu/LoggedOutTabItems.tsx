@@ -12,7 +12,7 @@ const LoggedOutTabItems: React.FC<LoggedOutTabItemsProps> = ({ onClose }) => {
   const [logoUrl, setLogoUrl] = useState<string>('/lovable-uploads/8a9d78f7-0536-4e85-9c4b-0debc4c61fcf.png');
 
   useEffect(() => {
-    const fetchLogoSetting = async () => {
+    const fetchLogoUrl = async () => {
       try {
         const { data, error } = await supabase
           .from('site_images')
@@ -33,7 +33,30 @@ const LoggedOutTabItems: React.FC<LoggedOutTabItemsProps> = ({ onClose }) => {
       }
     };
 
-    fetchLogoSetting();
+    fetchLogoUrl();
+
+    // Subscribe to logo changes
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'site_images',
+          filter: 'section_id=eq.logo'
+        },
+        (payload) => {
+          if (payload.new && payload.new.image_url) {
+            setLogoUrl(payload.new.image_url);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return (

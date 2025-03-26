@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -111,7 +112,28 @@ const AppearanceSettings: React.FC = () => {
 
   useEffect(() => {
     loadCurrentImages();
+    
+    // Enable realtime for site_images
+    enableRealtimeForSiteImages();
   }, []);
+
+  const enableRealtimeForSiteImages = async () => {
+    try {
+      // Enable full replica identity for the site_images table (needed for realtime)
+      await supabase.rpc('exec_sql', {
+        query: 'ALTER TABLE public.site_images REPLICA IDENTITY FULL;'
+      });
+      
+      // Add site_images to the realtime publication
+      await supabase.rpc('exec_sql', {
+        query: 'ALTER PUBLICATION supabase_realtime ADD TABLE public.site_images;'
+      });
+      
+      console.log('Realtime enabled for site_images table');
+    } catch (error) {
+      console.error('Error enabling realtime:', error);
+    }
+  };
 
   const loadCurrentImages = async () => {
     setIsRefreshing(true);
@@ -223,7 +245,10 @@ const AppearanceSettings: React.FC = () => {
         if (existingImage) {
           const { error: updateError } = await supabase
             .from('site_images')
-            .update({ image_url: imageUrl })
+            .update({ 
+              image_url: imageUrl,
+              updated_at: new Date().toISOString() 
+            })
             .eq('section_id', sectionId);
           
           if (updateError) throw updateError;
