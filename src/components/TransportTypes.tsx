@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,25 +21,25 @@ const defaultTransportTypes: TransportType[] = [
     image: '/lovable-uploads/hero-bg.jpg',
     title: 'Transfer para Offshore',
     description: 'Transporte para colaboradores com pontualidade e conforto',
-    duration: 'A partir de 2h30min • R$ 350,00'
+    duration: 'A partir de 2h30min • R$350,00'
   }, {
     id: 'airport',
     image: '/lovable-uploads/hero-bg.jpg',
     title: 'Transfer para Aeroportos',
     description: 'Chegue com tranquilidade para seu voo ou retorno',
-    duration: 'A partir de 1h30min • R$ 220,00'
+    duration: 'A partir de 1h30min • R$220,00'
   }, {
     id: 'vip',
     image: '/lovable-uploads/hero-bg.jpg',
     title: 'Transfer VIP & Executivo',
     description: 'Conforto e elegância para executivos e eventos especiais',
-    duration: 'A partir de 3h • R$ 450,00'
+    duration: 'A partir de 3h • R$450,00'
   }, {
     id: 'events',
     image: '/lovable-uploads/hero-bg.jpg',
     title: 'Transfer para Eventos',
     description: 'Soluções para transporte de grupos em eventos corporativos',
-    duration: 'A partir de 4h • R$ 600,00'
+    duration: 'A partir de 4h • R$600,00'
   }
 ];
 
@@ -184,7 +185,7 @@ const TransportTypes: React.FC = () => {
                     <h3 className="text-lg font-bold text-gray-900 mb-2">{type.title}</h3>
                     <p className="text-sm text-gray-600 mb-3">{type.description}</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-500">{type.duration}</span>
+                      <span className="text-sm font-medium text-gray-500 whitespace-nowrap">{type.duration}</span>
                       {hoveredItem === index && (
                         <Button 
                           size="sm" 
