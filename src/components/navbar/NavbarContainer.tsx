@@ -27,7 +27,7 @@ const NavbarContainer: React.FC<NavbarContainerProps> = ({ children, scrolled })
         }
         
         if (data && data.image_url) {
-          console.log('Logo URL loaded from Supabase:', data.image_url);
+          console.log('Home page - Logo URL loaded from Supabase:', data.image_url);
           setLogoUrl(data.image_url);
         }
       } catch (error) {
