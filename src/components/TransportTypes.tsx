@@ -184,12 +184,12 @@ const TransportTypes: React.FC = () => {
                   <div className="p-4">
                     <h3 className="text-lg font-bold text-gray-900 mb-2">{type.title}</h3>
                     <p className="text-sm text-gray-600 mb-3">{type.description}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-500 whitespace-nowrap">{type.duration}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-500 whitespace-nowrap mb-2">{type.duration}</span>
                       {hoveredItem === index && (
                         <Button 
                           size="sm" 
-                          className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 py-2 text-sm animate-pulse" 
+                          className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 py-2 text-sm animate-pulse w-full" 
                           onClick={scrollToBookingForm}
                         >
                           Solicitar
@@ -201,9 +201,9 @@ const TransportTypes: React.FC = () => {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <div className="hidden md:block">
-            <CarouselPrevious className="absolute -left-12 top-1/2" data-carousel-prev />
-            <CarouselNext className="absolute -right-12 top-1/2" data-carousel-next />
+          <div>
+            <CarouselPrevious className="absolute -left-12 top-1/2 hidden md:flex" data-carousel-prev />
+            <CarouselNext className="absolute -right-12 top-1/2 hidden md:flex" data-carousel-next />
           </div>
         </Carousel>
       </div>

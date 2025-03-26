@@ -77,11 +77,11 @@ const SolutionCard = ({ solution, index }) => {
           ))}
         </ul>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col">
         {isHovered && (
           <Button 
             variant="default"
-            className="w-full bg-primary text-white transition-all duration-300 animate-pulse"
+            className="w-full bg-primary text-white transition-all duration-300 animate-pulse mt-2"
             onClick={scrollToBookingForm}
           >
             <span className="flex items-center">
