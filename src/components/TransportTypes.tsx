@@ -89,9 +89,7 @@ const TransportTypes: React.FC = () => {
               // Fallback para imagem padrão em caso de erro
               (e.target as HTMLImageElement).src = '/placeholder.svg';
             }} />
-                <div className="absolute bottom-0 right-0 bg-[#002366] p-2 text-xs font-bold">
-                  <ArrowRight className="h-4 w-4 text-white" />
-                </div>
+                
               </div>
               <div className="card-service-content">
                 <h3 className="font-bold mb-2 text-[#002366]">{type.title}</h3>

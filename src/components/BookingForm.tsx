@@ -143,13 +143,13 @@ const BookingForm: React.FC = () => {
     return;
   };
   return <div className="w-full bg-[#f8f9fa] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
-      <div className="pt-5 md:pt-7 pb-6 md:pb-8 bg-gradient-to-b from-[#002366] to-[#003399] py-0 md:px-[54px] px-[29px]">
+      <div className="pt-5 md:pt-7 pb-6 md:pb-8 bg-gradient-to-b from-[#002366] to-[#003399] md:px-[54px] px-[29px] py-[34px]">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0">
           <h3 className="font-extrabold text-xl md:text-2xl text-white">Agendar viagem</h3>
           <TripTypeTabs value={tripType} onChange={setTripType} />
         </div>
 
-        <div className="space-y-4 md:space-y-5">
+        <div className="space-y-10 md:space-y-5">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="rounded-lg border border-[#D4AF37]/50 p-3 bg-white/[0.15]">
               <Label className="block text-sm font-semibold text-white mb-2">
