@@ -26,7 +26,7 @@ const NavbarLogo: React.FC = () => {
     fetchLogoSetting();
   }, []);
   return <Link to="/" className="flex items-center space-x-2 animate-fade-in">
-      <img src={logoUrl} alt="LaTransfer Logo" className="" />
+      <img src={logoUrl} alt="LaTransfer Logo" className="object-scale-down" />
     </Link>;
 };
 export default NavbarLogo;
