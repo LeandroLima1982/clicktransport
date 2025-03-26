@@ -48,4 +48,7 @@ const NavbarLogo: React.FC<NavbarLogoProps> = ({ logoUrl = '/lovable-uploads/442
   );
 };
 
+// Add displayName to the component to make it identifiable in NavbarContainer
+NavbarLogo.displayName = 'NavbarLogo';
+
 export default NavbarLogo;
