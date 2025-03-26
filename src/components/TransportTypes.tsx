@@ -83,7 +83,7 @@ const TransportTypes: React.FC = () => {
           
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 py-0 mx-0">
           {transportTypes.map((type, index) => <div key={index} className="card-service border border-[#D4AF37] shadow-[0_2px_8px_rgba(0,35,102,0.1)]">
               <div className="relative">
                 <img src={type.image} alt={type.title} onError={e => {
