@@ -78,8 +78,7 @@ const TransportTypes: React.FC = () => {
   return <section className="w-full py-[8px] mx-[2px] my-[24px] bg-[#000a0e]/0">
       <div className="max-w-[1400px] px-4 w-full md:px-0 mx-0 my-[33px]">
         <div className="text-center mb-12">
-          <h2 className="section-title mb-6 text-gray-600 text-lg my-0">Sua Plataforma
-  de Transfer Executivo</h2>
+          <h2 className="section-title mb-6 text-gray-600 my-0 text-xl">Plataforma inteligente para solicitar transferes executivos</h2>
           
         </div>
 
@@ -93,7 +92,7 @@ const TransportTypes: React.FC = () => {
                 
               </div>
               <div className="card-service-content">
-                <h3 className="font-bold mb-2 text-[#002366]">{type.title}</h3>
+                <h3 className="font-bold mb-2 text-[#002366] text-sm">{type.title}</h3>
                 <p className="text-sm text-[#2A2A2A] mb-3">{type.description}</p>
                 <p className="text-xs font-medium text-[#2A2A2A]">{type.duration}</p>
               </div>
