@@ -1,15 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  Carousel, 
-  CarouselContent, 
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious
-} from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 // Definir tipo para os dados de transporte
 interface TransportType {
@@ -46,12 +39,10 @@ const defaultTransportTypes: TransportType[] = [{
   description: 'Soluções para transporte de grupos em eventos corporativos',
   duration: 'A partir de 4h • R$ 600,00'
 }];
-
 const TransportTypes: React.FC = () => {
   const [transportTypes, setTransportTypes] = useState<TransportType[]>(defaultTransportTypes);
   const [loading, setLoading] = useState(true);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-
   useEffect(() => {
     const fetchImages = async () => {
       setLoading(true);
@@ -86,50 +77,31 @@ const TransportTypes: React.FC = () => {
     };
     fetchImages();
   }, []);
-
   const handleCardHover = (id: string) => {
     setHoveredCard(id);
   };
-
   const handleCardLeave = () => {
     setHoveredCard(null);
   };
-
   const scrollToBookingForm = () => {
     document.getElementById('request-service')?.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
   };
-
-  return (
-    <section className="w-full py-[8px] mx-[2px] my-[20px] bg-white">
+  return <section className="w-full py-[8px] mx-[2px] my-[20px] bg-white">
       <div className="max-w-[1400px] mx-auto px-4 w-full bg-white md:px-6 py-[4px]">
-        <Carousel
-          opts={{
-            align: "start",
-            loop: true,
-          }}
-          className="w-full"
-        >
+        <Carousel opts={{
+        align: "start",
+        loop: true
+      }} className="w-full">
           <CarouselContent className="-ml-2 md:-ml-4">
-            {transportTypes.map((type, index) => (
-              <CarouselItem key={index} className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
-                <div 
-                  className="relative h-full overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl" 
-                  onMouseEnter={() => handleCardHover(type.id)}
-                  onMouseLeave={handleCardLeave}
-                  onTouchStart={() => handleCardHover(type.id)}
-                >
+            {transportTypes.map((type, index) => <CarouselItem key={index} className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 px-[12px] mx-[18px] my-[28px]">
+                <div className="relative h-full overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl" onMouseEnter={() => handleCardHover(type.id)} onMouseLeave={handleCardLeave} onTouchStart={() => handleCardHover(type.id)}>
                   <div className="relative">
-                    <img 
-                      src={type.image} 
-                      alt={type.title} 
-                      className="w-full h-48 object-cover transition-transform duration-500 hover:scale-105"
-                      onError={e => {
-                        (e.target as HTMLImageElement).src = '/placeholder.svg';
-                      }}
-                    />
+                    <img src={type.image} alt={type.title} className="w-full h-48 object-cover transition-transform duration-500 hover:scale-105" onError={e => {
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }} />
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black/50" />
                     <div className="absolute bottom-4 right-4 bg-primary p-2 rounded-full shadow-lg">
                       <ArrowRight className="h-5 w-5 text-white" />
@@ -141,20 +113,13 @@ const TransportTypes: React.FC = () => {
                     <p className="text-sm text-gray-600 mb-3">{type.description}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-500">{type.duration}</span>
-                      {hoveredCard === type.id && (
-                        <Button 
-                          size="sm"
-                          className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 py-2 text-sm animate-fade-in"
-                          onClick={scrollToBookingForm}
-                        >
+                      {hoveredCard === type.id && <Button size="sm" className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 py-2 text-sm animate-fade-in" onClick={scrollToBookingForm}>
                           Agendar
-                        </Button>
-                      )}
+                        </Button>}
                     </div>
                   </div>
                 </div>
-              </CarouselItem>
-            ))}
+              </CarouselItem>)}
           </CarouselContent>
           <div className="hidden md:block">
             <CarouselPrevious className="absolute -left-12 top-1/2" />
@@ -162,8 +127,6 @@ const TransportTypes: React.FC = () => {
           </div>
         </Carousel>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default TransportTypes;
