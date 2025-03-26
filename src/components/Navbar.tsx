@@ -11,6 +11,7 @@ import {
   UserMenu,
   MobileMenu
 } from './navbar';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -30,6 +31,7 @@ const Navbar: React.FC = () => {
     }
   };
 
+  // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
       const isScrolled = window.scrollY > 10;
@@ -44,17 +46,33 @@ const Navbar: React.FC = () => {
     };
   }, [scrolled]);
 
+  // Add padding to body to account for fixed navbar
+  useEffect(() => {
+    const body = document.body;
+    body.style.paddingTop = scrolled ? '64px' : '80px';
+    
+    return () => {
+      body.style.paddingTop = '0';
+    };
+  }, [scrolled]);
+
   return (
     <>
       <NavbarContainer scrolled={scrolled}>
-        <NavbarLogo />
-        
-        <div className="hidden md:flex items-center space-x-4">
-          <NavbarLinks />
-        </div>
-        
-        <div className="flex items-center space-x-4 animate-fade-in" style={{animationDelay: '0.2s'}}>
-          <div className="hidden md:block">
+        <motion.div
+          className="flex items-center justify-between w-full"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ 
+            duration: 0.5,
+            type: "spring",
+            stiffness: 100
+          }}
+        >
+          <NavbarLogo />
+          
+          <div className="hidden md:flex items-center space-x-6">
+            <NavbarLinks />
             <UserMenu 
               user={user} 
               userRole={userRole} 
@@ -64,14 +82,25 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile menu button */}
-          <button 
-            className="md:hidden text-foreground focus:outline-none" 
+          <motion.button 
+            className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-gray-100/80 text-gray-700 focus:outline-none"
+            whileTap={{ scale: 0.95 }}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
           >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={mobileMenuOpen ? 'close' : 'menu'}
+                initial={{ opacity: 0, rotate: -90 }}
+                animate={{ opacity: 1, rotate: 0 }}
+                exit={{ opacity: 0, rotate: 90 }}
+                transition={{ duration: 0.2 }}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </motion.div>
+            </AnimatePresence>
+          </motion.button>
+        </motion.div>
       </NavbarContainer>
 
       {/* Mobile menu */}

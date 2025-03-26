@@ -1,34 +1,23 @@
-import React, { ReactNode, useState, useEffect } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+
+import React, { useState, useEffect } from 'react';
+
 interface NavbarContainerProps {
-  children: ReactNode;
+  children: React.ReactNode;
   scrolled: boolean;
 }
-const NavbarContainer: React.FC<NavbarContainerProps> = ({
-  children,
-  scrolled
-}) => {
-  const isMobile = useIsMobile();
-  const [safeAreaTop, setSafeAreaTop] = useState(0);
 
-  // Detect safe area insets for newer mobile devices
-  useEffect(() => {
-    if (isMobile) {
-      // Try to get the safe area top value if available
-      const safeAreaValue = getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0px';
-      setSafeAreaTop(parseInt(safeAreaValue, 10) || 0);
-    }
-  }, [isMobile]);
-  return <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 w-full
-        ${scrolled ? 'bg-white shadow-sm' : 'bg-transparent'}
-        ${isMobile ? 'safe-area-top' : ''}`} style={safeAreaTop ? {
-    paddingTop: `${safeAreaTop}px`
-  } : {}}>
-      <div className="w-full bg-neutral-50 md:py-[10px] mx-0 my-0 py-0 px-[13px]">
-        <div className="w-full flex items-center justify-between max-w-[1400px] md:px-[240px] mx-[30px] px-[59px]">
-          {children}
-        </div>
+const NavbarContainer: React.FC<NavbarContainerProps> = ({ children, scrolled }) => {
+  return (
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      scrolled 
+        ? 'bg-white/95 backdrop-blur-md shadow-sm py-2' 
+        : 'bg-white/80 backdrop-blur-sm py-4'
+    }`}>
+      <div className="max-w-[1400px] mx-auto px-4 md:px-6 flex items-center justify-between">
+        {children}
       </div>
-    </header>;
+    </header>
+  );
 };
+
 export default NavbarContainer;
