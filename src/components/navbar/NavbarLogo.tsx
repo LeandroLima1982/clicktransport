@@ -4,11 +4,12 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
 
-const NavbarLogo: React.FC = () => {
+interface NavbarLogoProps {
+  logoUrl?: string;
+}
+
+const NavbarLogo: React.FC<NavbarLogoProps> = ({ logoUrl = '/lovable-uploads/4426e89f-4ae5-492a-84b3-eb7935af6e46.png' }) => {
   const { user, userRole } = useAuth();
-  
-  // Get logo URL from environment or use default
-  const logoUrl = '/lovable-uploads/4426e89f-4ae5-492a-84b3-eb7935af6e46.png';
   
   // Define the appropriate homepage route based on user role
   const getHomeRoute = () => {
