@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const DriverHeader: React.FC = () => {
   const { companyContext } = useAuth();
-  const [logoUrl, setLogoUrl] = useState<string>('/lovable-uploads/8a9d78f7-0536-4e85-9c4b-0debc4c61fcf.png');
+  const [logoUrl, setLogoUrl] = useState<string>('/lovable-uploads/318b76fe-b700-4667-b957-7da8cd9c254a.png');
 
   useEffect(() => {
     const fetchLogoSetting = async () => {
@@ -27,6 +27,7 @@ const DriverHeader: React.FC = () => {
         }
         
         if (data && data.image_url) {
+          console.log('Driver header: Logo URL loaded from Supabase:', data.image_url);
           setLogoUrl(data.image_url);
         }
       } catch (error) {
