@@ -77,11 +77,7 @@ const TransportTypes: React.FC = () => {
   }, []);
   return <section className="w-full py-[8px] mx-[2px] my-[20px] bg-white">
       <div className="max-w-[1400px] mx-auto px-4 w-full bg-white md:px-0 py-[4px]">
-        <div className="text-center mb-12">
-          <h2 className="section-title mb-6 text-gray-600 my-[31px] text-xl">Sua Plataforma de Transfer Executivo</h2>
-          <p className="text-[#2A2A2A] max-w-2xl mx-auto">Oferecemos uma variedade de transporte executivo
-  para atender suas necessidades com pontualidade e qualidade.</p>
-        </div>
+        
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {transportTypes.map((type, index) => <div key={index} className="card-service border border-[#D4AF37] shadow-[0_2px_8px_rgba(0,35,102,0.1)]">

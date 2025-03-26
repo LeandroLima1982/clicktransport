@@ -4,12 +4,13 @@ import { ArrowRight } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
-  return <section className="relative py-20 md:py-32 overflow-hidden">
+  return <section className="relative py-20 overflow-hidden md:py-[19px]">
       <div className="container mx-auto px-4 md:px-6 relative z-10">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tighter mb-6">Sua plataforma
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tighter mb-6">Sua plataforma 
  de Transfer Executivo </h1>
-          <p className="text-lg md:text-xl text-gray-600 mb-8">Viagens seguras e confortáveis para aeroportos, eventos e muito mais</p>
+          <p className="text-lg md:text-xl text-gray-600 mb-8">Oferecemos uma variedade de transportes executivos 
+para atender suas necessidades com pontualidade e qualidade.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" className="gap-2 text-base font-medium" onClick={() => document.getElementById('booking-form')?.scrollIntoView({
             behavior: 'smooth'
