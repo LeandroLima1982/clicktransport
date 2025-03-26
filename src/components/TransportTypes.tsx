@@ -75,10 +75,10 @@ const TransportTypes: React.FC = () => {
     };
     fetchImages();
   }, []);
-  return <section className="w-full py-[8px] mx-[2px] my-[24px] bg-[#000a0e]/0">
-      <div className="max-w-[1400px] px-4 w-full md:px-0 mx-0 my-[33px]">
+  return <section className="w-full bg-[#000a0e]/0 mx-0 py-0 my-0">
+      <div className="max-w-[1400px] w-full md:px-0 my-[75px] mx-0 px-[13px]">
         <div className="text-center mb-12">
-          <h2 className="section-title mb-6 text-gray-600 my-0 text-xl">Plataforma inteligente para solicitar transferes executivos</h2>
+          <h2 className="section-title mb-6 text-gray-600 my-0 text-xl">Sua Plataforma inteligente de transporte executivo</h2>
           
         </div>
 
