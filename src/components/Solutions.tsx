@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,7 +51,7 @@ const SolutionCard = ({ solution, index }) => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setShowButton(true);
-    }, 1000); // 1 second delay (changed from 2 seconds)
+    }, 1000); // 1 second delay
   };
 
   const stopTimer = () => {
@@ -112,7 +111,7 @@ const SolutionCard = ({ solution, index }) => {
             onClick={scrollToBookingForm}
           >
             <span className="flex items-center">
-              Solicitar Motorista <ArrowRight className="ml-2 h-4 w-4 animate-slide-right" />
+              Solicitar <ArrowRight className="ml-2 h-4 w-4 animate-slide-right" />
             </span>
           </Button>
         ) : (
