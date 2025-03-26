@@ -23,7 +23,12 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
 }) => {
   const menuLinks = [
     { title: 'Home', href: '/' },
-    { title: 'Serviços', href: '/services' },
+    { title: 'Serviços', href: '/#solutions-section', action: () => {
+      document.getElementById('solutions-section')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }},
     { title: 'Sobre Nós', href: '/about' },
     { title: 'Contato', href: '/contact' },
   ];
@@ -80,13 +85,29 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             <div className="p-4 space-y-4">
               {menuLinks.map((link) => (
                 <motion.div key={link.href} variants={itemVariants}>
-                  <Link
-                    to={link.href}
-                    className="block py-3 px-4 text-lg font-medium text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
-                    onClick={onClose}
-                  >
-                    {link.title}
-                  </Link>
+                  {link.action ? (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        if (window.location.pathname === '/') {
+                          link.action();
+                        } else {
+                          window.location.href = link.href;
+                        }
+                      }}
+                      className="block w-full text-left py-3 px-4 text-lg font-medium text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      {link.title}
+                    </button>
+                  ) : (
+                    <Link
+                      to={link.href}
+                      className="block py-3 px-4 text-lg font-medium text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                      onClick={onClose}
+                    >
+                      {link.title}
+                    </Link>
+                  )}
                 </motion.div>
               ))}
               

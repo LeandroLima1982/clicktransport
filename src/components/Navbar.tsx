@@ -106,7 +106,7 @@ const Navbar: React.FC = () => {
     <>
       <NavbarContainer scrolled={scrolled}>
         <motion.div
-          className="flex items-center justify-between w-full"
+          className="flex items-center justify-between w-full md:justify-between"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ 
@@ -115,7 +115,9 @@ const Navbar: React.FC = () => {
             stiffness: 100
           }}
         >
-          <NavbarLogo />
+          <div className={`${isMobile ? 'flex-1 flex justify-center' : ''}`}>
+            <NavbarLogo />
+          </div>
           
           <div className="hidden md:flex items-center space-x-6">
             <NavbarLinks />

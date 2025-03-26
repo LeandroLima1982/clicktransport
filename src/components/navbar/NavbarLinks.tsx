@@ -15,7 +15,7 @@ const NavbarLinks: React.FC = () => {
 
   const links = [
     { name: 'Início', path: '/', action: null },
-    { name: 'Serviços', path: '/services', action: () => scrollToSection('solutions-section') },
+    { name: 'Serviços', path: '/#solutions-section', action: () => scrollToSection('solutions-section') },
     { name: 'Sobre Nós', path: '/about', action: null },
     { name: 'Contato', path: '/contact', action: null },
     { name: 'Seja Investidor', path: '/investor/auth', action: null },
@@ -35,7 +35,8 @@ const NavbarLinks: React.FC = () => {
   return (
     <nav className="flex items-center space-x-2">
       {links.map((link) => {
-        const isActive = location.pathname === link.path;
+        const isActive = location.pathname === link.path || 
+                        (location.pathname === '/' && link.path.startsWith('/#'));
         
         return (
           <motion.div
