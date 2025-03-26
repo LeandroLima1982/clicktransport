@@ -12,14 +12,13 @@ const Hero: React.FC = () => {
       <div className="w-full pt-10 pb-16 md:pt-20 md:pb-32 relative rounded-b-[40px] md:rounded-b-[80px] bg-white py-[54px]">
         <div className="w-full text-center mb-8 md:mb-12 max-w-[1400px] mx-auto px-4 md:px-6">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 animate-fade-in">
-            <span className="block mb-2 text-center font-extrabold text-5xl text-sky-900">Transporte Executivo</span>
-            <span className="block mt-1 md:mt-2 my-0 text-5xl font-extrabold text-yellow-600">Inteligente</span>
+            <span className="block mb-2 text-center font-extrabold text-sky-900 text-4xl">Transporte Executivo</span>
+            <span className="block mt-1 md:mt-2 my-0 font-extrabold text-yellow-600 text-3xl">Eficiente</span>
           </h1>
           
           <p style={{
           animationDelay: '0.2s'
-        }} className="mb-6 md:mb-8 animate-fade-in opacity-90 text-gray-600 max-w-2xl mx-auto font-light md:text-lg text-base">Conectamos motoristas executivos a empresas offshore,
- agências de turismo, hotéis e pousadas. Sempre com pontualida,eficiência e segurança.</p>
+        }} className="mb-6 md:mb-8 animate-fade-in opacity-90 text-gray-600 max-w-2xl mx-auto font-light md:text-lg text-base">Sempre com pontualida.</p>
           
           <div className="flex justify-center animate-fade-in" style={{
           animationDelay: '0.3s'
