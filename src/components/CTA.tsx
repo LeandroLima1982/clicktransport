@@ -1,11 +1,20 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Car, Phone, Clock } from 'lucide-react';
+
 const CTA: React.FC = () => {
+  const scrollToBookingForm = () => {
+    document.getElementById('request-service')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  };
+
   return <section className="w-full bg-[#002366] text-white">
       <div className="max-w-[1400px] mx-auto px-4 md:px-6 w-full py-12 md:py-16">
         <h2 className="text-2xl md:text-3xl font-bold mb-8">Reserve Seu
- Transfer Agora!</h2>
+ Transfer Agora!</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-8">
           <div className="flex flex-col items-center">
@@ -40,13 +49,16 @@ const CTA: React.FC = () => {
         </div>
         
         <div className="text-center">
-          <a href="#request-service">
-            <Button size="lg" className="rounded-md px-8 py-6 text-base font-bold bg-[#D4AF37] hover:bg-[#C69C21] text-[#002366]">
-              Solicitar Transfer
-            </Button>
-          </a>
+          <Button 
+            size="lg" 
+            className="rounded-md px-8 py-6 text-base font-bold bg-[#D4AF37] hover:bg-[#C69C21] text-[#002366]"
+            onClick={scrollToBookingForm}
+          >
+            Solicitar Transfer
+          </Button>
         </div>
       </div>
     </section>;
 };
+
 export default CTA;

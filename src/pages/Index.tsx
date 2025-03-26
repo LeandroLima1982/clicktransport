@@ -36,7 +36,7 @@ const Index = () => {
       <div className="w-full bg-slate-50/0">
         <Hero />
         <TransportTypes />
-        <div id="request-service" className="relative max-w-[1000px] mx-auto py-10 md:px-6 px-0 scroll-mt-20">
+        <div id="request-service" className="relative max-w-[1000px] mx-auto py-12 md:px-6 px-4 scroll-mt-24">
           <div className="shadow-xl animate-scale-in">
             <BookingForm />
           </div>

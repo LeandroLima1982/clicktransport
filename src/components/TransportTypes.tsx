@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { Link } from 'react-router-dom';
 import { 
   Carousel, 
   CarouselContent, 
@@ -96,6 +95,13 @@ const TransportTypes: React.FC = () => {
     setHoveredCard(null);
   };
 
+  const scrollToBookingForm = () => {
+    document.getElementById('request-service')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  };
+
   return (
     <section className="w-full py-[8px] mx-[2px] my-[20px] bg-white">
       <div className="max-w-[1400px] mx-auto px-4 w-full bg-white md:px-6 py-[4px]">
@@ -136,14 +142,13 @@ const TransportTypes: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-500">{type.duration}</span>
                       {hoveredCard === type.id && (
-                        <Link to="/#request-service" smooth="true" spy="true" offset={-70} duration={500}>
-                          <Button 
-                            size="sm"
-                            className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 py-2 text-sm animate-fade-in"
-                          >
-                            Agendar
-                          </Button>
-                        </Link>
+                        <Button 
+                          size="sm"
+                          className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 py-2 text-sm animate-fade-in"
+                          onClick={scrollToBookingForm}
+                        >
+                          Agendar
+                        </Button>
                       )}
                     </div>
                   </div>
