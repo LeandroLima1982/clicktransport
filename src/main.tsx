@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App.tsx'
 import './index.css'
 import { Toaster } from "@/components/ui/toaster"
-import { AuthProvider } from '@/hooks/useAuth'
+import { AuthProvider } from '@/hooks/auth'
 import { ThemeProvider } from 'next-themes'
 import { Toaster as SonnerToaster } from 'sonner'
 import { BrowserRouter } from 'react-router-dom'

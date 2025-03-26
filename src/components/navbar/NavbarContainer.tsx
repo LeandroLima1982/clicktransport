@@ -45,8 +45,10 @@ const NavbarContainer: React.FC<NavbarContainerProps> = ({ children, scrolled })
     }`}>
       <div className="max-w-[1400px] mx-auto px-4 md:px-6 flex items-center justify-between">
         {React.Children.map(children, child => {
-          // Pass logoUrl to child components
-          if (React.isValidElement(child)) {
+          // Pass logoUrl to child components that accept it
+          if (React.isValidElement(child) && 
+              // Check if the component can accept logoUrl prop
+              typeof child.type === 'function') {
             return React.cloneElement(child, { logoUrl });
           }
           return child;
