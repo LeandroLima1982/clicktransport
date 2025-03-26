@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -13,24 +12,22 @@ import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import BookingForm from '@/components/BookingForm';
-
 const Index = () => {
-  const { isLoading, user } = useAuth();
+  const {
+    isLoading,
+    user
+  } = useAuth();
 
   // Show a brief loading indicator only during initial authentication check
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen w-full text-primary">
+    return <div className="flex items-center justify-center h-screen w-full text-primary">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F8D748]"></div>
         <div className="ml-3 text-lg font-medium">Carregando...</div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <main className="w-full">
+  return <main className="w-full bg-white/0">
       <Navbar />
-      <div className="w-full bg-slate-50">
+      <div className="w-full bg-slate-50 mx-[85px]">
         <Hero />
         <TransportTypes />
         <div className="relative max-w-[1000px] mx-auto py-10 px-4 md:px-6">
@@ -45,8 +42,6 @@ const Index = () => {
         <CTA />
         <Footer />
       </div>
-    </main>
-  );
+    </main>;
 };
-
 export default Index;
