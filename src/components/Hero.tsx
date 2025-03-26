@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
-import BookingForm from './BookingForm';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
   return <section className="relative overflow-hidden w-full bg-slate-50">
@@ -23,13 +24,6 @@ const Hero: React.FC = () => {
         }}>
             <a href="#request-service" className="w-full max-w-xs md:max-w-none md:w-auto">
             </a>
-          </div>
-        </div>
-        
-        {/* Modernized Booking Form */}
-        <div className="relative -mb-28 md:-mb-32 max-w-[1000px] mx-auto py-0 my-[3px] md:px-[20px] px-0">
-          <div className="shadow-xl animate-scale-in">
-            <BookingForm />
           </div>
         </div>
       </div>

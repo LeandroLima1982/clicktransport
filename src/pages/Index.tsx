@@ -12,6 +12,7 @@ import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
+import BookingForm from '@/components/BookingForm';
 
 const Index = () => {
   const { isLoading, user } = useAuth();
@@ -32,6 +33,11 @@ const Index = () => {
       <div className="w-full bg-slate-50">
         <Hero />
         <TransportTypes />
+        <div className="relative max-w-[1000px] mx-auto py-10 px-4 md:px-6">
+          <div className="shadow-xl animate-scale-in">
+            <BookingForm />
+          </div>
+        </div>
         <Solutions />
         <ProcessSteps />
         <Testimonials />
