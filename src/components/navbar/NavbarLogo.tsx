@@ -8,7 +8,7 @@ interface NavbarLogoProps {
   logoUrl?: string;
 }
 
-const NavbarLogo: React.FC<NavbarLogoProps> = ({ logoUrl = '/lovable-uploads/4426e89f-4ae5-492a-84b3-eb7935af6e46.png' }) => {
+const NavbarLogo: React.FC<NavbarLogoProps> = ({ logoUrl = '/lovable-uploads/318b76fe-b700-4667-b957-7da8cd9c254a.png' }) => {
   const { user, userRole } = useAuth();
   
   // Define the appropriate homepage route based on user role

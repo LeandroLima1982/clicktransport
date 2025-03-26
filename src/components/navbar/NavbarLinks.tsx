@@ -11,6 +11,8 @@ const NavbarLinks: React.FC = () => {
     { name: 'Serviços', path: '/services' },
     { name: 'Sobre Nós', path: '/about' },
     { name: 'Contato', path: '/contact' },
+    { name: 'Seja Investidor', path: '/investor/auth' },
+    { name: 'Seja Parceiro', path: '/auth?register=true&type=company' },
   ];
 
   return (
