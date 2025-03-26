@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 
 interface NavbarLogoProps {
   logoUrl?: string;
@@ -10,6 +10,10 @@ interface NavbarLogoProps {
 
 const NavbarLogo: React.FC<NavbarLogoProps> = ({ logoUrl = '/lovable-uploads/318b76fe-b700-4667-b957-7da8cd9c254a.png' }) => {
   const { user, userRole } = useAuth();
+  const { scrollY } = useScroll();
+  
+  // Create a motion value that transforms based on scroll position
+  const logoHeight = useTransform(scrollY, [0, 100], [60, 45]);
   
   // Define the appropriate homepage route based on user role
   const getHomeRoute = () => {
@@ -40,10 +44,7 @@ const NavbarLogo: React.FC<NavbarLogoProps> = ({ logoUrl = '/lovable-uploads/318
           src={logoUrl}
           alt="LaTransfer Logo"
           className="w-auto object-contain"
-          initial={{ height: 60 }}
-          animate={{ 
-            height: document.documentElement.scrollTop > 10 ? 45 : 60 
-          }}
+          style={{ height: logoHeight }}
           transition={{ 
             type: "spring", 
             stiffness: 400, 
