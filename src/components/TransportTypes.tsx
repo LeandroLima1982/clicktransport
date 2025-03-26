@@ -75,7 +75,7 @@ const TransportTypes: React.FC = () => {
     };
     fetchImages();
   }, []);
-  return <section className="bg-gray-50 w-full py-[8px] mx-[2px] my-[20px]">
+  return <section className="w-full py-[8px] mx-[2px] my-[20px] bg-white">
       <div className="max-w-[1400px] mx-auto px-4 w-full md:px-[7px] bg-white">
         <div className="text-center mb-12">
           <h2 className="section-title mb-6 my-[29px] text-gray-600">Sua Plataforma de Transfer Executivo</h2>
