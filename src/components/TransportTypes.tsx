@@ -1,8 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
+import { 
+  Carousel, 
+  CarouselContent, 
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious
+} from '@/components/ui/carousel';
 
 // Definir tipo para os dados de transporte
 interface TransportType {
@@ -43,6 +51,7 @@ const defaultTransportTypes: TransportType[] = [{
 const TransportTypes: React.FC = () => {
   const [transportTypes, setTransportTypes] = useState<TransportType[]>(defaultTransportTypes);
   const [loading, setLoading] = useState(true);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -79,49 +88,74 @@ const TransportTypes: React.FC = () => {
     fetchImages();
   }, []);
 
+  const handleCardHover = (id: string) => {
+    setHoveredCard(id);
+  };
+
+  const handleCardLeave = () => {
+    setHoveredCard(null);
+  };
+
   return (
     <section className="w-full py-[8px] mx-[2px] my-[20px] bg-white">
-      <div className="max-w-[1400px] mx-auto px-4 w-full bg-white md:px-0 py-[4px]">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {transportTypes.map((type, index) => (
-            <Link 
-              to="/#request-service" 
-              key={index}
-              className="block transform transition-all duration-300 hover:translate-y-[-4px]"
-            >
-              <div className="h-full rounded-xl overflow-hidden bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <div className="relative">
-                  <img 
-                    src={type.image} 
-                    alt={type.title} 
-                    className="w-full h-48 object-cover"
-                    onError={e => {
-                      (e.target as HTMLImageElement).src = '/placeholder.svg';
-                    }}
-                  />
-                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black/50" />
-                  <div className="absolute bottom-4 right-4 bg-primary p-2 rounded-full shadow-lg">
-                    <ArrowRight className="h-5 w-5 text-white" />
+      <div className="max-w-[1400px] mx-auto px-4 w-full bg-white md:px-6 py-[4px]">
+        <Carousel
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+          className="w-full"
+        >
+          <CarouselContent className="-ml-2 md:-ml-4">
+            {transportTypes.map((type, index) => (
+              <CarouselItem key={index} className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
+                <div 
+                  className="relative h-full overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl" 
+                  onMouseEnter={() => handleCardHover(type.id)}
+                  onMouseLeave={handleCardLeave}
+                  onTouchStart={() => handleCardHover(type.id)}
+                >
+                  <div className="relative">
+                    <img 
+                      src={type.image} 
+                      alt={type.title} 
+                      className="w-full h-48 object-cover transition-transform duration-500 hover:scale-105"
+                      onError={e => {
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
+                    />
+                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black/50" />
+                    <div className="absolute bottom-4 right-4 bg-primary p-2 rounded-full shadow-lg">
+                      <ArrowRight className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  
+                  <div className="p-4">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">{type.title}</h3>
+                    <p className="text-sm text-gray-600 mb-3">{type.description}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-500">{type.duration}</span>
+                      {hoveredCard === type.id && (
+                        <Link to="/#request-service" smooth="true" spy="true" offset={-70} duration={500}>
+                          <Button 
+                            size="sm"
+                            className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 py-2 text-sm animate-fade-in"
+                          >
+                            Agendar
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
-                
-                <div className="p-4">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">{type.title}</h3>
-                  <p className="text-sm text-gray-600 mb-3">{type.description}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-500">{type.duration}</span>
-                    <Button 
-                      size="sm"
-                      className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 py-2 text-sm"
-                    >
-                      Agendar
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <div className="hidden md:block">
+            <CarouselPrevious className="absolute -left-12 top-1/2" />
+            <CarouselNext className="absolute -right-12 top-1/2" />
+          </div>
+        </Carousel>
       </div>
     </section>
   );
