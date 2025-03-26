@@ -1,10 +1,13 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Car, Phone, Clock } from 'lucide-react';
+
 const CTA: React.FC = () => {
-  return <section className="w-full bg-[#002366] text-white">
+  return (
+    <section className="w-full bg-[#002366] text-white">
       <div className="max-w-[1400px] mx-auto px-4 md:px-6 w-full py-12 md:py-16">
-        <h2 className="text-2xl md:text-3xl font-bold mb-8 mx-[12px]">Reserve Seu Transfer Agora!</h2>
+        <h2 className="text-2xl md:text-3xl font-bold mb-8">Reserve Seu Transfer Agora!</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-8">
           <div className="flex flex-col items-center">
@@ -46,6 +49,8 @@ const CTA: React.FC = () => {
           </a>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
+
 export default CTA;

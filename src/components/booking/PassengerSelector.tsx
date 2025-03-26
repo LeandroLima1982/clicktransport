@@ -22,7 +22,7 @@ const PassengerSelector: React.FC<PassengerSelectorProps> = ({
     setOpen(false);
   };
   return <div className="space-y-2">
-      <label className="text-white -700 block text-sm font-medium">
+      <label className="text-white-700 block text-sm font-medium">
         Passageiros
       </label>
       <Select value={value} onValueChange={handleValueChange} open={open} onOpenChange={setOpen}>
