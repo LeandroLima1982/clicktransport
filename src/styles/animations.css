@@ -23,3 +23,17 @@
 .animate-slide-right {
   animation: slide-right 1s ease-in-out infinite;
 }
+
+/* Fade in animation */
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-in-out forwards;
+}

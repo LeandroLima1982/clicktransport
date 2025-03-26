@@ -52,7 +52,7 @@ const SolutionCard = ({ solution, index }) => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setShowButton(true);
-    }, 2000); // 2 seconds delay
+    }, 1000); // 1 second delay (changed from 2 seconds)
   };
 
   const stopTimer = () => {
@@ -105,21 +105,19 @@ const SolutionCard = ({ solution, index }) => {
         </ul>
       </CardContent>
       <CardFooter>
-        <Button 
-          variant="outline" 
-          className={`w-full transition-all duration-500 ${
-            showButton ? 'bg-primary text-white' : 'group-hover:bg-primary/10'
-          }`}
-          onClick={scrollToBookingForm}
-        >
-          {showButton ? (
-            <>
+        {showButton ? (
+          <Button 
+            variant="default"
+            className="w-full bg-primary text-white transition-all duration-300 transform animate-fade-in"
+            onClick={scrollToBookingForm}
+          >
+            <span className="flex items-center">
               Solicitar Motorista <ArrowRight className="ml-2 h-4 w-4 animate-slide-right" />
-            </>
-          ) : (
-            "Saiba mais"
-          )}
-        </Button>
+            </span>
+          </Button>
+        ) : (
+          <div className="w-full h-10"></div> // Placeholder to maintain card height
+        )}
       </CardFooter>
     </Card>
   );
