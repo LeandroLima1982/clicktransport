@@ -78,8 +78,8 @@ const TransportTypes: React.FC = () => {
   return <section className="bg-gray-50 w-full py-[8px] mx-[2px] my-[51px]">
       <div className="max-w-[1400px] mx-auto px-4 md:px-6 w-full">
         <div className="text-center mb-12">
-          <h2 className="section-title mb-6 my-[29px] text-gray-600">Sua Plataforma de Transfer Executivo</h2>
-          <p className="text-[#2A2A2A] max-w-2xl mx-auto">Oferecemos uma variedade de opções de transporte executivo para atender suas necessidades com qualidade e segurança garantidas.</p>
+          <h2 className="section-title mb-6 text-gray-600 my-[20px]">Sua Plataforma de Transfer Executivo</h2>
+          
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
