@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -78,33 +79,33 @@ const TransportTypes: React.FC = () => {
   return <section className="bg-gray-50 w-full py-[8px] mx-[2px] my-[51px]">
       <div className="max-w-[1400px] mx-auto px-4 md:px-6 w-full">
         <div className="text-center mb-12">
-          <h2 className="section-title mb-6 my-[29px]">Soluções em Transporte Sob Demanda </h2>
-          <p className="text-foreground/70 max-w-2xl mx-auto">Oferecemos uma variedade de opções de transporte
- para atender suas necessidades com qualidade e segurança garantidas.</p>
+          <h2 className="section-title mb-6 my-[29px] text-[#002366]">Soluções em Transporte Sob Demanda </h2>
+          <p className="text-[#2A2A2A] max-w-2xl mx-auto">Oferecemos uma variedade de opções de transporte
+ para atender suas necessidades com qualidade e segurança garantidas.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {transportTypes.map((type, index) => <div key={index} className="card-service">
+          {transportTypes.map((type, index) => <div key={index} className="card-service border border-[#D4AF37] shadow-[0_2px_8px_rgba(0,35,102,0.1)]">
               <div className="relative">
                 <img src={type.image} alt={type.title} className="card-service-image" onError={e => {
               // Fallback para imagem padrão em caso de erro
               (e.target as HTMLImageElement).src = '/placeholder.svg';
             }} />
-                <div className="absolute bottom-0 right-0 bg-primary p-2 text-xs font-bold">
-                  <ArrowRight className="h-4 w-4" />
+                <div className="absolute bottom-0 right-0 bg-[#002366] p-2 text-xs font-bold">
+                  <ArrowRight className="h-4 w-4 text-white" />
                 </div>
               </div>
               <div className="card-service-content">
-                <h3 className="font-bold mb-2">{type.title}</h3>
-                <p className="text-sm text-foreground/70 mb-3">{type.description}</p>
-                <p className="text-xs font-medium">{type.duration}</p>
+                <h3 className="font-bold mb-2 text-[#002366]">{type.title}</h3>
+                <p className="text-sm text-[#2A2A2A] mb-3">{type.description}</p>
+                <p className="text-xs font-medium text-[#2A2A2A]">{type.duration}</p>
               </div>
             </div>)}
         </div>
 
         <div className="text-center mt-10">
           <a href="#request-service">
-            <Button className="rounded-md">
+            <Button className="rounded-md bg-[#002366] text-white hover:bg-[#002366]/90">
               Ver Todos os Serviços
             </Button>
           </a>

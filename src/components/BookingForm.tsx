@@ -156,37 +156,37 @@ const BookingForm: React.FC = () => {
     return;
   };
 
-  return <div className="w-full bg-[#FEF7E4] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
-      <div className="pt-5 md:pt-7 pb-6 md:pb-8 bg-gradient-to-b from-amber-300 to-amber-200 py-0 px-[20px] md:px-[54px] bg-amber-500">
+  return <div className="w-full bg-[#f8f9fa] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
+      <div className="pt-5 md:pt-7 pb-6 md:pb-8 bg-gradient-to-b from-[#002366] to-[#003399] py-0 px-[20px] md:px-[54px]">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0">
-          <h3 className="font-extrabold text-xl md:text-2xl text-stone-700">Agendar viagem</h3>
+          <h3 className="font-extrabold text-xl md:text-2xl text-white">Agendar viagem</h3>
           <TripTypeTabs value={tripType} onChange={setTripType} />
         </div>
 
         <div className="space-y-4 md:space-y-5">
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="rounded-lg border border-amber-300/50 p-3 bg-amber-50/[0.29]">
-              <Label className="block text-sm font-semibold text-gray-700 mb-2">
+            <div className="rounded-lg border border-[#D4AF37]/50 p-3 bg-white/[0.15]">
+              <Label className="block text-sm font-semibold text-white mb-2">
                 De onde vai sair?
               </Label>
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 <div className="flex-1">
                   <div className="relative">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                      <MapPin className="h-4 w-4 text-amber-400" />
+                      <MapPin className="h-4 w-4 text-[#D4AF37]" />
                     </div>
                     <Input 
                       placeholder="Digite seu endereço: rua, número, bairro" 
                       value={originValue} 
                       onChange={handleManualOriginChange} 
-                      className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-10 focus:border-amber-300 focus:ring-amber-300 placeholder:text-gray-400"
+                      className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-10 focus:border-[#D4AF37] focus:ring-[#D4AF37] placeholder:text-gray-400"
                     />
                   </div>
                 </div>
                 <div className="w-full sm:w-[180px]">
                   <div className="flex">
                     <Select value={originCityId} onValueChange={setOriginCityId}>
-                      <SelectTrigger className="h-10 bg-white text-gray-700 border-gray-100 focus:border-amber-300 focus:ring-amber-300">
+                      <SelectTrigger className="h-10 bg-white text-gray-700 border-gray-100 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
                         <SelectValue placeholder="Selecione cidade" className="text-gray-500" />
                       </SelectTrigger>
                       <SelectContent className="bg-white">
@@ -200,27 +200,27 @@ const BookingForm: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-amber-300/50 p-3 bg-amber-50/35">
-              <Label className="block text-sm font-semibold text-gray-700 mb-2">
+            <div className="rounded-lg border border-[#D4AF37]/50 p-3 bg-white/[0.15]">
+              <Label className="block text-sm font-semibold text-white mb-2">
                 Para onde vai?
               </Label>
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 <div className="flex-1">
                   <div className="relative">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                      <MapPin className="h-4 w-4 text-amber-400" />
+                      <MapPin className="h-4 w-4 text-[#D4AF37]" />
                     </div>
                     <Input 
                       placeholder="Digite seu destino: rua, número, bairro" 
                       value={destinationValue} 
                       onChange={handleManualDestinationChange} 
-                      className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-10 focus:border-amber-300 focus:ring-amber-300 placeholder:text-gray-400"
+                      className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-10 focus:border-[#D4AF37] focus:ring-[#D4AF37] placeholder:text-gray-400"
                     />
                   </div>
                 </div>
                 <div className="w-full sm:w-[180px]">
                   <Select value={destinationCityId} onValueChange={setDestinationCityId}>
-                    <SelectTrigger className="h-10 bg-white text-gray-700 border-gray-100 focus:border-amber-300 focus:ring-amber-300">
+                    <SelectTrigger className="h-10 bg-white text-gray-700 border-gray-100 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
                       <SelectValue placeholder="Selecione cidade" className="text-gray-500" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
@@ -235,16 +235,16 @@ const BookingForm: React.FC = () => {
           </div>
 
           <div className="hidden md:flex justify-center items-center h-6 relative">
-            <Separator className="w-full bg-amber-300/60" />
-            <div className="absolute bg-amber-100 rounded-full p-1">
-              <ArrowRight className="h-4 w-4 text-amber-500" />
+            <Separator className="w-full bg-[#D4AF37]/60" />
+            <div className="absolute bg-white rounded-full p-1">
+              <ArrowRight className="h-4 w-4 text-[#002366]" />
             </div>
           </div>
 
           <div className="flex md:hidden justify-center items-center h-6 relative mb-2">
-            <Separator className="w-full bg-amber-300/60" />
-            <div className="absolute bg-amber-100 rounded-full p-1">
-              <ArrowDown className="h-4 w-4 text-amber-500" />
+            <Separator className="w-full bg-[#D4AF37]/60" />
+            <div className="absolute bg-white rounded-full p-1">
+              <ArrowDown className="h-4 w-4 text-[#002366]" />
             </div>
           </div>
 
@@ -252,7 +252,7 @@ const BookingForm: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-gray-700 block text-sm font-medium mb-2">
+              <Label className="text-white block text-sm font-medium mb-2">
                 Vai quando?
               </Label>
               <div className="flex flex-col sm:flex-row sm:space-x-0">
@@ -270,9 +270,9 @@ const BookingForm: React.FC = () => {
             </div>
           </div>
 
-          {tripType === 'roundtrip' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-amber-200">
+          {tripType === 'roundtrip' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-[#D4AF37]/40">
               <div>
-                <Label className="text-gray-700 block text-sm font-medium mb-2">
+                <Label className="text-white block text-sm font-medium mb-2">
                   Volta quando?
                 </Label>
                 <div className="flex flex-col sm:flex-row sm:space-x-0">
@@ -287,7 +287,7 @@ const BookingForm: React.FC = () => {
             </div>}
         </div>
 
-        <Button onClick={handleBooking} className="w-full rounded-lg mt-6 text-black text-lg font-medium h-12 md:h-14 bg-amber-400 hover:bg-amber-500 transition-all duration-300 shadow-md relative overflow-hidden my-[39px]" disabled={!originCityId || !destinationCityId}>
+        <Button onClick={handleBooking} className="w-full rounded-lg mt-6 text-white text-lg font-medium h-12 md:h-14 bg-[#D4AF37] hover:bg-[#C69C21] transition-all duration-300 shadow-md relative overflow-hidden my-[39px]" disabled={!originCityId || !destinationCityId}>
           <span className="relative z-10 flex items-center justify-center">
             Buscar
           </span>
