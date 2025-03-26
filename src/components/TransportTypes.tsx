@@ -77,7 +77,7 @@ const TransportTypes: React.FC = () => {
   }, []);
   return <section className="w-full bg-[#000a0e]/0 mx-0 py-0 my-0">
       <div className="max-w-[1400px] w-full md:px-0 my-[75px] mx-0 px-[13px]">
-        <div className="">
+        <div className="my-[50px]">
           <h2 className="section-title mb-6 my-0 text-2xl text-indigo-950 font-semibold mx-[30px]">Sua plataforma de transporte executivo</h2>
           
         </div>
