@@ -263,7 +263,7 @@ const BookingForm: React.FC = () => {
             </div>}
         </div>
 
-        <Button onClick={handleBooking} disabled={!originCityId || !destinationCityId} className="">
+        <Button onClick={handleBooking} disabled={!originCityId || !destinationCityId} className="w-full rounded-lg mt-6 text-white text-lg font-medium h-12 md:h-14 transition-all duration-300 shadow-md relative overflow-hidden my-[39px] bg-yellow-600 hover:bg-yellow-500">
           <span className="relative z-10 flex items-center justify-center">
             Buscar
           </span>
