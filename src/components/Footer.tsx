@@ -25,13 +25,13 @@ const Footer: React.FC = () => {
     fetchFooterLogo();
   }, []);
   return <footer className="text-white pt-16 pb-8 w-full bg-blue-950">
-      <div className="content-container">
+      <div className="">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           <div>
             <div className="flex items-center mb-6">
               <img src={footerLogoUrl} alt="LaTransfer Logo" className="h-10 w-auto" />
             </div>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-300 mb-4 text-center">
               A principal plataforma que conecta clientes com empresas de transporte para serviços de transfer corporativo e turístico.
             </p>
             <div className="flex space-x-4">
@@ -105,16 +105,13 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="font-semibold text-lg mb-6">Contato</h3>
             <ul className="space-y-4">
-              <li className="flex items-start">
-                <MapPin className="h-5 w-5 mr-3 text-primary mt-0.5" />
-                <span className="text-gray-300">
-                  Av. Rio Branco, 156, Centro<br />
-                  Rio de Janeiro, RJ - 20040-901
-                </span>
-              </li>
+              
               <li className="flex items-center">
                 <Phone className="h-5 w-5 mr-3 text-primary" />
-                <span className="text-gray-300">(21) 99999-9999</span>
+                <span className="text-gray-300">Rua Humberto de Campos 1107 Enseadas das Gaivotas
+Rio das Ostras -RJ
+
+(22) 98100-2904</span>
               </li>
               <li className="flex items-center">
                 <Mail className="h-5 w-5 mr-3 text-primary" />

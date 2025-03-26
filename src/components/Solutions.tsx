@@ -34,7 +34,7 @@ const solutions = [{
   features: ['Roteiros personalizados', 'Guias especializados', 'Experiência local']
 }];
 const Solutions: React.FC = () => {
-  return <section className="py-20 bg-white relative overflow-hidden w-full">
+  return <section className="bg-white relative overflow-hidden w-full py-[7px]">
       <div className="absolute top-0 inset-0 bg-gradient-to-b from-white via-gray-50 to-white opacity-50 -z-10"></div>
       <div className="w-full px-[24px]">
         <div className="text-center mb-12">
