@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { UserRole } from '@/hooks/auth/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileTabBar } from './';
@@ -27,6 +27,14 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
 }) => {
   const isMobile = useIsMobile();
   
+  const scrollToSection = useCallback((sectionId: string) => {
+    document.getElementById(sectionId)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+    onClose();
+  }, [onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -50,9 +58,20 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             <Link to="/" className="text-xl font-medium" onClick={onClose}>
               Início
             </Link>
-            <Link to="/services" className="text-xl font-medium" onClick={onClose}>
+            <button 
+              className="text-xl font-medium text-left" 
+              onClick={() => {
+                if (window.location.pathname !== '/') {
+                  window.location.href = '/';
+                  // Add small delay to allow navigation to complete
+                  setTimeout(() => scrollToSection('solutions-section'), 100);
+                } else {
+                  scrollToSection('solutions-section');
+                }
+              }}
+            >
               Serviços
-            </Link>
+            </button>
             <Link to="/about" className="text-xl font-medium" onClick={onClose}>
               Sobre
             </Link>

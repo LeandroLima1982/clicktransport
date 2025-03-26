@@ -1,9 +1,25 @@
 
-/* Import specialized animation files */
-@import './animations/transitions.css';
 @import './animations/fade.css';
-@import './animations/slide.css';
 @import './animations/scale.css';
-@import './animations/special-effects.css';
-@import './animations/notification.css';
+@import './animations/slide.css';
+@import './animations/transitions.css';
 @import './animations/ui.css';
+@import './animations/notification.css';
+@import './animations/special-effects.css';
+
+/* Button slide animation */
+@keyframes slide-right {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-right {
+  animation: slide-right 1s ease-in-out infinite;
+}
