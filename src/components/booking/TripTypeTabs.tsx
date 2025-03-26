@@ -8,7 +8,7 @@ const TripTypeTabs: React.FC<TripTypeTabsProps> = ({
   value,
   onChange
 }) => {
-  return <ToggleGroup type="single" value={value} onValueChange={val => val && onChange(val as 'oneway' | 'roundtrip')} className="p-1 rounded-full bg-yellow-500 mx-0 my-[10px] py-[5px] px-[8px]">
+  return <ToggleGroup type="single" value={value} onValueChange={val => val && onChange(val as 'oneway' | 'roundtrip')} className="p-1 rounded-full bg-yellow-500 px-[23px] py-[5px] my-[21px] mx-[33px]">
       <ToggleGroupItem value="oneway" className="rounded-full text-sm px-4 py-1.5 data-[state=on]:bg-white data-[state=on]:shadow-sm data-[state=on]:text-amber-800 transition-colors">
         Somente Ida
       </ToggleGroupItem>
