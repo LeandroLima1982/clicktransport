@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BookingSteps } from './booking';
 import { useBookingForm } from '@/hooks/useBookingForm';
@@ -70,26 +69,22 @@ const BookingForm: React.FC = () => {
   const [destinationCity, setDestinationCity] = useState<string>('');
   const isMobile = useIsMobile();
   
-  // Steps state management
   const { currentStep, direction, totalSteps, goToNextStep, goToPreviousStep } = useBookingFormSteps();
   
-  // Check if location fields are filled to enable next button
-  const canProceedFromStep1 = () => {
-    return originCityId && destinationCityId && originValue && destinationValue;
+  const canProceedFromStep1 = (): boolean => {
+    return !!(originCityId && destinationCityId && originValue && destinationValue);
   };
   
-  // Check if date and time fields are filled to enable next button
-  const canProceedFromStep2 = () => {
+  const canProceedFromStep2 = (): boolean => {
     if (tripType === 'oneway') {
-      return date && time;
+      return !!(date && time);
     } else {
-      return date && time && returnDate && returnTime;
+      return !!(date && time && returnDate && returnTime);
     }
   };
   
-  // Final step validation before search
-  const canFinishBooking = () => {
-    return passengers && canProceedFromStep1() && canProceedFromStep2();
+  const canFinishBooking = (): boolean => {
+    return !!(passengers && canProceedFromStep1() && canProceedFromStep2());
   };
   
   useEffect(() => {
