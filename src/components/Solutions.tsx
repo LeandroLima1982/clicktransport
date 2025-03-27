@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, ArrowRight, User, Building2, Users, Plane, CarFront, Clock } from 'lucide-react';
@@ -43,9 +43,8 @@ const solutions = [
   }
 ];
 
-const SolutionCard = ({ solution, index, isPaused, visibleIndex }) => {
+const SolutionCard = ({ solution, index }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const cardRef = useRef(null);
   
   const scrollToBookingForm = () => {
     document.getElementById('request-service')?.scrollIntoView({
@@ -54,26 +53,17 @@ const SolutionCard = ({ solution, index, isPaused, visibleIndex }) => {
     });
   };
 
-  const isActive = visibleIndex === index;
-  
   return (
     <Card 
       key={index} 
-      ref={cardRef}
-      className={`border-none shadow-lg transition-all duration-500 overflow-hidden group relative stagger-item perspective-1000 transform-3d ${
-        isActive ? 'scale-105 shadow-xl translate-z-10' : 'scale-100 hover:translate-z-5'
-      }`}
-      onMouseEnter={() => {
-        setIsHovered(true);
-      }}
-      onMouseLeave={() => {
-        setIsHovered(false);
-      }}
+      className="border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       onTouchStart={() => setIsHovered(true)}
     >
-      <div className={`absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent transition-opacity duration-300 ${isActive || isHovered ? 'opacity-100' : 'opacity-0'}`}></div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       <CardHeader>
-        <div className="mb-4 transform transition-transform duration-300 group-hover:scale-110">{solution.icon}</div>
+        <div className="mb-4">{solution.icon}</div>
         <CardTitle className="text-xl">{solution.title}</CardTitle>
         <CardDescription className="text-foreground/70">{solution.description}</CardDescription>
       </CardHeader>
@@ -88,10 +78,10 @@ const SolutionCard = ({ solution, index, isPaused, visibleIndex }) => {
         </ul>
       </CardContent>
       <CardFooter className="flex flex-col">
-        {(isHovered || isActive) && (
+        {isHovered && (
           <Button 
-            variant="default" 
-            className="w-full bg-primary text-white transition-all duration-300 animate-pulse mt-2" 
+            variant="default"
+            className="w-full bg-primary text-white transition-all duration-300 animate-pulse mt-2"
             onClick={scrollToBookingForm}
           >
             <span className="flex items-center">
@@ -105,107 +95,19 @@ const SolutionCard = ({ solution, index, isPaused, visibleIndex }) => {
 };
 
 const Solutions: React.FC = () => {
-  const [isPaused, setIsPaused] = useState(false);
-  const [visibleIndex, setVisibleIndex] = useState(0);
-  const containerRef = useRef(null);
-  const autoScrollTimerRef = useRef(null);
-  
-  useEffect(() => {
-    // Set up the animation interval
-    const startAutoScroll = () => {
-      if (autoScrollTimerRef.current) {
-        clearInterval(autoScrollTimerRef.current);
-      }
-      
-      autoScrollTimerRef.current = setInterval(() => {
-        if (!isPaused) {
-          setVisibleIndex((prev) => (prev + 1) % solutions.length);
-        }
-      }, 4000); // Change card every 4 seconds
-    };
-    
-    startAutoScroll();
-    
-    // Clean up interval on unmount
-    return () => {
-      if (autoScrollTimerRef.current) {
-        clearInterval(autoScrollTimerRef.current);
-      }
-    };
-  }, [isPaused]);
-
-  useEffect(() => {
-    // Intersection Observer to detect when the section comes into view
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        // Pause animation when section is not in view
-        setIsPaused(!entry.isIntersecting);
-      });
-    }, {
-      root: null,
-      threshold: 0.1, // Trigger when 10% of the element is visible
-    });
-    
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-    
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
-
   return (
-    <section 
-      id="solutions-section" 
-      ref={containerRef}
-      className="py-24 px-4 bg-white scroll-mt-16 min-h-[800px] relative overflow-hidden"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={() => setIsPaused(true)}
-      onTouchEnd={() => setIsPaused(false)}
-    >
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-white/20 pointer-events-none z-10"></div>
-      
-      <div className="container mx-auto relative z-20">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 section-title">Nossas Soluções de Transfer</h2>
-          <p className="text-lg text-foreground/70">
-            Oferecemos uma variedade de serviços de transfer personalizados para atender às suas necessidades específicas
-          </p>
+    <section id="solutions-section" className="py-20 bg-white relative overflow-hidden w-full scroll-mt-24">
+      <div className="absolute top-0 inset-0 bg-gradient-to-b from-white via-gray-50 to-white opacity-50 -z-10"></div>
+      <div className="w-full px-[24px]">
+        <div className="text-center mb-12">
+          <h2 className="section-title mb-6">Soluções em Transporte Personalizado</h2>
+          <p className="text-foreground/70 max-w-2xl mx-auto">Oferecemos uma variedade de serviços de transfer para atender às necessidades específicas de cada cliente, garantindo conforto, segurança e pontualidade.</p>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 perspective-1000">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {solutions.map((solution, index) => (
-            <SolutionCard 
-              key={index}
-              solution={solution} 
-              index={index} 
-              isPaused={isPaused}
-              visibleIndex={visibleIndex}
-            />
+            <SolutionCard key={index} solution={solution} index={index} />
           ))}
-        </div>
-        
-        <div className="flex justify-center mt-12">
-          <div className="flex space-x-2">
-            {solutions.map((_, index) => (
-              <button
-                key={index}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === visibleIndex ? 'bg-primary w-6' : 'bg-gray-300'
-                }`}
-                onClick={() => {
-                  setVisibleIndex(index);
-                  setIsPaused(true);
-                  // Resume auto-scroll after a delay
-                  setTimeout(() => setIsPaused(false), 6000);
-                }}
-              />
-            ))}
-          </div>
         </div>
       </div>
     </section>

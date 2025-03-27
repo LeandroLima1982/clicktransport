@@ -4,7 +4,6 @@
 
 /* Import animations and transitions */
 @import './styles/animations.css';
-@import './styles/animations/ui.css';
 
 /* Import component styles */
 @import './styles/components.css';

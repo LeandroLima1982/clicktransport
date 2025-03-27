@@ -190,6 +190,7 @@
 }
 
 /* Enhanced responsiveness for different devices */
+/* Mobile devices (small) */
 @media (max-width: 375px) {
   .app-header {
     height: 60px;
@@ -245,9 +246,10 @@
   }
   
   input, button, textarea, select {
-    font-size: 16px;
+    font-size: 16px; /* Prevent zoom on focus for iOS */
   }
   
+  /* Add safe area padding for modern mobile devices */
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 16px);
   }
@@ -257,7 +259,7 @@
   }
 }
 
-/* Modern form inputs */
+/* Modern form inputs - updated colors for better visibility */
 .app-input-container {
   margin-bottom: 16px;
 }
