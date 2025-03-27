@@ -41,13 +41,12 @@ const Hero: React.FC = () => {
   };
   return <section className="relative overflow-hidden min-h-[500px] flex items-center mx-0">
       <div className="">
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="max-w-3xl text-center my-0 px-0 mx-[236px]">
           <h1 className="text-2xl font-extrabold mb-4 md:mb-6 tracking-tighter text-indigo-950 md:text-4xl">
             Sua Plataforma de Transporte Executivo
           </h1>
-          <p className="text-sm md:text-base mb-6 md:mb-8 font-light text-slate-900">
-            Conectamos você a motoristas executivos que atendam suas necessidades de transporte com qualidade e pontualidade.
-          </p>
+          <p className="text-sm md:text-base mb-6 md:mb-8 font-light text-slate-900">Conectamos você a motoristas executivos
+ que atendam suas necessidades de transporte com qualidade e pontualidade.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button size={isMobile ? "default" : "lg"} className="gap-2 text-base font-medium bg-primary hover:bg-primary/90" onClick={scrollToBookingForm}>
               Reserve Agora
