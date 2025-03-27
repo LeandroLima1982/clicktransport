@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -151,8 +150,8 @@ const TransportTypes: React.FC = () => {
     return {
       loop: true,
       dragFree: true,
-      containScroll: false, // Importante para manter o scroll contínuo
       slidesToScroll: 1
+      // Remove containScroll property as it's causing the type error
     };
   };
 
