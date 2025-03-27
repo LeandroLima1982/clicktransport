@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react'; // Added Loader2 import here
 import VehicleSelection from './steps/VehicleSelection';
 import PassengerInfo from './steps/PassengerInfo';
 import TripDetails from './steps/TripDetails';

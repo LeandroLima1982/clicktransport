@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { calculateRoute, RouteInfo } from '@/utils/routeUtils';
@@ -80,7 +79,6 @@ const MapPreview: React.FC<MapPreviewProps> = ({
       console.error("Erro ao calcular rota:", err);
       setError("Erro ao calcular a rota.");
     } finally {
-      setIsSubmitting(false);
       setIsCalculating(false);
     }
   };
