@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -157,10 +156,13 @@ const BookingForm: React.FC = () => {
 
   return (
     <div className="w-full bg-gradient-to-b from-[#1C4D9B]/80 to-[#002366] rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)] glass-morphism animate-float transition-all duration-300">
-      <div className="pt-5 md:pt-7 pb-6 md:pb-8 px-4 md:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0">
-          <h3 className="font-extrabold text-xl md:text-2xl text-white drop-shadow-sm">Solicitar Motorista</h3>
+      <div className="relative pt-5 md:pt-7 pb-6 md:pb-8 px-4 md:px-6 lg:px-8">
+        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
           <TripTypeTabs value={tripType} onChange={setTripType} />
+        </div>
+        
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0 mt-6 md:mt-0">
+          <h3 className="font-extrabold text-xl md:text-2xl text-white drop-shadow-sm">Solicitar Motorista</h3>
         </div>
 
         <div className="space-y-4 md:space-y-5">

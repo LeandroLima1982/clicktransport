@@ -17,25 +17,27 @@ const TripTypeTabs: React.FC<TripTypeTabsProps> = ({
   
   return (
     <TransitionEffect direction="fade" delay={150}>
-      <ToggleGroup 
-        type="single" 
-        value={value} 
-        onValueChange={val => val && onChange(val as 'oneway' | 'roundtrip')} 
-        className="p-1 rounded-full bg-yellow-500 py-[5px] my-[21px] mx-auto md:mx-[33px] px-[12px] max-w-[90%] md:max-w-full flex justify-center"
-      >
-        <ToggleGroupItem 
-          value="oneway" 
-          className="rounded-full text-sm py-1.5 data-[state=on]:bg-white data-[state=on]:shadow-sm data-[state=on]:text-amber-800 transition-colors px-[20px] md:px-[29px] flex-1 md:flex-none"
+      <div className="glass-morphism rounded-full px-1.5 py-1 border border-white/20 shadow-inner mx-auto max-w-[230px] md:max-w-[270px] flex justify-center">
+        <ToggleGroup 
+          type="single" 
+          value={value} 
+          onValueChange={val => val && onChange(val as 'oneway' | 'roundtrip')} 
+          className="w-full flex"
         >
-          Somente Ida
-        </ToggleGroupItem>
-        <ToggleGroupItem 
-          value="roundtrip" 
-          className="rounded-full text-sm px-4 py-1.5 data-[state=on]:bg-white data-[state=on]:shadow-sm data-[state=on]:text-amber-800 transition-colors flex-1 md:flex-none"
-        >
-          Ida e Volta
-        </ToggleGroupItem>
-      </ToggleGroup>
+          <ToggleGroupItem 
+            value="oneway" 
+            className="rounded-full text-xs md:text-sm py-1 flex-1 data-[state=on]:bg-[#F8D748] data-[state=on]:shadow-sm data-[state=on]:text-amber-800 transition-colors data-[state=on]:font-medium text-white"
+          >
+            Ida
+          </ToggleGroupItem>
+          <ToggleGroupItem 
+            value="roundtrip" 
+            className="rounded-full text-xs md:text-sm py-1 flex-1 data-[state=on]:bg-[#F8D748] data-[state=on]:shadow-sm data-[state=on]:text-amber-800 transition-colors data-[state=on]:font-medium text-white"
+          >
+            Ida e Volta
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
     </TransitionEffect>
   );
 };

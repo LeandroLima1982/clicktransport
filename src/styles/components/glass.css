@@ -7,6 +7,15 @@
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
+/* Modern glass switch effect */
+.glass-switch {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
 /* Shadows and hover effects */
 .smooth-shadow {
   box-shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.1);
