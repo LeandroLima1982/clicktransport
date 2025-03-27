@@ -8,10 +8,11 @@ import TripTypeTabs from './booking/TripTypeTabs';
 import TimeSelector from './TimeSelector';
 import PassengerSelector from './booking/PassengerSelector';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MapPin, Search, ArrowRight, Calendar, X, ChevronRight } from 'lucide-react';
+import { MapPin, Search, ArrowRight, Calendar, X, ChevronRight, UserIcon } from 'lucide-react';
 import TransitionEffect from '@/components/TransitionEffect';
 import LocationInput from './booking/LocationInput';
 import MapPreview from './booking/MapPreview';
+import useDestinationsService from '@/hooks/useDestinationsService';
 
 interface BookingData {
   origin: string;
@@ -366,7 +367,7 @@ const BookingForm: React.FC = () => {
                 
                 <div className="bg-gray-50 p-3 rounded-xl">
                   <div className="flex items-center mb-2">
-                    <Users className="h-4 w-4 text-gray-500 mr-2" />
+                    <UserIcon className="h-4 w-4 text-gray-500 mr-2" />
                     <span className="text-sm font-medium text-gray-700">Passageiros</span>
                   </div>
                   

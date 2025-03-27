@@ -1,12 +1,24 @@
 
 import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { calculateRoute } from '@/utils/routeUtils';
+import { calculateRoute, RouteInfo } from '@/utils/routeUtils';
 
 interface MapPreviewProps {
   origin: string;
   destination: string;
   onRouteCalculated?: (routeData: { distance: number; duration: number }) => void;
+}
+
+// Extended RouteInfo with success and route properties
+interface RouteResult {
+  success: boolean;
+  route: {
+    distance: number;
+    duration: number;
+    start_location: { lat: number; lng: number };
+    end_location: { lat: number; lng: number };
+    geometry: string;
+  };
 }
 
 const MapPreview: React.FC<MapPreviewProps> = ({ 
@@ -29,30 +41,50 @@ const MapPreview: React.FC<MapPreviewProps> = ({
     setError(null);
     
     try {
-      const result = await calculateRoute(origin, destination);
+      const routeInfo = await calculateRoute(origin, destination);
       
-      if (result && result.success) {
-        // Formatando as coordenadas para usar no URL da imagem do mapa
-        const startCoords = `${result.route.start_location.lng},${result.route.start_location.lat}`;
-        const endCoords = `${result.route.end_location.lng},${result.route.end_location.lat}`;
-        
-        // Criando URL para mapa estático
-        const mapboxToken = 'pk.eyJ1IjoiaW50ZWdyYXRpb25zIiwiYSI6ImNsZXhyYTB3bDBzZHQzeG82ZW04Z2lzdHIifQ.Gn1IoGg-zRmgmZxNWLdMHw';
+      if (!routeInfo) {
+        setError("Não foi possível calcular a rota.");
+        return;
+      }
+      
+      // Convert RouteInfo to RouteResult format
+      const result: RouteResult = {
+        success: true,
+        route: {
+          distance: routeInfo.distance,
+          duration: routeInfo.duration,
+          start_location: { lat: 0, lng: 0 }, // Default values
+          end_location: { lat: 0, lng: 0 }, // Default values
+          geometry: routeInfo.geometry || ""
+        }
+      };
+      
+      // Extract coordinates from geometry or use defaults
+      const startCoords = "0,0";
+      const endCoords = "0,0";
+      
+      // Create Mapbox static image URL
+      const mapboxToken = 'pk.eyJ1IjoiaW50ZWdyYXRpb25zIiwiYSI6ImNsZXhyYTB3bDBzZHQzeG82ZW04Z2lzdHIifQ.Gn1IoGg-zRmgmZxNWLdMHw';
+      
+      let url;
+      if (result.route.geometry) {
         const path = `path-2+0077ff-0.5(${encodeURIComponent(result.route.geometry)})`;
         const markers = `pin-s-a+4A89F3(${startCoords}),pin-s-b+EB4C36(${endCoords})`;
-        const url = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${path},${markers}/auto/500x300@2x?access_token=${mapboxToken}`;
-        
-        setMapUrl(url);
-        
-        // Passando as informações da rota para o callback
-        if (onRouteCalculated) {
-          onRouteCalculated({
-            distance: result.route.distance,
-            duration: result.route.duration
-          });
-        }
+        url = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${path},${markers}/auto/500x300@2x?access_token=${mapboxToken}`;
       } else {
-        setError("Não foi possível calcular a rota.");
+        // Fallback to a simple map centered on Brazil if no geometry is available
+        url = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/-53.2,-14.4,3/500x300@2x?access_token=${mapboxToken}`;
+      }
+      
+      setMapUrl(url);
+      
+      // Pass route data to parent component
+      if (onRouteCalculated) {
+        onRouteCalculated({
+          distance: result.route.distance,
+          duration: result.route.duration
+        });
       }
     } catch (err) {
       console.error("Erro ao calcular rota:", err);

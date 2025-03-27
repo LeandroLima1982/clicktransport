@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Loader2, CheckCircle, Users } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Users, Loader2, CheckCheck } from 'lucide-react';
 
 export interface Vehicle {
   id: string;
@@ -20,78 +21,78 @@ interface VehicleSelectionProps {
   isLoading: boolean;
 }
 
-const VehicleSelection: React.FC<VehicleSelectionProps> = ({ 
-  vehicles, 
-  selectedVehicle, 
+const VehicleSelection: React.FC<VehicleSelectionProps> = ({
+  vehicles,
+  selectedVehicle,
   onSelectVehicle,
   formatCurrency,
   isLoading
 }) => {
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-        <div className="text-gray-500">Carregando opções de veículos...</div>
+      <div className="flex flex-col items-center justify-center py-12">
+        <Loader2 className="h-10 w-10 text-blue-500 animate-spin mb-4" />
+        <div className="text-gray-500">Buscando veículos disponíveis...</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold mb-4">Escolha o veículo</h3>
+      <div className="text-center mb-4">
+        <h3 className="text-lg font-semibold">Escolha o Veículo</h3>
+        <p className="text-sm text-gray-500">
+          Selecione o veículo que melhor atende às suas necessidades
+        </p>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {vehicles.map((vehicle) => (
-          <div
+          <Card 
             key={vehicle.id}
-            className={`
-              relative rounded-lg overflow-hidden border transition-all duration-200 cursor-pointer
-              hover:shadow-md hover:border-primary/50
-              ${selectedVehicle === vehicle.id 
-                ? 'border-primary shadow-sm' 
-                : 'border-gray-200'
-              }
-            `}
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              selectedVehicle === vehicle.id ? 'ring-2 ring-primary' : ''
+            }`}
             onClick={() => onSelectVehicle(vehicle.id)}
           >
-            {/* Selected indicator */}
-            {selectedVehicle === vehicle.id && (
-              <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1 z-10">
-                <CheckCircle className="h-5 w-5" />
-              </div>
-            )}
-            
-            {/* Vehicle Image */}
-            <div className="h-36 bg-gray-100">
-              <img 
-                src={vehicle.image} 
-                alt={vehicle.name} 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Fallback to a default image if loading fails
-                  (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Veículo+indisponível";
+            <div className="flex items-center p-4 relative">
+              <div 
+                className="w-20 h-20 rounded-md bg-gray-100 flex-shrink-0 flex items-center justify-center overflow-hidden mr-4"
+                style={{
+                  backgroundImage: `url(${vehicle.image})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
                 }}
-              />
-            </div>
-            
-            {/* Vehicle Details */}
-            <div className="p-4">
-              <div className="font-medium text-lg">{vehicle.name}</div>
-              <div className="text-sm text-gray-500 mt-1 flex items-center">
-                <Users className="h-4 w-4 mr-1 inline" />
-                <span>até {vehicle.capacity} passageiros</span>
+              >
+                {!vehicle.image && (
+                  <Users className="h-10 w-10 text-gray-400" />
+                )}
               </div>
-              <div className="mt-4 flex justify-between items-end">
-                <div>
-                  <div className="text-xs text-gray-500">A partir de</div>
-                  <div className="text-primary font-semibold">{formatCurrency(vehicle.basePrice)}</div>
-                </div>
-                <div className="text-xs text-gray-500">
-                  {formatCurrency(vehicle.pricePerKm)}/km
+              
+              <div className="flex-1">
+                <h4 className="font-semibold text-lg">{vehicle.name}</h4>
+                <p className="text-sm text-gray-500">{vehicle.description}</p>
+                
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Users className="mr-1 h-4 w-4" />
+                    <span>Até {vehicle.capacity} passageiros</span>
+                  </div>
+                  
+                  <div>
+                    <div className="font-bold text-primary">{formatCurrency(vehicle.basePrice)}</div>
+                    <div className="text-xs text-gray-500">+{formatCurrency(vehicle.pricePerKm)}/km</div>
+                  </div>
                 </div>
               </div>
+              
+              {selectedVehicle === vehicle.id && (
+                <div className="absolute top-2 right-2 bg-green-500 text-white p-1 rounded-full">
+                  <CheckCheck className="w-4 h-4" />
+                </div>
+              )}
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>

@@ -68,11 +68,40 @@ export const useBookings = () => {
     }
   };
   
+  // Add the createBooking function
+  const createBooking = async (bookingData: any): Promise<{ booking: any; error: any }> => {
+    try {
+      // Simulate API call for now
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Generate reference code
+      const reference = 'TRF-' + Math.floor(100000 + Math.random() * 900000);
+      
+      const booking = {
+        id: Math.random().toString(36).substring(2, 11),
+        reference_code: reference,
+        ...bookingData
+      };
+      
+      toast.success('Reserva criada com sucesso!');
+      refetch();
+      
+      return { booking, error: null };
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      toast.error('Erro ao criar reserva');
+      return { booking: null, error };
+    }
+  };
+  
   return {
     bookings,
     isLoading,
     isError,
     refetch,
-    cancelBooking
+    cancelBooking,
+    createBooking
   };
 };
+
+export default useBookings;

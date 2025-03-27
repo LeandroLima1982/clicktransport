@@ -247,12 +247,21 @@ const BookingSteps: React.FC<BookingStepsProps> = ({
         return_time: bookingData.returnTime,
       };
       
-      // Simulating API call with timeout
-      setTimeout(() => {
-        setBookingReference(`RT${Math.floor(10000 + Math.random() * 90000)}`);
+      // Calling the createBooking function from the useBookings hook
+      const { booking, error } = await createBooking(bookingPayload);
+      
+      if (error) {
+        toast.error('Ocorreu um erro ao criar sua reserva. Por favor, tente novamente.');
+        return;
+      }
+      
+      // If booking was successful
+      if (booking) {
+        setBookingReference(booking.reference_code);
         setBookingComplete(true);
         setActiveStep(5);
-      }, 1500);
+        toast.success('Reserva confirmada com sucesso!');
+      }
       
     } catch (error) {
       console.error('Error creating booking:', error);
@@ -337,7 +346,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({
       case 5:
         return (
           <BookingComplete
-            referenceCode={bookingReference}
+            bookingReference={bookingReference || ''}
             bookingData={bookingData}
             vehicleName={getSelectedVehicleData()?.name || ''}
             totalPrice={totalPrice}
