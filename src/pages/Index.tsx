@@ -80,12 +80,13 @@ const Index = () => {
     )
   };
   
+  const sectionChildren = Object.values(sections);
+  
   return <main className="w-full overflow-x-hidden">
       <Navbar />
       <div className="w-full bg-slate-50/0 relative">
         <SectionController defaultSections={sections}>
-          {/* We could alternatively define sections as children */}
-          {Object.values(sections)}
+          {sectionChildren}
         </SectionController>
         <Footer />
       </div>

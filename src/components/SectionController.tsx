@@ -10,6 +10,18 @@ interface SectionConfig {
   componentPath: string;
 }
 
+// Interface representing the actual database schema
+interface SectionOrderRow {
+  id: string;
+  name: string;
+  description: string;
+  sort_order: number;
+  visible: boolean;
+  componentpath: string; // Note the lowercase 'p' matching the database column
+  created_at: string;
+  updated_at: string;
+}
+
 interface SectionControllerProps {
   children: React.ReactNode;
   defaultSections?: Record<string, React.ReactNode>;
@@ -35,7 +47,16 @@ const SectionController: React.FC<SectionControllerProps> = ({
         }
         
         if (data && data.length > 0) {
-          setSectionsConfig(data);
+          // Map database rows to our SectionConfig interface
+          const mappedData = (data as SectionOrderRow[]).map(row => ({
+            id: row.id,
+            name: row.name,
+            sort_order: row.sort_order,
+            visible: row.visible,
+            componentPath: row.componentpath // Map from 'componentpath' to 'componentPath'
+          }));
+          
+          setSectionsConfig(mappedData);
         }
       } catch (error) {
         console.error('Error loading section order:', error);

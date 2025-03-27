@@ -15,6 +15,18 @@ interface Section {
   componentPath: string;
 }
 
+// Interface representing the actual database schema
+interface SectionOrderRow {
+  id: string;
+  name: string;
+  description: string;
+  sort_order: number;
+  visible: boolean;
+  componentpath: string; // Note the lowercase 'p' matching the database column
+  created_at: string;
+  updated_at: string;
+}
+
 const defaultSections: Section[] = [
   {
     id: 'hero',
@@ -104,8 +116,18 @@ const SectionReorder: React.FC = () => {
       }
       
       if (data && data.length > 0) {
-        setSections(data as Section[]);
-        setOriginalSections([...data] as Section[]);
+        // Map database rows to our Section interface
+        const mappedData = (data as SectionOrderRow[]).map(row => ({
+          id: row.id,
+          name: row.name,
+          description: row.description || '',
+          sort_order: row.sort_order,
+          visible: row.visible,
+          componentPath: row.componentpath // Map from 'componentpath' to 'componentPath'
+        }));
+        
+        setSections(mappedData);
+        setOriginalSections([...mappedData]);
       } else {
         // If no data in DB, use default sections
         setSections([...defaultSections]);
@@ -218,10 +240,20 @@ const SectionReorder: React.FC = () => {
       
       if (deleteError) throw deleteError;
       
+      // Map our Section interface to match the database schema
+      const rowsToInsert = sections.map(section => ({
+        id: section.id,
+        name: section.name,
+        description: section.description,
+        sort_order: section.sort_order,
+        visible: section.visible,
+        componentpath: section.componentPath // Map from 'componentPath' to 'componentpath'
+      }));
+      
       // Then insert new records
       const { error: insertError } = await supabase
         .from('section_order')
-        .insert(sections);
+        .insert(rowsToInsert);
       
       if (insertError) throw insertError;
       
