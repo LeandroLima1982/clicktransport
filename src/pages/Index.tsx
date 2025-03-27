@@ -35,14 +35,16 @@ const Index = () => {
         {/* Hero section */}
         <Hero />
         
-        {/* Booking form - positioned to overlap with hero */}
-        <div className="relative z-10 max-w-[900px] mx-auto px-4 md:px-6 -mt-16 md:-mt-32 lg:-mt-40">
-          <TransitionEffect direction="up" delay={100}>
-            <div className="shadow-2xl rounded-2xl overflow-hidden animate-scale-in">
-              <BookingForm />
-            </div>
-          </TransitionEffect>
-        </div>
+        {/* Booking form - posicionado em sua própria seção após o hero */}
+        <section className="w-full bg-gray-50 py-8">
+          <div className="relative z-10 max-w-[900px] mx-auto px-4 md:px-6">
+            <TransitionEffect direction="up" delay={100}>
+              <div className="shadow-2xl rounded-2xl overflow-hidden animate-scale-in">
+                <BookingForm />
+              </div>
+            </TransitionEffect>
+          </div>
+        </section>
         
         {/* Transport types card carousel */}
         <div className="pt-8 md:pt-16 lg:pt-20">
