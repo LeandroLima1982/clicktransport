@@ -25,7 +25,7 @@ const PassengerSelector: React.FC<PassengerSelectorProps> = ({
   };
   
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       <label className="text-white block text-sm font-medium">
         Passageiros
       </label>
@@ -35,7 +35,7 @@ const PassengerSelector: React.FC<PassengerSelectorProps> = ({
         open={open} 
         onOpenChange={setOpen}
       >
-        <SelectTrigger className="w-full py-5 md:py-6 rounded-lg border border-gray-100 shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 h-12 md:h-auto transition-all duration-200 hover:bg-gray-50">
+        <SelectTrigger className="w-full py-4 md:py-6 rounded-lg border border-gray-100/40 shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 h-12 md:h-auto transition-all duration-200 hover:bg-gray-50">
           <div className="flex items-center">
             <Users className="mr-2 h-5 w-5 text-amber-400" />
             {value ? (
@@ -49,7 +49,7 @@ const PassengerSelector: React.FC<PassengerSelectorProps> = ({
             )}
           </div>
         </SelectTrigger>
-        <SelectContent className="max-h-[240px] bg-white">
+        <SelectContent className="max-h-[240px] bg-white border border-gray-100/40 shadow-lg">
           {passengerOptions.map(num => (
             <SelectItem 
               key={num} 

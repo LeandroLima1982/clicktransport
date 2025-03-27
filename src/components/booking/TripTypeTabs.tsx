@@ -15,12 +15,12 @@ const TripTypeTabs: React.FC<TripTypeTabsProps> = ({
   const isMobile = useIsMobile();
   
   return (
-    <div className="my-1 md:my-[21px]">
+    <div className="my-2 md:my-[21px]">
       <ToggleGroup 
         type="single" 
         value={value} 
         onValueChange={val => val && onChange(val as 'oneway' | 'roundtrip')} 
-        className={`p-1 rounded-full bg-yellow-500 py-[5px] mx-auto md:mx-[33px] px-[12px] shadow-md transition-all duration-300`}
+        className={`p-1 rounded-full bg-yellow-500 py-[6px] mx-auto md:mx-[33px] px-[12px] shadow-md transition-all duration-300`}
       >
         <ToggleGroupItem 
           value="oneway" 

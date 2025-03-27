@@ -36,51 +36,51 @@ const Index = () => {
       <div className="w-full">
         <Hero />
         
-        <div className="py-10 md:py-16"></div>
+        <div className="py-8 md:py-16"></div>
         
         <TransitionEffect direction="fade" duration={800} delay={200}>
           <TransportTypes />
         </TransitionEffect>
         
-        <div className="py-12 md:py-20"></div>
+        <div className="py-10 md:py-16"></div>
         
         <TransitionEffect direction="fade" duration={800} delay={200}>
           <Solutions />
         </TransitionEffect>
         
-        <div className="py-12 md:py-20"></div>
+        <div className="py-10 md:py-16"></div>
         
         <TransitionEffect direction="fade" duration={800} delay={200}>
           <Features />
         </TransitionEffect>
         
-        <div className="py-12 md:py-20"></div>
+        <div className="py-10 md:py-16"></div>
         
-        <div id="request-service" className="relative max-w-[1000px] mx-auto px-4 md:px-6 py-12 md:py-16 scroll-mt-24">
+        <div id="request-service" className="relative max-w-[1000px] mx-auto px-4 md:px-6 py-8 md:py-12 scroll-mt-24">
           <div className="shadow-xl transform transition-all duration-500 hover:shadow-2xl rounded-xl perspective-container">
             <BookingForm />
           </div>
         </div>
         
-        <div className="py-12 md:py-20"></div>
+        <div className="py-10 md:py-16"></div>
         
         <TransitionEffect direction="fade" duration={800} delay={200}>
           <ProcessSteps />
         </TransitionEffect>
         
-        <div className="py-12 md:py-20"></div>
+        <div className="py-10 md:py-16"></div>
         
         <TransitionEffect direction="fade" duration={800} delay={200}>
           <Testimonials />
         </TransitionEffect>
         
-        <div className="py-12 md:py-20"></div>
+        <div className="py-10 md:py-16"></div>
         
         <TransitionEffect direction="fade" duration={800} delay={200}>
           <FAQ />
         </TransitionEffect>
         
-        <div className="py-12 md:py-20"></div>
+        <div className="py-10 md:py-16"></div>
         
         <CTA />
         <Footer />

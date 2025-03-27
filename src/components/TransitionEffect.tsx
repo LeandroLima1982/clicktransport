@@ -20,7 +20,7 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
   delay = 0,
   className = '',
   perspective = 1000,
-  threshold = 0.1,
+  threshold = 0.15,
   rootMargin = '0px 0px -50px 0px'
 }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -29,6 +29,7 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
   // Adjust animations for mobile
   const effectiveDirection = isMobile && direction === 'slide-left' ? 'slide-up' : direction;
   const effectiveDuration = isMobile ? Math.min(duration, 600) : duration;
+  const effectiveDelay = isMobile ? Math.min(delay, 300) : delay;
   
   useEffect(() => {
     // Intersection Observer to detect when elements come into view
@@ -96,10 +97,11 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
       className={`transition-container ${isVisible ? getTransitionClass() : 'opacity-0'} transition-all ${className}`}
       style={{ 
         animationDuration: `${effectiveDuration}ms`,
-        animationDelay: `${delay}ms`,
+        animationDelay: `${effectiveDelay}ms`,
         animationFillMode: 'both',
         perspective: `${perspective}px`,
-        transformStyle: effectiveDirection.includes('3d') || effectiveDirection.includes('depth') ? 'preserve-3d' : 'flat'
+        transformStyle: effectiveDirection.includes('3d') || effectiveDirection.includes('depth') ? 'preserve-3d' : 'flat',
+        willChange: 'transform, opacity'
       }}
     >
       {children}

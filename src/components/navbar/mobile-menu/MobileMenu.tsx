@@ -7,6 +7,7 @@ import { MobileVerticalMenu } from './';
 import { Link } from 'react-router-dom';
 import { NavbarLinks } from '@/components/navbar';
 import { UserMenu } from '@/components/navbar';
+import { X } from 'lucide-react';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -43,23 +44,20 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
         <div className="flex justify-end p-4">
           <button 
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100"
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
             aria-label="Fechar menu"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <X className="h-6 w-6" />
           </button>
         </div>
         
         <div className="flex-1 flex flex-col p-6 space-y-6">
-          <nav className="flex flex-col space-y-4">
-            <Link to="/" className="text-xl font-medium" onClick={onClose}>
+          <nav className="flex flex-col space-y-5">
+            <Link to="/" className="text-xl font-medium transition-colors hover:text-amber-500" onClick={onClose}>
               Início
             </Link>
             <button 
-              className="text-xl font-medium text-left" 
+              className="text-xl font-medium text-left transition-colors hover:text-amber-500" 
               onClick={() => {
                 if (window.location.pathname !== '/') {
                   window.location.href = '/';
@@ -72,10 +70,10 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             >
               Serviços
             </button>
-            <Link to="/about" className="text-xl font-medium" onClick={onClose}>
+            <Link to="/about" className="text-xl font-medium transition-colors hover:text-amber-500" onClick={onClose}>
               Sobre
             </Link>
-            <Link to="/contact" className="text-xl font-medium" onClick={onClose}>
+            <Link to="/contact" className="text-xl font-medium transition-colors hover:text-amber-500" onClick={onClose}>
               Contato
             </Link>
           </nav>
