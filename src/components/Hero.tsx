@@ -89,7 +89,7 @@ const Hero: React.FC = () => {
       {/* Content container */}
       <div className="container md:px-6 z-10 md:my-12 my-0 px-0">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className={`text-3xl md:text-5xl font-extrabold mb-4 md:mb-6 tracking-tight text-${styles.title_color} drop-shadow-md animate-fade-in-down`}>Transporte Executivo Premium</h1>
+          <h1 className={`text-3xl md:text-5xl font-extrabold mb-4 md:mb-6 tracking-tight text-${styles.title_color} drop-shadow-md animate-fade-in-down`}>Transfer Executivo Premium</h1>
           
           <p className={`text-base md:text-lg mb-6 md:mb-8 text-${styles.description_color} drop-shadow max-w-2xl mx-auto animate-fade-in animate-delay-100`}>Conectamos você a motoristas profissionais e veículos de alto padrão, garantindo deslocamentos eficientes, seguros e personalizados para negócios, turismo ou eventos.</p>
           
