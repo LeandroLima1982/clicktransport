@@ -64,87 +64,70 @@
   animation: float 6s ease-in-out infinite;
 }
 
-/* Luxurious Gold 3D Text Effect for Hero */
+/* Elegant Gold Text Effect for Hero - Refined Version */
 .gold-3d-title {
-  /* Rich gold gradient background */
-  background: linear-gradient(135deg, #F8D748 0%, #D4AF37 45%, #F5DF4D 55%, #D4AF37 85%, #F8D748 100%);
+  /* Softer gold gradient background */
+  background: linear-gradient(135deg, #F8E7B5 0%, #D4AF37 55%, #F5E7AF 75%, #D4AF37 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
   
-  /* 3D Text effect with multiple shadows */
+  /* Lighter 3D Text effect with more subtle shadows */
   text-shadow: 
-    0 1px 0 #cca300,
-    0 2px 0 #b59500,
-    0 3px 0 #a38800,
-    0 4px 0 #8e7700,
-    0 5px 0 #796500,
-    0 6px 1px rgba(0,0,0,.2),
-    0 0 5px rgba(0,0,0,.3),
-    0 1px 3px rgba(0,0,0,.4),
-    0 3px 5px rgba(0,0,0,.5),
-    0 5px 10px rgba(0,0,0,.6),
-    0 10px 10px rgba(0,0,0,.7),
-    0 20px 20px rgba(0,0,0,.8);
+    0 1px 0 rgba(204, 163, 0, 0.8),
+    0 2px 0 rgba(181, 149, 0, 0.7),
+    0 3px 3px rgba(0, 0, 0, 0.3),
+    0 5px 10px rgba(0, 0, 0, 0.25);
   
-  /* Gold outline for better visibility */
-  -webkit-text-stroke: 1px rgba(212, 175, 55, 0.4);
+  /* Thin gold outline for better visibility */
+  -webkit-text-stroke: 0.5px rgba(212, 175, 55, 0.5);
   
   /* Enhanced 3D perception */
-  transform: perspective(500px) translateZ(10px);
+  transform: perspective(500px) translateZ(5px);
   
-  /* Gentle animation */
-  animation: gold-pulse 8s ease-in-out infinite;
-  letter-spacing: 1px;
+  /* Gentle shimmer animation */
+  animation: gold-shimmer 8s infinite;
+  
+  /* Custom font family for elegance */
+  font-family: 'Playfair Display', serif;
+  letter-spacing: 0.5px;
+  font-weight: 700;
 }
 
-/* Gold description text */
+/* Gold description text with elegant styling */
 .gold-description {
   color: white;
-  font-weight: 500;
-  text-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.7),
-    0 4px 8px rgba(0, 0, 0, 0.5);
-  line-height: 1.7;
-  border-left: 2px solid rgba(212, 175, 55, 0.6);
-  border-right: 2px solid rgba(212, 175, 55, 0.6);
-  padding: 0 1rem;
+  font-weight: 400;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  line-height: 1.8;
   position: relative;
+  padding: 1rem 1.5rem;
+  font-family: 'Inter', sans-serif;
+  
+  /* Semi-transparent elegant backdrop */
+  background: rgba(0, 35, 102, 0.15);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border-radius: 0.75rem;
+  
+  /* Thin gold accent for elegance */
+  border-left: 1px solid rgba(212, 175, 55, 0.4);
+  border-right: 1px solid rgba(212, 175, 55, 0.4);
 }
 
-/* Subtle gold pulse animation for the title */
-@keyframes gold-pulse {
+/* Subtle gold shimmer animation for the title */
+@keyframes gold-shimmer {
   0%, 100% {
-    text-shadow: 
-      0 1px 0 #cca300,
-      0 2px 0 #b59500,
-      0 3px 0 #a38800,
-      0 4px 0 #8e7700,
-      0 5px 0 #796500,
-      0 6px 1px rgba(0,0,0,.2),
-      0 0 5px rgba(0,0,0,.3),
-      0 1px 3px rgba(0,0,0,.4),
-      0 3px 5px rgba(0,0,0,.5),
-      0 5px 10px rgba(0,0,0,.6),
-      0 10px 10px rgba(0,0,0,.7),
-      0 20px 20px rgba(0,0,0,.8);
+    background-position: 0% 50%;
   }
   50% {
+    background-position: 100% 50%;
     text-shadow: 
-      0 1px 0 #cca300,
-      0 2px 0 #b59500,
-      0 3px 0 #a38800,
-      0 4px 0 #8e7700,
-      0 5px 0 #796500,
-      0 6px 1px rgba(0,0,0,.1),
-      0 0 5px rgba(0,0,0,.2),
-      0 1px 3px rgba(0,0,0,.3),
-      0 3px 5px rgba(0,0,0,.4),
-      0 5px 10px rgba(0,0,0,.5),
-      0 10px 10px rgba(0,0,0,.6),
-      0 20px 20px rgba(0,0,0,.7);
-    transform: perspective(500px) translateZ(15px);
+      0 1px 0 rgba(204, 163, 0, 0.6),
+      0 2px 0 rgba(181, 149, 0, 0.5),
+      0 3px 5px rgba(0, 0, 0, 0.2),
+      0 7px 15px rgba(0, 0, 0, 0.15);
   }
 }
 

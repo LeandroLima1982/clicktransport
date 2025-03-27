@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ChevronDown } from 'lucide-react';
@@ -87,23 +88,26 @@ const Hero: React.FC = () => {
   const gradientStyle = `bg-gradient-to-b from-${styles.gradient_from_color}/${styles.gradient_from_opacity} via-${styles.gradient_from_color}/30 to-${styles.gradient_from_color}/70`;
 
   const currentBackgroundImage = isMobile ? mobileBackgroundImage : backgroundImage;
-  return <section className="relative min-h-[90vh] md:min-h-[75vh] w-full flex items-center justify-center overflow-hidden mx-0">
+  return (
+    <section className="relative min-h-[90vh] md:min-h-[75vh] w-full flex items-center justify-center overflow-hidden mx-0">
       <div className="absolute inset-0 -z-10 bg-cover bg-center transform transition-transform duration-500" style={{
-      backgroundImage: `url(${currentBackgroundImage})`,
-      backgroundAttachment: isMobile ? 'scroll' : 'fixed'
-    }}>
+        backgroundImage: `url(${currentBackgroundImage})`,
+        backgroundAttachment: isMobile ? 'scroll' : 'fixed'
+      }}>
         <div className={`absolute inset-0 ${gradientStyle}`}></div>
       </div>
       
       <div className="container md:px-6 z-10 md:mt-0 mt-0 px-4">
         <div className="max-w-3xl mx-auto text-center pb-24 md:pb-48">
-          <h1 className="gold-3d-title text-4xl md:text-6xl font-bold mb-6 md:mb-8 tracking-tight">
+          <h1 className="gold-3d-title text-4xl md:text-6xl font-bold mb-8 md:mb-10 tracking-tight">
             Transfer Executivo Premium
           </h1>
           
-          <p className="gold-description text-base md:text-xl mb-8 max-w-2xl mx-auto">
-            Conectamos você a motoristas profissionais e veículos de alto padrão, garantindo deslocamentos eficientes, seguros e personalizados para negócios, turismo ou eventos.
-          </p>
+          <div className="max-w-2xl mx-auto">
+            <p className="gold-description text-base md:text-xl mb-8">
+              Conectamos você a motoristas profissionais e veículos de alto padrão, garantindo deslocamentos eficientes, seguros e personalizados para negócios, turismo ou eventos.
+            </p>
+          </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             
@@ -116,7 +120,8 @@ const Hero: React.FC = () => {
           <path fill="rgba(255,255,255,0.05)" fillOpacity="1" d="M0,224L60,208C120,192,240,160,360,160C480,160,600,192,720,213.3C840,235,960,245,1080,234.7C1200,224,1320,192,1380,176L1440,160L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path>
         </svg>
       </div>
-    </section>;
+    </section>
+  );
 };
 
 export default Hero;
