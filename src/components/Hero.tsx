@@ -41,7 +41,7 @@ const Hero: React.FC = () => {
   };
   return <section className="relative overflow-hidden min-h-[500px] flex items-center mx-0">
       <div className="">
-        <div className="max-w-3xl text-center my-0 px-0 mx-[236px]">
+        <div className="max-w-3xl text-center my-0 px-0 mx-0">
           <h1 className="text-2xl font-extrabold mb-4 md:mb-6 tracking-tighter text-indigo-950 md:text-4xl">
             Sua Plataforma de Transporte Executivo
           </h1>
