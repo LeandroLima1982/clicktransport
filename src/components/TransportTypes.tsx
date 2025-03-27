@@ -146,10 +146,8 @@ const TransportTypes: React.FC = () => {
   return <section className="w-full py-16 bg-white" ref={sectionRef}>
       <div className="max-w-[1400px] mx-auto px-4 w-full md:px-6">
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Diversas Opções de Transporte</h2>
-          <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
-            Escolha entre nossas diversas opções de transporte para atender sua necessidade
-          </p>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Diversas Opções de Transferes</h2>
+          <p className="text-lg text-foreground/70 max-w-2xl mx-auto">Escolha entre nossas diversas opções de transporte para atender sua necessidade e orçamento</p>
         </div>
         
         <Carousel opts={{
