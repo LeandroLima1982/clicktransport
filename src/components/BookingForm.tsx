@@ -88,9 +88,21 @@ const BookingForm: React.FC = () => {
     returnTime?: string;
   }>({});
   
+  const [shouldShowMap, setShouldShowMap] = useState(false);
+  
   useEffect(() => {
     fetchCities();
   }, [fetchCities]);
+  
+  // Determine when to show the map
+  useEffect(() => {
+    // Only show map when both fields have sufficient data and user has moved to step 2 or beyond
+    if (currentStep >= 2 && originValue.length > 5 && destinationValue.length > 5) {
+      setShouldShowMap(true);
+    } else {
+      setShouldShowMap(false);
+    }
+  }, [originValue, destinationValue, currentStep]);
   
   // Handle route calculation result
   const handleRouteCalculated = (routeData: { distance: number; duration: number }) => {
@@ -353,7 +365,7 @@ const BookingForm: React.FC = () => {
           )}
         </div>
         
-        {currentStep >= 2 && originValue && destinationValue && (
+        {shouldShowMap && (
           <MapPreview 
             origin={originValue}
             destination={destinationValue}
