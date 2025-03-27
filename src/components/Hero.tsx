@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ChevronDown } from 'lucide-react';
@@ -102,9 +103,15 @@ const Hero: React.FC = () => {
       {/* Content container */}
       <div className="container md:px-6 z-10 md:mt-0 mt-0 px-4">
         <div className="max-w-3xl mx-auto text-center pb-24 md:pb-48">
-          <h1 className={`text-3xl md:text-5xl font-extrabold mb-4 md:mb-6 tracking-tight text-${styles.title_color} drop-shadow-md`}>Transfer Executivo Premium</h1>
+          <h1 className="hero-title text-3xl md:text-5xl font-extrabold mb-4 md:mb-6 tracking-tight text-white">
+            Transfer Executivo Premium
+          </h1>
           
-          <p className={`text-base md:text-lg mb-6 md:mb-8 text-${styles.description_color} drop-shadow max-w-2xl mx-auto`}>Conectamos você a motoristas profissionais e veículos de alto padrão, garantindo deslocamentos eficientes, seguros e personalizados para negócios, turismo ou eventos.</p>
+          <div className="hero-text-container">
+            <p className="hero-description text-base md:text-lg mb-6 md:mb-8 text-white max-w-2xl mx-auto">
+              Conectamos você a motoristas profissionais e veículos de alto padrão, garantindo deslocamentos eficientes, seguros e personalizados para negócios, turismo ou eventos.
+            </p>
+          </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             
