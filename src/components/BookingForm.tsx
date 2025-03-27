@@ -155,7 +155,7 @@ const BookingForm: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-gradient-to-b from-transparent to-[#002366]/70 rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border-b border-l border-r border-[#D4AF37]/60 shadow-[0_15px_50px_rgba(0,0,0,0.5)] glass-morphism transition-all duration-300">
+    <div className="w-full bg-[#002366] rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border-b border-l border-r border-[#D4AF37] shadow-[0_15px_50px_rgba(0,0,0,0.5)] glass-morphism transition-all duration-300">
       <div className="relative pt-6 md:pt-7 pb-6 md:pb-8 px-5 md:px-6 lg:px-8">
         <div className="flex justify-center mb-6 mt-1">
           <TripTypeTabs value={tripType} onChange={setTripType} />
@@ -163,8 +163,8 @@ const BookingForm: React.FC = () => {
         
         <div className="space-y-5 md:space-y-6 mt-6">
           <div className="grid md:grid-cols-2 gap-4 md:gap-5">
-            <div className="rounded-lg border border-[#D4AF37] p-3 bg-white/20 hover:bg-white/25 transition-colors duration-200 shadow-lg input-shadow">
-              <Label className="block text-sm font-semibold text-black mb-2">
+            <div className="booking-input-container p-3 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
+              <Label className="block text-sm font-semibold booking-label mb-2">
                 De onde vai sair?
               </Label>
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
@@ -173,19 +173,26 @@ const BookingForm: React.FC = () => {
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
                       <MapPin className="h-4 w-4 text-[#F8D748]" />
                     </div>
-                    <Input placeholder="Digite seu endereço: rua, número, bairro" value={originValue} onChange={handleManualOriginChange} className="pl-9 pr-3 py-2.5 text-sm bg-white/95 border-gray-200 h-10 focus:border-[#D4AF37] focus:ring-[#D4AF37] placeholder:text-gray-300" />
+                    <Input 
+                      placeholder="Digite seu endereço: rua, número, bairro" 
+                      value={originValue} 
+                      onChange={handleManualOriginChange} 
+                      className="pl-9 pr-3 py-2.5 text-sm booking-input h-10 focus:border-[#F8D748] focus:ring-[#F8D748] placeholder:text-white/50" 
+                    />
                   </div>
                 </div>
                 <div className="w-full sm:w-[180px]">
                   <div className="flex">
                     <Select value={originCityId} onValueChange={setOriginCityId}>
-                      <SelectTrigger className="h-10 bg-white/95 text-gray-700 border-gray-200 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
-                        <SelectValue placeholder="Selecione cidade" className="text-gray-400" />
+                      <SelectTrigger className="h-10 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
+                        <SelectValue placeholder="Selecione cidade" className="text-white/50" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white">
-                        {cities.filter(city => city.is_active !== false).map(city => <SelectItem key={city.id} value={city.id}>
+                      <SelectContent className="bg-[#002366] border border-[#D4AF37] text-white">
+                        {cities.filter(city => city.is_active !== false).map(city => (
+                          <SelectItem key={city.id} value={city.id} className="hover:bg-white/10 text-white">
                             {formatCityLabel(city)}
-                          </SelectItem>)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -193,8 +200,8 @@ const BookingForm: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-[#D4AF37] p-3 bg-white/20 hover:bg-white/25 transition-colors duration-200 shadow-lg input-shadow">
-              <Label className="block text-sm font-semibold text-black mb-2">
+            <div className="booking-input-container p-3 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
+              <Label className="block text-sm font-semibold booking-label mb-2">
                 Para onde vai?
               </Label>
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
@@ -203,18 +210,25 @@ const BookingForm: React.FC = () => {
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
                       <MapPin className="h-4 w-4 text-[#F8D748]" />
                     </div>
-                    <Input placeholder="Digite seu destino: rua, número, bairro" value={destinationValue} onChange={handleManualDestinationChange} className="pl-9 pr-3 py-2.5 text-sm bg-white/95 border-gray-200 h-10 focus:border-[#D4AF37] focus:ring-[#D4AF37] placeholder:text-gray-300" />
+                    <Input 
+                      placeholder="Digite seu destino: rua, número, bairro" 
+                      value={destinationValue} 
+                      onChange={handleManualDestinationChange} 
+                      className="pl-9 pr-3 py-2.5 text-sm booking-input h-10 focus:border-[#F8D748] focus:ring-[#F8D748] placeholder:text-white/50" 
+                    />
                   </div>
                 </div>
                 <div className="w-full sm:w-[180px]">
                   <Select value={destinationCityId} onValueChange={setDestinationCityId}>
-                    <SelectTrigger className="h-10 bg-white/95 text-gray-700 border-gray-200 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
-                      <SelectValue placeholder="Selecione cidade" className="text-gray-400" />
+                    <SelectTrigger className="h-10 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
+                      <SelectValue placeholder="Selecione cidade" className="text-white/50" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white">
-                      {cities.filter(city => city.is_active !== false).map(city => <SelectItem key={city.id} value={city.id}>
+                    <SelectContent className="bg-[#002366] border border-[#D4AF37] text-white">
+                      {cities.filter(city => city.is_active !== false).map(city => (
+                        <SelectItem key={city.id} value={city.id} className="hover:bg-white/10 text-white">
                           {formatCityLabel(city)}
-                        </SelectItem>)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -223,15 +237,15 @@ const BookingForm: React.FC = () => {
           </div>
 
           <div className="hidden md:flex justify-center items-center h-6 relative">
-            <Separator className="w-full bg-[#D4AF37]/60" />
-            <div className="absolute bg-white rounded-full p-1 shadow-md">
+            <Separator className="w-full bg-[#D4AF37]" />
+            <div className="absolute bg-amber-400 rounded-full p-1 shadow-md">
               <ArrowRight className="h-4 w-4 text-[#002366]" />
             </div>
           </div>
 
           <div className="flex md:hidden justify-center items-center h-6 relative mb-2">
-            <Separator className="w-full bg-[#D4AF37]/60" />
-            <div className="absolute bg-white rounded-full p-1 shadow-md">
+            <Separator className="w-full bg-[#D4AF37]" />
+            <div className="absolute bg-amber-400 rounded-full p-1 shadow-md">
               <ArrowDown className="h-4 w-4 text-[#002366]" />
             </div>
           </div>
@@ -239,8 +253,8 @@ const BookingForm: React.FC = () => {
           {renderDistanceInfo()}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-            <div className="md:col-span-2 rounded-lg border border-[#D4AF37] bg-white/20 hover:bg-white/25 p-3 shadow-lg input-shadow">
-              <Label className="text-black block text-sm font-semibold mb-2">
+            <div className="md:col-span-2 booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow">
+              <Label className="booking-label block text-sm font-semibold mb-2">
                 Vai quando?
               </Label>
               <div className="flex flex-col sm:flex-row sm:space-x-0">
@@ -253,14 +267,15 @@ const BookingForm: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-[#D4AF37] bg-white/20 hover:bg-white/25 p-3 shadow-lg input-shadow">
+            <div className="booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow">
               <PassengerSelector value={passengers} onChange={setPassengers} />
             </div>
           </div>
 
-          {tripType === 'roundtrip' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-[#D4AF37]/60">
-              <div className="rounded-lg border border-[#D4AF37] bg-white/20 hover:bg-white/25 p-3 shadow-lg input-shadow">
-                <Label className="text-black block text-sm font-semibold mb-2">
+          {tripType === 'roundtrip' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-[#D4AF37]">
+              <div className="booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow">
+                <Label className="booking-label block text-sm font-semibold mb-2">
                   Volta quando?
                 </Label>
                 <div className="flex flex-col sm:flex-row sm:space-x-0">
@@ -272,27 +287,40 @@ const BookingForm: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </div>}
+            </div>
+          )}
         </div>
 
-        <Button onClick={handleBooking} disabled={!originCityId || !destinationCityId} className="w-full rounded-lg mt-6 text-white text-lg font-medium h-12 md:h-14 transition-all duration-300 shadow-xl relative overflow-hidden bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 border border-amber-400/40">
+        <Button 
+          onClick={handleBooking} 
+          disabled={!originCityId || !destinationCityId} 
+          className="w-full rounded-lg mt-6 text-[#002366] text-lg font-medium h-12 md:h-14 transition-all duration-300 
+                    shadow-xl relative overflow-hidden bg-gradient-to-r from-amber-400 to-amber-300 
+                    hover:from-amber-300 hover:to-amber-200 border border-amber-300"
+        >
           <span className="relative z-10 flex items-center justify-center">
             Buscar Motorista
           </span>
         </Button>
 
-        {bookingData && showBookingSteps && <BookingSteps bookingData={{
-        origin: getFullOriginAddress(),
-        destination: getFullDestinationAddress(),
-        date: date,
-        returnDate: returnDate,
-        tripType: tripType,
-        passengers: passengers,
-        time: time,
-        returnTime: returnTime,
-        passengerData: passengerData,
-        distance: distanceInfo?.distance
-      } as BookingData} isOpen={showBookingSteps} onClose={() => setShowBookingSteps(false)} />}
+        {bookingData && showBookingSteps && (
+          <BookingSteps 
+            bookingData={{
+              origin: getFullOriginAddress(),
+              destination: getFullDestinationAddress(),
+              date: date,
+              returnDate: returnDate,
+              tripType: tripType,
+              passengers: passengers,
+              time: time,
+              returnTime: returnTime,
+              passengerData: passengerData,
+              distance: distanceInfo?.distance
+            } as BookingData} 
+            isOpen={showBookingSteps} 
+            onClose={() => setShowBookingSteps(false)} 
+          />
+        )}
       </div>
     </div>
   );
