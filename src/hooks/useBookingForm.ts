@@ -1,87 +1,44 @@
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { fetchAddressSuggestions } from '@/utils/mapbox';
-
-export interface PassengerInfo {
-  name: string;
-  phone: string;
-}
-
-export interface BookingFormData {
-  originValue: string;
-  destinationValue: string;
-  originNumber?: string;
-  destinationNumber?: string;
-  date: Date | undefined;
-  returnDate: Date | undefined;
-  tripType: 'oneway' | 'roundtrip';
-  passengers: string;
-  time: string;
-  returnTime: string;
-  passengerData: PassengerInfo[];
-  distance?: number;
-}
+import { useBookingAddress } from './booking/useBookingAddress';
+import { useBookingDateTime } from './booking/useBookingDateTime';
+import { usePassengerData } from './booking/usePassengerData';
+import { BookingFormData } from '@/types/booking.types';
 
 export const useBookingForm = () => {
-  const [originValue, setOriginValue] = useState('');
-  const [destinationValue, setDestinationValue] = useState('');
-  const [originNumber, setOriginNumber] = useState('');
-  const [destinationNumber, setDestinationNumber] = useState('');
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
-  const [tripType, setTripType] = useState<'oneway' | 'roundtrip'>('oneway');
-  const [passengers, setPassengers] = useState('1');
-  const [passengerData, setPassengerData] = useState<PassengerInfo[]>([{ name: '', phone: '' }]);
+  const addressState = useBookingAddress();
+  const dateTimeState = useBookingDateTime();
+  const passengerState = usePassengerData();
   const [showBookingSteps, setShowBookingSteps] = useState(false);
-  const [time, setTime] = useState<string>('');
-  const [returnTime, setReturnTime] = useState<string>('');
-  const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
-  const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [errorCount, setErrorCount] = useState(0);
-  
-  const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Reset error count after a period to allow retrying
-  useEffect(() => {
-    if (errorCount > 0) {
-      const timer = setTimeout(() => {
-        setErrorCount(0);
-      }, 30000); // Reset after 30 seconds
-      
-      return () => clearTimeout(timer);
-    }
-  }, [errorCount]);
   
   const handleBooking = () => {
-    if (!originValue) {
+    if (!addressState.originValue) {
       toast.error('Por favor, informe o local de origem.');
       return;
     }
     
-    if (!destinationValue) {
+    if (!addressState.destinationValue) {
       toast.error('Por favor, informe o local de destino.');
       return;
     }
     
-    if (!date) {
+    if (!dateTimeState.date) {
       toast.error('Por favor, selecione a data da viagem.');
       return;
     }
     
-    if (!time) {
+    if (!dateTimeState.time) {
       toast.error('Por favor, selecione a hora da viagem.');
       return;
     }
     
-    if (tripType === 'roundtrip' && !returnDate) {
+    if (dateTimeState.tripType === 'roundtrip' && !dateTimeState.returnDate) {
       toast.error('Por favor, selecione a data de retorno.');
       return;
     }
     
-    if (tripType === 'roundtrip' && !returnTime) {
+    if (dateTimeState.tripType === 'roundtrip' && !dateTimeState.returnTime) {
       toast.error('Por favor, selecione a hora de retorno.');
       return;
     }
@@ -89,153 +46,63 @@ export const useBookingForm = () => {
     setShowBookingSteps(true);
   };
 
-  const handleOriginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setOriginValue(value);
-    
-    if (originTimeoutRef.current) {
-      clearTimeout(originTimeoutRef.current);
-    }
-    
-    // Só buscar sugestões se o usuário já digitou pelo menos 3 caracteres
-    // e não tivemos muitos erros recentes
-    if (value.length >= 3 && errorCount < 5) {
-      setIsLoadingSuggestions(true);
-      
-      originTimeoutRef.current = setTimeout(async () => {
-        try {
-          const suggestions = await fetchAddressSuggestions(value);
-          setOriginSuggestions(suggestions);
-          
-          // Se não encontrou nada, sugerir adicionar mais informações
-          if (suggestions.length === 0 && value.length > 5) {
-            console.log("Sem resultados para: " + value);
-          }
-        } catch (error) {
-          console.error('Erro ao buscar sugestões:', error);
-          setErrorCount(prev => prev + 1);
-          
-          // Avisar o usuário apenas na primeira falha
-          if (errorCount === 0) {
-            toast.error('Erro ao buscar sugestões de endereço. Tente um formato diferente.', {
-              description: 'Exemplo: "Rua Nome, 123, Bairro, Cidade"'
-            });
-          }
-        } finally {
-          setIsLoadingSuggestions(false);
-        }
-      }, 300);
-    } else {
-      setOriginSuggestions([]);
-    }
-  };
-
-  const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setDestinationValue(value);
-    
-    if (destinationTimeoutRef.current) {
-      clearTimeout(destinationTimeoutRef.current);
-    }
-    
-    if (value.length >= 3 && errorCount < 5) {
-      setIsLoadingSuggestions(true);
-      
-      destinationTimeoutRef.current = setTimeout(async () => {
-        try {
-          const suggestions = await fetchAddressSuggestions(value);
-          setDestinationSuggestions(suggestions);
-        } catch (error) {
-          console.error('Erro ao buscar sugestões:', error);
-          setErrorCount(prev => prev + 1);
-        } finally {
-          setIsLoadingSuggestions(false);
-        }
-      }, 300);
-    } else {
-      setDestinationSuggestions([]);
-    }
-  };
-
-  const handleOriginNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOriginNumber(e.target.value);
-  };
-
-  const handleDestinationNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDestinationNumber(e.target.value);
-  };
-
-  const selectSuggestion = (suggestion: any, isOrigin: boolean) => {
-    const placeName = suggestion.place_name;
-    if (isOrigin) {
-      setOriginValue(placeName);
-      setOriginSuggestions([]);
-    } else {
-      setDestinationValue(placeName);
-      setDestinationSuggestions([]);
-    }
-  };
-
-  const clearOrigin = () => {
-    setOriginValue('');
-    setOriginNumber('');
-    setOriginSuggestions([]);
-  };
-
-  const clearDestination = () => {
-    setDestinationValue('');
-    setDestinationNumber('');
-    setDestinationSuggestions([]);
-  };
-
   const bookingData: BookingFormData = {
-    originValue,
-    destinationValue,
-    originNumber,
-    destinationNumber,
-    date,
-    returnDate,
-    tripType,
-    passengers,
-    time,
-    returnTime,
-    passengerData
+    originValue: addressState.originValue,
+    destinationValue: addressState.destinationValue,
+    originNumber: addressState.originNumber,
+    destinationNumber: addressState.destinationNumber,
+    date: dateTimeState.date,
+    returnDate: dateTimeState.returnDate,
+    tripType: dateTimeState.tripType,
+    passengers: passengerState.passengers,
+    time: dateTimeState.time,
+    returnTime: dateTimeState.returnTime,
+    passengerData: passengerState.passengerData
   };
 
   return {
-    originValue,
-    destinationValue,
-    originNumber,
-    destinationNumber,
-    date,
-    returnDate,
-    tripType,
-    passengers,
-    passengerData,
-    time,
-    returnTime,
-    originSuggestions,
-    destinationSuggestions,
-    isLoadingSuggestions,
+    // Address data
+    originValue: addressState.originValue,
+    destinationValue: addressState.destinationValue,
+    originNumber: addressState.originNumber,
+    destinationNumber: addressState.destinationNumber,
+    originSuggestions: addressState.originSuggestions,
+    destinationSuggestions: addressState.destinationSuggestions,
+    isLoadingSuggestions: addressState.isLoadingSuggestions,
+    setOriginValue: addressState.setOriginValue,
+    setDestinationValue: addressState.setDestinationValue,
+    handleOriginChange: addressState.handleOriginChange,
+    handleDestinationChange: addressState.handleDestinationChange,
+    handleOriginNumberChange: addressState.handleOriginNumberChange,
+    handleDestinationNumberChange: addressState.handleDestinationNumberChange,
+    selectSuggestion: addressState.selectSuggestion,
+    clearOrigin: addressState.clearOrigin,
+    clearDestination: addressState.clearDestination,
+    
+    // Date and time data
+    date: dateTimeState.date,
+    returnDate: dateTimeState.returnDate,
+    time: dateTimeState.time,
+    returnTime: dateTimeState.returnTime,
+    tripType: dateTimeState.tripType,
+    setDate: dateTimeState.setDate,
+    setReturnDate: dateTimeState.setReturnDate, 
+    setTime: dateTimeState.setTime,
+    setReturnTime: dateTimeState.setReturnTime,
+    setTripType: dateTimeState.setTripType,
+    
+    // Passenger data
+    passengers: passengerState.passengers,
+    passengerData: passengerState.passengerData,
+    setPassengers: passengerState.setPassengers,
+    setPassengerData: passengerState.setPassengerData,
+    
+    // Booking steps and data
     showBookingSteps,
-    setOriginValue,
-    setDestinationValue,
-    setTripType,
-    setDate,
-    setReturnDate,
-    setPassengers,
-    setPassengerData,
-    setTime,
-    setReturnTime,
-    handleOriginChange,
-    handleDestinationChange,
-    handleOriginNumberChange,
-    handleDestinationNumberChange,
-    selectSuggestion,
-    handleBooking,
     setShowBookingSteps,
-    bookingData,
-    clearOrigin,
-    clearDestination
+    handleBooking,
+    bookingData
   };
 };
+
+export type { PassengerInfo, BookingFormData } from '@/types/booking.types';
