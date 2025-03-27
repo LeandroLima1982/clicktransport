@@ -48,7 +48,7 @@ const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
             <Label className="block text-sm font-semibold booking-label mb-2">
               De onde vai sair?
             </Label>
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            <div className="flex flex-col space-y-2">
               <div className="flex-1">
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -62,21 +62,19 @@ const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
                   />
                 </div>
               </div>
-              <div className="w-full sm:w-[180px]">
-                <div className="flex">
-                  <Select value={originCityId} onValueChange={setOriginCityId}>
-                    <SelectTrigger className="h-10 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
-                      <SelectValue placeholder="Selecione cidade" className="text-white/50" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#002366] border border-[#D4AF37] text-white">
-                      {cities.filter(city => city.is_active !== false).map(city => (
-                        <SelectItem key={city.id} value={city.id} className="hover:bg-white/10 text-white">
-                          {formatCityLabel(city)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="w-full">
+                <Select value={originCityId} onValueChange={setOriginCityId}>
+                  <SelectTrigger className="h-10 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
+                    <SelectValue placeholder="Selecione cidade" className="text-white/50" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#002366] border border-[#D4AF37] text-white">
+                    {cities.filter(city => city.is_active !== false).map(city => (
+                      <SelectItem key={city.id} value={city.id} className="hover:bg-white/10 text-white">
+                        {formatCityLabel(city)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
