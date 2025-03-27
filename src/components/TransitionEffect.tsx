@@ -1,75 +1,36 @@
 
-import React, { useEffect, useState } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import React, { useEffect } from 'react';
 
-interface TransitionEffectProps {
-  children: React.ReactNode;
-  delay?: number;
-  direction?: 'up' | 'down' | 'left' | 'right' | 'fade' | 'scale';
-  duration?: number;
-}
-
-const TransitionEffect: React.FC<TransitionEffectProps> = ({ 
-  children, 
-  delay = 0,
-  direction = 'up',
-  duration = 500
-}) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const isMobile = useIsMobile();
-
+const TransitionEffect: React.FC = () => {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, delay);
+    // Intersection Observer to detect when elements come into view
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        // Add the 'visible' class when the element is in view
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, {
+      root: null, // viewport
+      threshold: 0.1, // trigger when 10% of the item is visible
+      rootMargin: '0px 0px -50px 0px' // negative bottom margin to trigger earlier
+    });
+    
+    // Observe all stagger items
+    document.querySelectorAll('.stagger-item').forEach(item => {
+      observer.observe(item);
+    });
     
     return () => {
-      clearTimeout(timer);
-      setIsVisible(false);
+      // Cleanup
+      document.querySelectorAll('.stagger-item').forEach(item => {
+        observer.unobserve(item);
+      });
     };
-  }, [delay]);
-
-  // Different transition styles based on direction
-  const getTransitionStyles = () => {
-    if (!isVisible) {
-      switch (direction) {
-        case 'up':
-          return 'opacity-0 translate-y-8';
-        case 'down':
-          return 'opacity-0 -translate-y-8';
-        case 'left':
-          return 'opacity-0 translate-x-8';
-        case 'right':
-          return 'opacity-0 -translate-x-8';
-        case 'scale':
-          return 'opacity-0 scale-95';
-        case 'fade':
-        default:
-          return 'opacity-0';
-      }
-    }
-    return 'opacity-100 translate-y-0 translate-x-0 scale-100';
-  };
-
-  // Mobile specific animations with hardware acceleration for better performance
-  const getMobileClass = () => {
-    if (!isMobile) return '';
-    
-    // For mobile devices, we apply a more performant animation via GPU
-    return isVisible ? 'animate-app-reveal will-change-transform' : '';
-  };
-
-  return (
-    <div
-      className={`transition-all ease-out w-full ${getTransitionStyles()} ${getMobileClass()}`}
-      style={{ 
-        transitionDuration: `${duration}ms`, 
-        transitionDelay: `${delay}ms`
-      }}
-    >
-      {children}
-    </div>
-  );
+  }, []);
+  
+  return null; // This component doesn't render anything
 };
 
 export default TransitionEffect;

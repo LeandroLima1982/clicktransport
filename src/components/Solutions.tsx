@@ -56,7 +56,7 @@ const SolutionCard = ({ solution, index }) => {
   return (
     <Card 
       key={index} 
-      className="border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group relative"
+      className="border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group relative stagger-item"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={() => setIsHovered(true)}
@@ -100,7 +100,7 @@ const Solutions: React.FC = () => {
       <div className="absolute top-0 inset-0 bg-gradient-to-b from-white via-gray-50 to-white opacity-50 -z-10"></div>
       <div className="w-full px-[24px]">
         <div className="text-center mb-12">
-          <h2 className="section-title mb-6">Soluções em Transporte Personalizado</h2>
+          <h2 className="section-title mb-6 text-3xl md:text-4xl font-bold">Soluções em Transporte Personalizado</h2>
           <p className="text-foreground/70 max-w-2xl mx-auto">Oferecemos uma variedade de serviços de transfer para atender às necessidades específicas de cada cliente, garantindo conforto, segurança e pontualidade.</p>
         </div>
 
