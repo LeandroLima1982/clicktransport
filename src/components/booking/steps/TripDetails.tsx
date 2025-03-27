@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Calendar, MapPin, Users, Clock, AlertTriangle, DollarSign, Navigation, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -79,11 +78,15 @@ const TripDetails: React.FC<TripDetailsProps> = ({
   const handleShareViaWhatsApp = () => {
     if (!bookingData.date) return;
     
+    // Convert Date objects to strings for the sharing function
+    const formattedDate = bookingData.date ? formatDate(bookingData.date) : '';
+    const formattedReturnDate = bookingData.returnDate ? formatDate(bookingData.returnDate) : '';
+    
     const shareData = {
       origin: bookingData.origin,
       destination: bookingData.destination,
-      date: bookingData.date,
-      returnDate: bookingData.returnDate,
+      date: formattedDate,
+      returnDate: formattedReturnDate,
       tripType: bookingData.tripType,
       time: bookingData.time,
       returnTime: bookingData.returnTime,
