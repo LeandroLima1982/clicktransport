@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -156,12 +155,10 @@ const BookingForm: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-transparent to-[#002366]/90 rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border-b border-l border-r border-[#D4AF37]/60 shadow-[0_15px_50px_rgba(0,0,0,0.5)] glass-morphism-transparent transition-all duration-300">
-      <div className="relative pt-10 md:pt-12 pb-6 md:pb-8 px-5 md:px-6 lg:px-8">
-        <div className="flex justify-center mb-8 mt-2">
-          <div className="animate-float">
-            <TripTypeTabs value={tripType} onChange={setTripType} />
-          </div>
+    <div className="w-full bg-gradient-to-b from-transparent to-[#002366]/70 rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border-b border-l border-r border-[#D4AF37]/60 shadow-[0_15px_50px_rgba(0,0,0,0.5)] glass-morphism transition-all duration-300">
+      <div className="relative pt-6 md:pt-7 pb-6 md:pb-8 px-5 md:px-6 lg:px-8">
+        <div className="flex justify-center mb-6 mt-1">
+          <TripTypeTabs value={tripType} onChange={setTripType} />
         </div>
         
         <div className="space-y-5 md:space-y-6 mt-6">

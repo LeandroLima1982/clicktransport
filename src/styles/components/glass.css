@@ -13,21 +13,9 @@
   border-top: none;
 }
 
-/* New transparent to navy gradient */
-.glass-morphism-transparent {
-  background: linear-gradient(to bottom, 
-    rgba(255, 255, 255, 0) 0%, 
-    rgba(0, 35, 102, 0.1) 20%, 
-    rgba(0, 35, 102, 0.5) 50%, 
-    rgba(0, 35, 102, 0.9) 100%);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-top: none;
-}
-
-/* Modern glass switch effect with vibrant colors */
+/* Modern glass switch effect */
 .glass-switch {
-  background: rgba(0, 35, 102, 0.9);
+  background: rgba(28, 77, 155, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.6);
