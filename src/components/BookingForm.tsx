@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -8,12 +7,13 @@ import TripTypeTabs from './booking/TripTypeTabs';
 import TimeSelector from './TimeSelector';
 import PassengerSelector from './booking/PassengerSelector';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MapPin, ArrowRight, Calendar, X, ChevronRight, UserIcon } from 'lucide-react';
-import TransitionEffect from '@/components/TransitionEffect';
-import LocationInput from './booking/LocationInput';
-import MapPreview from './booking/MapPreview';
-import useDestinationsService from '@/hooks/useDestinationsService';
-import { useLocationSuggestions } from '@/hooks/useLocationSuggestions';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useDestinationsService } from '@/hooks/useDestinationsService';
+import { calculateRoute } from '@/utils/routeUtils';
+import { MapPin, RotateCw, ArrowDown, ArrowRight } from 'lucide-react';
+import { Separator } from './ui/separator';
 
 interface BookingData {
   origin: string;
@@ -54,469 +54,260 @@ const BookingForm: React.FC = () => {
     bookingData,
     showBookingSteps,
     setOriginValue,
-    setDestinationValue,
+    setDestinationValue
   } = useBookingForm();
-  
-  // Use our enhanced location suggestions hook
   const {
-    originSuggestions,
-    destinationSuggestions,
-    isLoadingSuggestions,
-    handleOriginChange,
-    handleDestinationChange,
-    selectOriginSuggestion,
-    selectDestinationSuggestion,
-    clearOriginSuggestions,
-    clearDestinationSuggestions,
-    originSelected,
-    destinationSelected,
-    areBothAddressesSelected
-  } = useLocationSuggestions();
-  
-  const { cities, loading: citiesLoading, fetchCities } = useDestinationsService();
-  
+    cities,
+    loading: citiesLoading,
+    fetchCities,
+    getDistanceBetweenCities
+  } = useDestinationsService();
+  const [originCityId, setOriginCityId] = useState<string>('');
+  const [destinationCityId, setDestinationCityId] = useState<string>('');
   const [distanceInfo, setDistanceInfo] = useState<{
     distance: number;
     duration: number;
   } | null>(null);
-  
+  const [originCity, setOriginCity] = useState<string>('');
+  const [destinationCity, setDestinationCity] = useState<string>('');
   const isMobile = useIsMobile();
-  
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const [formErrors, setFormErrors] = useState<{
-    origin?: string;
-    destination?: string;
-    date?: string;
-    time?: string;
-    returnDate?: string;
-    returnTime?: string;
-  }>({});
-  
-  const [shouldShowMap, setShouldShowMap] = useState(false);
-  const [shouldCalculateRoute, setShouldCalculateRoute] = useState(false);
   
   useEffect(() => {
     fetchCities();
   }, [fetchCities]);
   
-  // Only show map when both addresses have been selected
   useEffect(() => {
-    if (areBothAddressesSelected()) {
-      setShouldShowMap(true);
-      setShouldCalculateRoute(true);
-    } else if (currentStep >= 2 && originValue && destinationValue) {
-      setShouldShowMap(true);
-      setShouldCalculateRoute(false);
-    } else {
-      setShouldShowMap(false);
-      setShouldCalculateRoute(false);
-    }
-  }, [originValue, destinationValue, currentStep, originSelected, destinationSelected, areBothAddressesSelected]);
-  
-  const handleRouteCalculated = (routeData: { distance: number; duration: number }) => {
-    console.log('Route calculation result:', routeData);
-    setDistanceInfo(routeData);
-  };
-
-  const validateOriginStep = (): boolean => {
-    const errors: {origin?: string} = {};
-    
-    if (!originValue) {
-      errors.origin = "Por favor, informe o local de origem";
-    }
-    
-    setFormErrors(prevErrors => ({...prevErrors, ...errors}));
-    return Object.keys(errors).length === 0;
-  };
-  
-  const validateDestinationStep = (): boolean => {
-    const errors: {destination?: string} = {};
-    
-    if (!destinationValue) {
-      errors.destination = "Por favor, informe o local de destino";
-    }
-    
-    setFormErrors(prevErrors => ({...prevErrors, ...errors}));
-    return Object.keys(errors).length === 0;
-  };
-  
-  const validateTripDetailsStep = (): boolean => {
-    const errors: {
-      date?: string;
-      time?: string;
-      returnDate?: string;
-      returnTime?: string;
-    } = {};
-    
-    if (!date) {
-      errors.date = "Por favor, selecione a data da viagem";
-    }
-    
-    if (!time) {
-      errors.time = "Por favor, selecione o horário da viagem";
-    }
-    
-    if (tripType === 'roundtrip') {
-      if (!returnDate) {
-        errors.returnDate = "Por favor, selecione a data de retorno";
+    const calculateDistance = async () => {
+      if (originCityId && destinationCityId) {
+        const originCityObj = cities.find(city => city.id === originCityId);
+        const destinationCityObj = cities.find(city => city.id === destinationCityId);
+        if (originCityObj && destinationCityObj) {
+          setOriginCity(formatCityLabel(originCityObj));
+          setDestinationCity(formatCityLabel(destinationCityObj));
+          try {
+            const savedDistance = await getDistanceBetweenCities(originCityId, destinationCityId);
+            if (savedDistance && savedDistance.exists) {
+              setDistanceInfo({
+                distance: savedDistance.distance,
+                duration: savedDistance.duration
+              });
+              return;
+            }
+            const originCoords = `${originCityObj.longitude},${originCityObj.latitude}`;
+            const destinationCoords = `${destinationCityObj.longitude},${destinationCityObj.latitude}`;
+            const routeInfo = await calculateRoute(originCoords, destinationCoords);
+            if (routeInfo) {
+              setDistanceInfo({
+                distance: routeInfo.distance,
+                duration: routeInfo.duration
+              });
+            }
+          } catch (error) {
+            console.error('Erro ao calcular rota:', error);
+            setDistanceInfo(null);
+          }
+        }
+      } else {
+        setDistanceInfo(null);
       }
-      
-      if (!returnTime) {
-        errors.returnTime = "Por favor, selecione o horário de retorno";
-      }
-    }
-    
-    setFormErrors(prevErrors => ({...prevErrors, ...errors}));
-    return Object.keys(errors).length === 0;
+    };
+    calculateDistance();
+  }, [originCityId, destinationCityId, cities, getDistanceBetweenCities]);
+  
+  const formatCityLabel = (city: any) => {
+    const stateAbbreviation = city.state ? city.state.length > 2 ? city.state.substring(0, 2).toUpperCase() : city.state.toUpperCase() : '';
+    return `${city.name}${stateAbbreviation ? `, ${stateAbbreviation}` : ''}`;
   };
   
-  const goToNextStep = () => {
-    let isValid = false;
-    
-    if (currentStep === 1) {
-      isValid = validateOriginStep();
-    } else if (currentStep === 2) {
-      isValid = validateDestinationStep();
-    } else if (currentStep === 3) {
-      isValid = validateTripDetailsStep();
-      if (isValid) {
-        handleBooking();
-        return;
-      }
-    }
-    
-    if (isValid) {
-      setCurrentStep(prev => Math.min(prev + 1, 3));
-    }
+  const handleRefreshCities = () => {
+    fetchCities();
   };
   
-  const goToPreviousStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
+  const handleManualOriginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOriginValue(e.target.value);
   };
-
-  // Formatação do tempo estimado para exibição
-  const formatEstimatedTime = (minutes?: number) => {
-    if (!minutes) return "";
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `~${hours}h ${mins > 0 ? `${mins}min` : ''}`;
+  
+  const handleManualDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDestinationValue(e.target.value);
   };
-
-  // Função para renderizar a barra de progresso moderna
-  const renderProgressSteps = () => {
-    return (
-      <div className="flex justify-center items-center w-full relative mb-4">
-        {[1, 2, 3].map((step) => (
-          <React.Fragment key={step}>
-            {/* Círculo de etapa */}
-            <div 
-              className={`flex items-center justify-center w-8 h-8 rounded-full z-10 transition-all duration-300 ${
-                currentStep === step 
-                  ? 'bg-amber-400 text-white font-bold shadow-md' 
-                  : currentStep > step
-                    ? 'bg-green-500 text-white' 
-                    : 'bg-gray-100 text-gray-400'
-              }`}
-            >
-              {currentStep > step ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              ) : (
-                step
-              )}
-            </div>
-            
-            {/* Linha conectora */}
-            {step < 3 && (
-              <div className="flex-1 h-1 mx-2">
-                <div 
-                  className={`h-full transition-all duration-500 ${
-                    currentStep > step 
-                      ? 'bg-green-500' 
-                      : 'bg-gray-200'
-                  }`}
-                ></div>
-              </div>
-            )}
-          </React.Fragment>
-        ))}
-      </div>
-    );
-  };
-
-  // Renderização condicional do conteúdo baseado na etapa atual
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <TransitionEffect direction="fade" delay={100}>
-            <div className="rounded-xl bg-white p-4 shadow-lg">
-              <div className="mb-3 text-center">
-                <div className="text-lg font-bold text-gray-800">De onde você está saindo?</div>
-                <div className="text-xs text-gray-500">Informe o endereço de origem</div>
-              </div>
-              
-              <LocationInput
-                id="origin"
-                label=""
-                placeholder="Digite seu endereço de origem"
-                value={originValue}
-                onChange={(e) => handleOriginChange(e.target.value)}
-                suggestions={originSuggestions}
-                onSelectSuggestion={(suggestion) => {
-                  const address = selectOriginSuggestion(suggestion);
-                  setOriginValue(address);
-                }}
-                onClear={() => {
-                  setOriginValue('');
-                  clearOriginSuggestions();
-                }}
-                isLoading={isLoadingSuggestions}
-              />
-              
-              {formErrors.origin && (
-                <p className="text-red-500 text-sm mt-2">{formErrors.origin}</p>
-              )}
-              
-              {originValue && (
-                <div className="flex items-center mt-4 px-3 py-2 bg-blue-50 rounded-lg">
-                  <MapPin className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0" />
-                  <div className="text-sm text-blue-800 font-medium truncate">{originValue}</div>
-                </div>
-              )}
-            </div>
-          </TransitionEffect>
-        );
-      case 2:
-        return (
-          <TransitionEffect direction="fade" delay={100}>
-            <div className="rounded-xl bg-white p-4 shadow-lg">
-              <div className="mb-3 text-center">
-                <div className="text-lg font-bold text-gray-800">Para onde você vai?</div>
-                <div className="text-xs text-gray-500">Informe o endereço de destino</div>
-              </div>
-              
-              <LocationInput
-                id="destination"
-                label=""
-                placeholder="Digite o endereço de destino"
-                value={destinationValue}
-                onChange={(e) => handleDestinationChange(e.target.value)}
-                suggestions={destinationSuggestions}
-                onSelectSuggestion={(suggestion) => {
-                  const address = selectDestinationSuggestion(suggestion);
-                  setDestinationValue(address);
-                }}
-                onClear={() => {
-                  setDestinationValue('');
-                  clearDestinationSuggestions();
-                }}
-                isLoading={isLoadingSuggestions}
-              />
-              
-              {formErrors.destination && (
-                <p className="text-red-500 text-sm mt-2">{formErrors.destination}</p>
-              )}
-              
-              {originValue && (
-                <div className="flex items-center justify-between mt-4 px-3 py-2 bg-blue-50 rounded-t-lg border-b border-blue-100">
-                  <div className="flex items-center">
-                    <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center mr-2">
-                      <MapPin className="h-3 w-3 text-green-600" />
-                    </div>
-                    <div className="text-sm text-blue-800 truncate max-w-[200px]">{originValue}</div>
-                  </div>
-                </div>
-              )}
-              
-              {destinationValue && (
-                <div className="flex items-center justify-between px-3 py-2 bg-blue-50 rounded-b-lg">
-                  <div className="flex items-center">
-                    <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center mr-2">
-                      <MapPin className="h-3 w-3 text-red-600" />
-                    </div>
-                    <div className="text-sm text-blue-800 truncate max-w-[200px]">{destinationValue}</div>
-                  </div>
-                </div>
-              )}
-              
-              {distanceInfo && (
-                <div className="mt-3 text-center text-sm text-gray-600">
-                  <span className="font-medium">{Math.round(distanceInfo.distance)} km</span> • 
-                  <span className="ml-1">{formatEstimatedTime(distanceInfo.duration)}</span>
-                </div>
-              )}
-            </div>
-          </TransitionEffect>
-        );
-      case 3:
-        return (
-          <TransitionEffect direction="fade" delay={100}>
-            <div className="rounded-xl bg-white p-4 shadow-lg space-y-4">
-              <div className="mb-3 text-center">
-                <div className="text-lg font-bold text-gray-800">Quando você vai?</div>
-                <div className="text-xs text-gray-500">Selecione data, horário e passageiros</div>
-              </div>
-              
-              <div className="flex justify-center mb-4">
-                <TripTypeTabs value={tripType} onChange={setTripType} />
-              </div>
-              
-              <div className="space-y-4">
-                <div className="bg-gray-50 p-3 rounded-xl">
-                  <div className="flex items-center mb-2">
-                    <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                    <span className="text-sm font-medium text-gray-700">Data e hora da ida</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="relative">
-                      <DateSelector 
-                        hideLabel 
-                        date={date} 
-                        onSelect={setDate} 
-                        disabledDates={date => date < new Date()} 
-                        isConnected={true} 
-                        position="left" 
-                      />
-                    </div>
-                    <TimeSelector 
-                      value={time} 
-                      onChange={setTime} 
-                      connected 
-                      position="right" 
-                    />
-                  </div>
-                  
-                  {(formErrors.date || formErrors.time) && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {formErrors.date || formErrors.time}
-                    </p>
-                  )}
-                </div>
-                
-                <div className="bg-gray-50 p-3 rounded-xl">
-                  <div className="flex items-center mb-2">
-                    <UserIcon className="h-4 w-4 text-gray-500 mr-2" />
-                    <span className="text-sm font-medium text-gray-700">Passageiros</span>
-                  </div>
-                  
-                  <PassengerSelector value={passengers} onChange={setPassengers} />
-                </div>
-                
-                {tripType === 'roundtrip' && (
-                  <div className="bg-gray-50 p-3 rounded-xl">
-                    <div className="flex items-center mb-2">
-                      <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-sm font-medium text-gray-700">Data e hora de volta</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="relative">
-                        <DateSelector 
-                          hideLabel 
-                          date={returnDate} 
-                          onSelect={setReturnDate} 
-                          disabledDates={currentDate => currentDate < (date || new Date())} 
-                          isConnected={true} 
-                          position="left" 
-                        />
-                      </div>
-                      <TimeSelector 
-                        value={returnTime} 
-                        onChange={setReturnTime} 
-                        connected 
-                        position="right" 
-                      />
-                    </div>
-                    
-                    {(formErrors.returnDate || formErrors.returnTime) && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {formErrors.returnDate || formErrors.returnTime}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </TransitionEffect>
-        );
-      default:
-        return null;
+  
+  const getFullOriginAddress = () => {
+    if (originValue && originCity) {
+      return `${originValue}, ${originCity}`;
     }
+    return originValue;
   };
-
-  // Sumário da rota para mostrar enquanto o usuário avança
-  const renderRouteSummary = () => {
-    if (!shouldShowMap) return null;
-    
-    return (
-      <div className="mb-4">
-        <div className="rounded-xl overflow-hidden shadow-md mb-2 h-32">
-          <MapPreview 
-            origin={originValue}
-            destination={destinationValue}
-            onRouteCalculated={handleRouteCalculated}
-            shouldCalculate={shouldCalculateRoute}
-          />
-        </div>
-        
-        {distanceInfo && destinationValue && (
-          <div className="bg-blue-900 text-white px-3 py-2 rounded-lg text-xs flex items-center justify-center">
-            <div>Distância: <span className="font-medium">{Math.round(distanceInfo.distance)} km</span></div>
-            <div className="mx-2">•</div>
-            <div>Tempo estimado: <span className="font-medium">{formatEstimatedTime(distanceInfo.duration)}</span></div>
-          </div>
-        )}
-      </div>
-    );
+  
+  const getFullDestinationAddress = () => {
+    if (destinationValue && destinationCity) {
+      return `${destinationValue}, ${destinationCity}`;
+    }
+    return destinationValue;
   };
-
-  // Ações de navegação (voltar/continuar)
-  const renderNavigation = () => {
-    return (
-      <div className="flex justify-between items-center mt-6">
-        {currentStep > 1 ? (
-          <Button 
-            onClick={goToPreviousStep} 
-            variant="outline"
-            className="px-4 py-2 rounded-full border border-gray-300 text-gray-700 bg-white"
-          >
-            Voltar
-          </Button>
-        ) : (
-          <div></div>
-        )}
-        
-        <Button 
-          onClick={goToNextStep}
-          className="px-6 py-3 rounded-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-medium flex items-center shadow-lg"
-        >
-          {currentStep === 3 ? 'Buscar Motorista' : 'Continuar'}
-          <ChevronRight className="ml-1 h-5 w-5" />
-        </Button>
-      </div>
-    );
+  
+  const renderDistanceInfo = () => {
+    if (!distanceInfo) return null;
+    const totalMinutes = Math.round(distanceInfo.duration);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    return;
   };
 
   return (
-    <div className="w-full bg-gradient-to-b from-blue-900 to-blue-800 rounded-2xl overflow-hidden border border-blue-700 shadow-xl">
-      <div className="p-4">
-        <div className="mb-2 text-white text-center">
-          <h2 className="text-xl font-bold">Seu Transfer em 3 Passos Simples</h2>
+    <div className="w-full bg-[#002366] rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border-b border-l border-r border-[#D4AF37] shadow-[0_15px_50px_rgba(0,0,0,0.5)] glass-morphism transition-all duration-300">
+      <div className="relative pt-6 md:pt-7 pb-6 md:pb-8 px-5 md:px-6 lg:px-8">
+        <div className="flex justify-center mb-6 mt-1">
+          <TripTypeTabs value={tripType} onChange={setTripType} />
         </div>
         
-        {renderProgressSteps()}
-        {renderRouteSummary()}
-        {renderStepContent()}
-        {renderNavigation()}
+        <div className="space-y-5 md:space-y-6 mt-6">
+          <div className="grid md:grid-cols-2 gap-4 md:gap-5">
+            <div className="booking-input-container p-3 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
+              <Label className="block text-sm font-semibold booking-label mb-2">
+                De onde vai sair?
+              </Label>
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <div className="flex-1">
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                      <MapPin className="h-4 w-4 text-[#F8D748]" />
+                    </div>
+                    <Input 
+                      placeholder="Digite seu endereço: rua, número, bairro" 
+                      value={originValue} 
+                      onChange={handleManualOriginChange} 
+                      className="pl-9 pr-3 py-2.5 text-sm booking-input h-10 focus:border-[#F8D748] focus:ring-[#F8D748] placeholder:text-white/50" 
+                    />
+                  </div>
+                </div>
+                <div className="w-full sm:w-[180px]">
+                  <div className="flex">
+                    <Select value={originCityId} onValueChange={setOriginCityId}>
+                      <SelectTrigger className="h-10 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
+                        <SelectValue placeholder="Selecione cidade" className="text-white/50" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#002366] border border-[#D4AF37] text-white">
+                        {cities.filter(city => city.is_active !== false).map(city => (
+                          <SelectItem key={city.id} value={city.id} className="hover:bg-white/10 text-white">
+                            {formatCityLabel(city)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="booking-input-container p-3 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
+              <Label className="block text-sm font-semibold booking-label mb-2">
+                Para onde vai?
+              </Label>
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <div className="flex-1">
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                      <MapPin className="h-4 w-4 text-[#F8D748]" />
+                    </div>
+                    <Input 
+                      placeholder="Digite seu destino: rua, número, bairro" 
+                      value={destinationValue} 
+                      onChange={handleManualDestinationChange} 
+                      className="pl-9 pr-3 py-2.5 text-sm booking-input h-10 focus:border-[#F8D748] focus:ring-[#F8D748] placeholder:text-white/50" 
+                    />
+                  </div>
+                </div>
+                <div className="w-full sm:w-[180px]">
+                  <Select value={destinationCityId} onValueChange={setDestinationCityId}>
+                    <SelectTrigger className="h-10 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
+                      <SelectValue placeholder="Selecione cidade" className="text-white/50" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#002366] border border-[#D4AF37] text-white">
+                      {cities.filter(city => city.is_active !== false).map(city => (
+                        <SelectItem key={city.id} value={city.id} className="hover:bg-white/10 text-white">
+                          {formatCityLabel(city)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="hidden md:flex justify-center items-center h-6 relative">
+            <Separator className="w-full bg-[#D4AF37]" />
+            <div className="absolute bg-amber-400 rounded-full p-1 shadow-md">
+              <ArrowRight className="h-4 w-4 text-[#002366]" />
+            </div>
+          </div>
+
+          <div className="flex md:hidden justify-center items-center h-6 relative mb-2">
+            <Separator className="w-full bg-[#D4AF37]" />
+            <div className="absolute bg-amber-400 rounded-full p-1 shadow-md">
+              <ArrowDown className="h-4 w-4 text-[#002366]" />
+            </div>
+          </div>
+
+          {renderDistanceInfo()}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+            <div className="md:col-span-2 booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow">
+              <Label className="booking-label block text-sm font-semibold mb-2">
+                Vai quando?
+              </Label>
+              <div className="flex flex-col sm:flex-row sm:space-x-0">
+                <div className="sm:w-1/2 mb-2 sm:mb-0">
+                  <DateSelector hideLabel date={date} onSelect={setDate} disabledDates={date => date < new Date()} isConnected={true} position="left" />
+                </div>
+                <div className="sm:w-1/2">
+                  <TimeSelector value={time} onChange={setTime} connected position="right" />
+                </div>
+              </div>
+            </div>
+
+            <div className="booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow">
+              <PassengerSelector value={passengers} onChange={setPassengers} />
+            </div>
+          </div>
+
+          {tripType === 'roundtrip' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-[#D4AF37]">
+              <div className="booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow">
+                <Label className="booking-label block text-sm font-semibold mb-2">
+                  Volta quando?
+                </Label>
+                <div className="flex flex-col sm:flex-row sm:space-x-0">
+                  <div className="sm:w-1/2 mb-2 sm:mb-0">
+                    <DateSelector hideLabel date={returnDate} onSelect={setReturnDate} disabledDates={currentDate => currentDate < (date || new Date())} isConnected={true} position="left" />
+                  </div>
+                  <div className="sm:w-1/2">
+                    <TimeSelector value={returnTime} onChange={setReturnTime} connected position="right" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <Button 
+          onClick={handleBooking} 
+          disabled={!originCityId || !destinationCityId} 
+          className="w-full rounded-lg mt-6 text-[#002366] text-lg font-medium h-12 md:h-14 transition-all duration-300 
+                    shadow-xl relative overflow-hidden bg-gradient-to-r from-amber-400 to-amber-300 
+                    hover:from-amber-300 hover:to-amber-200 border border-amber-300"
+        >
+          <span className="relative z-10 flex items-center justify-center">
+            Buscar Motorista
+          </span>
+        </Button>
 
         {bookingData && showBookingSteps && (
           <BookingSteps 
             bookingData={{
-              origin: originValue,
-              destination: destinationValue,
+              origin: getFullOriginAddress(),
+              destination: getFullDestinationAddress(),
               date: date,
               returnDate: returnDate,
               tripType: tripType,

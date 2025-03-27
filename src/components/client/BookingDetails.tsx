@@ -1,56 +1,44 @@
 
 import React from 'react';
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetHeader, 
-  SheetTitle 
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Booking } from '@/types/booking';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Booking } from '@/types/booking';
+import BookingStatus from './BookingStatus';
+import ServiceOrderStatus from './ServiceOrderStatus';
 import {
   Calendar,
   Clock,
   MapPin,
-  Car,
   Users,
+  Car,
   CreditCard,
-  Trash2,
-  AlertCircle,
-  CheckCircle2,
-  CircleDot
+  Phone,
+  AlertTriangle,
 } from 'lucide-react';
-import BookingStatus from './BookingStatus';
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import ServiceOrderStatus from './ServiceOrderStatus';
 
 interface BookingDetailsProps {
   booking: Booking;
   isOpen: boolean;
   onClose: () => void;
-  onCancel: (id: string) => Promise<void>;
+  onCancel: (bookingId: string) => Promise<void>;
 }
 
 const BookingDetails: React.FC<BookingDetailsProps> = ({
   booking,
   isOpen,
   onClose,
-  onCancel
+  onCancel,
 }) => {
-  const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
   const [isCancelling, setIsCancelling] = React.useState(false);
-  
+
   const formatDate = (dateString: string) => {
     try {
       return format(parseISO(dateString), "dd 'de' MMMM, yyyy", { locale: ptBR });
@@ -58,7 +46,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
       return dateString;
     }
   };
-  
+
   const formatTime = (dateString: string) => {
     try {
       return format(parseISO(dateString), "HH:mm", { locale: ptBR });
@@ -66,235 +54,192 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
       return "";
     }
   };
-  
-  const formatCurrency = (value: number = 0) => {
+
+  const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
   };
-  
+
   const handleCancelBooking = async () => {
-    setIsCancelling(true);
-    try {
-      await onCancel(booking.id);
-      setCancelDialogOpen(false);
-    } finally {
-      setIsCancelling(false);
-    }
-  };
-  
-  const getBookingProgress = () => {
-    if (booking.status === 'cancelled') {
-      return -1; // Special case for cancelled
-    }
-    
-    if (booking.status === 'completed') {
-      return 100; // Completed
-    }
-    
-    const now = new Date();
-    const bookingDate = parseISO(booking.booking_date);
-    const travelDate = parseISO(booking.travel_date);
-    
-    const totalDuration = travelDate.getTime() - bookingDate.getTime();
-    const elapsed = now.getTime() - bookingDate.getTime();
-    
-    const progress = Math.min(Math.floor((elapsed / totalDuration) * 100), 99);
-    return Math.max(progress, 5); // At least 5% progress
-  };
-  
-  // Format for UI clarity
-  const getBookingDate = () => {
-    try {
-      const date = parseISO(booking.booking_date);
-      return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-    } catch (e) {
-      return booking.booking_date;
-    }
-  };
-  
-  // Determine if we can cancel (only pending or confirmed and not in the past)
-  const canCancel = () => {
-    if (booking.status !== 'pending' && booking.status !== 'confirmed') {
-      return false;
-    }
-    
-    try {
-      const travelDate = parseISO(booking.travel_date);
-      const now = new Date();
-      return travelDate > now;
-    } catch (e) {
-      return false;
+    if (window.confirm('Tem certeza que deseja cancelar esta reserva?')) {
+      setIsCancelling(true);
+      try {
+        await onCancel(booking.id);
+        onClose();
+      } catch (error) {
+        console.error('Error cancelling booking:', error);
+      } finally {
+        setIsCancelling(false);
+      }
     }
   };
 
+  // Get passenger data from booking
+  const getPassengerData = () => {
+    if (booking.passenger_data) {
+      try {
+        return typeof booking.passenger_data === 'string'
+          ? JSON.parse(booking.passenger_data)
+          : booking.passenger_data;
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const passengerData = getPassengerData();
+  const isRoundTrip = booking.return_date !== null;
+
   return (
-    <>
-      <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <SheetContent className="w-full sm:max-w-xl overflow-auto">
-          <SheetHeader className="mb-6">
-            <SheetTitle className="flex items-center justify-between">
-              <span>Detalhes da Reserva</span>
-              <BookingStatus status={booking.status} />
-            </SheetTitle>
-          </SheetHeader>
-          
-          <div className="space-y-6">
-            <div className="flex justify-between items-center border-b pb-2">
-              <div>
-                <div className="text-sm text-muted-foreground">Código da Reserva</div>
-                <div className="font-medium">{booking.reference_code}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Data da Reserva</div>
-                <div className="font-medium">{getBookingDate()}</div>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-md font-medium mb-3">Detalhes da Viagem</h3>
-              
-              <div className="space-y-4 bg-gray-50 p-3 rounded-md">
-                <div className="flex items-start gap-3">
-                  <Calendar className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">Data</div>
-                    <div className="font-medium">{formatDate(booking.travel_date)}</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <Clock className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">Horário</div>
-                    <div className="font-medium">{formatTime(booking.travel_date)}</div>
-                  </div>
-                </div>
-                
-                {booking.return_date && (
-                  <div className="flex items-start gap-3">
-                    <Calendar className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <div className="text-sm text-muted-foreground">Data de Retorno</div>
-                      <div className="font-medium">{formatDate(booking.return_date)}</div>
-                      {formatTime(booking.return_date) && (
-                        <div className="text-sm">{formatTime(booking.return_date)}</div>
-                      )}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">Origem</div>
-                    <div className="font-medium">{booking.origin}</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">Destino</div>
-                    <div className="font-medium">{booking.destination}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-md font-medium mb-3">Informações Adicionais</h3>
-              
-              <div className="space-y-4 bg-gray-50 p-3 rounded-md">
-                <div className="flex items-start gap-3">
-                  <Car className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">Veículo</div>
-                    <div className="font-medium">{booking.vehicle_type || "Veículo padrão"}</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <Users className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">Passageiros</div>
-                    <div className="font-medium">{booking.passengers}</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <CreditCard className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">Valor Total</div>
-                    <div className="font-medium">{formatCurrency(booking.total_price)}</div>
-                  </div>
-                </div>
-                
-                {booking.additional_notes && (
-                  <div className="flex items-start gap-3">
-                    <CircleDot className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <div className="text-sm text-muted-foreground">Observações</div>
-                      <div className="font-medium">{booking.additional_notes}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-md font-medium mb-3">Status do Serviço</h3>
-              <ServiceOrderStatus booking={booking} />
-            </div>
-            
-            <div className="flex justify-between pt-4 border-t">
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent className="sm:max-w-lg overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Detalhes da Reserva</SheetTitle>
+          <SheetDescription>
+            Reserva #{booking.reference_code}
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="py-4">
+          <div className="flex justify-between items-center mb-4">
+            <BookingStatus status={booking.status} className="py-1 px-3" />
+            {booking.status !== 'cancelled' && booking.status !== 'completed' && (
               <Button 
-                variant="outline"
-                onClick={() => onClose()}
+                variant="outline" 
+                size="sm" 
+                onClick={handleCancelBooking}
+                disabled={isCancelling}
               >
-                Fechar
+                {isCancelling ? 'Cancelando...' : 'Cancelar Reserva'}
               </Button>
-              
-              {canCancel() && (
-                <Button 
-                  variant="destructive"
-                  onClick={() => setCancelDialogOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Cancelar Reserva
-                </Button>
-              )}
-            </div>
+            )}
           </div>
-        </SheetContent>
-      </Sheet>
-      
-      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar Reserva</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja cancelar esta reserva? 
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isCancelling}>Voltar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                handleCancelBooking();
-              }}
-              disabled={isCancelling}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isCancelling ? 'Cancelando...' : 'Sim, Cancelar Reserva'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+
+          {/* Service Order Status Flow */}
+          <ServiceOrderStatus status={booking.status} className="my-6" />
+
+          <div className="space-y-4 mt-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-semibold flex items-center mb-2">
+                <Calendar className="h-4 w-4 mr-2 text-primary" />
+                Data e Horário
+              </h3>
+              <div className="text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Data:</span>
+                  <span>{formatDate(booking.travel_date)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Horário:</span>
+                  <span>{formatTime(booking.travel_date)}</span>
+                </div>
+                {isRoundTrip && booking.return_date && (
+                  <>
+                    <div className="border-t border-gray-200 my-2"></div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Data de retorno:</span>
+                      <span>{formatDate(booking.return_date)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Horário de retorno:</span>
+                      <span>{formatTime(booking.return_date)}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-semibold flex items-center mb-2">
+                <MapPin className="h-4 w-4 mr-2 text-primary" />
+                Trajeto
+              </h3>
+              <div className="text-sm space-y-1">
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground">Origem:</span>
+                  <span className="font-medium">{booking.origin}</span>
+                </div>
+                <div className="flex flex-col mt-2">
+                  <span className="text-muted-foreground">Destino:</span>
+                  <span className="font-medium">{booking.destination}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-semibold flex items-center mb-2">
+                <Car className="h-4 w-4 mr-2 text-primary" />
+                Veículo
+              </h3>
+              <div className="text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tipo:</span>
+                  <span>{booking.vehicle_type || "Não especificado"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Passageiros:</span>
+                  <span>{booking.passengers}</span>
+                </div>
+              </div>
+            </div>
+
+            {passengerData.length > 0 && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-semibold flex items-center mb-2">
+                  <Users className="h-4 w-4 mr-2 text-primary" />
+                  Passageiros
+                </h3>
+                <div className="space-y-2">
+                  {passengerData.map((passenger: any, index: number) => (
+                    <div key={index} className="border border-gray-200 rounded p-2">
+                      <div className="font-medium">{passenger.name}</div>
+                      <a 
+                        href={`https://wa.me/${passenger.phone.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center text-xs text-green-600 hover:text-green-700 transition-colors"
+                      >
+                        <Phone className="h-3 w-3 mr-1" />
+                        {passenger.phone}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-semibold flex items-center mb-2">
+                <CreditCard className="h-4 w-4 mr-2 text-primary" />
+                Pagamento
+              </h3>
+              <div className="text-sm space-y-1">
+                <div className="flex justify-between font-medium">
+                  <span>Valor Total:</span>
+                  <span className="text-primary">{formatCurrency(booking.total_price || 0)}</span>
+                </div>
+                {booking.status === 'pending' && (
+                  <div className="flex items-center mt-2 text-amber-600 text-xs">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    <span>Aguardando pagamento</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {booking.additional_notes && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-semibold mb-2">Observações</h3>
+                <p className="text-sm text-gray-700 whitespace-pre-line">{booking.additional_notes}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };
 

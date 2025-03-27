@@ -1,4 +1,3 @@
-
 import { MAPBOX_TOKEN } from './mapbox';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -6,10 +5,6 @@ export interface RouteInfo {
   distance: number; // in kilometers
   duration: number; // in minutes
   geometry?: any;
-  start_location?: { lat: number; lng: number };
-  end_location?: { lat: number; lng: number };
-  success?: boolean;
-  route?: any;
 }
 
 export interface VehicleRate {
@@ -17,7 +12,6 @@ export interface VehicleRate {
   name: string;
   basePrice: number;
   pricePerKm: number;
-  capacity: number;
 }
 
 export const calculateRoute = async (
@@ -25,68 +19,109 @@ export const calculateRoute = async (
   destination: string
 ): Promise<RouteInfo | null> => {
   try {
-    if (!origin || !destination) {
-      console.log("Missing origin or destination");
-      return null;
+    // First check if this is a city pair with stored distance
+    const cityDistance = await getCityDistanceFromDb(origin, destination);
+    if (cityDistance) {
+      console.log("Using stored city distance:", cityDistance);
+      return {
+        distance: cityDistance.distance,
+        duration: cityDistance.duration
+      };
     }
-
-    // Geocode the addresses to get coordinates
+    
+    // If no stored distance, geocode the addresses and calculate route
     const originCoords = await geocodeAddress(origin);
     const destinationCoords = await geocodeAddress(destination);
 
     if (!originCoords || !destinationCoords) {
-      console.error('Failed to geocode one of the addresses:', { origin, destination });
+      console.error('Failed to geocode one of the addresses');
       return null;
     }
-
-    console.log("Got coordinates", { originCoords, destinationCoords });
 
     // Calculate the route between the coordinates
     const route = await getRouteInfo(originCoords, destinationCoords);
-    
-    if (!route) {
-      console.error('Failed to get route info');
-      return null;
-    }
-    
-    // Transform to match expected format
-    return {
-      success: true,
-      distance: route.distance,
-      duration: route.duration,
-      geometry: route.geometry,
-      start_location: { 
-        lat: originCoords[1], 
-        lng: originCoords[0] 
-      },
-      end_location: { 
-        lat: destinationCoords[1], 
-        lng: destinationCoords[0] 
-      },
-      route: {
-        distance: route.distance,
-        duration: route.duration,
-        geometry: route.geometry,
-        start_location: { 
-          lat: originCoords[1], 
-          lng: originCoords[0] 
-        },
-        end_location: { 
-          lat: destinationCoords[1], 
-          lng: destinationCoords[0] 
-        }
-      }
-    };
+    return route;
   } catch (error) {
     console.error('Error calculating route:', error);
     return null;
   }
 };
 
-// Function to geocode an address to coordinates
-export const geocodeAddress = async (address: string): Promise<[number, number] | null> => {
+// Function to check if we have a saved distance between city names
+const getCityDistanceFromDb = async (origin: string, destination: string): Promise<RouteInfo | null> => {
   try {
-    console.log("Geocoding address:", address);
+    // Extract city names from addresses (assuming they're in the format "Street, City, State")
+    const originCity = extractCityFromAddress(origin);
+    const destinationCity = extractCityFromAddress(destination);
+    
+    if (!originCity || !destinationCity) {
+      return null;
+    }
+    
+    console.log("Checking distance between cities:", originCity, destinationCity);
+    
+    // Find city IDs from names
+    const { data: citiesData, error: citiesError } = await supabase
+      .from('cities')
+      .select('id, name, state')
+      .or(`name.ilike.${originCity}%,name.ilike.${destinationCity}%`);
+    
+    if (citiesError || !citiesData || citiesData.length < 2) {
+      console.log("Could not find both cities in database:", citiesError);
+      return null;
+    }
+    
+    const originCityData = citiesData.find(c => c.name.toLowerCase().includes(originCity.toLowerCase()));
+    const destinationCityData = citiesData.find(c => c.name.toLowerCase().includes(destinationCity.toLowerCase()));
+    
+    if (!originCityData || !destinationCityData) {
+      console.log("Could not match cities from address to database");
+      return null;
+    }
+    
+    // Look up distance between these cities
+    const { data: distanceData, error: distanceError } = await supabase
+      .from('city_distances')
+      .select('*')
+      .or(`and(origin_id.eq.${originCityData.id},destination_id.eq.${destinationCityData.id}),and(origin_id.eq.${destinationCityData.id},destination_id.eq.${originCityData.id})`)
+      .limit(1);
+    
+    if (distanceError || !distanceData || distanceData.length === 0) {
+      console.log("No stored distance found between cities");
+      return null;
+    }
+    
+    // Return the stored distance data
+    return {
+      distance: distanceData[0].distance,
+      duration: distanceData[0].duration
+    };
+  } catch (error) {
+    console.error("Error checking city distance:", error);
+    return null;
+  }
+};
+
+// Helper function to extract city name from address
+const extractCityFromAddress = (address: string): string | null => {
+  try {
+    // Try to extract city from address format like "Street, City, State"
+    const parts = address.split(',');
+    if (parts.length >= 2) {
+      // City is usually the second-to-last part before the state
+      return parts[parts.length - 2].trim();
+    }
+    return null;
+  } catch (error) {
+    console.error("Error extracting city from address:", error);
+    return null;
+  }
+};
+
+const geocodeAddress = async (address: string): Promise<[number, number] | null> => {
+  if (!address || !MAPBOX_TOKEN) return null;
+
+  try {
     const response = await fetch(
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&country=br&limit=1`
     );
@@ -96,12 +131,10 @@ export const geocodeAddress = async (address: string): Promise<[number, number] 
     }
 
     const data = await response.json();
-    
     if (data.features && data.features.length > 0) {
-      const coordinates = data.features[0].center;
-      return [coordinates[0], coordinates[1]]; // [longitude, latitude]
+      return data.features[0].center as [number, number];
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error geocoding address:', error);
@@ -109,15 +142,15 @@ export const geocodeAddress = async (address: string): Promise<[number, number] 
   }
 };
 
-// Function to get route information between two coordinates
-export const getRouteInfo = async (
+const getRouteInfo = async (
   origin: [number, number],
   destination: [number, number]
-): Promise<{ distance: number; duration: number; geometry: string } | null> => {
+): Promise<RouteInfo | null> => {
+  if (!MAPBOX_TOKEN) return null;
+
   try {
-    console.log("Getting route between:", origin, destination);
     const response = await fetch(
-      `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?access_token=${MAPBOX_TOKEN}&overview=full&geometries=polyline`
+      `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`
     );
 
     if (!response.ok) {
@@ -125,93 +158,116 @@ export const getRouteInfo = async (
     }
 
     const data = await response.json();
-    
     if (data.routes && data.routes.length > 0) {
       const route = data.routes[0];
       
+      // Convert distance from meters to kilometers
+      const distanceKm = route.distance / 1000;
+      
+      // Convert duration from seconds to minutes
+      const durationMin = Math.ceil(route.duration / 60);
+      
       return {
-        // Convert distance from meters to kilometers
-        distance: Math.round((route.distance / 1000) * 10) / 10,
-        // Convert duration from seconds to minutes
-        duration: Math.round(route.duration / 60),
+        distance: parseFloat(distanceKm.toFixed(2)),
+        duration: durationMin,
         geometry: route.geometry
       };
     }
-    
+
     return null;
   } catch (error) {
-    console.error('Error getting route info:', error);
+    console.error('Error getting route:', error);
     return null;
   }
 };
 
-// Function to create a static map URL with the route
-export const createStaticMapUrl = (
-  origin: [number, number],
-  destination: [number, number],
-  width = 500,
-  height = 300
-): string => {
-  const markers = `pin-s-a+4A89F3(${origin[0]},${origin[1]}),pin-s-b+EB4C36(${destination[0]},${destination[1]})`;
-  
-  return `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${markers}/auto/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
-};
-
-// Add the function that fetches vehicle rates
 export const getVehicleRates = async (): Promise<VehicleRate[]> => {
   try {
-    // Try to fetch vehicle rates from the database
     const { data, error } = await supabase
       .from('vehicle_rates')
-      .select('*');
+      .select('*')
+      .order('name');
     
     if (error) {
       console.error('Error fetching vehicle rates:', error);
-      // Fallback to default rates if there's an error
-      return getDefaultVehicleRates();
+      throw error;
     }
     
     if (data && data.length > 0) {
-      return data.map((rate: any) => ({
-        id: rate.id,
-        name: rate.name,
-        basePrice: rate.base_price || rate.baseprice,
-        pricePerKm: rate.price_per_km || rate.priceperkm,
-        capacity: rate.capacity
+      // Map database column names to our interface
+      return data.map(item => ({
+        id: item.id,
+        name: item.name,
+        basePrice: item.baseprice,
+        pricePerKm: item.priceperkm
       }));
     }
     
-    // If no data, return default rates
-    return getDefaultVehicleRates();
+    // Se não houver dados no banco, retorne valores padrão atualizados
+    return [
+      { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10 },
+      { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49 },
+      { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39 }
+    ];
   } catch (error) {
     console.error('Error in getVehicleRates:', error);
-    return getDefaultVehicleRates();
+    // Return default values on error
+    return [
+      { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10 },
+      { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49 },
+      { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39 }
+    ];
   }
 };
 
-// Helper function to provide default vehicle rates when database query fails
-const getDefaultVehicleRates = (): VehicleRate[] => {
-  return [
-    {
-      id: 'sedan',
-      name: 'Sedan Executivo',
-      basePrice: 79.90,
-      pricePerKm: 2.10,
-      capacity: 4
-    },
-    {
-      id: 'suv',
-      name: 'SUV Premium',
-      basePrice: 109.90,
-      pricePerKm: 2.50,
-      capacity: 6
-    },
-    {
-      id: 'van',
-      name: 'Van Executiva',
-      basePrice: 169.90,
-      pricePerKm: 3.20,
-      capacity: 10
-    }
-  ];
+export const calculateTripPrice = async (
+  distance: number,
+  vehicleTypeId: string = 'sedan',
+  isRoundTrip: boolean = false
+): Promise<number> => {
+  try {
+    const vehicleRates = await getVehicleRates();
+    
+    const vehicleRate = vehicleRates.find(rate => rate.id === vehicleTypeId) || vehicleRates[0];
+    
+    const distancePrice = distance * vehicleRate.pricePerKm;
+    const totalPrice = vehicleRate.basePrice + distancePrice;
+    
+    return isRoundTrip ? totalPrice * 2 : totalPrice;
+  } catch (error) {
+    console.error('Error calculating trip price:', error);
+    // Valores padrão atualizados para cálculo de backup
+    const basePrice = 79.90;
+    const pricePerKm = 2.10;
+    
+    const distancePrice = distance * pricePerKm;
+    const totalPrice = basePrice + distancePrice;
+    
+    return isRoundTrip ? totalPrice * 2 : totalPrice;
+  }
+};
+
+export const calculateTripPriceSync = (
+  distance: number,
+  basePrice: number,
+  pricePerKm: number = 2.10,
+  isRoundTrip: boolean = false
+): number => {
+  const distancePrice = distance * pricePerKm;
+  const totalPrice = basePrice + distancePrice;
+  
+  return isRoundTrip ? totalPrice * 2 : totalPrice;
+};
+
+export const formatTravelTime = (minutes: number): string => {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  
+  if (hours === 0) {
+    return `${mins} min`;
+  } else if (mins === 0) {
+    return `${hours}h`;
+  } else {
+    return `${hours}h ${mins}min`;
+  }
 };

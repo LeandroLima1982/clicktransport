@@ -40,13 +40,11 @@ export const useBookingForm = () => {
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [errorCount, setErrorCount] = useState(0);
-  const [lastQueryTime, setLastQueryTime] = useState(0);
-  const [originSelected, setOriginSelected] = useState(false);
-  const [destinationSelected, setDestinationSelected] = useState(false);
   
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
+  // Reset error count after a period to allow retrying
   useEffect(() => {
     if (errorCount > 0) {
       const timer = setTimeout(() => {
@@ -94,38 +92,30 @@ export const useBookingForm = () => {
   const handleOriginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setOriginValue(value);
-    setOriginSelected(false); // Mark as unselected when typing
     
-    // Controle de debounce para evitar chamadas excessivas
-    const now = Date.now();
-    if (now - lastQueryTime < 300) {
-      if (originTimeoutRef.current) {
-        clearTimeout(originTimeoutRef.current);
-      }
+    if (originTimeoutRef.current) {
+      clearTimeout(originTimeoutRef.current);
     }
-    setLastQueryTime(now);
     
-    if (value.length >= 2 && errorCount < 5) {
+    // Só buscar sugestões se o usuário já digitou pelo menos 3 caracteres
+    // e não tivemos muitos erros recentes
+    if (value.length >= 3 && errorCount < 5) {
       setIsLoadingSuggestions(true);
-      
-      if (originTimeoutRef.current) {
-        clearTimeout(originTimeoutRef.current);
-      }
       
       originTimeoutRef.current = setTimeout(async () => {
         try {
-          console.log('Fetching origin suggestions for:', value);
           const suggestions = await fetchAddressSuggestions(value);
-          console.log('Received origin suggestions:', suggestions.length);
           setOriginSuggestions(suggestions);
           
+          // Se não encontrou nada, sugerir adicionar mais informações
           if (suggestions.length === 0 && value.length > 5) {
-            console.log("Sem resultados para origem: " + value);
+            console.log("Sem resultados para: " + value);
           }
         } catch (error) {
-          console.error('Erro ao buscar sugestões de origem:', error);
+          console.error('Erro ao buscar sugestões:', error);
           setErrorCount(prev => prev + 1);
           
+          // Avisar o usuário apenas na primeira falha
           if (errorCount === 0) {
             toast.error('Erro ao buscar sugestões de endereço. Tente um formato diferente.', {
               description: 'Exemplo: "Rua Nome, 123, Bairro, Cidade"'
@@ -135,57 +125,35 @@ export const useBookingForm = () => {
           setIsLoadingSuggestions(false);
         }
       }, 300);
-    } else if (value.length < 2) {
+    } else {
       setOriginSuggestions([]);
-      if (originTimeoutRef.current) {
-        clearTimeout(originTimeoutRef.current);
-      }
     }
   };
 
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setDestinationValue(value);
-    setDestinationSelected(false); // Mark as unselected when typing
     
-    // Controle de debounce para evitar chamadas excessivas
-    const now = Date.now();
-    if (now - lastQueryTime < 300) {
-      if (destinationTimeoutRef.current) {
-        clearTimeout(destinationTimeoutRef.current);
-      }
+    if (destinationTimeoutRef.current) {
+      clearTimeout(destinationTimeoutRef.current);
     }
-    setLastQueryTime(now);
     
-    if (value.length >= 2 && errorCount < 5) {
+    if (value.length >= 3 && errorCount < 5) {
       setIsLoadingSuggestions(true);
-      
-      if (destinationTimeoutRef.current) {
-        clearTimeout(destinationTimeoutRef.current);
-      }
       
       destinationTimeoutRef.current = setTimeout(async () => {
         try {
-          console.log('Fetching destination suggestions for:', value);
           const suggestions = await fetchAddressSuggestions(value);
-          console.log('Received destination suggestions:', suggestions.length);
           setDestinationSuggestions(suggestions);
-          
-          if (suggestions.length === 0 && value.length > 5) {
-            console.log("Sem resultados para destino: " + value);
-          }
         } catch (error) {
-          console.error('Erro ao buscar sugestões de destino:', error);
+          console.error('Erro ao buscar sugestões:', error);
           setErrorCount(prev => prev + 1);
         } finally {
           setIsLoadingSuggestions(false);
         }
       }, 300);
-    } else if (value.length < 2) {
+    } else {
       setDestinationSuggestions([]);
-      if (destinationTimeoutRef.current) {
-        clearTimeout(destinationTimeoutRef.current);
-      }
     }
   };
 
@@ -198,17 +166,13 @@ export const useBookingForm = () => {
   };
 
   const selectSuggestion = (suggestion: any, isOrigin: boolean) => {
-    const placeName = suggestion.place_name || suggestion.text;
+    const placeName = suggestion.place_name;
     if (isOrigin) {
-      console.log('Selected origin suggestion:', placeName);
       setOriginValue(placeName);
       setOriginSuggestions([]);
-      setOriginSelected(true);
     } else {
-      console.log('Selected destination suggestion:', placeName);
       setDestinationValue(placeName);
       setDestinationSuggestions([]);
-      setDestinationSelected(true);
     }
   };
 
@@ -216,19 +180,12 @@ export const useBookingForm = () => {
     setOriginValue('');
     setOriginNumber('');
     setOriginSuggestions([]);
-    setOriginSelected(false);
   };
 
   const clearDestination = () => {
     setDestinationValue('');
     setDestinationNumber('');
     setDestinationSuggestions([]);
-    setDestinationSelected(false);
-  };
-  
-  // Function to check if both addresses have been selected from suggestions
-  const areBothAddressesSelected = () => {
-    return originSelected && destinationSelected;
   };
 
   const bookingData: BookingFormData = {
@@ -261,9 +218,6 @@ export const useBookingForm = () => {
     destinationSuggestions,
     isLoadingSuggestions,
     showBookingSteps,
-    originSelected,
-    destinationSelected,
-    areBothAddressesSelected,
     setOriginValue,
     setDestinationValue,
     setTripType,

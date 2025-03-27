@@ -8,8 +8,6 @@ export const useLocationSuggestions = () => {
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [requestCount, setRequestCount] = useState(0);
-  const [originSelected, setOriginSelected] = useState(false);
-  const [destinationSelected, setDestinationSelected] = useState(false);
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -25,15 +23,6 @@ export const useLocationSuggestions = () => {
   }, [requestCount]);
 
   const handleOriginChange = (value: string) => {
-    // Limpar sugestões se o valor for vazio
-    if (!value || value.length < 2) {
-      setOriginSuggestions([]);
-      return;
-    }
-    
-    // Mark as not selected when user types
-    setOriginSelected(false);
-    
     if (originTimeoutRef.current) {
       clearTimeout(originTimeoutRef.current);
     }
@@ -59,7 +48,7 @@ export const useLocationSuggestions = () => {
       }, 100); // Delay menor para CEP (100ms)
     } 
     // Para endereços comuns, espera um pouco mais para o usuário terminar de digitar
-    else if (value.length >= 2) { // Reduzido para 2 caracteres para sugerir mais cedo
+    else if (value.length >= 3) {
       setIsLoadingSuggestions(true);
       
       originTimeoutRef.current = setTimeout(async () => {
@@ -77,22 +66,13 @@ export const useLocationSuggestions = () => {
         } finally {
           setIsLoadingSuggestions(false);
         }
-      }, 300); // Reduzido para 300ms para ser mais responsivo
+      }, 500); // 500ms para endereços normais
     } else {
       setOriginSuggestions([]);
     }
   };
 
   const handleDestinationChange = (value: string) => {
-    // Limpar sugestões se o valor for vazio
-    if (!value || value.length < 2) {
-      setDestinationSuggestions([]);
-      return;
-    }
-    
-    // Mark as not selected when user types
-    setDestinationSelected(false);
-    
     if (destinationTimeoutRef.current) {
       clearTimeout(destinationTimeoutRef.current);
     }
@@ -118,7 +98,7 @@ export const useLocationSuggestions = () => {
       }, 100); // Delay menor para CEP (100ms)
     }
     // Para endereços comuns, espera um pouco mais
-    else if (value.length >= 2) { // Reduzido para 2 caracteres
+    else if (value.length >= 3) {
       setIsLoadingSuggestions(true);
       
       destinationTimeoutRef.current = setTimeout(async () => {
@@ -135,43 +115,33 @@ export const useLocationSuggestions = () => {
         } finally {
           setIsLoadingSuggestions(false);
         }
-      }, 300); // Reduzido para 300ms
+      }, 500); // 500ms para endereços normais
     } else {
       setDestinationSuggestions([]);
     }
   };
 
   const selectOriginSuggestion = (suggestion: any) => {
-    const placeName = suggestion.place_name || suggestion.text;
+    const placeName = suggestion.place_name;
     setOriginSuggestions([]);
-    setOriginSelected(true); // Mark as selected
     return placeName;
   };
 
   const selectDestinationSuggestion = (suggestion: any) => {
-    const placeName = suggestion.place_name || suggestion.text;
+    const placeName = suggestion.place_name;
     setDestinationSuggestions([]);
-    setDestinationSelected(true); // Mark as selected
     return placeName;
-  };
-
-  // Function to check if both addresses have been selected from suggestions
-  const areBothAddressesSelected = () => {
-    return originSelected && destinationSelected;
   };
 
   return {
     originSuggestions,
     destinationSuggestions,
     isLoadingSuggestions,
-    originSelected,
-    destinationSelected,
     handleOriginChange,
     handleDestinationChange,
     selectOriginSuggestion,
     selectDestinationSuggestion,
     clearOriginSuggestions: () => setOriginSuggestions([]),
-    clearDestinationSuggestions: () => setDestinationSuggestions([]),
-    areBothAddressesSelected
+    clearDestinationSuggestions: () => setDestinationSuggestions([])
   };
 };

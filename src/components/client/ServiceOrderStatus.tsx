@@ -1,22 +1,16 @@
 
 import React from 'react';
 import { Check, Clock, Car, MapPin, AlertTriangle } from 'lucide-react';
-import { Booking } from '@/types/booking';
 
 interface ServiceOrderStatusProps {
-  status?: string;
-  booking?: Booking;
+  status: string;
   className?: string;
 }
 
 const ServiceOrderStatus: React.FC<ServiceOrderStatusProps> = ({ 
-  status: propStatus,
-  booking,
+  status,
   className = ""
 }) => {
-  // Use either the provided status directly or get it from the booking
-  const status = propStatus || (booking ? booking.status : 'pending');
-
   // Define the steps in the service order flow
   const steps = [
     { id: 'pending', label: 'Pendente', icon: Clock },

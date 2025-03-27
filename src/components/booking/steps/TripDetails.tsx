@@ -1,10 +1,10 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Car, MapPin, Calendar, Clock, Users } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Calendar, MapPin, Users, Clock, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Vehicle } from './VehicleSelection';
+import { useDestinationsService } from '@/hooks/useDestinationsService';
 
 interface TripDetailsProps {
   selectedVehicle: Vehicle | undefined;
@@ -34,184 +34,155 @@ const TripDetails: React.FC<TripDetailsProps> = ({
   formatCurrency,
   isCalculatingRoute
 }) => {
-  const formatEstimatedTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 
-      ? `${hours}h ${mins > 0 ? `${mins}min` : ''}`
-      : `${mins}min`;
+  const { cities, fetchCities } = useDestinationsService();
+  const [isCheckingCityDistance, setIsCheckingCityDistance] = useState(false);
+  const [usingSavedDistance, setUsingSavedDistance] = useState(false);
+
+  useEffect(() => {
+    // Make sure cities are loaded
+    if (cities.length === 0) {
+      fetchCities();
+    }
+  }, [fetchCities, cities.length]);
+
+  const formatDate = (date: Date | undefined) => {
+    if (!date) return '';
+    return format(date, 'dd/MM/yyyy', { locale: ptBR });
   };
 
-  if (isCalculatingRoute) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="h-10 w-10 text-blue-500 animate-spin mb-4" />
-        <div className="text-gray-500">Calculando detalhes da rota...</div>
-      </div>
-    );
-  }
-
-  // Convert dates to strings for messageData
-  const messageData = {
-    origin: bookingData.origin,
-    destination: bookingData.destination,
-    date: bookingData.date ? format(bookingData.date, "dd/MM/yyyy") : '',
-    time: bookingData.time || '',
-    arrivalTime: '', // Optional - estimated arrival time
-    returnDate: bookingData.returnDate ? format(bookingData.returnDate, "dd/MM/yyyy") : '',
-    returnTime: bookingData.returnTime || '',
-    returnArrivalTime: '', // Optional - estimated return arrival time
-    duration: estimatedTime,
-    tripType: bookingData.tripType,
-    passengerData: [],
-    creationDate: new Date().toISOString()
+  const formatTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins > 0 ? `${mins}min` : ''}`;
   };
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-4">
-        <h3 className="text-lg font-semibold">Detalhes da Viagem</h3>
-        <p className="text-sm text-gray-500">
-          Verifique os detalhes da sua solicitação
-        </p>
-      </div>
+      <h3 className="text-lg font-semibold mb-4">Detalhes da Viagem</h3>
       
-      <div className="space-y-4">
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-base flex items-center">
-              <Car className="mr-2 h-4 w-4 text-primary" />
-              Veículo Selecionado
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="py-2">
-            {selectedVehicle && (
-              <div className="flex items-center">
-                <div 
-                  className="w-10 h-10 rounded bg-gray-100 flex-shrink-0 flex items-center justify-center overflow-hidden mr-3"
-                  style={{
-                    backgroundImage: `url(${selectedVehicle.image})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }}
-                >
-                  {!selectedVehicle.image && (
-                    <Users className="h-5 w-5 text-gray-400" />
-                  )}
-                </div>
-                
-                <div>
-                  <div className="font-medium">{selectedVehicle.name}</div>
-                  <div className="text-xs text-gray-500">{selectedVehicle.description}</div>
-                </div>
+      {isCalculatingRoute ? (
+        <div className="flex items-center justify-center p-8 text-gray-500">
+          <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Calculando rota...
+        </div>
+      ) : (
+        <>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-start mb-4">
+              <div className="min-w-[24px] mr-3">
+                <MapPin className="h-6 w-6 text-green-500" />
               </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-base flex items-center">
-              <MapPin className="mr-2 h-4 w-4 text-primary" />
-              Rota
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="py-2 space-y-3">
-            <div>
-              <div className="text-xs text-gray-500">Origem:</div>
-              <div className="text-sm font-medium">{bookingData.origin}</div>
+              <div>
+                <div className="text-sm text-gray-500">Origem</div>
+                <div className="font-medium">{bookingData.origin}</div>
+              </div>
             </div>
             
-            <div>
-              <div className="text-xs text-gray-500">Destino:</div>
-              <div className="text-sm font-medium">{bookingData.destination}</div>
-            </div>
-            
-            <div className="flex justify-between">
-              <div>
-                <div className="text-xs text-gray-500">Distância:</div>
-                <div className="text-sm font-medium">{estimatedDistance} km</div>
+            <div className="flex items-start">
+              <div className="min-w-[24px] mr-3">
+                <MapPin className="h-6 w-6 text-red-500" />
               </div>
-              
               <div>
-                <div className="text-xs text-gray-500">Tempo estimado:</div>
-                <div className="text-sm font-medium">{formatEstimatedTime(estimatedTime)}</div>
+                <div className="text-sm text-gray-500">Destino</div>
+                <div className="font-medium">{bookingData.destination}</div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-base flex items-center">
-              <Calendar className="mr-2 h-4 w-4 text-primary" />
-              Data e Horário
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="py-2 space-y-3">
-            <div>
-              <div className="text-xs text-gray-500">Data de ida:</div>
-              <div className="text-sm font-medium">
-                {bookingData.date 
-                  ? format(bookingData.date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
-                  : 'Não especificado'
-                }
-                {bookingData.time ? ` às ${bookingData.time}` : ''}
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="flex items-center mb-2">
+                <Calendar className="h-5 w-5 mr-2 text-gray-500" />
+                <span className="font-medium">Data</span>
               </div>
+              <div>{formatDate(bookingData.date)}</div>
+              {bookingData.time && (
+                <div className="flex items-center mt-2">
+                  <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>{bookingData.time}</span>
+                </div>
+              )}
             </div>
             
             {bookingData.tripType === 'roundtrip' && (
-              <div>
-                <div className="text-xs text-gray-500">Data de volta:</div>
-                <div className="text-sm font-medium">
-                  {bookingData.returnDate 
-                    ? format(bookingData.returnDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
-                    : 'Não especificado'
-                  }
-                  {bookingData.returnTime ? ` às ${bookingData.returnTime}` : ''}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-center mb-2">
+                  <Calendar className="h-5 w-5 mr-2 text-gray-500" />
+                  <span className="font-medium">Data de Retorno</span>
                 </div>
+                <div>{formatDate(bookingData.returnDate)}</div>
+                {bookingData.returnTime && (
+                  <div className="flex items-center mt-2">
+                    <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                    <span>{bookingData.returnTime}</span>
+                  </div>
+                )}
               </div>
             )}
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="flex items-center mb-2">
+                <Users className="h-5 w-5 mr-2 text-gray-500" />
+                <span className="font-medium">Passageiros</span>
+              </div>
+              <div>{bookingData.passengers}</div>
+            </div>
             
-            <div>
-              <div className="text-xs text-gray-500">Tipo de viagem:</div>
-              <div className="text-sm font-medium">
-                {bookingData.tripType === 'oneway' ? 'Somente ida' : 'Ida e volta'}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="flex items-center mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                <span className="font-medium">Distância</span>
+              </div>
+              <div className="flex items-center">
+                <span>{estimatedDistance.toFixed(1)} km</span>
+                {usingSavedDistance && (
+                  <span className="ml-2 text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">
+                    Verificada
+                  </span>
+                )}
               </div>
             </div>
             
-            <div>
-              <div className="text-xs text-gray-500">Passageiros:</div>
-              <div className="text-sm font-medium">{bookingData.passengers}</div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="flex items-center mb-2">
+                <Clock className="h-5 w-5 mr-2 text-gray-500" />
+                <span className="font-medium">Tempo Estimado</span>
+              </div>
+              <div>{formatTime(estimatedTime)}</div>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-base flex items-center">
-              <Clock className="mr-2 h-4 w-4 text-primary" />
-              Valor Estimado
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="py-2">
+          </div>
+          
+          <div className="border-t border-b py-4 my-4">
             <div className="flex justify-between items-center">
               <div>
-                <div className="text-xs text-gray-500">
-                  {bookingData.tripType === 'roundtrip' 
-                    ? 'Total (ida e volta)' 
-                    : 'Total'
-                  }:
-                </div>
+                <span className="font-medium">Veículo:</span>
+                <span className="ml-2">{selectedVehicle?.name}</span>
               </div>
-              
               <div className="text-xl font-bold text-primary">
                 {formatCurrency(totalPrice)}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            {bookingData.tripType === 'roundtrip' && (
+              <div className="text-sm text-gray-500 mt-1">*Preço inclui ida e volta</div>
+            )}
+          </div>
+          
+          <div className="flex items-start bg-yellow-50 p-4 rounded-lg">
+            <AlertTriangle className="h-5 w-5 text-yellow-500 mr-2 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-medium text-yellow-700">Importante</p>
+              <p className="text-yellow-600">Os valores são estimados e podem sofrer alterações conforme condições da viagem. Eventuais custos adicionais serão informados previamente.</p>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

@@ -1,138 +1,116 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { CheckCircle, Calendar, MapPin, Car } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
+import { Vehicle } from './VehicleSelection';
 
 interface BookingCompleteProps {
   bookingReference: string;
+  selectedVehicle: Vehicle | undefined;
   bookingData: {
     origin: string;
     destination: string;
-    date?: Date;
-    returnDate?: Date;
+    date: Date | undefined;
+    returnDate: Date | undefined;
     tripType: string;
     passengers: string;
     time?: string;
     returnTime?: string;
-    passengerData?: Array<{
+    passengerData?: {
       name: string;
       phone: string;
-    }>;
-    distance?: number;
+    }[];
   };
-  vehicleName: string;
   totalPrice: number;
   formatCurrency: (value: number) => string;
+  onClose: () => void;
 }
 
 const BookingComplete: React.FC<BookingCompleteProps> = ({
   bookingReference,
+  selectedVehicle,
   bookingData,
-  vehicleName,
   totalPrice,
-  formatCurrency
+  formatCurrency,
+  onClose
 }) => {
-  const formatDate = (date?: Date) => {
-    if (!date) return 'Não especificado';
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+  const navigate = useNavigate();
+
+  const formatDate = (date: Date | undefined) => {
+    if (!date) return '';
+    return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+  };
+
+  const handleViewBookings = () => {
+    onClose(); // Close the booking dialog
+    navigate('/bookings'); // Navigate to the user's bookings page
   };
 
   return (
-    <div className="text-center py-4 space-y-8">
-      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-50 text-green-500 mb-2">
+    <div className="text-center py-6">
+      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 text-primary mb-4">
         <CheckCircle className="w-10 h-10" />
       </div>
       
-      <div>
-        <h3 className="text-xl font-bold mb-1">Reserva Confirmada!</h3>
-        <p className="text-gray-500">Sua reserva foi confirmada com sucesso.</p>
-      </div>
+      <h2 className="text-2xl font-bold mb-2">Reserva Confirmada!</h2>
+      <p className="text-gray-500 mb-2">Sua reserva foi confirmada com sucesso.</p>
+      <p className="text-amber-600 mb-6">Você será redirecionado para suas reservas em instantes...</p>
       
-      <Card className="border-green-100 bg-green-50 overflow-hidden">
-        <CardContent className="pt-5">
+      <Card className="mx-auto max-w-md">
+        <CardContent className="pt-6">
           <div className="text-center mb-4">
-            <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-1">
-              Código de Reserva
-            </h4>
-            <div className="text-2xl font-mono tracking-wider text-green-600 font-bold">
-              {bookingReference}
+            <div className="text-lg font-bold">Código de Reserva</div>
+            <div className="text-3xl font-mono tracking-wider text-primary my-2">{bookingReference}</div>
+            <div className="text-sm text-gray-500">Guarde este código para referência futura</div>
+          </div>
+          
+          <div className="border-t border-b py-4 space-y-3 text-left">
+            <div className="flex justify-between">
+              <span className="text-gray-500 flex items-center"><Car className="w-4 h-4 mr-2" /> Veículo:</span>
+              <span className="font-medium">{selectedVehicle?.name}</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Guarde este código para referência
+            <div className="flex justify-between">
+              <span className="text-gray-500 flex items-center"><MapPin className="w-4 h-4 mr-2" /> Origem:</span>
+              <span className="font-medium truncate max-w-[240px]">{bookingData.origin}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500 flex items-center"><MapPin className="w-4 h-4 mr-2" /> Destino:</span>
+              <span className="font-medium truncate max-w-[240px]">{bookingData.destination}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500 flex items-center"><Calendar className="w-4 h-4 mr-2" /> Data:</span>
+              <span className="font-medium">
+                {formatDate(bookingData.date)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Total:</span>
+              <span className="font-medium text-primary">{formatCurrency(totalPrice)}</span>
+            </div>
+          </div>
+          
+          <div className="mt-6 space-y-2">
+            <p className="text-sm text-gray-500">
+              Um email com os detalhes da sua reserva foi enviado para o seu endereço de email.
+            </p>
+            <p className="text-sm text-gray-500">
+              Nossa equipe entrará em contato para confirmar os detalhes da sua viagem.
             </p>
           </div>
         </CardContent>
+        <CardFooter className="flex flex-col gap-2">
+          <Button onClick={handleViewBookings} className="w-full">
+            Ver Minhas Reservas
+          </Button>
+          <Button onClick={onClose} variant="outline" className="w-full">
+            Fechar
+          </Button>
+        </CardFooter>
       </Card>
-      
-      <Card>
-        <CardContent className="pt-5 px-5">
-          <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">
-            Detalhes da Viagem
-          </h4>
-          
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-500">Origem:</span>
-              <span className="font-medium">{bookingData.origin}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-500">Destino:</span>
-              <span className="font-medium">{bookingData.destination}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-500">Data:</span>
-              <span className="font-medium">{formatDate(bookingData.date)}</span>
-            </div>
-            {bookingData.time && (
-              <div className="flex justify-between py-2 border-b">
-                <span className="text-gray-500">Horário:</span>
-                <span className="font-medium">{bookingData.time}</span>
-              </div>
-            )}
-            {bookingData.tripType === 'roundtrip' && (
-              <>
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-500">Retorno:</span>
-                  <span className="font-medium">{formatDate(bookingData.returnDate)}</span>
-                </div>
-                {bookingData.returnTime && (
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-500">Horário de Retorno:</span>
-                    <span className="font-medium">{bookingData.returnTime}</span>
-                  </div>
-                )}
-              </>
-            )}
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-500">Tipo:</span>
-              <span className="font-medium">
-                {bookingData.tripType === 'roundtrip' ? 'Ida e volta' : 'Somente ida'}
-              </span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-500">Veículo:</span>
-              <span className="font-medium">{vehicleName}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-500">Passageiros:</span>
-              <span className="font-medium">{bookingData.passengers}</span>
-            </div>
-            <div className="flex justify-between py-2 font-bold">
-              <span>Total:</span>
-              <span className="text-green-600">{formatCurrency(totalPrice)}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <div className="text-sm text-gray-500 px-4">
-        <p>Um e-mail com os detalhes da sua reserva foi enviado.</p>
-        <p className="mt-1">Nossa equipe entrará em contato para confirmar os detalhes.</p>
-      </div>
     </div>
   );
 };
