@@ -28,8 +28,9 @@ const Footer: React.FC = () => {
     fetchFooterLogo();
   }, []);
 
-  return <footer className="text-white pt-16 pb-8 w-full bg-blue-950">
-      <div className="w-full px-6 mx-auto">
+  return (
+    <footer className="text-white pt-16 pb-8 w-full bg-blue-950 m-0">
+      <div className="full-width-container">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           <div>
             <div className="flex items-center mb-6">
@@ -147,7 +148,8 @@ const Footer: React.FC = () => {
           </div>
         </div>
       </div>
-    </footer>;
+    </footer>
+  );
 };
 
 export default Footer;
