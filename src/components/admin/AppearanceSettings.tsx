@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, ImageIcon, Loader2, RefreshCw, Check, AlertTriangle, DevicePhoneIcon, DesktopIcon } from 'lucide-react';
+import { Upload, ImageIcon, Loader2, RefreshCw, Check, AlertTriangle, Smartphone, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import HeroStylesEditor from './HeroStylesEditor';
@@ -296,9 +296,9 @@ const AppearanceSettings: React.FC = () => {
 
   const getDeviceIcon = (section: ImageSection) => {
     if (section.devices?.includes('mobile')) {
-      return <DevicePhoneIcon className="h-4 w-4 mr-1 text-purple-500" />;
+      return <Smartphone className="h-4 w-4 mr-1 text-purple-500" />;
     } else if (section.devices?.includes('desktop')) {
-      return <DesktopIcon className="h-4 w-4 mr-1 text-blue-500" />;
+      return <Monitor className="h-4 w-4 mr-1 text-blue-500" />;
     }
     return null;
   };
