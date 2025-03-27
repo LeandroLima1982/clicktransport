@@ -61,27 +61,38 @@ const PaymentSelection: React.FC<PaymentSelectionProps> = ({
           id: item.id,
           name: item.name,
           basePrice: item.baseprice,
-          pricePerKm: item.priceperkm
+          pricePerKm: item.priceperkm,
+          capacity: item.capacity || getDefaultCapacity(item.id)
         }));
         setVehicleRates(mappedData);
       } else {
         // Use default rates if none found in database
         setVehicleRates([
-          { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10 },
-          { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49 },
-          { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39 }
+          { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10, capacity: 5 },
+          { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49, capacity: 7 },
+          { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39, capacity: 10 }
         ]);
       }
     } catch (error) {
       console.error('Error fetching vehicle rates:', error);
       // Set default values on error
       setVehicleRates([
-        { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10 },
-        { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49 },
-        { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39 }
+        { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10, capacity: 5 },
+        { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49, capacity: 7 },
+        { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39, capacity: 10 }
       ]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Helper function to determine default capacity based on vehicle type
+  const getDefaultCapacity = (vehicleId: string): number => {
+    switch (vehicleId) {
+      case 'sedan': return 5;
+      case 'suv': return 7;
+      case 'van': return 10;
+      default: return 5;
     }
   };
 
