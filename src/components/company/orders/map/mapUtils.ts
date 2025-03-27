@@ -70,20 +70,20 @@ export function createStaticMapUrl(
     return '';
   }
   
-  // Create a more visually appealing map with a line between points
+  // Create a more visually appealing map with a line between points and Uber-like styling
   const originStr = `${origin[0]},${origin[1]}`;
   const destinationStr = `${destination[0]},${destination[1]}`;
   
-  // Define markers for origin (green) and destination (red)
-  const originMarker = `pin-s-a+00FF00(${originStr})`;
-  const destinationMarker = `pin-s-b+FF0000(${destinationStr})`;
+  // Define markers for origin (blue) and destination (red) in Uber style
+  const originMarker = `pin-s-a+0073FF(${originStr})`;
+  const destinationMarker = `pin-s-b+000000(${destinationStr})`;
   
-  // Create a GeoJSON path between the two points
+  // Create a GeoJSON path between the two points with Uber-like styling
   const path = {
     type: 'Feature',
     properties: {
-      stroke: '#3887be',
-      'stroke-width': 4,
+      stroke: '#0073FF',
+      'stroke-width': 5,
       'stroke-opacity': 0.8
     },
     geometry: {
@@ -109,8 +109,8 @@ export function createStaticMapUrl(
   // Convert bounds to string format "lon1,lat1,lon2,lat2"
   const boundsStr = `${adjustedBounds[0][0]},${adjustedBounds[0][1]},${adjustedBounds[1][0]},${adjustedBounds[1][1]}`;
   
-  // Create the URL with auto-fit for better visualization
-  const mapboxUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/` +
+  // Create the URL with auto-fit for better visualization - Uber-like styling
+  const mapboxUrl = `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/` +
     `geojson(${encodedPath}),` +
     `${originMarker},` +
     `${destinationMarker}/` +
@@ -166,17 +166,21 @@ export function calculateDistanceBetween(
   return distance;
 }
 
-// Add the missing exports that OrderTracking.tsx is trying to use
+// Validate Mapbox token
 export function validateMapboxToken(): boolean {
   return !!MAPBOX_TOKEN && MAPBOX_TOKEN.length > 20 && !MAPBOX_TOKEN.includes('YOUR_MAPBOX_TOKEN');
 }
 
+// Get coordinates from address with improved error handling (Uber-like)
 export async function getCoordinatesFromAddress(address: string): Promise<[number, number] | null> {
   if (!address || !MAPBOX_TOKEN) return null;
 
   try {
+    // First try with more specific parameters for better results (like Uber)
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&country=br&limit=1`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?` +
+      `access_token=${MAPBOX_TOKEN}&country=br&limit=1&types=address,poi,place` +
+      `&language=pt-BR&proximity=ip&autocomplete=true`
     );
 
     if (!response.ok) {
@@ -185,16 +189,40 @@ export async function getCoordinatesFromAddress(address: string): Promise<[numbe
 
     const data = await response.json();
     if (data.features && data.features.length > 0) {
+      console.log('Address geocoded successfully:', data.features[0].place_name);
       return data.features[0].center as [number, number];
     }
 
+    console.warn('No geocoding results found for:', address);
     return null;
   } catch (error) {
     console.error('Error geocoding address:', error);
+    
+    // Fallback to simpler query if specific query fails
+    try {
+      const fallbackResponse = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?` +
+        `access_token=${MAPBOX_TOKEN}&country=br&limit=1`
+      );
+      
+      if (!fallbackResponse.ok) {
+        throw new Error(`Fallback geocoding API error: ${fallbackResponse.status}`);
+      }
+      
+      const fallbackData = await fallbackResponse.json();
+      if (fallbackData.features && fallbackData.features.length > 0) {
+        console.log('Address geocoded with fallback:', fallbackData.features[0].place_name);
+        return fallbackData.features[0].center as [number, number];
+      }
+    } catch (fallbackError) {
+      console.error('Fallback geocoding also failed:', fallbackError);
+    }
+    
     return null;
   }
 }
 
+// Fetch route data with improved parameters and error handling (Uber-like)
 export async function fetchRouteData(
   origin: [number, number],
   destination: [number, number]
@@ -202,8 +230,11 @@ export async function fetchRouteData(
   if (!MAPBOX_TOKEN) return null;
 
   try {
+    // Use the directions API with better parameters for Uber-like experience
     const response = await fetch(
-      `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`
+      `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?` +
+      `geometries=geojson&overview=full&steps=true&annotations=distance,duration,speed&voice_instructions=true&` +
+      `banner_instructions=true&voice_units=metric&access_token=${MAPBOX_TOKEN}`
     );
 
     if (!response.ok) {
@@ -220,16 +251,211 @@ export async function fetchRouteData(
       // Convert duration from seconds to minutes
       const durationMin = Math.ceil(route.duration / 60);
       
+      // Detailed logging for diagnostic purposes
+      console.log(`Route calculated: ${distanceKm.toFixed(2)}km, ${durationMin}min`);
+      
       return {
         distance: parseFloat(distanceKm.toFixed(2)),
         duration: durationMin,
-        geometry: route.geometry
+        geometry: route.geometry,
       };
     }
 
+    console.warn('No routes found between the specified points');
     return null;
   } catch (error) {
     console.error('Error getting route:', error);
     return null;
   }
 }
+
+// Function to get current user location with high accuracy (Uber-like)
+export function getCurrentPosition(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation not supported by your browser'));
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        console.log('Got user position:', position.coords);
+        resolve(position);
+      },
+      error => {
+        console.error('Error getting position:', error);
+        reject(error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  });
+}
+
+// Watch user position changes with high accuracy (Uber-like live tracking)
+export function watchPosition(callback: (position: GeolocationPosition) => void): number {
+  if (!navigator.geolocation) {
+    console.error('Geolocation not supported by your browser');
+    return 0;
+  }
+  
+  return navigator.geolocation.watchPosition(
+    callback,
+    error => {
+      console.error('Error watching position:', error);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 5000,
+      maximumAge: 0
+    }
+  );
+}
+
+// Stop watching position
+export function clearPositionWatch(watchId: number): void {
+  if (watchId && navigator.geolocation) {
+    navigator.geolocation.clearWatch(watchId);
+  }
+}
+
+// NEW: Reverse geocode coordinates to address (Uber-like)
+export async function reverseGeocode(coords: [number, number]): Promise<string | null> {
+  if (!MAPBOX_TOKEN) return null;
+  
+  try {
+    const response = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords[0]},${coords[1]}.json?` +
+      `access_token=${MAPBOX_TOKEN}&language=pt-BR&types=address,place,neighborhood,locality`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Reverse geocoding API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (data.features && data.features.length > 0) {
+      return data.features[0].place_name;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error reverse geocoding:', error);
+    return null;
+  }
+}
+
+// Format address for display in a more user-friendly way (Uber-like)
+export function formatAddress(address: string): string {
+  if (!address) return '';
+  
+  // Remove country info from the end (usually not needed in UI)
+  return address.replace(/, Brasil$/, '');
+}
+
+// Get ETA with traffic considerations (Uber-like)
+export function getEstimatedArrival(durationMinutes: number): string {
+  const now = new Date();
+  const arrivalTime = new Date(now.getTime() + durationMinutes * 60000);
+  
+  return arrivalTime.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+// Calculate fare estimate based on distance and duration (Uber-like)
+export function calculateFareEstimate(
+  distanceKm: number, 
+  durationMinutes: number,
+  serviceType: 'standard' | 'premium' | 'luxury' = 'standard'
+): number {
+  // Base rates depend on service type
+  let baseFare = 7;
+  let pricePerKm = 2.5;
+  let pricePerMinute = 0.26;
+  
+  if (serviceType === 'premium') {
+    baseFare = 10;
+    pricePerKm = 3.2;
+    pricePerMinute = 0.35;
+  } else if (serviceType === 'luxury') {
+    baseFare = 15;
+    pricePerKm = 4.5;
+    pricePerMinute = 0.45;
+  }
+  
+  // Calculate total fare
+  const distanceCharge = distanceKm * pricePerKm;
+  const timeCharge = durationMinutes * pricePerMinute;
+  
+  return parseFloat((baseFare + distanceCharge + timeCharge).toFixed(2));
+}
+
+// Detect address format from input (CEP, street, etc.) like Uber does
+export function detectAddressFormat(input: string): 'cep' | 'street' | 'poi' | 'unknown' {
+  // Check for Brazilian CEP format
+  const cepRegex = /^(\d{5})-?(\d{3})$/;
+  if (cepRegex.test(input.replace(/\D/g, ''))) {
+    return 'cep';
+  }
+  
+  // Check if input is likely a street address (contains street indicators)
+  const streetIndicators = ['rua', 'r.', 'avenida', 'av.', 'av', 'alameda', 'al.', 'travessa', 'rodovia', 'estrada'];
+  if (streetIndicators.some(indicator => input.toLowerCase().includes(indicator))) {
+    return 'street';
+  }
+  
+  // Check if input might be a point of interest
+  const poiIndicators = ['shopping', 'restaurante', 'hotel', 'aeroporto', 'terminal', 'praça', 'parque', 'supermercado'];
+  if (poiIndicators.some(indicator => input.toLowerCase().includes(indicator))) {
+    return 'poi';
+  }
+  
+  return 'unknown';
+}
+
+// Generate autofill suggestions based on partial input (Uber-like)
+export async function getAddressAutofill(
+  partialInput: string,
+  proximity?: [number, number]
+): Promise<Array<{ description: string; placeId: string; }>> {
+  if (!MAPBOX_TOKEN || partialInput.length < 3) return [];
+  
+  try {
+    let url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(partialInput)}.json?` +
+      `access_token=${MAPBOX_TOKEN}&country=br&language=pt-BR&` + 
+      `autocomplete=true&types=address,poi,place,neighborhood&limit=5`;
+    
+    // Add proximity if available to prioritize nearby results (like Uber)
+    if (proximity) {
+      url += `&proximity=${proximity[0]},${proximity[1]}`;
+    }
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Autofill API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.features || data.features.length === 0) {
+      return [];
+    }
+    
+    // Format suggestions in a clean, Uber-like way
+    return data.features.map((feature: any) => ({
+      description: feature.place_name,
+      placeId: feature.id,
+      // Add more properties from the feature if needed
+    }));
+  } catch (error) {
+    console.error('Error getting address autofill:', error);
+    return [];
+  }
+}
+
