@@ -1,20 +1,9 @@
 
 import { useState } from 'react';
+import { Booking as BookingType } from '@/types/booking';
 
-// Define the Booking type
-export interface Booking {
-  id: string;
-  reference_code: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  origin: string;
-  destination: string;
-  travel_date: string;
-  booking_date: string;
-  total_price: number;
-  passengers: number;
-  user_id: string;
-  additional_notes?: string;
-}
+// Re-export the Booking type
+export type Booking = BookingType;
 
 export const useBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -41,7 +30,10 @@ export const useBookings = () => {
             total_price: 120.00,
             passengers: 2,
             user_id: 'user123',
-            additional_notes: 'Preciso de ajuda com as malas'
+            additional_notes: 'Preciso de ajuda com as malas',
+            created_at: '2025-03-28T15:23:00Z',
+            vehicle_type: 'Sedan Executivo',
+            return_date: null
           },
           {
             id: '2',
@@ -54,6 +46,9 @@ export const useBookings = () => {
             total_price: 85.00,
             passengers: 1,
             user_id: 'user123',
+            created_at: '2025-03-29T09:15:00Z',
+            vehicle_type: 'SUV Premium',
+            return_date: null
           }
         ]);
         setIsLoading(false);
@@ -66,7 +61,7 @@ export const useBookings = () => {
   };
 
   // Cancel a booking
-  const cancelBooking = async (bookingId: string) => {
+  const cancelBooking = async (bookingId: string): Promise<void> => {
     setIsLoading(true);
     try {
       // Simulate API call
@@ -80,18 +75,15 @@ export const useBookings = () => {
             : booking
         )
       );
-      
-      return { success: true };
     } catch (error) {
       console.error('Error cancelling booking:', error);
-      return { success: false, error };
     } finally {
       setIsLoading(false);
     }
   };
 
   // Create a booking
-  const createBooking = async (bookingData: any) => {
+  const createBooking = async (bookingData: any): Promise<{ success: boolean, booking?: Booking, referenceCode?: string, error?: any }> => {
     setIsLoading(true);
     try {
       // Simulate API call
@@ -108,11 +100,15 @@ export const useBookings = () => {
         origin: bookingData.origin,
         destination: bookingData.destination,
         travel_date: bookingData.travel_date,
+        return_date: bookingData.return_date || null,
         booking_date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
         total_price: bookingData.total_price || 0,
         passengers: bookingData.passengers || 1,
         user_id: bookingData.user_id || 'guest',
-        additional_notes: bookingData.additional_notes
+        additional_notes: bookingData.additional_notes,
+        vehicle_type: bookingData.vehicle_type || 'Sedan Executivo',
+        passenger_data: bookingData.passenger_data
       };
       
       // Add it to the bookings list
