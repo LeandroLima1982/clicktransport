@@ -170,9 +170,7 @@ const TransportTypes: React.FC = () => {
                     (e.target as HTMLImageElement).src = '/placeholder.svg';
                   }} />
                       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black/50" />
-                      <div className="absolute bottom-4 right-4 bg-primary p-2 rounded-full shadow-lg">
-                        <ArrowRight className="h-5 w-5 text-white" />
-                      </div>
+                      
                     </div>
                     
                     <div className="p-4">
