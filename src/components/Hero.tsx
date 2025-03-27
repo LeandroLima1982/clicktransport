@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
-
 interface HeroStyles {
   gradient_from_color: string;
   gradient_from_opacity: number;
@@ -13,7 +11,6 @@ interface HeroStyles {
   title_color: string;
   description_color: string;
 }
-
 const defaultStyles: HeroStyles = {
   gradient_from_color: 'black',
   gradient_from_opacity: 40,
@@ -22,13 +19,11 @@ const defaultStyles: HeroStyles = {
   title_color: 'white',
   description_color: 'white/90'
 };
-
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
   const [backgroundImage, setBackgroundImage] = useState<string>('/lovable-uploads/hero-bg.jpg');
   const [mobileBackgroundImage, setMobileBackgroundImage] = useState<string>('/lovable-uploads/hero-bg.jpg');
   const [styles, setStyles] = useState<HeroStyles>(defaultStyles);
-  
   useEffect(() => {
     // Fetch the hero background image and styles from Supabase
     const fetchHeroData = async () => {
@@ -38,19 +33,17 @@ const Hero: React.FC = () => {
           data: imageData,
           error: imageError
         } = await supabase.from('site_images').select('image_url').eq('section_id', 'hero').single();
-        
         if (imageError) {
           console.error('Error fetching hero desktop image:', imageError);
         } else if (imageData && imageData.image_url) {
           setBackgroundImage(imageData.image_url);
         }
-        
+
         // Fetch mobile image
         const {
           data: mobileImageData,
           error: mobileImageError
         } = await supabase.from('site_images').select('image_url').eq('section_id', 'hero_mobile').single();
-        
         if (mobileImageError) {
           console.error('Error fetching hero mobile image:', mobileImageError);
           // If no mobile-specific image, use desktop image as fallback
@@ -66,7 +59,6 @@ const Hero: React.FC = () => {
           data: stylesData,
           error: stylesError
         } = await supabase.from('hero_styles').select('*').single();
-        
         if (stylesError) {
           console.error('Error fetching hero styles:', stylesError);
         } else if (stylesData) {
@@ -83,17 +75,14 @@ const Hero: React.FC = () => {
         console.error('Error processing hero data:', error);
       }
     };
-    
     fetchHeroData();
   }, []);
-  
   const scrollToBookingForm = () => {
     document.getElementById('request-service')?.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
   };
-  
   const scrollToSolutionsSection = () => {
     document.getElementById('solutions-section')?.scrollIntoView({
       behavior: 'smooth',
@@ -103,15 +92,14 @@ const Hero: React.FC = () => {
 
   // Build the gradient style dynamically
   const gradientStyle = `bg-gradient-to-b from-${styles.gradient_from_color}/${styles.gradient_from_opacity} to-${styles.gradient_to_color}/${styles.gradient_to_opacity}`;
-  
+
   // Use the appropriate background image based on device type
   const currentBackgroundImage = isMobile ? mobileBackgroundImage : backgroundImage;
-  
   return <section className="relative min-h-[75vh] md:min-h-[50vh] w-full flex items-center justify-center overflow-hidden mx-0">
       {/* Background image */}
       <div className="absolute inset-0 -z-10 bg-cover bg-center" style={{
-        backgroundImage: `url(${currentBackgroundImage})`
-      }}>
+      backgroundImage: `url(${currentBackgroundImage})`
+    }}>
         {/* Gradient overlay with dynamic colors */}
         <div className={`absolute inset-0 ${gradientStyle}`}></div>
       </div>
@@ -119,7 +107,7 @@ const Hero: React.FC = () => {
       {/* Content container */}
       <div className="container md:px-6 z-10 md:my-12 my-0 px-0">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className={`text-3xl md:text-5xl font-extrabold mb-4 md:mb-6 tracking-tight text-${styles.title_color} drop-shadow-md`}>Transporte Executivo Premium</h1>
+          <h1 className={`text-3xl md:text-5xl font-extrabold mb-4 md:mb-6 tracking-tight text-${styles.title_color} drop-shadow-md`}>Transfer Executivo Premium</h1>
           
           <p className={`text-base md:text-lg mb-6 md:mb-8 text-${styles.description_color} drop-shadow max-w-2xl mx-auto`}>Conectamos você a motoristas profissionais e veículos de alto padrão, garantindo deslocamentos eficientes, seguros e personalizados para negócios, turismo ou eventos.</p>
           
@@ -140,5 +128,4 @@ const Hero: React.FC = () => {
       </div>
     </section>;
 };
-
 export default Hero;
