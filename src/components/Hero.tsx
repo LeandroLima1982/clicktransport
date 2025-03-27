@@ -102,9 +102,7 @@ const Hero: React.FC = () => {
               <ArrowRight className="h-5 w-5" />
             </Button>
             
-            <Button variant="outline" size={isMobile ? "default" : "lg"} onClick={scrollToSolutionsSection} className="text-base font-medium bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-md border-0 transition-all duration-300">
-              Nossos Serviços
-            </Button>
+            <Button variant="outline" size={isMobile ? "default" : "lg"} onClick={scrollToSolutionsSection} className="text-base font-medium bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-md border-0 transition-all duration-300">SAIBA MAIS</Button>
           </div>
           
           {/* Scroll indicator */}
