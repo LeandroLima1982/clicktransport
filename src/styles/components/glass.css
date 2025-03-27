@@ -5,6 +5,7 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
 /* Modern glass switch effect */
@@ -13,17 +14,17 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 /* Shadows and hover effects */
 .smooth-shadow {
-  box-shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
   transition: box-shadow 0.3s ease-in-out;
 }
 
 .smooth-shadow:hover {
-  box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 25px 45px rgba(0, 0, 0, 0.25);
 }
 
 .blur-load {
@@ -36,15 +37,15 @@
 @keyframes float {
   0% {
     transform: translateY(0px);
-    box-shadow: 0 5px 15px 0px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 25px 0px rgba(0, 0, 0, 0.3);
   }
   50% {
     transform: translateY(-4px);
-    box-shadow: 0 15px 25px 0px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 20px 35px 0px rgba(0, 0, 0, 0.2);
   }
   100% {
     transform: translateY(0px);
-    box-shadow: 0 5px 15px 0px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 25px 0px rgba(0, 0, 0, 0.3);
   }
 }
 
