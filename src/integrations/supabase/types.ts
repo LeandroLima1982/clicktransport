@@ -332,6 +332,42 @@ export type Database = {
           },
         ]
       }
+      hero_styles: {
+        Row: {
+          created_at: string | null
+          description_color: string
+          gradient_from_color: string
+          gradient_from_opacity: number
+          gradient_to_color: string
+          gradient_to_opacity: number
+          id: string
+          title_color: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description_color?: string
+          gradient_from_color?: string
+          gradient_from_opacity?: number
+          gradient_to_color?: string
+          gradient_to_opacity?: number
+          id?: string
+          title_color?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description_color?: string
+          gradient_from_color?: string
+          gradient_from_opacity?: number
+          gradient_to_color?: string
+          gradient_to_opacity?: number
+          id?: string
+          title_color?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       investor_company_shares: {
         Row: {
           company_id: string

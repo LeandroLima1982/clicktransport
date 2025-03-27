@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -65,8 +64,6 @@ interface HeroStyles {
   gradient_to_opacity: number;
   title_color: string;
   description_color: string;
-  created_at?: string;
-  updated_at?: string;
 }
 
 const defaultStyles: HeroStyles = {
@@ -106,11 +103,21 @@ const HeroStylesEditor: React.FC = () => {
         .select('*')
         .single();
       
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching hero styles:', error);
-        toast.error('Erro ao carregar estilos do hero');
+        if (error.code !== 'PGRST116') { // Not found error
+          toast.error('Erro ao carregar estilos do hero');
+        }
       } else if (data) {
-        setStyles(data);
+        setStyles({
+          id: data.id,
+          gradient_from_color: data.gradient_from_color,
+          gradient_from_opacity: data.gradient_from_opacity,
+          gradient_to_color: data.gradient_to_color,
+          gradient_to_opacity: data.gradient_to_opacity,
+          title_color: data.title_color,
+          description_color: data.description_color
+        });
       }
     } catch (error) {
       console.error('Error processing hero styles:', error);
@@ -123,49 +130,39 @@ const HeroStylesEditor: React.FC = () => {
   const saveHeroStyles = async () => {
     setLoading(true);
     try {
-      // Check if we have an existing record
-      const { data: existingData, error: checkError } = await supabase
-        .from('hero_styles')
-        .select('id')
-        .single();
+      // Get the current timestamp
+      const now = new Date().toISOString();
       
-      let saveError;
-      
-      if (checkError && checkError.code !== 'PGRST116') {
-        // If there was an error other than "no rows returned"
-        throw checkError;
-      }
-      
-      const updatedStyles = {
+      // Define styles to save
+      const stylesToSave = {
         ...styles,
-        updated_at: new Date().toISOString()
+        updated_at: now
       };
       
-      if (existingData && existingData.id) {
+      let result;
+      
+      if (styles.id) {
         // Update existing record
-        const { error } = await supabase
+        result = await supabase
           .from('hero_styles')
-          .update(updatedStyles)
-          .eq('id', existingData.id);
-        
-        saveError = error;
+          .update(stylesToSave)
+          .eq('id', styles.id);
       } else {
         // Insert new record
-        const { error } = await supabase
+        result = await supabase
           .from('hero_styles')
           .insert({
-            ...updatedStyles,
-            created_at: new Date().toISOString()
+            ...stylesToSave,
+            created_at: now
           });
-        
-        saveError = error;
       }
       
-      if (saveError) {
-        throw saveError;
+      if (result.error) {
+        throw result.error;
       }
       
       toast.success('Estilos do hero salvos com sucesso');
+      await fetchHeroStyles(); // Reload the data
     } catch (error: any) {
       console.error('Error saving hero styles:', error);
       toast.error('Erro ao salvar estilos do hero', {
@@ -191,7 +188,10 @@ const HeroStylesEditor: React.FC = () => {
   };
   
   const resetToDefaults = () => {
-    setStyles(defaultStyles);
+    setStyles({
+      ...styles,
+      ...defaultStyles
+    });
     toast.info('Estilos restaurados para os valores padrão');
   };
   
