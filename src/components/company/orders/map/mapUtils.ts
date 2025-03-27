@@ -38,10 +38,13 @@ export function canUseInteractiveMaps(): boolean {
     if (
       'connection' in navigator && 
       // @ts-ignore - TypeScript doesn't know about this newer API
-      ((navigator.connection?.saveData) || 
-       (navigator.connection?.effectiveType && 
-        // @ts-ignore
-        ['slow-2g', '2g', '3g'].includes(navigator.connection.effectiveType)))
+      navigator.connection?.saveData === true || 
+      // Check connection type if available
+      ('connection' in navigator && 
+       // @ts-ignore - TypeScript doesn't know about this newer API
+       navigator.connection?.effectiveType && 
+       // @ts-ignore - TypeScript doesn't know about this newer API
+       ['slow-2g', '2g', '3g'].includes(navigator.connection.effectiveType))
     ) {
       return false;
     }
