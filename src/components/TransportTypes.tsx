@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -151,7 +152,7 @@ const TransportTypes: React.FC = () => {
       loop: true,
       dragFree: true,
       slidesToScroll: 1
-      // Remove containScroll property as it's causing the type error
+      // Loop é forçado no componente Carousel para garantir o comportamento infinito
     };
   };
 
