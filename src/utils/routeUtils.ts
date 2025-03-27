@@ -1,4 +1,3 @@
-
 import { MAPBOX_TOKEN } from './mapbox';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -155,4 +154,63 @@ export const createStaticMapUrl = (
   const markers = `pin-s-a+4A89F3(${origin[0]},${origin[1]}),pin-s-b+EB4C36(${destination[0]},${destination[1]})`;
   
   return `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${markers}/auto/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
+};
+
+// Add the missing function that fetches vehicle rates
+export const getVehicleRates = async (): Promise<VehicleRate[]> => {
+  try {
+    // Try to fetch vehicle rates from the database
+    const { data, error } = await supabase
+      .from('vehicle_rates')
+      .select('*');
+    
+    if (error) {
+      console.error('Error fetching vehicle rates:', error);
+      // Fallback to default rates if there's an error
+      return getDefaultVehicleRates();
+    }
+    
+    if (data && data.length > 0) {
+      return data.map((rate: any) => ({
+        id: rate.id,
+        name: rate.name,
+        basePrice: rate.base_price,
+        pricePerKm: rate.price_per_km,
+        capacity: rate.capacity
+      }));
+    }
+    
+    // If no data, return default rates
+    return getDefaultVehicleRates();
+  } catch (error) {
+    console.error('Error in getVehicleRates:', error);
+    return getDefaultVehicleRates();
+  }
+};
+
+// Helper function to provide default vehicle rates when database query fails
+const getDefaultVehicleRates = (): VehicleRate[] => {
+  return [
+    {
+      id: 'sedan',
+      name: 'Sedan Executivo',
+      basePrice: 79.90,
+      pricePerKm: 2.10,
+      capacity: 4
+    },
+    {
+      id: 'suv',
+      name: 'SUV Premium',
+      basePrice: 109.90,
+      pricePerKm: 2.50,
+      capacity: 6
+    },
+    {
+      id: 'van',
+      name: 'Van Executiva',
+      basePrice: 169.90,
+      pricePerKm: 3.20,
+      capacity: 10
+    }
+  ];
 };
