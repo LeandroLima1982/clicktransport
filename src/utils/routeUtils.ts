@@ -12,6 +12,7 @@ export interface VehicleRate {
   name: string;
   basePrice: number;
   pricePerKm: number;
+  capacity: number; // Add this property to fix the type errors
 }
 
 export const calculateRoute = async (
@@ -199,23 +200,24 @@ export const getVehicleRates = async (): Promise<VehicleRate[]> => {
         id: item.id,
         name: item.name,
         basePrice: item.baseprice,
-        pricePerKm: item.priceperkm
+        pricePerKm: item.priceperkm,
+        capacity: item.capacity
       }));
     }
     
     // Se não houver dados no banco, retorne valores padrão atualizados
     return [
-      { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10 },
-      { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49 },
-      { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39 }
+      { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10, capacity: 5 },
+      { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49, capacity: 7 },
+      { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39, capacity: 10 }
     ];
   } catch (error) {
     console.error('Error in getVehicleRates:', error);
     // Return default values on error
     return [
-      { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10 },
-      { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49 },
-      { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39 }
+      { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10, capacity: 5 },
+      { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49, capacity: 7 },
+      { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39, capacity: 10 }
     ];
   }
 };

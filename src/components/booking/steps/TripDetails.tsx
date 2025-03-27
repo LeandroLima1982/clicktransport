@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Calendar, MapPin, Users, Clock, AlertTriangle, DollarSign, Road } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, AlertTriangle, DollarSign, Navigation } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Vehicle } from './VehicleSelection';
@@ -152,7 +152,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({
             
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex items-center mb-2">
-                <Road className="h-5 w-5 mr-2 text-gray-500" />
+                <Navigation className="h-5 w-5 mr-2 text-gray-500" />
                 <span className="font-medium">Distância</span>
               </div>
               <div className="flex items-center">
