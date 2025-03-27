@@ -122,12 +122,12 @@ const TransportTypes: React.FC = () => {
     });
   };
   return <section className="w-full py-[8px] mx-[2px] my-[20px] bg-white">
-      <div className="max-w-[1400px] mx-auto px-4 w-full md:px-6 py-[4px] bg-zinc-50">
+      <div className="max-w-[1400px] mx-auto px-4 w-full md:px-6 py-[4px] bg-white">
         <Carousel opts={{
         align: "start",
         loop: true
       }} className="w-full" ref={carouselRef} onMouseEnter={pauseAutoplay} onMouseLeave={resumeAutoplay} onTouchStart={pauseAutoplay} onTouchEnd={resumeAutoplay}>
-          <CarouselContent className="-ml-2 md:-ml-4 bg-zinc-50 my-0 mx-0 px-0">
+          <CarouselContent className="-ml-2 md:-ml-4 my-0 mx-0 px-0 bg-white">
             {transportTypes.map((type, index) => <CarouselItem key={index} className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 px-[12px] mx-[18px] my-[28px]">
                 <div className="relative h-full overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl" onMouseEnter={() => {
               pauseAutoplay();
