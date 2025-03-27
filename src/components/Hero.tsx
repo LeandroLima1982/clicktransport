@@ -96,10 +96,11 @@ const Hero: React.FC = () => {
   // Use the appropriate background image based on device type
   const currentBackgroundImage = isMobile ? mobileBackgroundImage : backgroundImage;
   
-  return <section className="relative min-h-[90vh] md:min-h-[80vh] w-full flex items-center justify-center overflow-hidden mx-0">
-      {/* Background image */}
-      <div className="absolute inset-0 -z-10 bg-cover bg-center" style={{
-      backgroundImage: `url(${currentBackgroundImage})`
+  return <section className="relative min-h-[90vh] md:min-h-[75vh] w-full flex items-center justify-center overflow-hidden mx-0">
+      {/* Background image with parallax effect */}
+      <div className="absolute inset-0 -z-10 bg-cover bg-center transform transition-transform duration-500" style={{
+      backgroundImage: `url(${currentBackgroundImage})`,
+      backgroundAttachment: isMobile ? 'scroll' : 'fixed'
     }}>
         {/* Gradient overlay with dynamic colors */}
         <div className={`absolute inset-0 ${gradientStyle}`}></div>
@@ -116,6 +117,13 @@ const Hero: React.FC = () => {
             <Button variant="outline" size={isMobile ? "default" : "lg"} onClick={scrollToSolutionsSection} className="text-base font-medium bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-md border-0 transition-all duration-300">SAIBA MAIS</Button>
           </div>
         </div>
+      </div>
+      
+      {/* Shape divider to create a curve that connects with the booking form */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 md:h-20 z-0 overflow-hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" className="absolute bottom-0 w-full h-auto" preserveAspectRatio="none">
+          <path fill="rgba(255,255,255,0.05)" fillOpacity="1" d="M0,224L60,208C120,192,240,160,360,160C480,160,600,192,720,213.3C840,235,960,245,1080,234.7C1200,224,1320,192,1380,176L1440,160L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path>
+        </svg>
       </div>
     </section>;
 };

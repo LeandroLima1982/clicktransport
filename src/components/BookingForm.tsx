@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -155,16 +156,16 @@ const BookingForm: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-gradient-to-b from-[#1C4D9B]/90 to-[#002366] rounded-lg md:rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
-      <div className="pt-5 md:pt-7 pb-6 md:pb-8 py-0 md:px-[54px] px-[8px]">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0 px-[4px]">
-          <h3 className="font-extrabold text-xl md:text-2xl text-white">Solicitar Motorista</h3>
+    <div className="w-full bg-gradient-to-b from-[#1C4D9B]/80 to-[#002366] rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)] glass-morphism animate-float transition-all duration-300">
+      <div className="pt-5 md:pt-7 pb-6 md:pb-8 px-4 md:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0">
+          <h3 className="font-extrabold text-xl md:text-2xl text-white drop-shadow-sm">Solicitar Motorista</h3>
           <TripTypeTabs value={tripType} onChange={setTripType} />
         </div>
 
         <div className="space-y-4 md:space-y-5">
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="rounded-lg border border-[#D4AF37]/50 p-3 bg-white/[0.15]">
+            <div className="rounded-lg border border-[#D4AF37]/30 p-3 bg-white/10 hover:bg-white/15 transition-colors duration-200">
               <Label className="block text-sm font-semibold text-white mb-2">
                 De onde vai sair?
               </Label>
@@ -174,13 +175,13 @@ const BookingForm: React.FC = () => {
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
                       <MapPin className="h-4 w-4 text-[#D4AF37]" />
                     </div>
-                    <Input placeholder="Digite seu endereço: rua, número, bairro" value={originValue} onChange={handleManualOriginChange} className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-10 focus:border-[#D4AF37] focus:ring-[#D4AF37] placeholder:text-gray-400" />
+                    <Input placeholder="Digite seu endereço: rua, número, bairro" value={originValue} onChange={handleManualOriginChange} className="pl-9 pr-3 py-2.5 text-sm bg-white/90 border-gray-100 h-10 focus:border-[#D4AF37] focus:ring-[#D4AF37] placeholder:text-gray-400" />
                   </div>
                 </div>
                 <div className="w-full sm:w-[180px]">
                   <div className="flex">
                     <Select value={originCityId} onValueChange={setOriginCityId}>
-                      <SelectTrigger className="h-10 bg-white text-gray-700 border-gray-100 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
+                      <SelectTrigger className="h-10 bg-white/90 text-gray-700 border-gray-100 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
                         <SelectValue placeholder="Selecione cidade" className="text-gray-500" />
                       </SelectTrigger>
                       <SelectContent className="bg-white">
@@ -194,7 +195,7 @@ const BookingForm: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-[#D4AF37]/50 p-3 bg-white/[0.15]">
+            <div className="rounded-lg border border-[#D4AF37]/30 p-3 bg-white/10 hover:bg-white/15 transition-colors duration-200">
               <Label className="block text-sm font-semibold text-white mb-2">
                 Para onde vai?
               </Label>
@@ -204,12 +205,12 @@ const BookingForm: React.FC = () => {
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
                       <MapPin className="h-4 w-4 text-[#D4AF37]" />
                     </div>
-                    <Input placeholder="Digite seu destino: rua, número, bairro" value={destinationValue} onChange={handleManualDestinationChange} className="pl-9 pr-3 py-2.5 text-sm bg-white border-gray-100 h-10 focus:border-[#D4AF37] focus:ring-[#D4AF37] placeholder:text-gray-400" />
+                    <Input placeholder="Digite seu destino: rua, número, bairro" value={destinationValue} onChange={handleManualDestinationChange} className="pl-9 pr-3 py-2.5 text-sm bg-white/90 border-gray-100 h-10 focus:border-[#D4AF37] focus:ring-[#D4AF37] placeholder:text-gray-400" />
                   </div>
                 </div>
                 <div className="w-full sm:w-[180px]">
                   <Select value={destinationCityId} onValueChange={setDestinationCityId}>
-                    <SelectTrigger className="h-10 bg-white text-gray-700 border-gray-100 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
+                    <SelectTrigger className="h-10 bg-white/90 text-gray-700 border-gray-100 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
                       <SelectValue placeholder="Selecione cidade" className="text-gray-500" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
@@ -224,15 +225,15 @@ const BookingForm: React.FC = () => {
           </div>
 
           <div className="hidden md:flex justify-center items-center h-6 relative">
-            <Separator className="w-full bg-[#D4AF37]/60" />
-            <div className="absolute bg-white rounded-full p-1">
+            <Separator className="w-full bg-[#D4AF37]/40" />
+            <div className="absolute bg-white rounded-full p-1 shadow-md">
               <ArrowRight className="h-4 w-4 text-[#002366]" />
             </div>
           </div>
 
           <div className="flex md:hidden justify-center items-center h-6 relative mb-2">
-            <Separator className="w-full bg-[#D4AF37]/60" />
-            <div className="absolute bg-white rounded-full p-1">
+            <Separator className="w-full bg-[#D4AF37]/40" />
+            <div className="absolute bg-white rounded-full p-1 shadow-md">
               <ArrowDown className="h-4 w-4 text-[#002366]" />
             </div>
           </div>
@@ -259,7 +260,7 @@ const BookingForm: React.FC = () => {
             </div>
           </div>
 
-          {tripType === 'roundtrip' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-[#D4AF37]/40">
+          {tripType === 'roundtrip' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-[#D4AF37]/30">
               <div>
                 <Label className="text-white block text-sm font-medium mb-2">
                   Volta quando?
@@ -276,7 +277,7 @@ const BookingForm: React.FC = () => {
             </div>}
         </div>
 
-        <Button onClick={handleBooking} disabled={!originCityId || !destinationCityId} className="w-full rounded-lg mt-6 text-white text-lg font-medium h-12 md:h-14 transition-all duration-300 shadow-lg relative overflow-hidden my-[24px] bg-yellow-600 hover:bg-yellow-500">
+        <Button onClick={handleBooking} disabled={!originCityId || !destinationCityId} className="w-full rounded-lg mt-6 text-white text-lg font-medium h-12 md:h-14 transition-all duration-300 shadow-lg relative overflow-hidden bg-gradient-to-r from-yellow-600 to-amber-500 hover:from-yellow-500 hover:to-amber-400">
           <span className="relative z-10 flex items-center justify-center">
             Buscar
           </span>

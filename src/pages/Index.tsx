@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -35,9 +36,9 @@ const Index = () => {
         <Hero />
         
         {/* Booking form - positioned to overlap with hero */}
-        <div className="relative z-10 max-w-[1200px] mx-auto px-4 md:px-6 -mt-16 md:-mt-32 lg:-mt-40">
+        <div className="relative z-10 max-w-[900px] mx-auto px-4 md:px-6 -mt-16 md:-mt-32 lg:-mt-40">
           <TransitionEffect direction="up" delay={100}>
-            <div className="shadow-xl rounded-2xl overflow-hidden animate-scale-in">
+            <div className="shadow-2xl rounded-2xl overflow-hidden animate-scale-in">
               <BookingForm />
             </div>
           </TransitionEffect>
