@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { fetchAddressSuggestions } from '@/utils/mapbox';
@@ -44,7 +43,6 @@ export const useBookingForm = () => {
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Reset error count after a period to allow retrying
   useEffect(() => {
     if (errorCount > 0) {
       const timer = setTimeout(() => {
@@ -97,8 +95,6 @@ export const useBookingForm = () => {
       clearTimeout(originTimeoutRef.current);
     }
     
-    // Só buscar sugestões se o usuário já digitou pelo menos 3 caracteres
-    // e não tivemos muitos erros recentes
     if (value.length >= 3 && errorCount < 5) {
       setIsLoadingSuggestions(true);
       
@@ -107,7 +103,6 @@ export const useBookingForm = () => {
           const suggestions = await fetchAddressSuggestions(value);
           setOriginSuggestions(suggestions);
           
-          // Se não encontrou nada, sugerir adicionar mais informações
           if (suggestions.length === 0 && value.length > 5) {
             console.log("Sem resultados para: " + value);
           }
@@ -115,7 +110,6 @@ export const useBookingForm = () => {
           console.error('Erro ao buscar sugestões:', error);
           setErrorCount(prev => prev + 1);
           
-          // Avisar o usuário apenas na primeira falha
           if (errorCount === 0) {
             toast.error('Erro ao buscar sugestões de endereço. Tente um formato diferente.', {
               description: 'Exemplo: "Rua Nome, 123, Bairro, Cidade"'

@@ -16,6 +16,8 @@ import { calculateRoute } from '@/utils/routeUtils';
 import { MapPin, RotateCw, ArrowDown, ArrowRight, ArrowRightCircle } from 'lucide-react';
 import { Separator } from './ui/separator';
 import TransitionEffect from '@/components/TransitionEffect';
+import LocationInput from './booking/LocationInput';
+import MapPreview from './booking/MapPreview';
 
 interface BookingData {
   origin: string;
@@ -56,29 +58,27 @@ const BookingForm: React.FC = () => {
     bookingData,
     showBookingSteps,
     setOriginValue,
-    setDestinationValue
+    setDestinationValue,
+    handleOriginChange,
+    handleDestinationChange,
+    originSuggestions,
+    destinationSuggestions,
+    selectSuggestion,
+    clearOrigin,
+    clearDestination
   } = useBookingForm();
   
-  const {
-    cities,
-    loading: citiesLoading,
-    fetchCities,
-    getDistanceBetweenCities
-  } = useDestinationsService();
+  const { cities, loading: citiesLoading, fetchCities } = useDestinationsService();
   
-  const [originCityId, setOriginCityId] = useState<string>('');
-  const [destinationCityId, setDestinationCityId] = useState<string>('');
   const [distanceInfo, setDistanceInfo] = useState<{
     distance: number;
     duration: number;
   } | null>(null);
-  const [originCity, setOriginCity] = useState<string>('');
-  const [destinationCity, setDestinationCity] = useState<string>('');
+  
   const isMobile = useIsMobile();
   
   // New state for the multi-step booking process
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
   const [formErrors, setFormErrors] = useState<{
     origin?: string;
     destination?: string;
@@ -92,89 +92,16 @@ const BookingForm: React.FC = () => {
     fetchCities();
   }, [fetchCities]);
   
-  useEffect(() => {
-    const calculateDistance = async () => {
-      if (originCityId && destinationCityId) {
-        const originCityObj = cities.find(city => city.id === originCityId);
-        const destinationCityObj = cities.find(city => city.id === destinationCityId);
-        if (originCityObj && destinationCityObj) {
-          setOriginCity(formatCityLabel(originCityObj));
-          setDestinationCity(formatCityLabel(destinationCityObj));
-          try {
-            const savedDistance = await getDistanceBetweenCities(originCityId, destinationCityId);
-            if (savedDistance && savedDistance.exists) {
-              setDistanceInfo({
-                distance: savedDistance.distance,
-                duration: savedDistance.duration
-              });
-              return;
-            }
-            const originCoords = `${originCityObj.longitude},${originCityObj.latitude}`;
-            const destinationCoords = `${destinationCityObj.longitude},${destinationCityObj.latitude}`;
-            const routeInfo = await calculateRoute(originCoords, destinationCoords);
-            if (routeInfo) {
-              setDistanceInfo({
-                distance: routeInfo.distance,
-                duration: routeInfo.duration
-              });
-            }
-          } catch (error) {
-            console.error('Erro ao calcular rota:', error);
-            setDistanceInfo(null);
-          }
-        }
-      } else {
-        setDistanceInfo(null);
-      }
-    };
-    calculateDistance();
-  }, [originCityId, destinationCityId, cities, getDistanceBetweenCities]);
-  
-  const formatCityLabel = (city: any) => {
-    const stateAbbreviation = city.state ? city.state.length > 2 ? city.state.substring(0, 2).toUpperCase() : city.state.toUpperCase() : '';
-    return `${city.name}${stateAbbreviation ? `, ${stateAbbreviation}` : ''}`;
-  };
-  
-  const handleRefreshCities = () => {
-    fetchCities();
-  };
-  
-  const handleManualOriginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOriginValue(e.target.value);
-  };
-  
-  const handleManualDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDestinationValue(e.target.value);
-  };
-  
-  const getFullOriginAddress = () => {
-    if (originValue && originCity) {
-      return `${originValue}, ${originCity}`;
-    }
-    return originValue;
-  };
-  
-  const getFullDestinationAddress = () => {
-    if (destinationValue && destinationCity) {
-      return `${destinationValue}, ${destinationCity}`;
-    }
-    return destinationValue;
-  };
-  
-  const renderDistanceInfo = () => {
-    if (!distanceInfo) return null;
-    const totalMinutes = Math.round(distanceInfo.duration);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    return;
+  // Handle route calculation result
+  const handleRouteCalculated = (routeData: { distance: number; duration: number }) => {
+    setDistanceInfo(routeData);
   };
 
   // Validation functions for each step
   const validateOriginStep = (): boolean => {
     const errors: {origin?: string} = {};
     
-    if (!originValue || !originCityId) {
+    if (!originValue) {
       errors.origin = "Por favor, informe o local de origem";
     }
     
@@ -185,7 +112,7 @@ const BookingForm: React.FC = () => {
   const validateDestinationStep = (): boolean => {
     const errors: {destination?: string} = {};
     
-    if (!destinationValue || !destinationCityId) {
+    if (!destinationValue) {
       errors.destination = "Por favor, informe o local de destino";
     }
     
@@ -292,37 +219,18 @@ const BookingForm: React.FC = () => {
               <Label className="block text-lg font-semibold booking-label mb-3 text-center">
                 De onde vai sair?
               </Label>
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <div className="flex-1">
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                      <MapPin className="h-4 w-4 text-[#F8D748]" />
-                    </div>
-                    <Input 
-                      placeholder="Digite seu endereço: rua, número, bairro" 
-                      value={originValue} 
-                      onChange={handleManualOriginChange} 
-                      className="pl-9 pr-3 py-2.5 text-sm booking-input h-10 focus:border-[#F8D748] focus:ring-[#F8D748] placeholder:text-white/50" 
-                    />
-                  </div>
-                </div>
-                <div className="w-full sm:w-[180px]">
-                  <div className="flex">
-                    <Select value={originCityId} onValueChange={setOriginCityId}>
-                      <SelectTrigger className="h-10 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
-                        <SelectValue placeholder="Selecione cidade" className="text-white/50" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#002366] border border-[#D4AF37] text-white">
-                        {cities.filter(city => city.is_active !== false).map(city => (
-                          <SelectItem key={city.id} value={city.id} className="hover:bg-white/10 text-white">
-                            {formatCityLabel(city)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
+              
+              <LocationInput
+                id="origin"
+                label=""
+                placeholder="Digite seu endereço completo"
+                value={originValue}
+                onChange={handleOriginChange}
+                suggestions={originSuggestions}
+                onSelectSuggestion={(suggestion) => selectSuggestion(suggestion, true)}
+                onClear={clearOrigin}
+              />
+              
               {formErrors.origin && (
                 <p className="text-red-300 text-sm mt-2">{formErrors.origin}</p>
               )}
@@ -336,35 +244,18 @@ const BookingForm: React.FC = () => {
               <Label className="block text-lg font-semibold booking-label mb-3 text-center">
                 Para onde vai?
               </Label>
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <div className="flex-1">
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                      <MapPin className="h-4 w-4 text-[#F8D748]" />
-                    </div>
-                    <Input 
-                      placeholder="Digite seu destino: rua, número, bairro" 
-                      value={destinationValue} 
-                      onChange={handleManualDestinationChange} 
-                      className="pl-9 pr-3 py-2.5 text-sm booking-input h-10 focus:border-[#F8D748] focus:ring-[#F8D748] placeholder:text-white/50" 
-                    />
-                  </div>
-                </div>
-                <div className="w-full sm:w-[180px]">
-                  <Select value={destinationCityId} onValueChange={setDestinationCityId}>
-                    <SelectTrigger className="h-10 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
-                      <SelectValue placeholder="Selecione cidade" className="text-white/50" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#002366] border border-[#D4AF37] text-white">
-                      {cities.filter(city => city.is_active !== false).map(city => (
-                        <SelectItem key={city.id} value={city.id} className="hover:bg-white/10 text-white">
-                          {formatCityLabel(city)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              
+              <LocationInput
+                id="destination"
+                label=""
+                placeholder="Digite o endereço de destino"
+                value={destinationValue}
+                onChange={handleDestinationChange}
+                suggestions={destinationSuggestions}
+                onSelectSuggestion={(suggestion) => selectSuggestion(suggestion, false)}
+                onClear={clearDestination}
+              />
+              
               {formErrors.destination && (
                 <p className="text-red-300 text-sm mt-2">{formErrors.destination}</p>
               )}
@@ -434,30 +325,40 @@ const BookingForm: React.FC = () => {
     }
   };
 
-  // Render summary (visible after step 1)
+  // Render summary (visible after step 1) with map preview
   const renderSummary = () => {
     if (currentStep === 1) return null;
     
     return (
-      <div className="mb-4 p-3 bg-white/10 rounded-md border border-[#D4AF37]/30">
-        {currentStep >= 2 && originValue && originCityId && (
-          <div className="flex items-center text-sm">
-            <span className="font-semibold mr-2">De:</span>
-            <span className="text-white/90">{getFullOriginAddress()}</span>
-          </div>
-        )}
+      <div className="mb-4 pb-1">
+        <div className="p-3 bg-white/10 rounded-md border border-[#D4AF37]/30 mb-3">
+          {currentStep >= 2 && originValue && (
+            <div className="flex items-center text-sm">
+              <span className="font-semibold mr-2">De:</span>
+              <span className="text-white/90">{originValue}</span>
+            </div>
+          )}
+          
+          {currentStep >= 3 && destinationValue && (
+            <div className="flex items-center text-sm mt-1">
+              <span className="font-semibold mr-2">Para:</span>
+              <span className="text-white/90">{destinationValue}</span>
+            </div>
+          )}
+          
+          {distanceInfo && (
+            <div className="text-xs text-amber-200 mt-2">
+              Distância: ~{Math.round(distanceInfo.distance)} km • Tempo estimado: ~{Math.floor(distanceInfo.duration / 60)}h{distanceInfo.duration % 60 > 0 ? ` ${Math.round(distanceInfo.duration % 60)}min` : ''}
+            </div>
+          )}
+        </div>
         
-        {currentStep >= 3 && destinationValue && destinationCityId && (
-          <div className="flex items-center text-sm mt-1">
-            <span className="font-semibold mr-2">Para:</span>
-            <span className="text-white/90">{getFullDestinationAddress()}</span>
-          </div>
-        )}
-        
-        {distanceInfo && currentStep >= 3 && (
-          <div className="text-xs text-amber-200 mt-2">
-            Distância: ~{Math.round(distanceInfo.distance)} km • Tempo estimado: ~{Math.floor(distanceInfo.duration / 60)}h{distanceInfo.duration % 60 > 0 ? ` ${Math.round(distanceInfo.duration % 60)}min` : ''}
-          </div>
+        {currentStep >= 2 && originValue && destinationValue && (
+          <MapPreview 
+            origin={originValue}
+            destination={destinationValue}
+            onRouteCalculated={handleRouteCalculated}
+          />
         )}
       </div>
     );
@@ -502,8 +403,8 @@ const BookingForm: React.FC = () => {
         {bookingData && showBookingSteps && (
           <BookingSteps 
             bookingData={{
-              origin: getFullOriginAddress(),
-              destination: getFullDestinationAddress(),
+              origin: originValue,
+              destination: destinationValue,
               date: date,
               returnDate: returnDate,
               tripType: tripType,
