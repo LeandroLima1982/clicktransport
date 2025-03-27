@@ -16,43 +16,7 @@ import BookingComplete from './steps/BookingComplete';
 import PassengerInfoFields from './PassengerInfoFields';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-
-const defaultVehicleOptions: Vehicle[] = [
-  {
-    id: "sedan",
-    name: 'Sedan Executivo',
-    image: '/lovable-uploads/sedan-exec.jpg',
-    description: 'Conforto para até 4 passageiros',
-    capacity: 4,
-    pricePerKm: 2.10,
-    basePrice: 79.90,
-  },
-  {
-    id: "suv",
-    name: 'SUV Premium',
-    image: '/lovable-uploads/suv-premium.jpg',
-    description: 'Espaço e conforto para até 6 passageiros',
-    capacity: 6,
-    pricePerKm: 2.49,
-    basePrice: 119.90,
-  },
-  {
-    id: "van",
-    name: 'Van Executiva',
-    image: '/lovable-uploads/van-exec.jpg',
-    description: 'Ideal para grupos de até 10 passageiros',
-    capacity: 10,
-    pricePerKm: 3.39,
-    basePrice: 199.90,
-  },
-];
-
-const paymentMethods = [
-  { id: 'credit', name: 'Cartão de Crédito', icon: 'credit-card' },
-  { id: 'pix', name: 'PIX', icon: 'qr-code' },
-  { id: 'bank', name: 'Transferência Bancária', icon: 'bank' },
-  { id: 'company', name: 'Faturar para Empresa', icon: 'building' },
-];
+import MapPreview from './MapPreview';
 
 interface BookingStepsProps {
   bookingData: {
@@ -85,9 +49,10 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
   const [passengerData, setPassengerData] = useState<{name: string; phone: string}[]>([]);
-  const [vehicleOptions, setVehicleOptions] = useState<Vehicle[]>(defaultVehicleOptions);
+  const [vehicleOptions, setVehicleOptions] = useState<Vehicle[]>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
   const [pendingBooking, setPendingBooking] = useState(false);
+  const [calculatedFare, setCalculatedFare] = useState<number | null>(null);
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -103,62 +68,101 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const fetchVehicleRates = async () => {
     setIsLoadingVehicles(true);
     try {
-      const { data, error } = await supabase
-        .from('vehicle_rates')
-        .select('*')
-        .order('name');
+      const rates = await getVehicleRates();
       
-      if (error) throw error;
+      const mappedVehicles: Vehicle[] = rates.map(rate => ({
+        id: rate.id,
+        name: rate.name,
+        image: getVehicleImage(rate.id),
+        description: getVehicleDescription(rate),
+        capacity: rate.capacity || getDefaultCapacity(rate.id),
+        pricePerKm: rate.pricePerKm,
+        basePrice: rate.basePrice,
+      }));
       
-      if (data && data.length > 0) {
-        const updatedVehicles = defaultVehicleOptions.map(vehicle => {
-          const dbRate = data.find(rate => rate.id === vehicle.id);
-          if (dbRate) {
-            return {
-              ...vehicle,
-              basePrice: dbRate.baseprice,
-              pricePerKm: dbRate.priceperkm
-            };
-          }
-          return vehicle;
-        });
-        
-        setVehicleOptions(updatedVehicles);
-      }
+      setVehicleOptions(mappedVehicles);
+      
+      const passengerCount = parseInt(bookingData.passengers, 10) || 1;
+      let defaultVehicle = mappedVehicles.find(v => v.capacity >= passengerCount) || mappedVehicles[0];
+      setSelectedVehicle(defaultVehicle.id);
     } catch (error) {
       console.error('Error fetching vehicle rates:', error);
       toast.error('Erro ao carregar taxas de veículos. Usando valores padrão.');
+      setVehicleOptions([
+        {
+          id: "sedan",
+          name: 'Sedan Executivo',
+          image: '/lovable-uploads/sedan-exec.jpg',
+          description: 'Conforto para até 4 passageiros',
+          capacity: 4,
+          pricePerKm: 2.10,
+          basePrice: 79.90,
+        },
+        {
+          id: "suv",
+          name: 'SUV Premium',
+          image: '/lovable-uploads/suv-premium.jpg',
+          description: 'Espaço e conforto para até 6 passageiros',
+          capacity: 6,
+          pricePerKm: 2.49,
+          basePrice: 119.90,
+        },
+        {
+          id: "van",
+          name: 'Van Executiva',
+          image: '/lovable-uploads/van-exec.jpg',
+          description: 'Ideal para grupos de até 10 passageiros',
+          capacity: 10,
+          pricePerKm: 3.39,
+          basePrice: 199.90,
+        },
+      ]);
     } finally {
       setIsLoadingVehicles(false);
     }
   };
+  
+  const getVehicleImage = (vehicleId: string): string => {
+    switch (vehicleId) {
+      case 'sedan': return '/lovable-uploads/sedan-exec.jpg';
+      case 'suv': return '/lovable-uploads/suv-premium.jpg';
+      case 'van': return '/lovable-uploads/van-exec.jpg';
+      default: return '/lovable-uploads/sedan-exec.jpg';
+    }
+  };
+  
+  const getVehicleDescription = (rate: VehicleRate): string => {
+    const capacity = rate.capacity || getDefaultCapacity(rate.id);
+    return `Conforto para até ${capacity} passageiros`;
+  };
+  
+  const getDefaultCapacity = (vehicleId: string): number => {
+    switch (vehicleId) {
+      case 'sedan': return 4;
+      case 'suv': return 6;
+      case 'van': return 10;
+      default: return 4;
+    }
+  };
 
-  useEffect(() => {
-    const fetchRouteData = async () => {
-      if (bookingData.origin && bookingData.destination && isOpen) {
-        setIsCalculatingRoute(true);
-        try {
-          const result = await calculateRoute(bookingData.origin, bookingData.destination);
-          setRouteInfo(result);
-          if (!result) {
-            toast.error('Não foi possível calcular a rota. Usando estimativas padrão.');
-          }
-        } catch (error) {
-          console.error('Error fetching route data:', error);
-          toast.error('Erro ao calcular rota. Usando estimativas padrão.');
-        } finally {
-          setIsCalculatingRoute(false);
-        }
-      }
-    };
+  const handleRouteCalculated = (data: { distance: number; duration: number; fare: number }) => {
+    setRouteInfo({
+      distance: data.distance,
+      duration: data.duration,
+      geometry: null
+    });
+    setCalculatedFare(data.fare);
+    setIsCalculatingRoute(false);
+  };
 
-    fetchRouteData();
-  }, [bookingData.origin, bookingData.destination, isOpen]);
-
-  const estimatedDistance = routeInfo?.distance || 120;
-  const estimatedTime = routeInfo?.duration || 95;
+  const estimatedDistance = routeInfo?.distance || 0;
+  const estimatedTime = routeInfo?.duration || 0;
 
   const calculatePrice = () => {
+    if (calculatedFare) {
+      return bookingData.tripType === 'roundtrip' ? calculatedFare * 2 : calculatedFare;
+    }
+    
     if (!selectedVehicle) return 0;
     const vehicle = vehicleOptions.find(v => v.id === selectedVehicle);
     if (!vehicle) return 0;
@@ -180,6 +184,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
 
   const handleVehicleSelect = (vehicleId: string) => {
     setSelectedVehicle(vehicleId);
+    setCalculatedFare(null);
   };
 
   const handlePaymentMethodSelect = (methodId: string) => {
@@ -340,18 +345,36 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   };
 
   const selectedVehicleDetails = vehicleOptions.find(v => v.id === selectedVehicle);
+  
+  const paymentMethods = [
+    { id: 'credit', name: 'Cartão de Crédito', icon: 'credit-card' },
+    { id: 'pix', name: 'PIX', icon: 'qr-code' },
+    { id: 'bank', name: 'Transferência Bancária', icon: 'bank' },
+    { id: 'company', name: 'Faturar para Empresa', icon: 'building' },
+  ];
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return (
-          <VehicleSelection
-            vehicles={vehicleOptions}
-            selectedVehicle={selectedVehicle}
-            onSelectVehicle={handleVehicleSelect}
-            formatCurrency={formatCurrency}
-            isLoading={isLoadingVehicles}
-          />
+          <>
+            <div className="mb-6">
+              <MapPreview 
+                origin={bookingData.origin} 
+                destination={bookingData.destination}
+                selectedVehicleId={selectedVehicle || undefined}
+                onRouteCalculated={handleRouteCalculated}
+              />
+            </div>
+            
+            <VehicleSelection
+              vehicles={vehicleOptions}
+              selectedVehicle={selectedVehicle}
+              onSelectVehicle={handleVehicleSelect}
+              formatCurrency={formatCurrency}
+              isLoading={isLoadingVehicles}
+            />
+          </>
         );
       case 2:
         return (

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from 'sonner';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Users, DollarSign, Percent } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { VehicleRate } from '@/utils/routeUtils';
@@ -46,15 +46,16 @@ const TripRateSettings = () => {
           id: item.id,
           name: item.name,
           basePrice: item.baseprice,
-          pricePerKm: item.priceperkm
+          pricePerKm: item.priceperkm,
+          capacity: item.capacity || getDefaultCapacity(item.id)
         }));
         form.reset({ vehicles: mappedData });
       } else {
         // If no rates exist yet, initialize with default values
         const defaultRates = [
-          { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10 },
-          { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49 },
-          { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39 }
+          { id: 'sedan', name: 'Sedan Executivo', basePrice: 79.90, pricePerKm: 2.10, capacity: 4 },
+          { id: 'suv', name: 'SUV Premium', basePrice: 119.90, pricePerKm: 2.49, capacity: 6 },
+          { id: 'van', name: 'Van Executiva', basePrice: 199.90, pricePerKm: 3.39, capacity: 10 }
         ];
         form.reset({ vehicles: defaultRates });
       }
@@ -63,6 +64,15 @@ const TripRateSettings = () => {
       toast.error('Erro ao carregar taxas de veículos');
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const getDefaultCapacity = (vehicleId: string): number => {
+    switch (vehicleId) {
+      case 'sedan': return 4;
+      case 'suv': return 6;
+      case 'van': return 10;
+      default: return 4;
     }
   };
 
@@ -78,7 +88,8 @@ const TripRateSettings = () => {
             id: vehicle.id,
             name: vehicle.name,
             baseprice: vehicle.basePrice,
-            priceperkm: vehicle.pricePerKm
+            priceperkm: vehicle.pricePerKm,
+            capacity: vehicle.capacity || getDefaultCapacity(vehicle.id)
           }, { onConflict: 'id' });
         
         if (error) throw error;
@@ -112,9 +123,12 @@ const TripRateSettings = () => {
               {form.watch('vehicles').map((vehicle, index) => (
                 <div key={vehicle.id} className="bg-muted/30 p-4 rounded-lg">
                   <h3 className="font-medium text-lg mb-3">{vehicle.name}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <Label htmlFor={`basePrice-${index}`}>Preço Base (R$)</Label>
+                      <Label htmlFor={`basePrice-${index}`} className="flex items-center">
+                        <DollarSign className="h-4 w-4 mr-1" /> 
+                        Preço Base (R$)
+                      </Label>
                       <Input
                         id={`basePrice-${index}`}
                         type="number"
@@ -133,7 +147,10 @@ const TripRateSettings = () => {
                       </p>
                     </div>
                     <div>
-                      <Label htmlFor={`pricePerKm-${index}`}>Taxa por Km (R$)</Label>
+                      <Label htmlFor={`pricePerKm-${index}`} className="flex items-center">
+                        <Percent className="h-4 w-4 mr-1" />
+                        Taxa por Km (R$)
+                      </Label>
                       <Input
                         id={`pricePerKm-${index}`}
                         type="number"
@@ -149,6 +166,29 @@ const TripRateSettings = () => {
                       />
                       <p className="text-sm text-muted-foreground mt-1">
                         Valor cobrado por quilômetro percorrido
+                      </p>
+                    </div>
+                    <div>
+                      <Label htmlFor={`capacity-${index}`} className="flex items-center">
+                        <Users className="h-4 w-4 mr-1" />
+                        Capacidade (passageiros)
+                      </Label>
+                      <Input
+                        id={`capacity-${index}`}
+                        type="number"
+                        step="1"
+                        min="1"
+                        max="20"
+                        value={vehicle.capacity || getDefaultCapacity(vehicle.id)}
+                        onChange={(e) => {
+                          const newValue = parseInt(e.target.value);
+                          const vehicles = form.getValues('vehicles');
+                          vehicles[index].capacity = newValue;
+                          form.setValue('vehicles', vehicles);
+                        }}
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Número máximo de passageiros para este veículo
                       </p>
                     </div>
                   </div>

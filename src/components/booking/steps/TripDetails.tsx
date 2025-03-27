@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Calendar, MapPin, Users, Clock, AlertTriangle } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, AlertTriangle, DollarSign, Road } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Vehicle } from './VehicleSelection';
@@ -55,6 +55,23 @@ const TripDetails: React.FC<TripDetailsProps> = ({
     const mins = minutes % 60;
     return `${hours}h ${mins > 0 ? `${mins}min` : ''}`;
   };
+
+  // Calculate price breakdown
+  const getPriceBreakdown = () => {
+    if (!selectedVehicle) return null;
+    
+    const basePrice = selectedVehicle.basePrice;
+    const distancePrice = estimatedDistance * selectedVehicle.pricePerKm;
+    const isRoundTrip = bookingData.tripType === 'roundtrip';
+    
+    return {
+      basePrice,
+      distancePrice,
+      total: isRoundTrip ? (basePrice + distancePrice) * 2 : basePrice + distancePrice
+    };
+  };
+  
+  const priceBreakdown = getPriceBreakdown();
 
   return (
     <div className="space-y-6">
@@ -135,9 +152,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({
             
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex items-center mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
+                <Road className="h-5 w-5 mr-2 text-gray-500" />
                 <span className="font-medium">Distância</span>
               </div>
               <div className="flex items-center">
@@ -159,20 +174,37 @@ const TripDetails: React.FC<TripDetailsProps> = ({
             </div>
           </div>
           
-          <div className="border-t border-b py-4 my-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <span className="font-medium">Veículo:</span>
-                <span className="ml-2">{selectedVehicle?.name}</span>
+          {priceBreakdown && (
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="flex items-center mb-3">
+                <DollarSign className="h-5 w-5 mr-2 text-green-600" />
+                <span className="font-medium">Detalhamento do Preço</span>
               </div>
-              <div className="text-xl font-bold text-primary">
-                {formatCurrency(totalPrice)}
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Tarifa base</span>
+                  <span>{formatCurrency(priceBreakdown.basePrice)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Distância ({estimatedDistance.toFixed(1)} km x {formatCurrency(selectedVehicle.pricePerKm)}/km)</span>
+                  <span>{formatCurrency(priceBreakdown.distancePrice)}</span>
+                </div>
+                
+                {bookingData.tripType === 'roundtrip' && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Multiplicador de ida e volta (x2)</span>
+                    <span>x2</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between pt-2 border-t border-gray-200 font-medium">
+                  <span>Total</span>
+                  <span className="text-green-600">{formatCurrency(totalPrice)}</span>
+                </div>
               </div>
             </div>
-            {bookingData.tripType === 'roundtrip' && (
-              <div className="text-sm text-gray-500 mt-1">*Preço inclui ida e volta</div>
-            )}
-          </div>
+          )}
           
           <div className="flex items-start bg-yellow-50 p-4 rounded-lg">
             <AlertTriangle className="h-5 w-5 text-yellow-500 mr-2 mt-0.5" />

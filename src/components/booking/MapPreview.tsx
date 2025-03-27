@@ -1,26 +1,28 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { Loader2, MapPin, AlertTriangle, Navigation, Clock, LocateFixed } from 'lucide-react';
+import { Loader2, MapPin, AlertTriangle, Navigation, Clock, LocateFixed, DollarSign } from 'lucide-react';
 import { 
   createStaticMapUrl, 
   fetchRouteData, 
   getEstimatedArrival, 
-  formatAddress,
-  calculateFareEstimate
+  formatAddress
 } from '@/components/company/orders/map/mapUtils';
 import { getCoordinatesFromAddress } from '@/components/company/orders/map/mapUtils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { getVehicleRates } from '@/utils/routeUtils';
 
 interface MapPreviewProps {
   origin: string;
   destination: string;
+  selectedVehicleId?: string;
   onRouteCalculated?: (data: { distance: number; duration: number; fare: number }) => void;
 }
 
 const MapPreview: React.FC<MapPreviewProps> = ({ 
   origin, 
   destination,
+  selectedVehicleId = 'sedan',
   onRouteCalculated
 }) => {
   const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
@@ -36,8 +38,23 @@ const MapPreview: React.FC<MapPreviewProps> = ({
     fareEstimate: number;
   } | null>(null);
   const [showingEstimates, setShowingEstimates] = useState(false);
+  const [vehicleRates, setVehicleRates] = useState<any[]>([]);
   
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Load vehicle rates once when component mounts
+  useEffect(() => {
+    const loadVehicleRates = async () => {
+      try {
+        const rates = await getVehicleRates();
+        setVehicleRates(rates);
+      } catch (error) {
+        console.error('Error loading vehicle rates:', error);
+      }
+    };
+    
+    loadVehicleRates();
+  }, []);
   
   useEffect(() => {
     // Only calculate route if both origin and destination are provided and not empty
@@ -70,7 +87,19 @@ const MapPreview: React.FC<MapPreviewProps> = ({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [origin, destination]);
+  }, [origin, destination, selectedVehicleId]);
+  
+  const calculateFareEstimate = (distance: number, duration: number) => {
+    // Get the selected vehicle rate from the loaded rates
+    const selectedRate = vehicleRates.find(rate => rate.id === selectedVehicleId) || 
+      { id: 'sedan', basePrice: 79.90, pricePerKm: 2.10 };
+    
+    // Apply the admin-defined rates
+    const distancePrice = distance * selectedRate.pricePerKm;
+    const totalPrice = selectedRate.basePrice + distancePrice;
+    
+    return parseFloat(totalPrice.toFixed(2));
+  };
   
   const calculateAndDisplayRoute = async () => {
     if (!origin || !destination || origin.trim() === '' || destination.trim() === '') {
@@ -113,7 +142,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
       const mapUrl = createStaticMapUrl(originCoords, destinationCoords);
       setStaticMapUrl(mapUrl);
       
-      // Calculate fare estimate (Uber-like)
+      // Calculate fare using admin-defined rates
       const fareEstimate = calculateFareEstimate(routeData.distance, routeData.duration);
       
       // Get estimated arrival time (Uber-like)
@@ -256,7 +285,8 @@ const MapPreview: React.FC<MapPreviewProps> = ({
               <div className="text-sm font-semibold text-gray-800">
                 {routeInfo.distance} km
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs font-semibold text-green-600 flex items-center justify-end">
+                <DollarSign className="h-3 w-3 mr-1" />
                 R$ {routeInfo.fareEstimate.toFixed(2).replace('.', ',')}
               </div>
             </div>
