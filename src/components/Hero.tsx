@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
+
 interface HeroStyles {
   gradient_from_color: string;
   gradient_from_opacity: number;
@@ -11,6 +13,7 @@ interface HeroStyles {
   title_color: string;
   description_color: string;
 }
+
 const defaultStyles: HeroStyles = {
   gradient_from_color: 'black',
   gradient_from_opacity: 40,
@@ -19,11 +22,13 @@ const defaultStyles: HeroStyles = {
   title_color: 'white',
   description_color: 'white/90'
 };
+
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
   const [backgroundImage, setBackgroundImage] = useState<string>('/lovable-uploads/hero-bg.jpg');
   const [mobileBackgroundImage, setMobileBackgroundImage] = useState<string>('/lovable-uploads/hero-bg.jpg');
   const [styles, setStyles] = useState<HeroStyles>(defaultStyles);
+
   useEffect(() => {
     const fetchHeroData = async () => {
       try {
@@ -70,14 +75,17 @@ const Hero: React.FC = () => {
     };
     fetchHeroData();
   }, []);
+
   const scrollToSolutionsSection = () => {
     document.getElementById('solutions-section')?.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
   };
+
   const gradientStyle = `bg-gradient-to-b from-${styles.gradient_from_color}/${styles.gradient_from_opacity} via-${styles.gradient_from_color}/30 to-${styles.gradient_from_color}/70`;
   const currentBackgroundImage = isMobile ? mobileBackgroundImage : backgroundImage;
+
   return <section className="relative min-h-[90vh] md:min-h-[75vh] w-full flex items-center justify-center overflow-hidden mx-0">
       <div className="absolute inset-0 -z-10 bg-cover bg-center transform transition-transform duration-500" style={{
       backgroundImage: `url(${currentBackgroundImage})`,
@@ -86,7 +94,7 @@ const Hero: React.FC = () => {
         <div className={`absolute inset-0 ${gradientStyle}`}></div>
       </div>
       
-      <div className="container md:px-6 z-10 md:mt-0 mt-0 px-4">
+      <div className="w-full px-4 md:px-6 z-10 md:mt-0 mt-0">
         
       </div>
       
@@ -97,4 +105,5 @@ const Hero: React.FC = () => {
       </div>
     </section>;
 };
+
 export default Hero;

@@ -1,9 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+
 const Footer: React.FC = () => {
   const [footerLogoUrl, setFooterLogoUrl] = useState<string>('/lovable-uploads/4426e89f-4ae5-492a-84b3-eb7935af6e46.png');
+
   useEffect(() => {
     const fetchFooterLogo = async () => {
       try {
@@ -24,8 +27,9 @@ const Footer: React.FC = () => {
     };
     fetchFooterLogo();
   }, []);
+
   return <footer className="text-white pt-16 pb-8 w-full bg-blue-950">
-      <div className="content-container">
+      <div className="w-full px-6 mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           <div>
             <div className="flex items-center mb-6">
@@ -145,4 +149,5 @@ const Footer: React.FC = () => {
       </div>
     </footer>;
 };
+
 export default Footer;

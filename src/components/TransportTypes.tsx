@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,7 @@ const defaultTransportTypes: TransportType[] = [{
   description: 'Soluções para transporte de grupos em eventos corporativos',
   duration: 'A partir de 4h • R$600,00'
 }];
+
 const TransportTypes: React.FC = () => {
   const [transportTypes, setTransportTypes] = useState<TransportType[]>(defaultTransportTypes);
   const [loading, setLoading] = useState(true);
@@ -76,6 +78,7 @@ const TransportTypes: React.FC = () => {
   const resumeAutoplay = () => {
     setIsPaused(false);
   };
+
   useEffect(() => {
     const fetchImages = async () => {
       setLoading(true);
@@ -130,14 +133,16 @@ const TransportTypes: React.FC = () => {
       }
     };
   }, [startAutoplay]);
+
   const scrollToBookingForm = () => {
     window.scrollTo({
       top: window.innerHeight * 0.65,
       behavior: 'smooth'
     });
   };
+
   return <section className="w-full py-8 md:py-12 lg:py-16 bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-[1400px] mx-auto px-4 w-full md:px-6 py-[4px]">
+      <div className="w-full px-4 md:px-6 py-[4px] max-w-[1400px] mx-auto">
         <TransitionEffect direction="up" delay={200}>
           <div className="flex flex-col items-center justify-center mb-8 text-center">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Temos Diversas Opções de Transferes</h2>
@@ -197,4 +202,5 @@ const TransportTypes: React.FC = () => {
       </div>
     </section>;
 };
+
 export default TransportTypes;
