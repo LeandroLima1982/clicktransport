@@ -1,7 +1,17 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, ReactNode } from 'react';
 
-const TransitionEffect: React.FC = () => {
+interface TransitionEffectProps {
+  children: ReactNode;
+  direction?: 'fade' | 'slide-up' | 'slide-down' | 'slide-left' | 'slide-right';
+  duration?: number;
+}
+
+const TransitionEffect: React.FC<TransitionEffectProps> = ({ 
+  children,
+  direction = 'fade',
+  duration = 500
+}) => {
   useEffect(() => {
     // Intersection Observer to detect when elements come into view
     const observer = new IntersectionObserver((entries) => {
@@ -30,7 +40,12 @@ const TransitionEffect: React.FC = () => {
     };
   }, []);
   
-  return null; // This component doesn't render anything
+  // Return the children wrapped in a div with transition classes
+  return (
+    <div className={`transition-${direction} duration-${duration}`}>
+      {children}
+    </div>
+  );
 };
 
 export default TransitionEffect;
