@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -31,16 +30,25 @@ const Index = () => {
   
   return <main className="w-full overflow-x-hidden">
       <Navbar />
-      <div className="w-full bg-slate-50/0">
+      <div className="w-full bg-slate-50/0 relative">
+        {/* Hero section */}
         <Hero />
-        <TransportTypes />
-        <div id="request-service" className="relative max-w-[1000px] mx-auto py-12 md:px-6 px-4 scroll-mt-24">
+        
+        {/* Booking form - positioned to overlap with hero */}
+        <div className="relative z-10 max-w-[1200px] mx-auto px-4 md:px-6 -mt-16 md:-mt-32 lg:-mt-40">
           <TransitionEffect direction="up" delay={100}>
             <div className="shadow-xl rounded-2xl overflow-hidden animate-scale-in">
               <BookingForm />
             </div>
           </TransitionEffect>
         </div>
+        
+        {/* Transport types card carousel */}
+        <div className="pt-8 md:pt-16 lg:pt-20">
+          <TransportTypes />
+        </div>
+        
+        {/* Rest of the page content */}
         <Solutions />
         <ProcessSteps />
         <Testimonials />

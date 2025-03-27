@@ -14,6 +14,7 @@ import { useDestinationsService } from '@/hooks/useDestinationsService';
 import { calculateRoute } from '@/utils/routeUtils';
 import { MapPin, RotateCw, ArrowDown, ArrowRight } from 'lucide-react';
 import { Separator } from './ui/separator';
+
 interface BookingData {
   origin: string;
   destination: string;
@@ -29,6 +30,7 @@ interface BookingData {
   }[];
   distance?: number;
 }
+
 const BookingForm: React.FC = () => {
   const {
     originValue,
@@ -69,9 +71,11 @@ const BookingForm: React.FC = () => {
   const [originCity, setOriginCity] = useState<string>('');
   const [destinationCity, setDestinationCity] = useState<string>('');
   const isMobile = useIsMobile();
+  
   useEffect(() => {
     fetchCities();
   }, [fetchCities]);
+  
   useEffect(() => {
     const calculateDistance = async () => {
       if (originCityId && destinationCityId) {
@@ -109,31 +113,38 @@ const BookingForm: React.FC = () => {
     };
     calculateDistance();
   }, [originCityId, destinationCityId, cities, getDistanceBetweenCities]);
+  
   const formatCityLabel = (city: any) => {
     const stateAbbreviation = city.state ? city.state.length > 2 ? city.state.substring(0, 2).toUpperCase() : city.state.toUpperCase() : '';
     return `${city.name}${stateAbbreviation ? `, ${stateAbbreviation}` : ''}`;
   };
+  
   const handleRefreshCities = () => {
     fetchCities();
   };
+  
   const handleManualOriginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOriginValue(e.target.value);
   };
+  
   const handleManualDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDestinationValue(e.target.value);
   };
+  
   const getFullOriginAddress = () => {
     if (originValue && originCity) {
       return `${originValue}, ${originCity}`;
     }
     return originValue;
   };
+  
   const getFullDestinationAddress = () => {
     if (destinationValue && destinationCity) {
       return `${destinationValue}, ${destinationCity}`;
     }
     return destinationValue;
   };
+  
   const renderDistanceInfo = () => {
     if (!distanceInfo) return null;
     const totalMinutes = Math.round(distanceInfo.duration);
@@ -142,8 +153,10 @@ const BookingForm: React.FC = () => {
     const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     return;
   };
-  return <div className="w-full bg-[#f8f9fa] rounded-lg md:rounded-2xl shadow-lg overflow-hidden">
-      <div className="pt-5 md:pt-7 pb-6 md:pb-8 bg-gradient-to-b from-[#002366] to-[#003399] py-0 md:px-[54px] px-[8px]">
+
+  return (
+    <div className="w-full bg-gradient-to-b from-[#1C4D9B]/90 to-[#002366] rounded-lg md:rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
+      <div className="pt-5 md:pt-7 pb-6 md:pb-8 py-0 md:px-[54px] px-[8px]">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 space-y-3 md:space-y-0 px-[4px]">
           <h3 className="font-extrabold text-xl md:text-2xl text-white">Solicitar Motorista</h3>
           <TripTypeTabs value={tripType} onChange={setTripType} />
@@ -263,7 +276,7 @@ const BookingForm: React.FC = () => {
             </div>}
         </div>
 
-        <Button onClick={handleBooking} disabled={!originCityId || !destinationCityId} className="w-full rounded-lg mt-6 text-white text-lg font-medium h-12 md:h-14 transition-all duration-300 shadow-md relative overflow-hidden my-[39px] bg-yellow-600 hover:bg-yellow-500">
+        <Button onClick={handleBooking} disabled={!originCityId || !destinationCityId} className="w-full rounded-lg mt-6 text-white text-lg font-medium h-12 md:h-14 transition-all duration-300 shadow-lg relative overflow-hidden my-[24px] bg-yellow-600 hover:bg-yellow-500">
           <span className="relative z-10 flex items-center justify-center">
             Buscar
           </span>
@@ -282,6 +295,8 @@ const BookingForm: React.FC = () => {
         distance: distanceInfo?.distance
       } as BookingData} isOpen={showBookingSteps} onClose={() => setShowBookingSteps(false)} />}
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default BookingForm;
