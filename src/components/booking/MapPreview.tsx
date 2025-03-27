@@ -1,9 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
-import { Loader2, MapPin } from 'lucide-react';
+import { Loader2, MapPin, AlertTriangle } from 'lucide-react';
 import { createStaticMapUrl } from '@/components/company/orders/map/mapUtils';
 import { calculateRoute } from '@/utils/routeUtils';
 import { fetchAddressSuggestions } from '@/utils/mapbox';
+import { Button } from '@/components/ui/button';
 
 interface MapPreviewProps {
   origin: string;
@@ -19,6 +20,9 @@ const MapPreview: React.FC<MapPreviewProps> = ({
   const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastCalculatedOrigin, setLastCalculatedOrigin] = useState('');
+  const [lastCalculatedDestination, setLastCalculatedDestination] = useState('');
   
   useEffect(() => {
     // Only calculate route if both origin and destination are provided and not empty
@@ -28,6 +32,11 @@ const MapPreview: React.FC<MapPreviewProps> = ({
     
     // Avoid calculating route if inputs are too short (likely incomplete)
     if (origin.length < 5 || destination.length < 5) {
+      return;
+    }
+    
+    // Prevent redundant calculations for the same addresses
+    if (origin === lastCalculatedOrigin && destination === lastCalculatedDestination) {
       return;
     }
     
@@ -48,12 +57,15 @@ const MapPreview: React.FC<MapPreviewProps> = ({
     setError(null);
     
     try {
+      console.log('Calculating route between:', origin, destination);
+      
       // Get coordinates for origin and destination
       const originResult = await fetchAddressSuggestions(origin);
       const destinationResult = await fetchAddressSuggestions(destination);
       
       if (!originResult?.length || !destinationResult?.length) {
-        setError('Não foi possível encontrar os endereços');
+        console.error('Address lookup failed:', { originResult, destinationResult });
+        setError('Não foi possível encontrar os endereços especificados');
         setIsLoading(false);
         return;
       }
@@ -63,10 +75,13 @@ const MapPreview: React.FC<MapPreviewProps> = ({
       const destinationCenter = destinationResult[0].center;
       
       if (!originCenter || !destinationCenter) {
+        console.error('Missing coordinates:', { originCenter, destinationCenter });
         setError('Endereços sem coordenadas válidas');
         setIsLoading(false);
         return;
       }
+      
+      console.log('Coordinates found:', { originCenter, destinationCenter });
       
       // Calculate route
       const routeInfo = await calculateRoute(
@@ -75,18 +90,25 @@ const MapPreview: React.FC<MapPreviewProps> = ({
       );
       
       if (!routeInfo) {
+        console.error('Route calculation failed');
         setError('Não foi possível calcular a rota');
         setIsLoading(false);
         return;
       }
       
-      // Create static map URL
+      console.log('Route calculated:', routeInfo);
+      
+      // Create static map URL with route visualization
       const mapUrl = createStaticMapUrl(
         [originCenter[0], originCenter[1]],
         [destinationCenter[0], destinationCenter[1]]
       );
       
       setStaticMapUrl(mapUrl);
+      
+      // Update state to prevent redundant calculations
+      setLastCalculatedOrigin(origin);
+      setLastCalculatedDestination(destination);
       
       // Notify parent about route calculation
       if (onRouteCalculated) {
@@ -103,6 +125,11 @@ const MapPreview: React.FC<MapPreviewProps> = ({
     }
   };
   
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    calculateAndDisplayRoute();
+  };
+  
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-4 h-48 bg-white/5 rounded-lg border border-[#D4AF37]/20">
@@ -115,8 +142,17 @@ const MapPreview: React.FC<MapPreviewProps> = ({
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center p-4 h-48 bg-white/5 rounded-lg border border-[#D4AF37]/20">
+        <AlertTriangle className="h-8 w-8 text-amber-400 mb-2" />
         <div className="text-sm text-red-300 text-center">{error}</div>
         <div className="text-xs text-white/50 mt-2">Verifique se os endereços estão corretos</div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="mt-3 text-xs border-amber-400/30 text-amber-300 hover:bg-amber-400/10"
+          onClick={handleRetry}
+        >
+          Tentar novamente
+        </Button>
       </div>
     );
   }
@@ -135,12 +171,27 @@ const MapPreview: React.FC<MapPreviewProps> = ({
   }
   
   return (
-    <div className="overflow-hidden rounded-lg border border-[#D4AF37]/20 shadow-lg">
+    <div className="overflow-hidden rounded-lg border border-[#D4AF37]/20 shadow-lg relative group">
       <img 
         src={staticMapUrl} 
         alt="Mapa da rota" 
         className="w-full h-48 object-cover"
+        onError={() => {
+          setError('Falha ao carregar imagem do mapa');
+          setStaticMapUrl(null);
+        }}
       />
+      
+      {/* Overlay with retry button on hover */}
+      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+        <Button 
+          size="sm" 
+          className="bg-amber-400 hover:bg-amber-500 text-[#002366]"
+          onClick={handleRetry}
+        >
+          Atualizar mapa
+        </Button>
+      </div>
     </div>
   );
 };

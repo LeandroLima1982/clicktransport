@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -77,7 +76,6 @@ const BookingForm: React.FC = () => {
   
   const isMobile = useIsMobile();
   
-  // New state for the multi-step booking process
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formErrors, setFormErrors] = useState<{
     origin?: string;
@@ -94,9 +92,7 @@ const BookingForm: React.FC = () => {
     fetchCities();
   }, [fetchCities]);
   
-  // Determine when to show the map
   useEffect(() => {
-    // Only show map when both fields have sufficient data and user has moved to step 2 or beyond
     if (currentStep >= 2 && originValue.length > 5 && destinationValue.length > 5) {
       setShouldShowMap(true);
     } else {
@@ -104,12 +100,11 @@ const BookingForm: React.FC = () => {
     }
   }, [originValue, destinationValue, currentStep]);
   
-  // Handle route calculation result
   const handleRouteCalculated = (routeData: { distance: number; duration: number }) => {
+    console.log('Route calculation result:', routeData);
     setDistanceInfo(routeData);
   };
 
-  // Validation functions for each step
   const validateOriginStep = (): boolean => {
     const errors: {origin?: string} = {};
     
@@ -162,11 +157,9 @@ const BookingForm: React.FC = () => {
     return Object.keys(errors).length === 0;
   };
   
-  // Function to handle going to the next step
   const goToNextStep = () => {
     let isValid = false;
     
-    // Validate current step
     if (currentStep === 1) {
       isValid = validateOriginStep();
     } else if (currentStep === 2) {
@@ -184,12 +177,10 @@ const BookingForm: React.FC = () => {
     }
   };
   
-  // Function to handle going to the previous step
   const goToPreviousStep = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
   
-  // Render progress indicator
   const renderProgressIndicator = () => {
     return (
       <div className="flex items-center justify-center mb-4">
@@ -221,7 +212,6 @@ const BookingForm: React.FC = () => {
     );
   };
 
-  // Render step content based on current step
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -337,7 +327,6 @@ const BookingForm: React.FC = () => {
     }
   };
 
-  // Render summary (visible after step 1) with map preview
   const renderSummary = () => {
     if (currentStep === 1) return null;
     
