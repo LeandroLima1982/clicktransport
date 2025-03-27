@@ -127,7 +127,7 @@ const TransportTypes: React.FC = () => {
         align: "start",
         loop: true
       }} className="w-full" ref={carouselRef} onMouseEnter={pauseAutoplay} onMouseLeave={resumeAutoplay} onTouchStart={pauseAutoplay} onTouchEnd={resumeAutoplay}>
-          <CarouselContent className="-ml-2 md:-ml-4 bg-zinc-50">
+          <CarouselContent className="-ml-2 md:-ml-4 bg-zinc-50 mx-0">
             {transportTypes.map((type, index) => <CarouselItem key={index} className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 px-[12px] mx-[18px] my-[28px]">
                 <div className="relative h-full overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl" onMouseEnter={() => {
               pauseAutoplay();

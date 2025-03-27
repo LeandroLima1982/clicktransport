@@ -77,7 +77,7 @@ const Hero: React.FC = () => {
 
   // Build the gradient style dynamically
   const gradientStyle = `bg-gradient-to-b from-${styles.gradient_from_color}/${styles.gradient_from_opacity} to-${styles.gradient_to_color}/${styles.gradient_to_opacity}`;
-  return <section className="relative min-h-[90vh] md:min-h-[80vh] w-full flex items-center justify-center overflow-hidden">
+  return <section className="relative min-h-[70vh] md:min-h-[70vh] w-full flex items-center justify-center overflow-hidden mx-0">
       {/* Background image */}
       <div className="absolute inset-0 -z-10 bg-cover bg-center" style={{
       backgroundImage: `url(${backgroundImage})`
@@ -87,7 +87,7 @@ const Hero: React.FC = () => {
       </div>
       
       {/* Content container */}
-      <div className="container px-4 md:px-6 z-10 my-8 md:my-12">
+      <div className="container md:px-6 z-10 md:my-12 my-0 px-0">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className={`text-3xl md:text-5xl font-extrabold mb-4 md:mb-6 tracking-tight text-${styles.title_color} drop-shadow-md`}>Transporte Executivo Premium</h1>
           
@@ -104,7 +104,7 @@ const Hero: React.FC = () => {
           
           {/* Scroll indicator */}
           <div className="hidden md:flex justify-center mt-16 animate-bounce">
-            <ChevronDown className={`h-8 w-8 text-${styles.title_color}/80 cursor-pointer hover:text-${styles.title_color} transition-colors`} onClick={scrollToSolutionsSection} />
+            <ChevronDown onClick={scrollToSolutionsSection} className="rounded-2xl bg-yellow-500" />
           </div>
         </div>
       </div>
