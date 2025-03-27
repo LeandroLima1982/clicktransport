@@ -64,39 +64,88 @@
   animation: float 6s ease-in-out infinite;
 }
 
-/* Enhanced Hero text effects */
-.hero-title {
-  background: linear-gradient(135deg, #F8D748 0%, #D4AF37 100%);
+/* Luxurious Gold 3D Text Effect for Hero */
+.gold-3d-title {
+  /* Rich gold gradient background */
+  background: linear-gradient(135deg, #F8D748 0%, #D4AF37 45%, #F5DF4D 55%, #D4AF37 85%, #F8D748 100%);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
   color: transparent;
+  
+  /* 3D Text effect with multiple shadows */
   text-shadow: 
-    0 1px 0 rgba(0,0,0,0.2),
-    0 4px 16px rgba(0,0,0,0.4),
-    0 8px 40px rgba(0,0,0,0.6);
-  transform: perspective(500px) translateZ(20px);
-  letter-spacing: 0.5px;
-  animation: float 6s ease-in-out infinite;
+    0 1px 0 #cca300,
+    0 2px 0 #b59500,
+    0 3px 0 #a38800,
+    0 4px 0 #8e7700,
+    0 5px 0 #796500,
+    0 6px 1px rgba(0,0,0,.2),
+    0 0 5px rgba(0,0,0,.3),
+    0 1px 3px rgba(0,0,0,.4),
+    0 3px 5px rgba(0,0,0,.5),
+    0 5px 10px rgba(0,0,0,.6),
+    0 10px 10px rgba(0,0,0,.7),
+    0 20px 20px rgba(0,0,0,.8);
+  
+  /* Gold outline for better visibility */
+  -webkit-text-stroke: 1px rgba(212, 175, 55, 0.4);
+  
+  /* Enhanced 3D perception */
+  transform: perspective(500px) translateZ(10px);
+  
+  /* Gentle animation */
+  animation: gold-pulse 8s ease-in-out infinite;
+  letter-spacing: 1px;
 }
 
-.hero-text-container {
-  background: rgba(0, 35, 102, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 1rem;
-  padding: 1.25rem;
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  max-width: 90%;
-  margin: 0 auto;
-}
-
-.hero-description {
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+/* Gold description text */
+.gold-description {
+  color: white;
   font-weight: 500;
-  line-height: 1.6;
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.7),
+    0 4px 8px rgba(0, 0, 0, 0.5);
+  line-height: 1.7;
+  border-left: 2px solid rgba(212, 175, 55, 0.6);
+  border-right: 2px solid rgba(212, 175, 55, 0.6);
+  padding: 0 1rem;
+  position: relative;
+}
+
+/* Subtle gold pulse animation for the title */
+@keyframes gold-pulse {
+  0%, 100% {
+    text-shadow: 
+      0 1px 0 #cca300,
+      0 2px 0 #b59500,
+      0 3px 0 #a38800,
+      0 4px 0 #8e7700,
+      0 5px 0 #796500,
+      0 6px 1px rgba(0,0,0,.2),
+      0 0 5px rgba(0,0,0,.3),
+      0 1px 3px rgba(0,0,0,.4),
+      0 3px 5px rgba(0,0,0,.5),
+      0 5px 10px rgba(0,0,0,.6),
+      0 10px 10px rgba(0,0,0,.7),
+      0 20px 20px rgba(0,0,0,.8);
+  }
+  50% {
+    text-shadow: 
+      0 1px 0 #cca300,
+      0 2px 0 #b59500,
+      0 3px 0 #a38800,
+      0 4px 0 #8e7700,
+      0 5px 0 #796500,
+      0 6px 1px rgba(0,0,0,.1),
+      0 0 5px rgba(0,0,0,.2),
+      0 1px 3px rgba(0,0,0,.3),
+      0 3px 5px rgba(0,0,0,.4),
+      0 5px 10px rgba(0,0,0,.5),
+      0 10px 10px rgba(0,0,0,.6),
+      0 20px 20px rgba(0,0,0,.7);
+    transform: perspective(500px) translateZ(15px);
+  }
 }
 
 /* Booking form specific styles */
