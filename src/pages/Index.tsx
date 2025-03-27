@@ -16,36 +16,49 @@ import BookingForm from '@/components/BookingForm';
 import Features from '@/components/Features';
 
 const Index = () => {
-  const {
-    isLoading,
-    user
-  } = useAuth();
+  const { isLoading, user } = useAuth();
 
   // Show a brief loading indicator only during initial authentication check
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen w-full text-primary">
+    return (
+      <div className="flex items-center justify-center h-screen w-full text-primary">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F8D748]"></div>
         <div className="ml-3 text-lg font-medium">Carregando...</div>
-      </div>;
+      </div>
+    );
   }
-  return <main className="w-full">
+  
+  return (
+    <main className="w-full">
       <Navbar />
       <div className="w-full bg-slate-50/0">
         <Hero />
+        <div className="py-8 md:py-12"></div> {/* Spacing after hero */}
         <TransportTypes />
+        <div className="py-6 md:py-10"></div> {/* Spacing after transport types */}
+        <Solutions />
+        <div className="py-6 md:py-10"></div> {/* Spacing after solutions */}
         <Features />
-        <div id="request-service" className="relative max-w-[1000px] mx-auto py-12 md:px-6 px-4 scroll-mt-24">
+        <div className="py-6 md:py-10"></div> {/* Spacing after features */}
+        
+        <div id="request-service" className="relative max-w-[1000px] mx-auto py-16 md:px-6 px-4 scroll-mt-24">
           <div className="shadow-xl animate-scale-in">
             <BookingForm />
           </div>
         </div>
-        <Solutions />
+        
+        <div className="py-6 md:py-10"></div> {/* Spacing after booking form */}
         <ProcessSteps />
+        <div className="py-6 md:py-10"></div> {/* Spacing after process steps */}
         <Testimonials />
+        <div className="py-6 md:py-10"></div> {/* Spacing after testimonials */}
         <FAQ />
+        <div className="py-6 md:py-10"></div> {/* Spacing after FAQ */}
         <CTA />
         <Footer />
       </div>
-    </main>;
+    </main>
+  );
 };
+
 export default Index;

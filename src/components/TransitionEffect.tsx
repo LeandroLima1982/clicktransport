@@ -3,10 +3,11 @@ import React, { useEffect, ReactNode } from 'react';
 
 interface TransitionEffectProps {
   children: ReactNode;
-  direction?: 'fade' | 'slide-up' | 'slide-down' | 'slide-left' | 'slide-right' | 'scale' | 'float' | 'float-depth' | 'depth';
+  direction?: 'fade' | 'slide-up' | 'slide-down' | 'slide-left' | 'slide-right' | 'scale' | 'float' | 'float-depth' | 'depth' | '3d-float';
   duration?: number;
   delay?: number;
   className?: string;
+  perspective?: number;
 }
 
 const TransitionEffect: React.FC<TransitionEffectProps> = ({ 
@@ -14,7 +15,8 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
   direction = 'fade',
   duration = 500,
   delay = 0,
-  className = ''
+  className = '',
+  perspective = 1000
 }) => {
   useEffect(() => {
     // Intersection Observer to detect when elements come into view
@@ -63,6 +65,8 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
         return 'animate-float-depth';
       case 'depth':
         return 'animate-depth';
+      case '3d-float':
+        return 'animate-float-3d';
       case 'fade':
       default:
         return 'animate-fade-in';
@@ -76,7 +80,9 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
       style={{ 
         animationDuration: `${duration}ms`,
         animationDelay: `${delay}ms`,
-        animationFillMode: 'both'
+        animationFillMode: 'both',
+        perspective: `${perspective}px`,
+        transformStyle: direction.includes('3d') || direction.includes('depth') ? 'preserve-3d' : 'flat'
       }}
     >
       {children}

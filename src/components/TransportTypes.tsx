@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,31 +14,33 @@ interface TransportType {
 }
 
 // Dados iniciais (fallback) caso não consiga buscar do banco
-const defaultTransportTypes: TransportType[] = [{
-  id: 'offshore',
-  image: '/lovable-uploads/hero-bg.jpg',
-  title: 'Transfer para Offshore',
-  description: 'Transporte para colaboradores com pontualidade e conforto',
-  duration: 'A partir de 2h30min • R$350,00'
-}, {
-  id: 'airport',
-  image: '/lovable-uploads/hero-bg.jpg',
-  title: 'Transfer para Aeroportos',
-  description: 'Chegue com tranquilidade para seu voo ou retorno',
-  duration: 'A partir de 1h30min • R$220,00'
-}, {
-  id: 'vip',
-  image: '/lovable-uploads/hero-bg.jpg',
-  title: 'Transfer VIP & Executivo',
-  description: 'Conforto e elegância para executivos e eventos especiais',
-  duration: 'A partir de 3h • R$450,00'
-}, {
-  id: 'events',
-  image: '/lovable-uploads/hero-bg.jpg',
-  title: 'Transfer para Eventos',
-  description: 'Soluções para transporte de grupos em eventos corporativos',
-  duration: 'A partir de 4h • R$600,00'
-}];
+const defaultTransportTypes: TransportType[] = [
+  {
+    id: 'offshore',
+    image: '/lovable-uploads/hero-bg.jpg',
+    title: 'Transfer para Offshore',
+    description: 'Transporte para colaboradores com pontualidade e conforto',
+    duration: 'A partir de 2h30min • R$350,00'
+  }, {
+    id: 'airport',
+    image: '/lovable-uploads/hero-bg.jpg',
+    title: 'Transfer para Aeroportos',
+    description: 'Chegue com tranquilidade para seu voo ou retorno',
+    duration: 'A partir de 1h30min • R$220,00'
+  }, {
+    id: 'vip',
+    image: '/lovable-uploads/hero-bg.jpg',
+    title: 'Transfer VIP & Executivo',
+    description: 'Conforto e elegância para executivos e eventos especiais',
+    duration: 'A partir de 3h • R$450,00'
+  }, {
+    id: 'events',
+    image: '/lovable-uploads/hero-bg.jpg',
+    title: 'Transfer para Eventos',
+    description: 'Soluções para transporte de grupos em eventos corporativos',
+    duration: 'A partir de 4h • R$600,00'
+  }
+];
 
 const TransportTypes: React.FC = () => {
   const [transportTypes, setTransportTypes] = useState<TransportType[]>(defaultTransportTypes);
@@ -150,16 +151,16 @@ const TransportTypes: React.FC = () => {
   };
 
   return (
-    <section className="w-full py-24 bg-white relative overflow-hidden perspective-1000" ref={sectionRef}>
+    <section className="w-full py-28 md:py-32 bg-white relative overflow-hidden perspective-1000" ref={sectionRef}>
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-white/20 pointer-events-none z-10"></div>
       
       <div className="max-w-[1400px] mx-auto px-4 w-full md:px-6 relative z-20">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Diversas Opções de Transferes</h2>
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 section-title">Diversas Opções de Transferes</h2>
           <p className="text-lg text-foreground/70 max-w-2xl mx-auto">Escolha entre nossas diversas opções de transporte para atender sua necessidade e orçamento</p>
         </div>
         
-        <div className="h-[500px] md:h-[550px] relative">
+        <div className="h-[520px] md:h-[580px] relative">
           <Carousel 
             opts={{
               align: "start",
@@ -176,10 +177,10 @@ const TransportTypes: React.FC = () => {
               {transportTypes.map((type, index) => (
                 <CarouselItem key={index} className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 h-full">
                   <div 
-                    className={`relative h-full overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-500 transform 
-                      ${activeIndex === index ? 'scale-105 shadow-xl -translate-y-4 z-20' : 'scale-100 hover:scale-103 hover:-translate-y-2'} 
+                    className={`relative h-full overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-500 transform-3d 
+                      ${activeIndex === index ? 'scale-105 shadow-xl -translate-y-4 translate-z-20 z-20' : 'scale-100 hover:scale-103 hover:-translate-y-2 hover:translate-z-10'} 
                       ${hoveredItem === index ? 'z-30' : 'z-10'}
-                      animate-float
+                      animate-float-depth
                     `} 
                     style={{
                       animationDelay: `${index * 0.2}s`,

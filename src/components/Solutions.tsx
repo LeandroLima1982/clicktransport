@@ -60,7 +60,9 @@ const SolutionCard = ({ solution, index, isPaused, visibleIndex }) => {
     <Card 
       key={index} 
       ref={cardRef}
-      className={`border-none shadow-lg transition-all duration-500 overflow-hidden group relative stagger-item ${isActive ? 'scale-105 shadow-xl' : 'scale-100'}`}
+      className={`border-none shadow-lg transition-all duration-500 overflow-hidden group relative stagger-item perspective-1000 transform-3d ${
+        isActive ? 'scale-105 shadow-xl translate-z-10' : 'scale-100 hover:translate-z-5'
+      }`}
       onMouseEnter={() => {
         setIsHovered(true);
       }}
@@ -159,21 +161,23 @@ const Solutions: React.FC = () => {
     <section 
       id="solutions-section" 
       ref={containerRef}
-      className="py-24 px-4 bg-white scroll-mt-16"
+      className="py-24 px-4 bg-white scroll-mt-16 min-h-[800px] relative overflow-hidden"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
     >
-      <div className="container mx-auto">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-white/20 pointer-events-none z-10"></div>
+      
+      <div className="container mx-auto relative z-20">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Nossas Soluções de Transfer</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 section-title">Nossas Soluções de Transfer</h2>
           <p className="text-lg text-foreground/70">
             Oferecemos uma variedade de serviços de transfer personalizados para atender às suas necessidades específicas
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 perspective-1000">
           {solutions.map((solution, index) => (
             <SolutionCard 
               key={index}
