@@ -155,21 +155,15 @@ const BookingForm: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-gradient-to-b from-[#1C4D9B]/95 to-[#002366] rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border border-white/25 shadow-[0_10px_40px_rgba(0,0,0,0.35)] glass-morphism transition-all duration-300">
+    <div className="w-full bg-gradient-to-b from-[#1C4D9B]/70 to-[#002366] rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border border-white/30 shadow-[0_15px_50px_rgba(0,0,0,0.45)] glass-morphism transition-all duration-300">
       <div className="relative pt-5 md:pt-8 pb-6 md:pb-8 px-5 md:px-6 lg:px-8">
         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
           <TripTypeTabs value={tripType} onChange={setTripType} />
         </div>
         
-        <div className="flex justify-end mt-3 md:mt-0 mb-6">
-          <div className="w-auto">
-            <TripTypeTabs value={tripType} onChange={setTripType} />
-          </div>
-        </div>
-
-        <div className="space-y-5 md:space-y-6">
+        <div className="space-y-5 md:space-y-6 mt-4">
           <div className="grid md:grid-cols-2 gap-4 md:gap-5">
-            <div className="rounded-lg border border-[#D4AF37]/40 p-3 bg-white/10 hover:bg-white/15 transition-colors duration-200 shadow-lg">
+            <div className="rounded-lg border border-[#D4AF37]/50 p-3 bg-white/15 hover:bg-white/20 transition-colors duration-200 shadow-lg">
               <Label className="block text-sm font-semibold text-white mb-2">
                 De onde vai sair?
               </Label>
@@ -199,7 +193,7 @@ const BookingForm: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-[#D4AF37]/40 p-3 bg-white/10 hover:bg-white/15 transition-colors duration-200 shadow-lg">
+            <div className="rounded-lg border border-[#D4AF37]/50 p-3 bg-white/15 hover:bg-white/20 transition-colors duration-200 shadow-lg">
               <Label className="block text-sm font-semibold text-white mb-2">
                 Para onde vai?
               </Label>
@@ -264,7 +258,7 @@ const BookingForm: React.FC = () => {
             </div>
           </div>
 
-          {tripType === 'roundtrip' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-[#D4AF37]/30">
+          {tripType === 'roundtrip' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-[#D4AF37]/40">
               <div>
                 <Label className="text-white block text-sm font-semibold mb-2">
                   Volta quando?
