@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Building, Landmark, Home, Navigation, MapPin, ShoppingBag, School, Hospital, Hotel, Coffee, Utensils, Bus, Plane, Music as MusicIcon, Dumbbell, Church, Library as LibraryBig, Trees } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -286,5 +285,123 @@ export const fetchAddressSuggestions = async (query: string): Promise<any[]> => 
   } catch (error) {
     console.error('Erro ao buscar sugestões de endereço:', error);
     return [];
+  }
+};
+
+// NEW FUNCTIONS NEEDED BY LocationField.tsx:
+
+// Detect address format from input (CEP, street, etc.) like Uber does
+export const detectAddressFormat = (input: string): 'cep' | 'street' | 'poi' | 'unknown' => {
+  // Check for Brazilian CEP format
+  const cepRegex = /^(\d{5})-?(\d{3})$/;
+  if (cepRegex.test(input.replace(/\D/g, ''))) {
+    return 'cep';
+  }
+  
+  // Check if input is likely a street address (contains street indicators)
+  const streetIndicators = ['rua', 'r.', 'avenida', 'av.', 'av', 'alameda', 'al.', 'travessa', 'rodovia', 'estrada'];
+  if (streetIndicators.some(indicator => input.toLowerCase().includes(indicator))) {
+    return 'street';
+  }
+  
+  // Check if input might be a point of interest
+  const poiIndicators = ['shopping', 'restaurante', 'hotel', 'aeroporto', 'terminal', 'praça', 'parque', 'supermercado'];
+  if (poiIndicators.some(indicator => input.toLowerCase().includes(indicator))) {
+    return 'poi';
+  }
+  
+  return 'unknown';
+};
+
+// Generate autofill suggestions based on partial input (Uber-like)
+export const getAddressAutofill = async (
+  partialInput: string,
+  proximity?: [number, number]
+): Promise<Array<{ description: string; placeId: string; }>> => {
+  if (!MAPBOX_TOKEN || partialInput.length < 3) return [];
+  
+  try {
+    let url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(partialInput)}.json?` +
+      `access_token=${MAPBOX_TOKEN}&country=br&language=pt-BR&` + 
+      `autocomplete=true&types=address,poi,place,neighborhood&limit=5`;
+    
+    // Add proximity if available to prioritize nearby results (like Uber)
+    if (proximity) {
+      url += `&proximity=${proximity[0]},${proximity[1]}`;
+    }
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Autofill API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.features || data.features.length === 0) {
+      return [];
+    }
+    
+    // Format suggestions in a clean, Uber-like way
+    return data.features.map((feature: any) => ({
+      description: feature.place_name,
+      placeId: feature.id,
+      // Add more properties from the feature if needed
+    }));
+  } catch (error) {
+    console.error('Error getting address autofill:', error);
+    return [];
+  }
+};
+
+// Function to get current user location with high accuracy (Uber-like)
+export const getCurrentPosition = (): Promise<GeolocationPosition> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation not supported by your browser'));
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        console.log('Got user position:', position.coords);
+        resolve(position);
+      },
+      error => {
+        console.error('Error getting position:', error);
+        reject(error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  });
+};
+
+// Reverse geocode coordinates to address (Uber-like)
+export const reverseGeocode = async (coords: [number, number]): Promise<string | null> => {
+  if (!MAPBOX_TOKEN) return null;
+  
+  try {
+    const response = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords[0]},${coords[1]}.json?` +
+      `access_token=${MAPBOX_TOKEN}&language=pt-BR&types=address,place,neighborhood,locality`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Reverse geocoding API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (data.features && data.features.length > 0) {
+      return data.features[0].place_name;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error reverse geocoding:', error);
+    return null;
   }
 };
