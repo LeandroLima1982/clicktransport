@@ -12,6 +12,13 @@ interface BookingCompleteProps {
     returnDate?: Date;
     tripType: string;
     passengers: string;
+    time?: string;
+    returnTime?: string;
+    passengerData?: Array<{
+      name: string;
+      phone: string;
+    }>;
+    distance?: number;
   };
   vehicleName: string;
   totalPrice: number;
@@ -80,11 +87,25 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
               <span className="text-gray-500">Data:</span>
               <span className="font-medium">{formatDate(bookingData.date)}</span>
             </div>
-            {bookingData.tripType === 'roundtrip' && (
+            {bookingData.time && (
               <div className="flex justify-between py-2 border-b">
-                <span className="text-gray-500">Retorno:</span>
-                <span className="font-medium">{formatDate(bookingData.returnDate)}</span>
+                <span className="text-gray-500">Horário:</span>
+                <span className="font-medium">{bookingData.time}</span>
               </div>
+            )}
+            {bookingData.tripType === 'roundtrip' && (
+              <>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-gray-500">Retorno:</span>
+                  <span className="font-medium">{formatDate(bookingData.returnDate)}</span>
+                </div>
+                {bookingData.returnTime && (
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-500">Horário de Retorno:</span>
+                    <span className="font-medium">{bookingData.returnTime}</span>
+                  </div>
+                )}
+              </>
             )}
             <div className="flex justify-between py-2 border-b">
               <span className="text-gray-500">Tipo:</span>
