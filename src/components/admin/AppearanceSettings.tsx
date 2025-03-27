@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Upload, ImageIcon, Loader2, RefreshCw, Check, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import HeroStylesEditor from './HeroStylesEditor';
 
 interface SiteImage {
   id: string;
@@ -302,7 +303,7 @@ const AppearanceSettings: React.FC = () => {
         <div>
           <h2 className="text-3xl font-bold">Configurações de Aparência</h2>
           <p className="text-muted-foreground">
-            Atualize as imagens exibidas nas diferentes seções do site
+            Atualize as imagens e estilos exibidos nas diferentes seções do site
           </p>
         </div>
         <Button 
@@ -319,6 +320,8 @@ const AppearanceSettings: React.FC = () => {
           Atualizar
         </Button>
       </div>
+
+      <HeroStylesEditor />
 
       {logoImages.length > 0 && (
         <>

@@ -5,30 +5,69 @@ import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 
+interface HeroStyles {
+  gradientFromColor: string;
+  gradientFromOpacity: number;
+  gradientToColor: string;
+  gradientToOpacity: number;
+  titleColor: string;
+  descriptionColor: string;
+}
+
+const defaultStyles: HeroStyles = {
+  gradientFromColor: 'black',
+  gradientFromOpacity: 40,
+  gradientToColor: 'transparent',
+  gradientToOpacity: 0,
+  titleColor: 'white',
+  descriptionColor: 'white/90'
+};
+
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
   const [backgroundImage, setBackgroundImage] = useState<string>('/lovable-uploads/hero-bg.jpg');
+  const [styles, setStyles] = useState<HeroStyles>(defaultStyles);
   
   useEffect(() => {
-    // Fetch the hero background image from Supabase
-    const fetchHeroImage = async () => {
+    // Fetch the hero background image and styles from Supabase
+    const fetchHeroData = async () => {
       try {
+        // Fetch image
         const {
-          data,
-          error
+          data: imageData,
+          error: imageError
         } = await supabase.from('site_images').select('image_url').eq('section_id', 'hero').single();
-        if (error) {
-          console.error('Error fetching hero image:', error);
-          return;
+        
+        if (imageError) {
+          console.error('Error fetching hero image:', imageError);
+        } else if (imageData && imageData.image_url) {
+          setBackgroundImage(imageData.image_url);
         }
-        if (data && data.image_url) {
-          setBackgroundImage(data.image_url);
+        
+        // Fetch styles
+        const {
+          data: stylesData,
+          error: stylesError
+        } = await supabase.from('hero_styles').select('*').single();
+        
+        if (stylesError && stylesError.code !== 'PGRST116') {
+          console.error('Error fetching hero styles:', stylesError);
+        } else if (stylesData) {
+          setStyles({
+            gradientFromColor: stylesData.gradient_from_color || defaultStyles.gradientFromColor,
+            gradientFromOpacity: stylesData.gradient_from_opacity ?? defaultStyles.gradientFromOpacity,
+            gradientToColor: stylesData.gradient_to_color || defaultStyles.gradientToColor,
+            gradientToOpacity: stylesData.gradient_to_opacity ?? defaultStyles.gradientToOpacity,
+            titleColor: stylesData.title_color || defaultStyles.titleColor,
+            descriptionColor: stylesData.description_color || defaultStyles.descriptionColor
+          });
         }
       } catch (error) {
-        console.error('Error processing hero image:', error);
+        console.error('Error processing hero data:', error);
       }
     };
-    fetchHeroImage();
+    
+    fetchHeroData();
   }, []);
 
   const scrollToBookingForm = () => {
@@ -44,6 +83,9 @@ const Hero: React.FC = () => {
       block: 'start'
     });
   };
+  
+  // Build the gradient style dynamically
+  const gradientStyle = `bg-gradient-to-b from-${styles.gradientFromColor}/${styles.gradientFromOpacity} to-${styles.gradientToColor}/${styles.gradientToOpacity}`;
 
   return (
     <section className="relative min-h-[90vh] md:min-h-[80vh] w-full flex items-center justify-center overflow-hidden">
@@ -52,18 +94,18 @@ const Hero: React.FC = () => {
         className="absolute inset-0 -z-10 bg-cover bg-center" 
         style={{ backgroundImage: `url(${backgroundImage})` }}
       >
-        {/* Gradient overlay instead of dark mask */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent"></div>
+        {/* Gradient overlay with dynamic colors */}
+        <div className={`absolute inset-0 ${gradientStyle}`}></div>
       </div>
       
       {/* Content container */}
       <div className="container px-4 md:px-6 z-10 my-8 md:my-12">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-3xl md:text-5xl font-extrabold mb-4 md:mb-6 tracking-tight text-white drop-shadow-md">
+          <h1 className={`text-3xl md:text-5xl font-extrabold mb-4 md:mb-6 tracking-tight text-${styles.titleColor} drop-shadow-md`}>
             Sua Plataforma de Transporte Executivo
           </h1>
           
-          <p className="text-base md:text-lg mb-6 md:mb-8 text-white/90 drop-shadow max-w-2xl mx-auto">
+          <p className={`text-base md:text-lg mb-6 md:mb-8 text-${styles.descriptionColor} drop-shadow max-w-2xl mx-auto`}>
             Conectamos você a motoristas executivos que atendam suas necessidades de transporte com qualidade e pontualidade.
           </p>
           
@@ -90,7 +132,7 @@ const Hero: React.FC = () => {
           {/* Scroll indicator */}
           <div className="hidden md:flex justify-center mt-16 animate-bounce">
             <ChevronDown 
-              className="h-8 w-8 text-white/80 cursor-pointer hover:text-white transition-colors"
+              className={`h-8 w-8 text-${styles.titleColor}/80 cursor-pointer hover:text-${styles.titleColor} transition-colors`}
               onClick={scrollToSolutionsSection}
             />
           </div>
