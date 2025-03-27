@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,17 +7,15 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import '@/styles/animations/scale.css';
 import TransitionEffect from '@/components/TransitionEffect';
 
-// Definir tipo para os dados de transporte
 interface TransportType {
   id: string;
   image: string;
-  mobile_image?: string; // Optional mobile specific image
+  mobile_image?: string;
   title: string;
   description: string;
   duration: string;
 }
 
-// Dados iniciais (fallback) caso não consiga buscar do banco
 const defaultTransportTypes: TransportType[] = [{
   id: 'offshore',
   image: '/lovable-uploads/hero-bg.jpg',
@@ -54,7 +51,6 @@ const TransportTypes: React.FC = () => {
   const autoplayTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isMobile = useIsMobile();
 
-  // Function to control autoplay - Always enabled regardless of device
   const startAutoplay = useCallback(() => {
     if (autoplayTimerRef.current) {
       clearInterval(autoplayTimerRef.current);
@@ -67,15 +63,13 @@ const TransportTypes: React.FC = () => {
           nextButton.click();
         }
       }
-    }, 4000); // Scroll every 4 seconds
+    }, 4000);
   }, [isPaused]);
 
-  // Pause autoplay on interaction
   const pauseAutoplay = () => {
     setIsPaused(true);
   };
 
-  // Resume autoplay after interaction
   const resumeAutoplay = () => {
     setIsPaused(false);
   };
@@ -84,7 +78,6 @@ const TransportTypes: React.FC = () => {
     const fetchImages = async () => {
       setLoading(true);
       try {
-        // Buscar todas as imagens da tabela site_images
         const {
           data,
           error
@@ -96,12 +89,9 @@ const TransportTypes: React.FC = () => {
         }
         
         if (data && data.length > 0) {
-          // Criar uma cópia do array de transportes
           const updatedTransportTypes = [...defaultTransportTypes];
 
-          // Atualizar as imagens com base nos dados do banco
           data.forEach(item => {
-            // Check for mobile-specific images
             if (item.section_id.endsWith('_mobile')) {
               const baseId = item.section_id.replace('_mobile', '');
               const transportIndex = updatedTransportTypes.findIndex(transport => transport.id === baseId);
@@ -109,7 +99,6 @@ const TransportTypes: React.FC = () => {
                 updatedTransportTypes[transportIndex].mobile_image = item.image_url;
               }
             } else {
-              // Regular desktop images
               const transportIndex = updatedTransportTypes.findIndex(transport => transport.id === item.section_id);
               if (transportIndex !== -1 && item.image_url) {
                 updatedTransportTypes[transportIndex].image = item.image_url;
@@ -128,10 +117,8 @@ const TransportTypes: React.FC = () => {
     
     fetchImages();
 
-    // Always start autoplay when component mounts, regardless of device
     startAutoplay();
 
-    // Cleanup interval on component unmount
     return () => {
       if (autoplayTimerRef.current) {
         clearInterval(autoplayTimerRef.current);
@@ -146,13 +133,11 @@ const TransportTypes: React.FC = () => {
     });
   };
 
-  // Configurações do carousel para todos os tamanhos de tela
   const getCarouselOptionsForScreenSize = () => {
     return {
       loop: true,
       dragFree: true,
       slidesToScroll: 1
-      // Loop é forçado no componente Carousel para garantir o comportamento infinito
     };
   };
 
@@ -197,8 +182,7 @@ const TransportTypes: React.FC = () => {
                       setHoveredItem(index);
                     }} 
                     onTouchEnd={() => {
-                      // Don't resume on touchEnd to allow interaction on mobile
-                      // But we do want to keep the item hovered for mobile users
+                      setHoveredItem(null);
                     }}
                   >
                     <div className="relative">
