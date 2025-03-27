@@ -80,12 +80,15 @@ const MapPreview: React.FC<MapPreviewProps> = ({
       console.error("Erro ao calcular rota:", err);
       setError("Erro ao calcular a rota.");
     } finally {
+      setIsSubmitting(false);
       setIsCalculating(false);
     }
   };
 
+  // Don't render anything if we don't want to show the map
   if (!showMap) return null;
 
+  // Show loading state
   if (isCalculating) {
     return (
       <div className="flex flex-col items-center justify-center h-full bg-gray-50">
@@ -95,6 +98,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
     );
   }
 
+  // Show error state
   if (error) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-50 text-red-500 text-sm p-4">
@@ -103,6 +107,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
     );
   }
 
+  // Show empty state
   if (!mapUrl) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500 text-sm">
@@ -111,6 +116,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
     );
   }
 
+  // Show map with route
   return (
     <div className="relative w-full h-full bg-gray-100 overflow-hidden">
       <img 

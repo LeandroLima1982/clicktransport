@@ -14,8 +14,11 @@ import TripDetails from './steps/TripDetails';
 import PaymentSelection from './steps/PaymentSelection';
 import BookingConfirmation from './steps/BookingConfirmation';
 import BookingComplete from './steps/BookingComplete';
+import LoginForm from './LoginForm';
+import RegisterForm from './RegisterForm';
 import { useBookings } from '@/hooks/useBookings';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Vehicle } from './steps/VehicleSelection';
 
@@ -66,8 +69,14 @@ const BookingSteps: React.FC<BookingStepsProps> = ({
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
   const [totalPrice, setTotalPrice] = useState(0);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { cancelBooking } = useBookings();
+  // Add auth state and auth modal state
+  const { user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  
+  const { cancelBooking, createBooking } = useBookings();
   const isMobile = useIsMobile();
   
   // Dummy payment methods
@@ -185,6 +194,13 @@ const BookingSteps: React.FC<BookingStepsProps> = ({
     }
     
     if (activeStep === 4) {
+      // Check if user is logged in before confirming booking
+      if (!user) {
+        // Show authentication modal if not logged in
+        setShowAuthModal(true);
+        return;
+      }
+      
       handleConfirmBooking();
       return;
     }
@@ -222,10 +238,14 @@ const BookingSteps: React.FC<BookingStepsProps> = ({
   
   const handleConfirmBooking = async () => {
     try {
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+      
       const selectedVehicleData = vehicles.find(v => v.id === selectedVehicle);
       
       if (!selectedVehicleData) {
         toast.error('Veículo não encontrado. Por favor, tente novamente.');
+        setIsSubmitting(false);
         return;
       }
       
@@ -245,21 +265,38 @@ const BookingSteps: React.FC<BookingStepsProps> = ({
         payment_method: paymentMethod,
         travel_time: bookingData.time,
         return_time: bookingData.returnTime,
+        user_id: user?.id // Add user ID
       };
       
-      // Simulating API call
-      setTimeout(() => {
-        const generatedReference = `RT${Math.floor(10000 + Math.random() * 90000)}`;
-        setBookingReference(generatedReference);
+      // Use createBooking from useBookings
+      const { success, referenceCode, error } = await createBooking(bookingPayload);
+      
+      if (success && referenceCode) {
+        setBookingReference(referenceCode);
         setBookingComplete(true);
         setActiveStep(5);
         toast.success('Reserva confirmada com sucesso!');
-      }, 1500);
+      } else {
+        console.error('Error creating booking:', error);
+        toast.error('Ocorreu um erro ao criar sua reserva. Por favor, tente novamente.');
+      }
       
     } catch (error) {
       console.error('Error creating booking:', error);
       toast.error('Ocorreu um erro ao criar sua reserva. Por favor, tente novamente.');
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+  
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false);
+    // Proceed with booking after successful authentication
+    setTimeout(() => {
+      if (user) {
+        handleConfirmBooking();
+      }
+    }, 500);
   };
   
   const handleClose = () => {
@@ -411,68 +448,112 @@ const BookingSteps: React.FC<BookingStepsProps> = ({
     );
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent 
-        className={`${isMobile ? 'p-4 max-w-full h-full max-h-[92vh] rounded-t-xl' : 'max-w-2xl'} overflow-hidden flex flex-col sm:h-auto`}
-        onInteractOutside={(e) => e.preventDefault()}
-      >
-        <DialogHeader className="px-0">
-          <div className="flex items-center justify-between mb-2">
+  // Render auth modal component
+  const renderAuthModal = () => {
+    if (!showAuthModal) return null;
+    
+    return (
+      <Dialog open={showAuthModal} onOpenChange={(open) => !open && setShowAuthModal(false)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
             <DialogTitle>
-              {activeStep === 5 ? 'Reserva Confirmada!' : 'Complete sua Reserva'}
+              {authMode === 'login' ? 'Entrar na sua conta' : 'Criar uma conta'}
             </DialogTitle>
+          </DialogHeader>
+          
+          {authMode === 'login' ? (
+            <LoginForm 
+              onLoginSuccess={handleAuthSuccess}
+              onShowRegister={() => setAuthMode('register')}
+            />
+          ) : (
+            <RegisterForm
+              onRegisterSuccess={handleAuthSuccess}
+              onShowLogin={() => setAuthMode('login')} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+  return (
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+        <DialogContent 
+          className={`${isMobile ? 'p-4 max-w-full h-full max-h-[92vh] rounded-t-xl' : 'max-w-2xl'} overflow-hidden flex flex-col sm:h-auto`}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader className="px-0">
+            <div className="flex items-center justify-between mb-2">
+              <DialogTitle>
+                {activeStep === 5 ? 'Reserva Confirmada!' : 'Complete sua Reserva'}
+              </DialogTitle>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleClose}
+                className="w-8 h-8 rounded-full"
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Fechar</span>
+              </Button>
+            </div>
             
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClose}
-              className="w-8 h-8 rounded-full"
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Fechar</span>
-            </Button>
+            {activeStep < 5 && renderStepIndicator()}
+          </DialogHeader>
+          
+          <div className="overflow-auto flex-1 p-1 -mx-1">
+            {renderStepContent()}
           </div>
           
-          {activeStep < 5 && renderStepIndicator()}
-        </DialogHeader>
-        
-        <div className="overflow-auto flex-1 p-1 -mx-1">
-          {renderStepContent()}
-        </div>
-        
-        {activeStep < 5 && (
-          <div className="mt-6 flex justify-between pt-4 border-t border-gray-100">
-            {activeStep > 0 ? (
+          {activeStep < 5 && (
+            <div className="mt-6 flex justify-between pt-4 border-t border-gray-100">
+              {activeStep > 0 ? (
+                <Button
+                  variant="outline"
+                  onClick={handleBack}
+                  disabled={activeStep === 0 || isSubmitting}
+                >
+                  Voltar
+                </Button>
+              ) : (
+                <div></div>
+              )}
+              
               <Button
-                variant="outline"
-                onClick={handleBack}
-                disabled={activeStep === 0}
+                onClick={handleNext}
+                className={activeStep === 4 ? 'bg-green-600 hover:bg-green-700' : ''}
+                disabled={isSubmitting}
               >
-                Voltar
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processando...
+                  </>
+                ) : activeStep === 4 ? (
+                  'Confirmar Reserva'
+                ) : (
+                  'Continuar'
+                )}
               </Button>
-            ) : (
-              <div></div>
-            )}
-            
-            <Button
-              onClick={handleNext}
-              className={activeStep === 4 ? 'bg-green-600 hover:bg-green-700' : ''}
-            >
-              {activeStep === 4 ? 'Confirmar Reserva' : 'Continuar'}
-            </Button>
-          </div>
-        )}
-        
-        {activeStep === 5 && (
-          <div className="mt-6 flex justify-center">
-            <Button onClick={handleClose}>
-              Concluir
-            </Button>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+            </div>
+          )}
+          
+          {activeStep === 5 && (
+            <div className="mt-6 flex justify-center">
+              <Button onClick={handleClose}>
+                Concluir
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Auth Modal */}
+      {renderAuthModal()}
+    </>
   );
 };
 

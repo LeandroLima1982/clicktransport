@@ -13,6 +13,7 @@ import TransitionEffect from '@/components/TransitionEffect';
 import LocationInput from './booking/LocationInput';
 import MapPreview from './booking/MapPreview';
 import useDestinationsService from '@/hooks/useDestinationsService';
+import { useLocationSuggestions } from '@/hooks/useLocationSuggestions';
 
 interface BookingData {
   origin: string;
@@ -54,15 +55,23 @@ const BookingForm: React.FC = () => {
     showBookingSteps,
     setOriginValue,
     setDestinationValue,
-    handleOriginChange,
-    handleDestinationChange,
+  } = useBookingForm();
+  
+  // Use our enhanced location suggestions hook
+  const {
     originSuggestions,
     destinationSuggestions,
     isLoadingSuggestions,
-    selectSuggestion,
-    clearOrigin,
-    clearDestination
-  } = useBookingForm();
+    handleOriginChange,
+    handleDestinationChange,
+    selectOriginSuggestion,
+    selectDestinationSuggestion,
+    clearOriginSuggestions,
+    clearDestinationSuggestions,
+    originSelected,
+    destinationSelected,
+    areBothAddressesSelected
+  } = useLocationSuggestions();
   
   const { cities, loading: citiesLoading, fetchCities } = useDestinationsService();
   
@@ -84,21 +93,25 @@ const BookingForm: React.FC = () => {
   }>({});
   
   const [shouldShowMap, setShouldShowMap] = useState(false);
+  const [shouldCalculateRoute, setShouldCalculateRoute] = useState(false);
   
   useEffect(() => {
     fetchCities();
   }, [fetchCities]);
   
+  // Only show map when both addresses have been selected
   useEffect(() => {
-    if (originValue.length > 4 && currentStep === 1) {
-      // Mostra o mapa já na etapa 1 se o usuário começou a digitar a origem
+    if (areBothAddressesSelected()) {
       setShouldShowMap(true);
-    } else if (currentStep >= 2 && originValue.length > 4 && destinationValue.length > 4) {
+      setShouldCalculateRoute(true);
+    } else if (currentStep >= 2 && originValue && destinationValue) {
       setShouldShowMap(true);
+      setShouldCalculateRoute(false);
     } else {
       setShouldShowMap(false);
+      setShouldCalculateRoute(false);
     }
-  }, [originValue, destinationValue, currentStep]);
+  }, [originValue, destinationValue, currentStep, originSelected, destinationSelected, areBothAddressesSelected]);
   
   const handleRouteCalculated = (routeData: { distance: number; duration: number }) => {
     console.log('Route calculation result:', routeData);
@@ -249,10 +262,16 @@ const BookingForm: React.FC = () => {
                 label=""
                 placeholder="Digite seu endereço de origem"
                 value={originValue}
-                onChange={handleOriginChange}
+                onChange={(e) => handleOriginChange(e.target.value)}
                 suggestions={originSuggestions}
-                onSelectSuggestion={(suggestion) => selectSuggestion(suggestion, true)}
-                onClear={clearOrigin}
+                onSelectSuggestion={(suggestion) => {
+                  const address = selectOriginSuggestion(suggestion);
+                  setOriginValue(address);
+                }}
+                onClear={() => {
+                  setOriginValue('');
+                  clearOriginSuggestions();
+                }}
                 isLoading={isLoadingSuggestions}
               />
               
@@ -283,10 +302,16 @@ const BookingForm: React.FC = () => {
                 label=""
                 placeholder="Digite o endereço de destino"
                 value={destinationValue}
-                onChange={handleDestinationChange}
+                onChange={(e) => handleDestinationChange(e.target.value)}
                 suggestions={destinationSuggestions}
-                onSelectSuggestion={(suggestion) => selectSuggestion(suggestion, false)}
-                onClear={clearDestination}
+                onSelectSuggestion={(suggestion) => {
+                  const address = selectDestinationSuggestion(suggestion);
+                  setDestinationValue(address);
+                }}
+                onClear={() => {
+                  setDestinationValue('');
+                  clearDestinationSuggestions();
+                }}
                 isLoading={isLoadingSuggestions}
               />
               
@@ -424,21 +449,16 @@ const BookingForm: React.FC = () => {
 
   // Sumário da rota para mostrar enquanto o usuário avança
   const renderRouteSummary = () => {
-    // Mostra o mapa quando houver origem (etapa 1) e, se estiver na etapa 2 ou superior, quando também houver destino
-    const showMap = shouldShowMap && (
-      (currentStep === 1 && originValue.length > 4) || 
-      (currentStep >= 2 && originValue.length > 4 && destinationValue.length > 4)
-    );
-    
-    if (!showMap) return null;
+    if (!shouldShowMap) return null;
     
     return (
       <div className="mb-4">
         <div className="rounded-xl overflow-hidden shadow-md mb-2 h-32">
           <MapPreview 
             origin={originValue}
-            destination={destinationValue || "Brasil"} // Usa "Brasil" como placeholder se estiver apenas na etapa 1
+            destination={destinationValue}
             onRouteCalculated={handleRouteCalculated}
+            shouldCalculate={shouldCalculateRoute}
           />
         </div>
         
