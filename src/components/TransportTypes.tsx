@@ -122,7 +122,7 @@ const TransportTypes: React.FC = () => {
     });
   };
   return <section className="w-full py-[8px] mx-[2px] my-[20px] bg-white">
-      <div className="max-w-[1400px] mx-auto px-4 w-full bg-white md:px-6 py-[4px]">
+      <div className="max-w-[1400px] mx-auto px-4 w-full md:px-6 py-[4px] bg-zinc-50">
         <Carousel opts={{
         align: "start",
         loop: true
