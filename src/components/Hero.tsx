@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
+
 interface HeroStyles {
   gradient_from_color: string;
   gradient_from_opacity: number;
@@ -11,6 +13,7 @@ interface HeroStyles {
   title_color: string;
   description_color: string;
 }
+
 const defaultStyles: HeroStyles = {
   gradient_from_color: 'black',
   gradient_from_opacity: 40,
@@ -19,31 +22,51 @@ const defaultStyles: HeroStyles = {
   title_color: 'white',
   description_color: 'white/90'
 };
+
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
   const [backgroundImage, setBackgroundImage] = useState<string>('/lovable-uploads/hero-bg.jpg');
+  const [mobileBackgroundImage, setMobileBackgroundImage] = useState<string>('/lovable-uploads/hero-bg.jpg');
   const [styles, setStyles] = useState<HeroStyles>(defaultStyles);
+  
   useEffect(() => {
     // Fetch the hero background image and styles from Supabase
     const fetchHeroData = async () => {
       try {
-        // Fetch image
+        // Fetch desktop image
         const {
           data: imageData,
           error: imageError
         } = await supabase.from('site_images').select('image_url').eq('section_id', 'hero').single();
+        
         if (imageError) {
-          console.error('Error fetching hero image:', imageError);
+          console.error('Error fetching hero desktop image:', imageError);
         } else if (imageData && imageData.image_url) {
           setBackgroundImage(imageData.image_url);
+        }
+        
+        // Fetch mobile image
+        const {
+          data: mobileImageData,
+          error: mobileImageError
+        } = await supabase.from('site_images').select('image_url').eq('section_id', 'hero_mobile').single();
+        
+        if (mobileImageError) {
+          console.error('Error fetching hero mobile image:', mobileImageError);
+          // If no mobile-specific image, use desktop image as fallback
+          if (!mobileImageError.message.includes('The result contains 0 rows')) {
+            console.log('Using desktop image as fallback for mobile');
+          }
+        } else if (mobileImageData && mobileImageData.image_url) {
+          setMobileBackgroundImage(mobileImageData.image_url);
         }
 
         // Fetch styles
         const {
           data: stylesData,
           error: stylesError
-          // Use proper typing for the from method by specifying the table name as a known table
         } = await supabase.from('hero_styles').select('*').single();
+        
         if (stylesError) {
           console.error('Error fetching hero styles:', stylesError);
         } else if (stylesData) {
@@ -60,14 +83,17 @@ const Hero: React.FC = () => {
         console.error('Error processing hero data:', error);
       }
     };
+    
     fetchHeroData();
   }, []);
+  
   const scrollToBookingForm = () => {
     document.getElementById('request-service')?.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
   };
+  
   const scrollToSolutionsSection = () => {
     document.getElementById('solutions-section')?.scrollIntoView({
       behavior: 'smooth',
@@ -77,11 +103,15 @@ const Hero: React.FC = () => {
 
   // Build the gradient style dynamically
   const gradientStyle = `bg-gradient-to-b from-${styles.gradient_from_color}/${styles.gradient_from_opacity} to-${styles.gradient_to_color}/${styles.gradient_to_opacity}`;
+  
+  // Use the appropriate background image based on device type
+  const currentBackgroundImage = isMobile ? mobileBackgroundImage : backgroundImage;
+  
   return <section className="relative min-h-[75vh] md:min-h-[50vh] w-full flex items-center justify-center overflow-hidden mx-0">
       {/* Background image */}
       <div className="absolute inset-0 -z-10 bg-cover bg-center" style={{
-      backgroundImage: `url(${backgroundImage})`
-    }}>
+        backgroundImage: `url(${currentBackgroundImage})`
+      }}>
         {/* Gradient overlay with dynamic colors */}
         <div className={`absolute inset-0 ${gradientStyle}`}></div>
       </div>
@@ -110,4 +140,5 @@ const Hero: React.FC = () => {
       </div>
     </section>;
 };
+
 export default Hero;

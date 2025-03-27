@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Solutions from '@/components/Solutions';
@@ -7,7 +7,6 @@ import TransportTypes from '@/components/TransportTypes';
 import ProcessSteps from '@/components/ProcessSteps';
 import Testimonials from '@/components/Testimonials';
 import FAQ from '@/components/FAQ';
-import ServiceForm from '@/components/ServiceForm';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
