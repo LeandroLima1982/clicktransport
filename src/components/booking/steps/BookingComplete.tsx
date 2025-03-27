@@ -1,20 +1,17 @@
 
 import React from 'react';
-import { CheckCircle, Calendar, MapPin, Users } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Card, CardContent } from '@/components/ui/card';
+import { CheckCircle } from 'lucide-react';
 
-export interface BookingCompleteProps {
-  bookingReference: string; // Changed from referenceCode to bookingReference
+interface BookingCompleteProps {
+  bookingReference: string;
   bookingData: {
     origin: string;
     destination: string;
-    date: Date | undefined;
-    returnDate: Date | undefined;
+    date?: Date;
+    returnDate?: Date;
     tripType: string;
     passengers: string;
-    time?: string;
-    returnTime?: string;
   };
   vehicleName: string;
   totalPrice: number;
@@ -28,82 +25,92 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
   totalPrice,
   formatCurrency
 }) => {
-  return (
-    <div className="text-center space-y-6">
-      <div className="flex flex-col items-center justify-center">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-          <CheckCircle className="h-8 w-8 text-green-600" />
-        </div>
-        <h2 className="text-xl font-bold">Reserva Confirmada!</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Sua viagem foi agendada com sucesso
-        </p>
-      </div>
+  const formatDate = (date?: Date) => {
+    if (!date) return 'Não especificado';
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
 
-      <div className="bg-gray-50 rounded-lg p-4">
-        <div className="text-center mb-3">
-          <div className="text-sm text-gray-500">Código da Reserva</div>
-          <div className="text-xl font-bold text-blue-600">{bookingReference}</div>
-        </div>
-        
-        <div className="space-y-3 text-left">
-          <div className="flex items-start">
-            <MapPin className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
-            <div>
-              <div className="text-xs text-gray-500">De</div>
-              <div className="text-sm font-medium">{bookingData.origin}</div>
-              <div className="text-xs text-gray-500 mt-2">Para</div>
-              <div className="text-sm font-medium">{bookingData.destination}</div>
-            </div>
-          </div>
-          
-          <div className="flex items-start">
-            <Calendar className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
-            <div>
-              <div className="text-xs text-gray-500">Data e Hora</div>
-              <div className="text-sm font-medium">
-                {bookingData.date ? (
-                  <>
-                    {format(bookingData.date, "dd 'de' MMMM", { locale: ptBR })}
-                    {bookingData.time ? ` às ${bookingData.time}` : ''}
-                  </>
-                ) : (
-                  'Data não especificada'
-                )}
-              </div>
-              
-              {bookingData.tripType === 'roundtrip' && bookingData.returnDate && (
-                <>
-                  <div className="text-xs text-gray-500 mt-2">Retorno</div>
-                  <div className="text-sm font-medium">
-                    {format(bookingData.returnDate, "dd 'de' MMMM", { locale: ptBR })}
-                    {bookingData.returnTime ? ` às ${bookingData.returnTime}` : ''}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex items-start">
-            <Users className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
-            <div>
-              <div className="text-xs text-gray-500">Detalhes</div>
-              <div className="text-sm font-medium">
-                {vehicleName} • {bookingData.passengers} {parseInt(bookingData.passengers) === 1 ? 'passageiro' : 'passageiros'}
-              </div>
-            </div>
-          </div>
-        </div>
+  return (
+    <div className="text-center py-4 space-y-8">
+      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-50 text-green-500 mb-2">
+        <CheckCircle className="w-10 h-10" />
       </div>
       
-      <div className="text-center">
-        <div className="text-sm text-gray-500 mb-1">Valor Total</div>
-        <div className="text-2xl font-bold text-blue-600">{formatCurrency(totalPrice)}</div>
+      <div>
+        <h3 className="text-xl font-bold mb-1">Reserva Confirmada!</h3>
+        <p className="text-gray-500">Sua reserva foi confirmada com sucesso.</p>
       </div>
       
-      <div className="text-sm text-gray-500 space-y-2">
-        <p>Um email com os detalhes da sua reserva foi enviado.</p>
-        <p>Para verificar sua reserva, acesse o menu "Minhas Reservas".</p>
+      <Card className="border-green-100 bg-green-50 overflow-hidden">
+        <CardContent className="pt-5">
+          <div className="text-center mb-4">
+            <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-1">
+              Código de Reserva
+            </h4>
+            <div className="text-2xl font-mono tracking-wider text-green-600 font-bold">
+              {bookingReference}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Guarde este código para referência
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="pt-5 px-5">
+          <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">
+            Detalhes da Viagem
+          </h4>
+          
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-gray-500">Origem:</span>
+              <span className="font-medium">{bookingData.origin}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-gray-500">Destino:</span>
+              <span className="font-medium">{bookingData.destination}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-gray-500">Data:</span>
+              <span className="font-medium">{formatDate(bookingData.date)}</span>
+            </div>
+            {bookingData.tripType === 'roundtrip' && (
+              <div className="flex justify-between py-2 border-b">
+                <span className="text-gray-500">Retorno:</span>
+                <span className="font-medium">{formatDate(bookingData.returnDate)}</span>
+              </div>
+            )}
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-gray-500">Tipo:</span>
+              <span className="font-medium">
+                {bookingData.tripType === 'roundtrip' ? 'Ida e volta' : 'Somente ida'}
+              </span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-gray-500">Veículo:</span>
+              <span className="font-medium">{vehicleName}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-gray-500">Passageiros:</span>
+              <span className="font-medium">{bookingData.passengers}</span>
+            </div>
+            <div className="flex justify-between py-2 font-bold">
+              <span>Total:</span>
+              <span className="text-green-600">{formatCurrency(totalPrice)}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="text-sm text-gray-500 px-4">
+        <p>Um e-mail com os detalhes da sua reserva foi enviado.</p>
+        <p className="mt-1">Nossa equipe entrará em contato para confirmar os detalhes.</p>
       </div>
     </div>
   );

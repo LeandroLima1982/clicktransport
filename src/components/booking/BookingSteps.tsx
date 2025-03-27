@@ -67,7 +67,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({
   const [totalPrice, setTotalPrice] = useState(0);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
   
-  const { createBooking } = useBookings();
+  const { cancelBooking } = useBookings();
   const isMobile = useIsMobile();
   
   // Dummy payment methods
@@ -247,21 +247,14 @@ const BookingSteps: React.FC<BookingStepsProps> = ({
         return_time: bookingData.returnTime,
       };
       
-      // Calling the createBooking function from the useBookings hook
-      const { booking, error } = await createBooking(bookingPayload);
-      
-      if (error) {
-        toast.error('Ocorreu um erro ao criar sua reserva. Por favor, tente novamente.');
-        return;
-      }
-      
-      // If booking was successful
-      if (booking) {
-        setBookingReference(booking.reference_code);
+      // Simulating API call
+      setTimeout(() => {
+        const generatedReference = `RT${Math.floor(10000 + Math.random() * 90000)}`;
+        setBookingReference(generatedReference);
         setBookingComplete(true);
         setActiveStep(5);
         toast.success('Reserva confirmada com sucesso!');
-      }
+      }, 1500);
       
     } catch (error) {
       console.error('Error creating booking:', error);
