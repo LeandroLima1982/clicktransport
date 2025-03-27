@@ -1,56 +1,41 @@
 
 import React from 'react';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useIsMobile } from '@/hooks/use-mobile';
-import TransitionEffect from '@/components/TransitionEffect';
-import { Route, ArrowRight } from 'lucide-react';
+import { ArrowRight, CornerDownLeft } from 'lucide-react';
 
 interface TripTypeTabsProps {
-  value: 'oneway' | 'roundtrip';
+  value: string;
   onChange: (value: 'oneway' | 'roundtrip') => void;
 }
 
-const TripTypeTabs: React.FC<TripTypeTabsProps> = ({
-  value,
-  onChange
-}) => {
-  const isMobile = useIsMobile();
-  
+const TripTypeTabs: React.FC<TripTypeTabsProps> = ({ value, onChange }) => {
   return (
-    <TransitionEffect direction="fade" delay={150}>
-      <div className="flex justify-center">
-        <ToggleGroup 
-          type="single" 
-          value={value} 
-          onValueChange={(val) => val && onChange(val as 'oneway' | 'roundtrip')}
-          className="bg-white/10 p-0.5 rounded-lg border border-[#D4AF37]/40 shadow-inner"
-        >
-          <ToggleGroupItem 
-            value="oneway" 
-            className={`px-4 py-2 text-sm rounded-md transition-all duration-200 ${
-              value === 'oneway' 
-                ? 'bg-gradient-to-r from-amber-400 to-amber-300 text-[#002366] font-medium shadow-md'
-                : 'text-white/90 hover:bg-white/10'
-            }`}
-          >
-            <Route className="h-4 w-4 mr-2" />
-            Só ida
-          </ToggleGroupItem>
-          
-          <ToggleGroupItem 
-            value="roundtrip" 
-            className={`px-4 py-2 text-sm rounded-md transition-all duration-200 ${
-              value === 'roundtrip' 
-                ? 'bg-gradient-to-r from-amber-400 to-amber-300 text-[#002366] font-medium shadow-md'
-                : 'text-white/90 hover:bg-white/10'
-            }`}
-          >
-            <ArrowRight className="h-4 w-4 mr-2" />
-            Ida e volta
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
-    </TransitionEffect>
+    <div className="inline-flex rounded-full p-1 bg-gray-100">
+      <button
+        type="button"
+        onClick={() => onChange('oneway')}
+        className={`flex items-center px-4 py-2 text-sm font-medium rounded-full ${
+          value === 'oneway'
+            ? 'bg-white text-gray-900 shadow-sm'
+            : 'text-gray-600 hover:text-gray-700'
+        }`}
+      >
+        <ArrowRight className="h-4 w-4 mr-2" />
+        Ida
+      </button>
+      
+      <button
+        type="button"
+        onClick={() => onChange('roundtrip')}
+        className={`flex items-center px-4 py-2 text-sm font-medium rounded-full ${
+          value === 'roundtrip'
+            ? 'bg-white text-gray-900 shadow-sm'
+            : 'text-gray-600 hover:text-gray-700'
+        }`}
+      >
+        <CornerDownLeft className="h-4 w-4 mr-2" />
+        Ida e Volta
+      </button>
+    </div>
   );
 };
 

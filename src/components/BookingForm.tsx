@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -7,13 +8,7 @@ import TripTypeTabs from './booking/TripTypeTabs';
 import TimeSelector from './TimeSelector';
 import PassengerSelector from './booking/PassengerSelector';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useDestinationsService } from '@/hooks/useDestinationsService';
-import { calculateRoute } from '@/utils/routeUtils';
-import { MapPin, RotateCw, ArrowDown, ArrowRight, ArrowRightCircle } from 'lucide-react';
-import { Separator } from './ui/separator';
+import { MapPin, Search, ArrowRight, Calendar, X, ChevronRight } from 'lucide-react';
 import TransitionEffect from '@/components/TransitionEffect';
 import LocationInput from './booking/LocationInput';
 import MapPreview from './booking/MapPreview';
@@ -180,52 +175,74 @@ const BookingForm: React.FC = () => {
   const goToPreviousStep = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
-  
-  const renderProgressIndicator = () => {
+
+  // Formatação do tempo estimado para exibição
+  const formatEstimatedTime = (minutes?: number) => {
+    if (!minutes) return "";
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `~${hours}h ${mins > 0 ? `${mins}min` : ''}`;
+  };
+
+  // Função para renderizar a barra de progresso moderna
+  const renderProgressSteps = () => {
     return (
-      <div className="flex items-center justify-center mb-4">
-        <div className="flex items-center w-full max-w-xs">
-          {[1, 2, 3].map((step) => (
-            <React.Fragment key={step}>
-              <div 
-                className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 ${
-                  currentStep >= step 
-                    ? 'bg-amber-400 text-white' 
-                    : 'bg-gray-200 text-gray-500'
-                }`}
-              >
-                {step}
-              </div>
-              {step < 3 && (
+      <div className="flex justify-center items-center w-full relative mb-4">
+        {[1, 2, 3].map((step) => (
+          <React.Fragment key={step}>
+            {/* Círculo de etapa */}
+            <div 
+              className={`flex items-center justify-center w-8 h-8 rounded-full z-10 transition-all duration-300 ${
+                currentStep === step 
+                  ? 'bg-amber-400 text-white font-bold shadow-md' 
+                  : currentStep > step
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-gray-100 text-gray-400'
+              }`}
+            >
+              {currentStep > step ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                step
+              )}
+            </div>
+            
+            {/* Linha conectora */}
+            {step < 3 && (
+              <div className="flex-1 h-1 mx-2">
                 <div 
-                  className={`flex-1 h-1 mx-2 transition-all duration-300 ${
+                  className={`h-full transition-all duration-500 ${
                     currentStep > step 
-                      ? 'bg-amber-400' 
+                      ? 'bg-green-500' 
                       : 'bg-gray-200'
                   }`}
                 ></div>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
+              </div>
+            )}
+          </React.Fragment>
+        ))}
       </div>
     );
   };
 
+  // Renderização condicional do conteúdo baseado na etapa atual
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return (
           <TransitionEffect direction="fade" delay={100}>
-            <div className="booking-input-container p-3 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
-              <Label className="block text-lg font-semibold booking-label mb-3 text-center">
-                De onde vai sair?
-              </Label>
+            <div className="rounded-xl bg-white p-4 shadow-lg">
+              <div className="mb-3 text-center">
+                <div className="text-lg font-bold text-gray-800">De onde você está saindo?</div>
+                <div className="text-xs text-gray-500">Informe o endereço de origem</div>
+              </div>
               
               <LocationInput
                 id="origin"
                 label=""
-                placeholder="Digite seu endereço completo"
+                placeholder="Digite seu endereço de origem"
                 value={originValue}
                 onChange={handleOriginChange}
                 suggestions={originSuggestions}
@@ -234,7 +251,14 @@ const BookingForm: React.FC = () => {
               />
               
               {formErrors.origin && (
-                <p className="text-red-300 text-sm mt-2">{formErrors.origin}</p>
+                <p className="text-red-500 text-sm mt-2">{formErrors.origin}</p>
+              )}
+              
+              {originValue && (
+                <div className="flex items-center mt-4 px-3 py-2 bg-blue-50 rounded-lg">
+                  <MapPin className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0" />
+                  <div className="text-sm text-blue-800 font-medium truncate">{originValue}</div>
+                </div>
               )}
             </div>
           </TransitionEffect>
@@ -242,10 +266,11 @@ const BookingForm: React.FC = () => {
       case 2:
         return (
           <TransitionEffect direction="fade" delay={100}>
-            <div className="booking-input-container p-3 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
-              <Label className="block text-lg font-semibold booking-label mb-3 text-center">
-                Para onde vai?
-              </Label>
+            <div className="rounded-xl bg-white p-4 shadow-lg">
+              <div className="mb-3 text-center">
+                <div className="text-lg font-bold text-gray-800">Para onde você vai?</div>
+                <div className="text-xs text-gray-500">Informe o endereço de destino</div>
+              </div>
               
               <LocationInput
                 id="destination"
@@ -259,7 +284,36 @@ const BookingForm: React.FC = () => {
               />
               
               {formErrors.destination && (
-                <p className="text-red-300 text-sm mt-2">{formErrors.destination}</p>
+                <p className="text-red-500 text-sm mt-2">{formErrors.destination}</p>
+              )}
+              
+              {originValue && (
+                <div className="flex items-center justify-between mt-4 px-3 py-2 bg-blue-50 rounded-t-lg border-b border-blue-100">
+                  <div className="flex items-center">
+                    <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center mr-2">
+                      <MapPin className="h-3 w-3 text-green-600" />
+                    </div>
+                    <div className="text-sm text-blue-800 truncate max-w-[200px]">{originValue}</div>
+                  </div>
+                </div>
+              )}
+              
+              {destinationValue && (
+                <div className="flex items-center justify-between px-3 py-2 bg-blue-50 rounded-b-lg">
+                  <div className="flex items-center">
+                    <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center mr-2">
+                      <MapPin className="h-3 w-3 text-red-600" />
+                    </div>
+                    <div className="text-sm text-blue-800 truncate max-w-[200px]">{destinationValue}</div>
+                  </div>
+                </div>
+              )}
+              
+              {distanceInfo && (
+                <div className="mt-3 text-center text-sm text-gray-600">
+                  <span className="font-medium">{Math.round(distanceInfo.distance)} km</span> • 
+                  <span className="ml-1">{formatEstimatedTime(distanceInfo.duration)}</span>
+                </div>
               )}
             </div>
           </TransitionEffect>
@@ -267,58 +321,92 @@ const BookingForm: React.FC = () => {
       case 3:
         return (
           <TransitionEffect direction="fade" delay={100}>
-            <div className="space-y-5">
-              <div className="flex justify-center mb-4 mt-1">
+            <div className="rounded-xl bg-white p-4 shadow-lg space-y-4">
+              <div className="mb-3 text-center">
+                <div className="text-lg font-bold text-gray-800">Quando você vai?</div>
+                <div className="text-xs text-gray-500">Selecione data, horário e passageiros</div>
+              </div>
+              
+              <div className="flex justify-center mb-4">
                 <TripTypeTabs value={tripType} onChange={setTripType} />
               </div>
-            
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-                <div className="md:col-span-2 booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow">
-                  <Label className="booking-label block text-sm font-semibold mb-2">
-                    Vai quando?
-                  </Label>
-                  <div className="flex flex-col sm:flex-row sm:space-x-0">
-                    <div className="sm:w-1/2 mb-2 sm:mb-0">
-                      <DateSelector hideLabel date={date} onSelect={setDate} disabledDates={date => date < new Date()} isConnected={true} position="left" />
-                    </div>
-                    <div className="sm:w-1/2">
-                      <TimeSelector value={time} onChange={setTime} connected position="right" />
-                    </div>
+              
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-3 rounded-xl">
+                  <div className="flex items-center mb-2">
+                    <Calendar className="h-4 w-4 text-gray-500 mr-2" />
+                    <span className="text-sm font-medium text-gray-700">Data e hora da ida</span>
                   </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="relative">
+                      <DateSelector 
+                        hideLabel 
+                        date={date} 
+                        onSelect={setDate} 
+                        disabledDates={date => date < new Date()} 
+                        isConnected={true} 
+                        position="left" 
+                      />
+                    </div>
+                    <TimeSelector 
+                      value={time} 
+                      onChange={setTime} 
+                      connected 
+                      position="right" 
+                    />
+                  </div>
+                  
                   {(formErrors.date || formErrors.time) && (
-                    <p className="text-red-300 text-sm mt-2">
+                    <p className="text-red-500 text-xs mt-1">
                       {formErrors.date || formErrors.time}
                     </p>
                   )}
                 </div>
-
-                <div className="booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow">
+                
+                <div className="bg-gray-50 p-3 rounded-xl">
+                  <div className="flex items-center mb-2">
+                    <Users className="h-4 w-4 text-gray-500 mr-2" />
+                    <span className="text-sm font-medium text-gray-700">Passageiros</span>
+                  </div>
+                  
                   <PassengerSelector value={passengers} onChange={setPassengers} />
                 </div>
-              </div>
-
-              {tripType === 'roundtrip' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-[#D4AF37]">
-                  <div className="booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow">
-                    <Label className="booking-label block text-sm font-semibold mb-2">
-                      Volta quando?
-                    </Label>
-                    <div className="flex flex-col sm:flex-row sm:space-x-0">
-                      <div className="sm:w-1/2 mb-2 sm:mb-0">
-                        <DateSelector hideLabel date={returnDate} onSelect={setReturnDate} disabledDates={currentDate => currentDate < (date || new Date())} isConnected={true} position="left" />
-                      </div>
-                      <div className="sm:w-1/2">
-                        <TimeSelector value={returnTime} onChange={setReturnTime} connected position="right" />
-                      </div>
+                
+                {tripType === 'roundtrip' && (
+                  <div className="bg-gray-50 p-3 rounded-xl">
+                    <div className="flex items-center mb-2">
+                      <Calendar className="h-4 w-4 text-gray-500 mr-2" />
+                      <span className="text-sm font-medium text-gray-700">Data e hora de volta</span>
                     </div>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="relative">
+                        <DateSelector 
+                          hideLabel 
+                          date={returnDate} 
+                          onSelect={setReturnDate} 
+                          disabledDates={currentDate => currentDate < (date || new Date())} 
+                          isConnected={true} 
+                          position="left" 
+                        />
+                      </div>
+                      <TimeSelector 
+                        value={returnTime} 
+                        onChange={setReturnTime} 
+                        connected 
+                        position="right" 
+                      />
+                    </div>
+                    
                     {(formErrors.returnDate || formErrors.returnTime) && (
-                      <p className="text-red-300 text-sm mt-2">
+                      <p className="text-red-500 text-xs mt-1">
                         {formErrors.returnDate || formErrors.returnTime}
                       </p>
                     )}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </TransitionEffect>
         );
@@ -327,79 +415,71 @@ const BookingForm: React.FC = () => {
     }
   };
 
-  const renderSummary = () => {
-    if (currentStep === 1) return null;
+  // Sumário da rota para mostrar enquanto o usuário avança
+  const renderRouteSummary = () => {
+    if (currentStep === 1 || (!originValue && !destinationValue)) return null;
     
     return (
-      <div className="mb-4 pb-1">
-        <div className="p-3 bg-white/10 rounded-md border border-[#D4AF37]/30 mb-3">
-          {currentStep >= 2 && originValue && (
-            <div className="flex items-center text-sm">
-              <span className="font-semibold mr-2">De:</span>
-              <span className="text-white/90">{originValue}</span>
-            </div>
-          )}
-          
-          {currentStep >= 3 && destinationValue && (
-            <div className="flex items-center text-sm mt-1">
-              <span className="font-semibold mr-2">Para:</span>
-              <span className="text-white/90">{destinationValue}</span>
-            </div>
-          )}
-          
-          {distanceInfo && (
-            <div className="text-xs text-amber-200 mt-2">
-              Distância: ~{Math.round(distanceInfo.distance)} km • Tempo estimado: ~{Math.floor(distanceInfo.duration / 60)}h{distanceInfo.duration % 60 > 0 ? ` ${Math.round(distanceInfo.duration % 60)}min` : ''}
-            </div>
-          )}
-        </div>
-        
+      <div className="mb-4">
         {shouldShowMap && (
-          <MapPreview 
-            origin={originValue}
-            destination={destinationValue}
-            onRouteCalculated={handleRouteCalculated}
-          />
+          <div className="rounded-xl overflow-hidden shadow-md mb-2 h-32">
+            <MapPreview 
+              origin={originValue}
+              destination={destinationValue}
+              onRouteCalculated={handleRouteCalculated}
+            />
+          </div>
+        )}
+        
+        {distanceInfo && (
+          <div className="bg-blue-900 text-white px-3 py-2 rounded-lg text-xs flex items-center justify-center">
+            <div>Distância: <span className="font-medium">{Math.round(distanceInfo.distance)} km</span></div>
+            <div className="mx-2">•</div>
+            <div>Tempo estimado: <span className="font-medium">{formatEstimatedTime(distanceInfo.duration)}</span></div>
+          </div>
         )}
       </div>
     );
   };
 
-  return (
-    <div className="w-full bg-[#002366] rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border-b border-l border-r border-[#D4AF37] shadow-[0_15px_50px_rgba(0,0,0,0.5)] glass-morphism transition-all duration-300">
-      <div className="relative pt-6 md:pt-7 pb-6 md:pb-8 px-5 md:px-6 lg:px-8">
-        {renderProgressIndicator()}
-        {renderSummary()}
-        <div className="space-y-6">
-          {renderStepContent()}
-        </div>
-
-        <div className="flex justify-between mt-6">
-          {currentStep > 1 ? (
-            <Button 
-              onClick={goToPreviousStep}
-              className="rounded-lg text-[#002366] font-medium py-2 px-4
-                        shadow-md bg-white/80 hover:bg-white
-                        border border-white/60 transition-all duration-300"
-            >
-              Voltar
-            </Button>
-          ) : (
-            <div></div>
-          )}
-          
+  // Ações de navegação (voltar/continuar)
+  const renderNavigation = () => {
+    return (
+      <div className="flex justify-between items-center mt-6">
+        {currentStep > 1 ? (
           <Button 
-            onClick={goToNextStep}
-            className="rounded-lg text-[#002366] text-base font-medium py-2 px-4 md:py-2.5 md:px-5 
-                    shadow-xl relative overflow-hidden bg-gradient-to-r from-amber-400 to-amber-300 
-                    hover:from-amber-300 hover:to-amber-200 border border-amber-300 transition-all duration-300"
+            onClick={goToPreviousStep} 
+            variant="outline"
+            className="px-4 py-2 rounded-full border border-gray-300 text-gray-700 bg-white"
           >
-            <span className="relative z-10 flex items-center justify-center">
-              {currentStep === 3 ? 'Buscar Motorista' : 'Continuar'}
-              <ArrowRightCircle className="ml-2 h-4 w-4" />
-            </span>
+            Voltar
           </Button>
+        ) : (
+          <div></div>
+        )}
+        
+        <Button 
+          onClick={goToNextStep}
+          className="px-6 py-3 rounded-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-medium flex items-center shadow-lg"
+        >
+          {currentStep === 3 ? 'Buscar Motorista' : 'Continuar'}
+          <ChevronRight className="ml-1 h-5 w-5" />
+        </Button>
+      </div>
+    );
+  };
+
+  return (
+    <div className="w-full bg-gradient-to-b from-blue-900 to-blue-800 rounded-2xl overflow-hidden border border-blue-700 shadow-xl">
+      <div className="p-4">
+        <div className="mb-2 text-white text-center">
+          <h2 className="text-xl font-bold">Seu Transfer em 3 Passos Simples</h2>
         </div>
+        
+        {renderProgressSteps()}
+        {renderRouteSummary()}
+        {renderStepContent()}
+        {renderNavigation()}
 
         {bookingData && showBookingSteps && (
           <BookingSteps 

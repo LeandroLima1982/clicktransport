@@ -1,91 +1,88 @@
 
-import React, { useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 interface DateSelectorProps {
-  label?: string;
-  hideLabel?: boolean;
   date: Date | undefined;
   onSelect: (date: Date | undefined) => void;
   disabledDates?: (date: Date) => boolean;
   isConnected?: boolean;
-  position?: 'left' | 'right';
+  position?: "left" | "right" | "middle";
+  className?: string;
+  hideLabel?: boolean;
 }
 
 const DateSelector: React.FC<DateSelectorProps> = ({
-  label,
-  hideLabel = false,
   date,
   onSelect,
   disabledDates,
   isConnected = false,
-  position = 'left'
+  position = "left",
+  className,
+  hideLabel = false
 }) => {
-  const isMobile = useIsMobile();
-  const [open, setOpen] = React.useState(false);
-  const popoverRef = useRef<HTMLDivElement>(null);
-  
-  // Handle date selection and auto-close
-  const handleSelect = (newDate: Date | undefined) => {
-    onSelect(newDate);
-    setOpen(false);
+  const [open, setOpen] = useState(false);
+
+  const formatDisplayDate = (date: Date | undefined) => {
+    if (!date) return "";
+    return format(date, 'dd/MM/yyyy', { locale: ptBR });
   };
   
-  // Define classes for connected appearance
-  const getConnectedClasses = () => {
-    if (!isConnected) return '';
-    
-    return position === 'left' 
-      ? 'rounded-r-none border-r-0' 
-      : 'rounded-l-none border-l-0';
+  const getBorderRadius = () => {
+    switch(position) {
+      case "left":
+        return isConnected ? "rounded-l-lg rounded-r-none" : "rounded-lg";
+      case "right":
+        return isConnected ? "rounded-r-lg rounded-l-none" : "rounded-lg";
+      case "middle":
+        return isConnected ? "rounded-none" : "rounded-lg";
+      default:
+        return "rounded-lg";
+    }
   };
-  
+
   return (
-    <div className={hideLabel ? "" : "space-y-2"}>
-      {!hideLabel && label && (
-        <Label className="text-gray-700 block text-sm font-medium">
-          {label}
-        </Label>
-      )}
+    <div className={cn("w-full", className)}>
+      {!hideLabel && <div className="text-sm font-medium mb-1.5">Data</div>}
+      
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button 
-            variant="outline" 
-            className={`w-full justify-start text-left font-normal py-5 md:py-6 border border-gray-100 shadow-sm bg-white hover:bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 ${getConnectedClasses()}`}
-          >
-            <CalendarIcon className="mr-2 h-5 w-5 text-amber-400" />
-            {date ? (
-              format(date, "dd/MM/yyyy", { locale: ptBR })
-            ) : (
-              <span className="text-gray-400">Selecione uma data</span>
+          <Button
+            variant="outline"
+            className={cn(
+              `w-full h-10 pl-3 pr-2 text-left font-normal border border-gray-200
+               bg-white hover:bg-gray-50 focus:ring-1 focus:ring-blue-500
+               transition-colors justify-between items-center`,
+              getBorderRadius(),
+              !date && "text-gray-500"
             )}
+          >
+            {date ? formatDisplayDate(date) : "Selecionar data"}
+            <CalendarIcon className="h-4 w-4 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align={isMobile ? "center" : "start"} sideOffset={5}>
-          <Calendar 
-            mode="single" 
-            selected={date} 
-            onSelect={handleSelect} 
-            initialFocus 
-            className={cn("p-3 pointer-events-auto")}
+        
+        <PopoverContent className="w-auto p-0 bg-white rounded-lg shadow-lg" align="start">
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={(newDate) => {
+              onSelect(newDate);
+              setOpen(false);
+            }}
             disabled={disabledDates}
             locale={ptBR}
-            classNames={{
-              day_selected: "bg-amber-400 text-amber-900 hover:bg-amber-400 hover:text-amber-900 focus:bg-amber-400 focus:text-amber-900",
-              day_today: "bg-amber-100 text-amber-800",
-              nav_button_previous: "hover:bg-amber-50",
-              nav_button_next: "hover:bg-amber-50",
-              caption: "text-amber-800",
-              head_cell: "text-amber-600 font-medium",
-            }}
+            initialFocus
           />
         </PopoverContent>
       </Popover>
