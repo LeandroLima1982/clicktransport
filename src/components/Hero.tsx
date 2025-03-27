@@ -77,7 +77,7 @@ const Hero: React.FC = () => {
 
   // Build the gradient style dynamically
   const gradientStyle = `bg-gradient-to-b from-${styles.gradient_from_color}/${styles.gradient_from_opacity} to-${styles.gradient_to_color}/${styles.gradient_to_opacity}`;
-  return <section className="relative min-h-[130vh] md:min-h-[50vh] w-full flex items-center justify-center overflow-hidden mx-0">
+  return <section className="relative min-h-[75vh] md:min-h-[50vh] w-full flex items-center justify-center overflow-hidden mx-0">
       {/* Background image */}
       <div className="absolute inset-0 -z-10 bg-cover bg-center" style={{
       backgroundImage: `url(${backgroundImage})`
