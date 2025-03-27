@@ -107,7 +107,7 @@ const Hero: React.FC = () => {
           <p className={`text-base md:text-lg mb-6 md:mb-8 text-${styles.description_color} drop-shadow max-w-2xl mx-auto`}>Conectamos você a motoristas profissionais e veículos de alto padrão, garantindo deslocamentos eficientes, seguros e personalizados para negócios, turismo ou eventos.</p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="outline" size={isMobile ? "default" : "lg"} onClick={scrollToSolutionsSection} className="text-base font-medium bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-md border-0 transition-all duration-300">Agende seu transfer</Button>
+            
           </div>
         </div>
       </div>
