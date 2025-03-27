@@ -3,14 +3,16 @@ import React, { useEffect, ReactNode } from 'react';
 
 interface TransitionEffectProps {
   children: ReactNode;
-  direction?: 'fade' | 'slide-up' | 'slide-down' | 'slide-left' | 'slide-right';
+  direction?: 'fade' | 'slide-up' | 'slide-down' | 'slide-left' | 'slide-right' | 'scale' | 'float';
   duration?: number;
+  delay?: number;
 }
 
 const TransitionEffect: React.FC<TransitionEffectProps> = ({ 
   children,
   direction = 'fade',
-  duration = 500
+  duration = 500,
+  delay = 0
 }) => {
   useEffect(() => {
     // Intersection Observer to detect when elements come into view
@@ -51,6 +53,10 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
         return 'animate-slide-in-left';
       case 'slide-right':
         return 'animate-slide-in-right';
+      case 'scale':
+        return 'animate-scale-in';
+      case 'float':
+        return 'animate-float';
       case 'fade':
       default:
         return 'animate-fade-in';
@@ -60,8 +66,12 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
   // Return the children wrapped in a div with transition classes
   return (
     <div 
-      className={`${getTransitionClass()} transition-all duration-${duration}`}
-      style={{ animationDuration: `${duration}ms` }}
+      className={`${getTransitionClass()} transition-all`}
+      style={{ 
+        animationDuration: `${duration}ms`,
+        animationDelay: `${delay}ms`,
+        animationFillMode: 'both'
+      }}
     >
       {children}
     </div>
