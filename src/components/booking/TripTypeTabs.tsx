@@ -17,7 +17,7 @@ const TripTypeTabs: React.FC<TripTypeTabsProps> = ({
   
   return (
     <TransitionEffect direction="fade" delay={150}>
-      <div className="glass-switch rounded-full px-1 py-0.5 border border-white/60 shadow-lg w-full max-w-[160px] md:max-w-[180px] flex justify-center">
+      <div className="glass-switch rounded-full px-1.5 py-1 border border-white/80 shadow-lg w-full max-w-[170px] md:max-w-[190px] flex justify-center mt-5">
         <ToggleGroup 
           type="single" 
           value={value} 
@@ -26,13 +26,13 @@ const TripTypeTabs: React.FC<TripTypeTabsProps> = ({
         >
           <ToggleGroupItem 
             value="oneway" 
-            className="rounded-full text-xs py-1 flex-1 data-[state=on]:bg-[#F8D748] data-[state=on]:shadow-md data-[state=on]:text-amber-900 transition-all duration-200 data-[state=on]:font-medium text-white font-medium"
+            className="rounded-full text-xs md:text-sm py-1.5 flex-1 data-[state=on]:bg-[#F8D748] data-[state=on]:shadow-md data-[state=on]:text-amber-900 transition-all duration-200 data-[state=on]:font-medium text-white font-medium"
           >
             Ida
           </ToggleGroupItem>
           <ToggleGroupItem 
             value="roundtrip" 
-            className="rounded-full text-xs py-1 flex-1 data-[state=on]:bg-[#F8D748] data-[state=on]:shadow-md data-[state=on]:text-amber-900 transition-all duration-200 data-[state=on]:font-medium text-white font-medium"
+            className="rounded-full text-xs md:text-sm py-1.5 flex-1 data-[state=on]:bg-[#F8D748] data-[state=on]:shadow-md data-[state=on]:text-amber-900 transition-all duration-200 data-[state=on]:font-medium text-white font-medium"
           >
             Ida e Volta
           </ToggleGroupItem>

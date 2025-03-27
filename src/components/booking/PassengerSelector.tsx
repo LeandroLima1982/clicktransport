@@ -30,11 +30,11 @@ const PassengerSelector: React.FC<PassengerSelectorProps> = ({
   return (
     <TransitionEffect direction="fade" delay={250}>
       <div className="space-y-2">
-        <label className="text-white -700 block text-sm font-medium">
+        <label className="text-black block text-sm font-semibold">
           Passageiros
         </label>
         <Select value={value} onValueChange={handleValueChange} open={open} onOpenChange={setOpen}>
-          <SelectTrigger className="w-full py-5 md:py-6 rounded-lg border border-gray-100 shadow-sm bg-white focus:border-amber-300 focus:ring-amber-300 text-gray-700 transition-all duration-200 hover:border-amber-200">
+          <SelectTrigger className="w-full py-5 md:py-6 rounded-lg border border-gray-200 shadow-sm bg-white/95 focus:border-amber-300 focus:ring-amber-300 text-gray-700 transition-all duration-200 hover:border-amber-200">
             <div className="flex items-center">
               <Users className="mr-2 h-5 w-5 text-amber-400" />
               {value ? 
@@ -48,7 +48,7 @@ const PassengerSelector: React.FC<PassengerSelectorProps> = ({
               }
             </div>
           </SelectTrigger>
-          <SelectContent className="max-h-[200px] bg-white shadow-lg border border-gray-100 z-50">
+          <SelectContent className="max-h-[200px] bg-white shadow-lg border border-gray-200 z-50">
             {passengerOptions.map(num => 
               <SelectItem 
                 key={num} 

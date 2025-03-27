@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -155,16 +156,16 @@ const BookingForm: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-gradient-to-b from-[#1C4D9B]/70 to-[#002366] rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border border-white/30 shadow-[0_15px_50px_rgba(0,0,0,0.45)] glass-morphism transition-all duration-300">
-      <div className="relative pt-5 md:pt-8 pb-6 md:pb-8 px-5 md:px-6 lg:px-8">
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+    <div className="w-full bg-gradient-to-b from-[#1C4D9B]/0 to-[#002366]/35 rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border-b border-l border-r border-white/30 shadow-[0_15px_50px_rgba(0,0,0,0.5)] glass-morphism transition-all duration-300">
+      <div className="relative pt-2 md:pt-3 pb-6 md:pb-8 px-5 md:px-6 lg:px-8">
+        <div className="flex justify-center mb-4">
           <TripTypeTabs value={tripType} onChange={setTripType} />
         </div>
         
-        <div className="space-y-5 md:space-y-6 mt-4">
+        <div className="space-y-5 md:space-y-6 mt-6">
           <div className="grid md:grid-cols-2 gap-4 md:gap-5">
-            <div className="rounded-lg border border-[#D4AF37]/50 p-3 bg-white/15 hover:bg-white/20 transition-colors duration-200 shadow-lg">
-              <Label className="block text-sm font-semibold text-white mb-2">
+            <div className="rounded-lg border border-[#D4AF37]/60 p-3 bg-white/20 hover:bg-white/25 transition-colors duration-200 shadow-lg input-shadow">
+              <Label className="block text-sm font-semibold text-black mb-2">
                 De onde vai sair?
               </Label>
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
@@ -173,14 +174,14 @@ const BookingForm: React.FC = () => {
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
                       <MapPin className="h-4 w-4 text-[#F8D748]" />
                     </div>
-                    <Input placeholder="Digite seu endereço: rua, número, bairro" value={originValue} onChange={handleManualOriginChange} className="pl-9 pr-3 py-2.5 text-sm bg-white/95 border-gray-100 h-10 focus:border-[#D4AF37] focus:ring-[#D4AF37] placeholder:text-gray-500" />
+                    <Input placeholder="Digite seu endereço: rua, número, bairro" value={originValue} onChange={handleManualOriginChange} className="pl-9 pr-3 py-2.5 text-sm bg-white/95 border-gray-200 h-10 focus:border-[#D4AF37] focus:ring-[#D4AF37] placeholder:text-gray-300" />
                   </div>
                 </div>
                 <div className="w-full sm:w-[180px]">
                   <div className="flex">
                     <Select value={originCityId} onValueChange={setOriginCityId}>
-                      <SelectTrigger className="h-10 bg-white/95 text-gray-700 border-gray-100 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
-                        <SelectValue placeholder="Selecione cidade" className="text-gray-500" />
+                      <SelectTrigger className="h-10 bg-white/95 text-gray-700 border-gray-200 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
+                        <SelectValue placeholder="Selecione cidade" className="text-gray-400" />
                       </SelectTrigger>
                       <SelectContent className="bg-white">
                         {cities.filter(city => city.is_active !== false).map(city => <SelectItem key={city.id} value={city.id}>
@@ -193,8 +194,8 @@ const BookingForm: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-[#D4AF37]/50 p-3 bg-white/15 hover:bg-white/20 transition-colors duration-200 shadow-lg">
-              <Label className="block text-sm font-semibold text-white mb-2">
+            <div className="rounded-lg border border-[#D4AF37]/60 p-3 bg-white/20 hover:bg-white/25 transition-colors duration-200 shadow-lg input-shadow">
+              <Label className="block text-sm font-semibold text-black mb-2">
                 Para onde vai?
               </Label>
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
@@ -203,13 +204,13 @@ const BookingForm: React.FC = () => {
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
                       <MapPin className="h-4 w-4 text-[#F8D748]" />
                     </div>
-                    <Input placeholder="Digite seu destino: rua, número, bairro" value={destinationValue} onChange={handleManualDestinationChange} className="pl-9 pr-3 py-2.5 text-sm bg-white/95 border-gray-100 h-10 focus:border-[#D4AF37] focus:ring-[#D4AF37] placeholder:text-gray-500" />
+                    <Input placeholder="Digite seu destino: rua, número, bairro" value={destinationValue} onChange={handleManualDestinationChange} className="pl-9 pr-3 py-2.5 text-sm bg-white/95 border-gray-200 h-10 focus:border-[#D4AF37] focus:ring-[#D4AF37] placeholder:text-gray-300" />
                   </div>
                 </div>
                 <div className="w-full sm:w-[180px]">
                   <Select value={destinationCityId} onValueChange={setDestinationCityId}>
-                    <SelectTrigger className="h-10 bg-white/95 text-gray-700 border-gray-100 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
-                      <SelectValue placeholder="Selecione cidade" className="text-gray-500" />
+                    <SelectTrigger className="h-10 bg-white/95 text-gray-700 border-gray-200 focus:border-[#D4AF37] focus:ring-[#D4AF37]">
+                      <SelectValue placeholder="Selecione cidade" className="text-gray-400" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
                       {cities.filter(city => city.is_active !== false).map(city => <SelectItem key={city.id} value={city.id}>
@@ -239,8 +240,8 @@ const BookingForm: React.FC = () => {
           {renderDistanceInfo()}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-            <div className="md:col-span-2">
-              <Label className="text-white block text-sm font-semibold mb-2">
+            <div className="md:col-span-2 rounded-lg border border-[#D4AF37]/60 bg-white/20 hover:bg-white/25 p-3 shadow-lg input-shadow">
+              <Label className="text-black block text-sm font-semibold mb-2">
                 Vai quando?
               </Label>
               <div className="flex flex-col sm:flex-row sm:space-x-0">
@@ -253,14 +254,14 @@ const BookingForm: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="rounded-lg border border-[#D4AF37]/60 bg-white/20 hover:bg-white/25 p-3 shadow-lg input-shadow">
               <PassengerSelector value={passengers} onChange={setPassengers} />
             </div>
           </div>
 
           {tripType === 'roundtrip' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-[#D4AF37]/40">
-              <div>
-                <Label className="text-white block text-sm font-semibold mb-2">
+              <div className="rounded-lg border border-[#D4AF37]/60 bg-white/20 hover:bg-white/25 p-3 shadow-lg input-shadow">
+                <Label className="text-black block text-sm font-semibold mb-2">
                   Volta quando?
                 </Label>
                 <div className="flex flex-col sm:flex-row sm:space-x-0">
