@@ -27,10 +27,10 @@ const BookingProgress: React.FC<BookingProgressProps> = ({ currentStep, totalSte
         </div>
         
         {/* Step indicators */}
-        {steps.map((step, index) => {
+        {steps.slice(0, totalSteps).map((step, index) => {
           const Icon = step.icon;
           const isCompleted = index < currentStep;
-          const isActive = index === currentStep;
+          const isActive = index === currentStep - 1;
           
           return (
             <div key={index} className="flex flex-col items-center z-10">
