@@ -1,5 +1,6 @@
 
-import React, { useEffect, ReactNode } from 'react';
+import React, { useEffect, ReactNode, useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TransitionEffectProps {
   children: ReactNode;
@@ -8,6 +9,8 @@ interface TransitionEffectProps {
   delay?: number;
   className?: string;
   perspective?: number;
+  threshold?: number;
+  rootMargin?: string;
 }
 
 const TransitionEffect: React.FC<TransitionEffectProps> = ({ 
@@ -16,39 +19,53 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
   duration = 500,
   delay = 0,
   className = '',
-  perspective = 1000
+  perspective = 1000,
+  threshold = 0.1,
+  rootMargin = '0px 0px -50px 0px'
 }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const isMobile = useIsMobile();
+  
+  // Adjust animations for mobile
+  const effectiveDirection = isMobile && direction === 'slide-left' ? 'slide-up' : direction;
+  const effectiveDuration = isMobile ? Math.min(duration, 600) : duration;
+  
   useEffect(() => {
     // Intersection Observer to detect when elements come into view
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         // Add the 'visible' class when the element is in view
         if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
+          setIsVisible(true);
+          // Once visible, no need to observe anymore
+          if (entry.target instanceof Element) {
+            observer.unobserve(entry.target);
+          }
         }
       });
     }, {
       root: null, // viewport
-      threshold: 0.1, // trigger when 10% of the item is visible
-      rootMargin: '0px 0px -50px 0px' // negative bottom margin to trigger earlier
+      threshold: threshold, // trigger when % of the item is visible
+      rootMargin: rootMargin // margin to trigger earlier
     });
     
-    // Observe all stagger items
-    document.querySelectorAll('.stagger-item').forEach(item => {
-      observer.observe(item);
-    });
+    // Create a ref to the current element
+    const currentElement = document.querySelector('.transition-container:last-of-type');
+    
+    if (currentElement) {
+      observer.observe(currentElement);
+    }
     
     return () => {
-      // Cleanup
-      document.querySelectorAll('.stagger-item').forEach(item => {
-        observer.unobserve(item);
-      });
+      if (currentElement) {
+        observer.unobserve(currentElement);
+      }
     };
-  }, []);
+  }, [threshold, rootMargin]);
   
   // Create transition class based on the direction
   const getTransitionClass = () => {
-    switch(direction) {
+    switch(effectiveDirection) {
       case 'slide-up':
         return 'animate-fade-in-up';
       case 'slide-down':
@@ -76,13 +93,13 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
   // Return the children wrapped in a div with transition classes
   return (
     <div 
-      className={`${getTransitionClass()} transition-all ${className}`}
+      className={`transition-container ${isVisible ? getTransitionClass() : 'opacity-0'} transition-all ${className}`}
       style={{ 
-        animationDuration: `${duration}ms`,
+        animationDuration: `${effectiveDuration}ms`,
         animationDelay: `${delay}ms`,
         animationFillMode: 'both',
         perspective: `${perspective}px`,
-        transformStyle: direction.includes('3d') || direction.includes('depth') ? 'preserve-3d' : 'flat'
+        transformStyle: effectiveDirection.includes('3d') || effectiveDirection.includes('depth') ? 'preserve-3d' : 'flat'
       }}
     >
       {children}
