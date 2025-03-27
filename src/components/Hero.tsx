@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
-
 interface HeroStyles {
   gradient_from_color: string;
   gradient_from_opacity: number;
@@ -13,7 +11,6 @@ interface HeroStyles {
   title_color: string;
   description_color: string;
 }
-
 const defaultStyles: HeroStyles = {
   gradient_from_color: 'black',
   gradient_from_opacity: 40,
@@ -22,12 +19,10 @@ const defaultStyles: HeroStyles = {
   title_color: 'white',
   description_color: 'white/90'
 };
-
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
   const [backgroundImage, setBackgroundImage] = useState<string>('/lovable-uploads/hero-bg.jpg');
   const [styles, setStyles] = useState<HeroStyles>(defaultStyles);
-
   useEffect(() => {
     // Fetch the hero background image and styles from Supabase
     const fetchHeroData = async () => {
@@ -67,14 +62,12 @@ const Hero: React.FC = () => {
     };
     fetchHeroData();
   }, []);
-
   const scrollToBookingForm = () => {
     document.getElementById('request-service')?.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
   };
-
   const scrollToSolutionsSection = () => {
     document.getElementById('solutions-section')?.scrollIntoView({
       behavior: 'smooth',
@@ -84,8 +77,7 @@ const Hero: React.FC = () => {
 
   // Build the gradient style dynamically
   const gradientStyle = `bg-gradient-to-b from-${styles.gradient_from_color}/${styles.gradient_from_opacity} to-${styles.gradient_to_color}/${styles.gradient_to_opacity}`;
-
-  return <section className="relative min-h-[75vh] md:min-h-[50vh] w-full flex items-center justify-center overflow-hidden mx-0">
+  return <section className="relative min-h-[90vh] md:min-h-[50vh] w-full flex items-center justify-center overflow-hidden mx-0">
       {/* Background image */}
       <div className="absolute inset-0 -z-10 bg-cover bg-center" style={{
       backgroundImage: `url(${backgroundImage})`
@@ -118,5 +110,4 @@ const Hero: React.FC = () => {
       </div>
     </section>;
 };
-
 export default Hero;
