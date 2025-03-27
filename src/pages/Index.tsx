@@ -84,11 +84,8 @@ const Index = () => {
       <Navbar />
       <div className="w-full bg-slate-50/0 relative">
         <SectionController defaultSections={sections}>
-          {/* We predefine sections above, but could also be done like this: */}
-          {/* 
-          <section id="hero"><Hero /></section>
-          <section id="booking">...</section>
-          */}
+          {/* We could alternatively define sections as children */}
+          {Object.values(sections)}
         </SectionController>
         <Footer />
       </div>

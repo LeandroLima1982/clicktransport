@@ -1,10 +1,11 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SectionConfig {
   id: string;
   name: string;
-  order: number;
+  sort_order: number;
   visible: boolean;
   componentPath: string;
 }
@@ -27,7 +28,7 @@ const SectionController: React.FC<SectionControllerProps> = ({
         const { data, error } = await supabase
           .from('section_order')
           .select('*')
-          .order('order', { ascending: true });
+          .order('sort_order', { ascending: true });
         
         if (error) {
           throw error;

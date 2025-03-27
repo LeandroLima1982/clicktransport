@@ -10,7 +10,7 @@ interface Section {
   id: string;
   name: string;
   description: string;
-  order: number;
+  sort_order: number;
   visible: boolean;
   componentPath: string;
 }
@@ -20,7 +20,7 @@ const defaultSections: Section[] = [
     id: 'hero',
     name: 'Banner Principal',
     description: 'Seção inicial com título e imagem de destaque',
-    order: 1,
+    sort_order: 1,
     visible: true,
     componentPath: 'src/components/Hero.tsx'
   },
@@ -28,7 +28,7 @@ const defaultSections: Section[] = [
     id: 'booking',
     name: 'Formulário de Agendamento',
     description: 'Formulário para solicitar transporte',
-    order: 2,
+    sort_order: 2,
     visible: true,
     componentPath: 'src/components/BookingForm.tsx'
   },
@@ -36,7 +36,7 @@ const defaultSections: Section[] = [
     id: 'transport-types',
     name: 'Tipos de Transporte',
     description: 'Carrossel com opções de tipos de transporte disponíveis',
-    order: 3,
+    sort_order: 3,
     visible: true,
     componentPath: 'src/components/TransportTypes.tsx'
   },
@@ -44,7 +44,7 @@ const defaultSections: Section[] = [
     id: 'solutions',
     name: 'Soluções',
     description: 'Descrição das soluções oferecidas',
-    order: 4,
+    sort_order: 4,
     visible: true,
     componentPath: 'src/components/Solutions.tsx'
   },
@@ -52,7 +52,7 @@ const defaultSections: Section[] = [
     id: 'process-steps',
     name: 'Etapas do Processo',
     description: 'Passos para solicitar e utilizar o serviço',
-    order: 5,
+    sort_order: 5,
     visible: true,
     componentPath: 'src/components/ProcessSteps.tsx'
   },
@@ -60,7 +60,7 @@ const defaultSections: Section[] = [
     id: 'testimonials',
     name: 'Depoimentos',
     description: 'Depoimentos de clientes satisfeitos',
-    order: 6,
+    sort_order: 6,
     visible: true,
     componentPath: 'src/components/Testimonials.tsx'
   },
@@ -68,7 +68,7 @@ const defaultSections: Section[] = [
     id: 'faq',
     name: 'Perguntas Frequentes',
     description: 'Respostas para dúvidas comuns',
-    order: 7,
+    sort_order: 7,
     visible: true,
     componentPath: 'src/components/FAQ.tsx'
   },
@@ -76,7 +76,7 @@ const defaultSections: Section[] = [
     id: 'cta',
     name: 'Chamada para Ação',
     description: 'Seção final com botão de ação principal',
-    order: 8,
+    sort_order: 8,
     visible: true,
     componentPath: 'src/components/CTA.tsx'
   }
@@ -97,15 +97,15 @@ const SectionReorder: React.FC = () => {
       const { data, error } = await supabase
         .from('section_order')
         .select('*')
-        .order('order', { ascending: true });
+        .order('sort_order', { ascending: true });
       
       if (error) {
         throw error;
       }
       
       if (data && data.length > 0) {
-        setSections(data);
-        setOriginalSections([...data]);
+        setSections(data as Section[]);
+        setOriginalSections([...data] as Section[]);
       } else {
         // If no data in DB, use default sections
         setSections([...defaultSections]);
@@ -159,7 +159,7 @@ const SectionReorder: React.FC = () => {
       // Update order numbers
       const reorderedSections = updatedSections.map((section, index) => ({
         ...section,
-        order: index + 1
+        sort_order: index + 1
       }));
       
       setSections(reorderedSections);
@@ -184,7 +184,7 @@ const SectionReorder: React.FC = () => {
       // Update order numbers
       const reorderedSections = updatedSections.map((section, index) => ({
         ...section,
-        order: index + 1
+        sort_order: index + 1
       }));
       
       setSections(reorderedSections);
@@ -250,7 +250,7 @@ const SectionReorder: React.FC = () => {
       const { data: sectionsConfig, error } = await supabase
         .from('section_order')
         .select('*')
-        .order('order', { ascending: true });
+        .order('sort_order', { ascending: true });
       
       if (error) throw error;
       

@@ -479,6 +479,39 @@ export type Database = {
         }
         Relationships: []
       }
+      section_order: {
+        Row: {
+          componentpath: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          componentpath: string
+          created_at?: string
+          description?: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          componentpath?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: []
+      }
       service_orders: {
         Row: {
           company_id: string
