@@ -50,30 +50,42 @@ const Hero: React.FC = () => {
   };
   
   return (
-    <section className="relative overflow-hidden md:py-[19px] py-[5px]">
-      <div className="container mx-auto md:px-6 relative z-10 py-[25px] px-[38px]">
+    <section className="relative overflow-hidden min-h-[500px] flex items-center">
+      <div className="container mx-auto relative z-10 py-12 md:py-20 px-4 md:px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="tracking-tighter mb-6 mx-0 px-0 text-xl font-extrabold md:text-4xl">Sua Plataforma de Transporte Executivo</h1>
-          <p className="text-gray-600 mb-8 text-sm my-0 px-0 py-0 font-extralight md:text-base mx-0">Conectamos você a motoristas executivos
- que atendam suas necessidades de transporte com qualidade e pontualidade.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="gap-2 text-base font-medium" onClick={scrollToBookingForm}>
+          <h1 className="text-2xl md:text-4xl font-extrabold mb-4 md:mb-6 tracking-tighter text-white">
+            Sua Plataforma de Transporte Executivo
+          </h1>
+          <p className="text-sm md:text-base mb-6 md:mb-8 text-white/90 font-light">
+            Conectamos você a motoristas executivos que atendam suas necessidades de transporte com qualidade e pontualidade.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button 
+              size={isMobile ? "default" : "lg"} 
+              className="gap-2 text-base font-medium bg-primary hover:bg-primary/90" 
+              onClick={scrollToBookingForm}
+            >
               Reserve Agora
               <ArrowRight className="h-5 w-5" />
             </Button>
-            <Button variant="outline" size="lg" className="text-base font-medium" onClick={scrollToSolutionsSection}>
+            <Button 
+              variant="outline" 
+              size={isMobile ? "default" : "lg"} 
+              className="text-base font-medium bg-white/10 text-white border-white/20 hover:bg-white/20" 
+              onClick={scrollToSolutionsSection}
+            >
               Nossos Serviços
             </Button>
           </div>
         </div>
       </div>
       
-      {/* Background image */}
+      {/* Background image with overlay */}
       <div 
         className="absolute inset-0 -z-10 bg-cover bg-center" 
         style={{ backgroundImage: `url(${backgroundImage})` }}
       >
-        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="absolute inset-0 bg-black/60"></div>
       </div>
     </section>
   );
