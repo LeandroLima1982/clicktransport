@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,7 +43,6 @@ const defaultTransportTypes: TransportType[] = [{
   description: 'Soluções para transporte de grupos em eventos corporativos',
   duration: 'A partir de 4h • R$600,00'
 }];
-
 const TransportTypes: React.FC = () => {
   const [transportTypes, setTransportTypes] = useState<TransportType[]>(defaultTransportTypes);
   const [loading, setLoading] = useState(true);
@@ -78,7 +76,6 @@ const TransportTypes: React.FC = () => {
   const resumeAutoplay = () => {
     setIsPaused(false);
   };
-
   useEffect(() => {
     const fetchImages = async () => {
       setLoading(true);
@@ -133,14 +130,12 @@ const TransportTypes: React.FC = () => {
       }
     };
   }, [startAutoplay]);
-
   const scrollToBookingForm = () => {
     window.scrollTo({
       top: window.innerHeight * 0.65,
       behavior: 'smooth'
     });
   };
-
   return <section className="w-full py-8 md:py-12 lg:py-16 bg-gradient-to-b from-gray-50 to-white">
       <div className="w-full px-4 md:px-6 py-[4px] max-w-[1400px] mx-auto">
         <TransitionEffect direction="up" delay={200}>
@@ -155,7 +150,7 @@ const TransportTypes: React.FC = () => {
           align: "start",
           loop: true
         }} className="w-full" ref={carouselRef} onMouseEnter={pauseAutoplay} onMouseLeave={resumeAutoplay} onTouchStart={pauseAutoplay} onTouchEnd={resumeAutoplay}>
-            <CarouselContent className="-ml-2 md:-ml-4 my-0 mx-0 px-0">
+            <CarouselContent className="-ml-2 md:-ml-4 px-0 mx-0 my-[41px]">
               {transportTypes.map((type, index) => <CarouselItem key={index} className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 px-[12px] mx-[8px] my-[12px]">
                   <div className="relative h-full overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl" onMouseEnter={() => {
                 pauseAutoplay();
@@ -202,5 +197,4 @@ const TransportTypes: React.FC = () => {
       </div>
     </section>;
 };
-
 export default TransportTypes;
