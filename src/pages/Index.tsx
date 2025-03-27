@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -12,11 +13,14 @@ import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import BookingForm from '@/components/BookingForm';
+import TransitionEffect from '@/components/TransitionEffect';
+
 const Index = () => {
   const {
     isLoading,
     user
   } = useAuth();
+  const isMobile = useIsMobile();
 
   // Show a brief loading indicator only during initial authentication check
   if (isLoading) {
@@ -25,15 +29,18 @@ const Index = () => {
         <div className="ml-3 text-lg font-medium">Carregando...</div>
       </div>;
   }
-  return <main className="w-full">
+  
+  return <main className="w-full overflow-x-hidden">
       <Navbar />
       <div className="w-full bg-slate-50/0">
         <Hero />
         <TransportTypes />
         <div id="request-service" className="relative max-w-[1000px] mx-auto py-12 md:px-6 px-4 scroll-mt-24">
-          <div className="shadow-xl animate-scale-in">
-            <BookingForm />
-          </div>
+          <TransitionEffect direction="up" delay={100}>
+            <div className="shadow-xl rounded-2xl overflow-hidden animate-scale-in">
+              <BookingForm />
+            </div>
+          </TransitionEffect>
         </div>
         <Solutions />
         <ProcessSteps />
@@ -44,4 +51,5 @@ const Index = () => {
       </div>
     </main>;
 };
+
 export default Index;

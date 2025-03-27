@@ -7,13 +7,15 @@ interface TransitionEffectProps {
   delay?: number;
   direction?: 'up' | 'down' | 'left' | 'right' | 'fade' | 'scale';
   duration?: number;
+  className?: string;
 }
 
 const TransitionEffect: React.FC<TransitionEffectProps> = ({ 
   children, 
   delay = 0,
   direction = 'up',
-  duration = 500
+  duration = 500,
+  className = ""
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const isMobile = useIsMobile();
@@ -61,10 +63,11 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
 
   return (
     <div
-      className={`transition-all ease-out w-full ${getTransitionStyles()} ${getMobileClass()}`}
+      className={`transition-all ease-out w-full ${getTransitionStyles()} ${getMobileClass()} ${className}`}
       style={{ 
         transitionDuration: `${duration}ms`, 
-        transitionDelay: `${delay}ms`
+        transitionDelay: `${delay}ms`,
+        willChange: 'transform, opacity'
       }}
     >
       {children}

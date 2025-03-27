@@ -22,15 +22,28 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   isAuthenticating
 }) => {
   const menuLinks = [
-    { title: 'Home', href: '/' },
-    { title: 'Serviços', href: '/#solutions-section', action: () => {
-      document.getElementById('solutions-section')?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
-    }},
-    { title: 'Sobre Nós', href: '/about' },
-    { title: 'Contato', href: '/contact' },
+    { 
+      title: 'Home', 
+      href: '/' 
+    },
+    { 
+      title: 'Serviços', 
+      href: '/#solutions-section', 
+      action: () => {
+        document.getElementById('solutions-section')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    },
+    { 
+      title: 'Sobre Nós', 
+      href: '/about' 
+    },
+    { 
+      title: 'Contato', 
+      href: '/contact' 
+    },
   ];
 
   const menuVariants = {
@@ -65,16 +78,16 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop with improved blur */}
           <motion.div
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
           
-          {/* Menu */}
+          {/* Menu with smoother animation */}
           <motion.div
             className="fixed top-[70px] left-0 right-0 bg-white shadow-lg z-50 rounded-b-2xl overflow-hidden max-h-[85vh] overflow-y-auto"
             variants={menuVariants}
@@ -82,9 +95,9 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             animate="open"
             exit="closed"
           >
-            <div className="p-4 space-y-4">
+            <div className="p-5 space-y-5">
               {menuLinks.map((link) => (
-                <motion.div key={link.href} variants={itemVariants}>
+                <motion.div key={link.href} variants={itemVariants} className="transform transition-all duration-200 hover:translate-x-1">
                   {link.action ? (
                     <button
                       onClick={() => {
@@ -114,8 +127,8 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
               <div className="border-t border-gray-100 my-4"></div>
               
               {user ? (
-                <div className="space-y-3">
-                  <motion.div variants={itemVariants} className="p-4 bg-gray-50 rounded-lg">
+                <div className="space-y-4">
+                  <motion.div variants={itemVariants} className="p-4 bg-gray-50 rounded-xl">
                     <div className="flex items-center mb-2">
                       <User className="w-5 h-5 mr-2 text-primary" />
                       <span className="font-medium">
@@ -131,7 +144,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                     <button
                       onClick={handleSignOut}
                       disabled={isAuthenticating}
-                      className="w-full flex items-center justify-center py-3 px-4 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors"
+                      className="w-full flex items-center justify-center py-3 px-4 bg-red-50 text-red-700 rounded-xl hover:bg-red-100 transition-colors transform active:scale-98"
                     >
                       {isAuthenticating ? (
                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -146,7 +159,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                 <motion.div variants={itemVariants}>
                   <Link
                     to="/auth"
-                    className="block w-full py-3 px-4 bg-primary text-white text-center font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                    className="block w-full py-4 px-6 bg-primary text-white text-center font-medium rounded-xl hover:bg-primary/90 transition-colors transform active:scale-98"
                     onClick={onClose}
                   >
                     Entrar / Registrar
