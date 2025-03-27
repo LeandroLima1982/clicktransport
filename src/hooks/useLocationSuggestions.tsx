@@ -23,6 +23,12 @@ export const useLocationSuggestions = () => {
   }, [requestCount]);
 
   const handleOriginChange = (value: string) => {
+    // Limpar sugestões se o valor for vazio
+    if (!value || value.length < 2) {
+      setOriginSuggestions([]);
+      return;
+    }
+    
     if (originTimeoutRef.current) {
       clearTimeout(originTimeoutRef.current);
     }
@@ -48,7 +54,7 @@ export const useLocationSuggestions = () => {
       }, 100); // Delay menor para CEP (100ms)
     } 
     // Para endereços comuns, espera um pouco mais para o usuário terminar de digitar
-    else if (value.length >= 3) {
+    else if (value.length >= 2) { // Reduzido para 2 caracteres para sugerir mais cedo
       setIsLoadingSuggestions(true);
       
       originTimeoutRef.current = setTimeout(async () => {
@@ -66,13 +72,19 @@ export const useLocationSuggestions = () => {
         } finally {
           setIsLoadingSuggestions(false);
         }
-      }, 500); // 500ms para endereços normais
+      }, 300); // Reduzido para 300ms para ser mais responsivo
     } else {
       setOriginSuggestions([]);
     }
   };
 
   const handleDestinationChange = (value: string) => {
+    // Limpar sugestões se o valor for vazio
+    if (!value || value.length < 2) {
+      setDestinationSuggestions([]);
+      return;
+    }
+    
     if (destinationTimeoutRef.current) {
       clearTimeout(destinationTimeoutRef.current);
     }
@@ -98,7 +110,7 @@ export const useLocationSuggestions = () => {
       }, 100); // Delay menor para CEP (100ms)
     }
     // Para endereços comuns, espera um pouco mais
-    else if (value.length >= 3) {
+    else if (value.length >= 2) { // Reduzido para 2 caracteres
       setIsLoadingSuggestions(true);
       
       destinationTimeoutRef.current = setTimeout(async () => {
@@ -115,20 +127,20 @@ export const useLocationSuggestions = () => {
         } finally {
           setIsLoadingSuggestions(false);
         }
-      }, 500); // 500ms para endereços normais
+      }, 300); // Reduzido para 300ms
     } else {
       setDestinationSuggestions([]);
     }
   };
 
   const selectOriginSuggestion = (suggestion: any) => {
-    const placeName = suggestion.place_name;
+    const placeName = suggestion.place_name || suggestion.text;
     setOriginSuggestions([]);
     return placeName;
   };
 
   const selectDestinationSuggestion = (suggestion: any) => {
-    const placeName = suggestion.place_name;
+    const placeName = suggestion.place_name || suggestion.text;
     setDestinationSuggestions([]);
     return placeName;
   };

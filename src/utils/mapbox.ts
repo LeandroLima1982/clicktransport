@@ -1,11 +1,13 @@
+
 export const MAPBOX_TOKEN = 'pk.eyJ1IjoiaW50ZWdyYXRpb25zIiwiYSI6ImNsZXhyYTB3bDBzZHQzeG82ZW04Z2lzdHIifQ.Gn1IoGg-zRmgmZxNWLdMHw';
 
 export const fetchAddressSuggestions = async (query: string) => {
-  if (!query || query.length < 3) return [];
+  if (!query || query.length < 2) return [];
   
   try {
+    console.log('Fetching address suggestions for:', query);
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?country=br&types=address,place,locality,region&access_token=${MAPBOX_TOKEN}`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?country=br&types=address,place,locality,region&access_token=${MAPBOX_TOKEN}&autocomplete=true&language=pt`
     );
     
     if (!response.ok) {
@@ -13,6 +15,7 @@ export const fetchAddressSuggestions = async (query: string) => {
     }
     
     const data = await response.json();
+    console.log('Received suggestions:', data.features?.length || 0);
     return data.features || [];
   } catch (error) {
     console.error('Error fetching address suggestions:', error);
@@ -47,10 +50,29 @@ export const formatPlaceName = (suggestion: any) => {
 };
 
 // Get the appropriate icon based on place type
-export const getPlaceIcon = (placeType: string) => {
-  // We would ideally return a JSX element here, but to keep this util pure,
-  // we'll return the type as a string and let the component handle the icon
-  return placeType;
+export const getPlaceIcon = (suggestion: any) => {
+  if (!suggestion) return 'pin';
+  
+  const placeType = Array.isArray(suggestion.place_type) ? suggestion.place_type[0] : suggestion.place_type;
+  
+  switch (placeType) {
+    case 'address':
+      return 'home';
+    case 'place':
+      return 'building';
+    case 'region':
+      return 'map';
+    case 'postcode':
+      return 'mail';
+    case 'locality':
+      return 'landmark';
+    case 'poi':
+      return 'map-pin';
+    case 'neighborhood':
+      return 'home';
+    default:
+      return 'map-pin';
+  }
 };
 
 // Check if a string is a valid Brazilian CEP (postal code)
@@ -128,7 +150,7 @@ export const reverseGeocode = async (coords: [number, number]): Promise<string |
   try {
     const [lng, lat] = coords;
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&language=pt`
     );
     
     if (!response.ok) {

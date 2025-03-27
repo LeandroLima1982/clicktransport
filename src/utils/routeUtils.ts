@@ -25,37 +25,45 @@ export const calculateRoute = async (
   destination: string
 ): Promise<RouteInfo | null> => {
   try {
-    // First check if this is a city pair with stored distance
-    const cityDistance = await getCityDistanceFromDb(origin, destination);
-    if (cityDistance) {
-      console.log("Using stored city distance:", cityDistance);
-      return {
-        success: true,
-        distance: cityDistance.distance,
-        duration: cityDistance.duration,
-        // Add placeholder locations
-        start_location: { lat: 0, lng: 0 },
-        end_location: { lat: 0, lng: 0 },
-        geometry: ''
-      };
+    if (!origin || !destination) {
+      console.log("Missing origin or destination");
+      return null;
     }
-    
-    // If no stored distance, geocode the addresses and calculate route
+
+    // Geocode the addresses to get coordinates
     const originCoords = await geocodeAddress(origin);
     const destinationCoords = await geocodeAddress(destination);
 
     if (!originCoords || !destinationCoords) {
-      console.error('Failed to geocode one of the addresses');
+      console.error('Failed to geocode one of the addresses:', { origin, destination });
       return null;
     }
+
+    console.log("Got coordinates", { originCoords, destinationCoords });
 
     // Calculate the route between the coordinates
     const route = await getRouteInfo(originCoords, destinationCoords);
     
+    if (!route) {
+      console.error('Failed to get route info');
+      return null;
+    }
+    
     // Transform to match expected format
-    if (route) {
-      return {
-        success: true,
+    return {
+      success: true,
+      distance: route.distance,
+      duration: route.duration,
+      geometry: route.geometry,
+      start_location: { 
+        lat: originCoords[1], 
+        lng: originCoords[0] 
+      },
+      end_location: { 
+        lat: destinationCoords[1], 
+        lng: destinationCoords[0] 
+      },
+      route: {
         distance: route.distance,
         duration: route.duration,
         geometry: route.geometry,
@@ -66,105 +74,19 @@ export const calculateRoute = async (
         end_location: { 
           lat: destinationCoords[1], 
           lng: destinationCoords[0] 
-        },
-        route: {
-          distance: route.distance,
-          duration: route.duration,
-          geometry: route.geometry,
-          start_location: { 
-            lat: originCoords[1], 
-            lng: originCoords[0] 
-          },
-          end_location: { 
-            lat: destinationCoords[1], 
-            lng: destinationCoords[0] 
-          }
         }
-      };
-    }
-    
-    return null;
+      }
+    };
   } catch (error) {
     console.error('Error calculating route:', error);
     return null;
   }
 };
 
-// Function to check if we have a saved distance between city names
-const getCityDistanceFromDb = async (origin: string, destination: string): Promise<RouteInfo | null> => {
+// Function to geocode an address to coordinates
+export const geocodeAddress = async (address: string): Promise<[number, number] | null> => {
   try {
-    // Extract city names from addresses (assuming they're in the format "Street, City, State")
-    const originCity = extractCityFromAddress(origin);
-    const destinationCity = extractCityFromAddress(destination);
-    
-    if (!originCity || !destinationCity) {
-      return null;
-    }
-    
-    console.log("Checking distance between cities:", originCity, destinationCity);
-    
-    // Find city IDs from names
-    const { data: citiesData, error: citiesError } = await supabase
-      .from('cities')
-      .select('id, name, state')
-      .or(`name.ilike.${originCity}%,name.ilike.${destinationCity}%`);
-    
-    if (citiesError || !citiesData || citiesData.length < 2) {
-      console.log("Could not find both cities in database:", citiesError);
-      return null;
-    }
-    
-    const originCityData = citiesData.find(c => c.name.toLowerCase().includes(originCity.toLowerCase()));
-    const destinationCityData = citiesData.find(c => c.name.toLowerCase().includes(destinationCity.toLowerCase()));
-    
-    if (!originCityData || !destinationCityData) {
-      console.log("Could not match cities from address to database");
-      return null;
-    }
-    
-    // Look up distance between these cities
-    const { data: distanceData, error: distanceError } = await supabase
-      .from('city_distances')
-      .select('*')
-      .or(`and(origin_id.eq.${originCityData.id},destination_id.eq.${destinationCityData.id}),and(origin_id.eq.${destinationCityData.id},destination_id.eq.${originCityData.id})`)
-      .limit(1);
-    
-    if (distanceError || !distanceData || distanceData.length === 0) {
-      console.log("No stored distance found between cities");
-      return null;
-    }
-    
-    // Return the stored distance data
-    return {
-      distance: distanceData[0].distance,
-      duration: distanceData[0].duration
-    };
-  } catch (error) {
-    console.error("Error checking city distance:", error);
-    return null;
-  }
-};
-
-// Helper function to extract city name from address
-const extractCityFromAddress = (address: string): string | null => {
-  try {
-    // Try to extract city from address format like "Street, City, State"
-    const parts = address.split(',');
-    if (parts.length >= 2) {
-      // City is usually the second-to-last part before the state
-      return parts[parts.length - 2].trim();
-    }
-    return null;
-  } catch (error) {
-    console.error("Error extracting city from address:", error);
-    return null;
-  }
-};
-
-const geocodeAddress = async (address: string): Promise<[number, number] | null> => {
-  if (!address || !MAPBOX_TOKEN) return null;
-
-  try {
+    console.log("Geocoding address:", address);
     const response = await fetch(
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&country=br&limit=1`
     );
@@ -174,28 +96,28 @@ const geocodeAddress = async (address: string): Promise<[number, number] | null>
     }
 
     const data = await response.json();
+    
     if (data.features && data.features.length > 0) {
-      return data.features[0].center;
+      const coordinates = data.features[0].center;
+      return [coordinates[0], coordinates[1]]; // [longitude, latitude]
     }
+    
     return null;
   } catch (error) {
-    console.error("Error geocoding address:", error);
+    console.error('Error geocoding address:', error);
     return null;
   }
 };
 
-const getRouteInfo = async (
+// Function to get route information between two coordinates
+export const getRouteInfo = async (
   origin: [number, number],
   destination: [number, number]
-): Promise<RouteInfo | null> => {
-  if (!origin || !destination || !MAPBOX_TOKEN) return null;
-
+): Promise<{ distance: number; duration: number; geometry: string } | null> => {
   try {
-    const originStr = `${origin[0]},${origin[1]}`;
-    const destinationStr = `${destination[0]},${destination[1]}`;
-    
+    console.log("Getting route between:", origin, destination);
     const response = await fetch(
-      `https://api.mapbox.com/directions/v5/mapbox/driving/${originStr};${destinationStr}?geometries=polyline&overview=full&steps=false&access_token=${MAPBOX_TOKEN}`
+      `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?access_token=${MAPBOX_TOKEN}&overview=full&geometries=polyline`
     );
 
     if (!response.ok) {
@@ -208,48 +130,29 @@ const getRouteInfo = async (
       const route = data.routes[0];
       
       return {
-        distance: route.distance / 1000, // Convert meters to kilometers
-        duration: Math.round(route.duration / 60), // Convert seconds to minutes
+        // Convert distance from meters to kilometers
+        distance: Math.round((route.distance / 1000) * 10) / 10,
+        // Convert duration from seconds to minutes
+        duration: Math.round(route.duration / 60),
         geometry: route.geometry
       };
     }
     
     return null;
   } catch (error) {
-    console.error("Error getting route info:", error);
+    console.error('Error getting route info:', error);
     return null;
   }
 };
 
-export const getVehicleRates = async (): Promise<VehicleRate[]> => {
-  try {
-    // In a real app, fetch from database
-    // Simulating API call for now
-    return [
-      {
-        id: 'sedan',
-        name: 'Sedan Executivo',
-        basePrice: 79.90,
-        pricePerKm: 2.10,
-        capacity: 4
-      },
-      {
-        id: 'suv',
-        name: 'SUV Premium',
-        basePrice: 119.90,
-        pricePerKm: 2.49,
-        capacity: 6
-      },
-      {
-        id: 'van',
-        name: 'Van Executiva',
-        basePrice: 199.90,
-        pricePerKm: 3.39,
-        capacity: 15
-      }
-    ];
-  } catch (error) {
-    console.error('Error loading vehicle rates:', error);
-    return [];
-  }
+// Function to create a static map URL with the route
+export const createStaticMapUrl = (
+  origin: [number, number],
+  destination: [number, number],
+  width = 500,
+  height = 300
+): string => {
+  const markers = `pin-s-a+4A89F3(${origin[0]},${origin[1]}),pin-s-b+EB4C36(${destination[0]},${destination[1]})`;
+  
+  return `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${markers}/auto/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
 };

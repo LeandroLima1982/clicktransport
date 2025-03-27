@@ -30,7 +30,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
   isLoading = false,
   className
 }) => {
-  const hasSuggestions = suggestions.length > 0;
+  const hasSuggestions = suggestions && suggestions.length > 0;
   
   return (
     <div className={cn("relative", className)}>
@@ -51,6 +51,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
           onChange={onChange}
           placeholder={placeholder}
           className="pl-10 pr-8 py-2 h-12 rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white"
+          autoComplete="off" // Desativa o autocompletar do navegador
         />
         
         {value && (
@@ -76,7 +77,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
           <ul className="py-1">
             {suggestions.map((suggestion, index) => (
               <li
-                key={suggestion.id}
+                key={suggestion.id || index}
                 className={`px-4 py-2 cursor-pointer hover:bg-gray-100 text-sm ${
                   index !== suggestions.length - 1 ? 'border-b border-gray-100' : ''
                 }`}

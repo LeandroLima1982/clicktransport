@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { calculateRoute, RouteInfo } from '@/utils/routeUtils';
 
@@ -7,84 +7,72 @@ interface MapPreviewProps {
   origin: string;
   destination: string;
   onRouteCalculated?: (routeData: { distance: number; duration: number }) => void;
-}
-
-// Extended RouteInfo with success and route properties
-interface RouteResult {
-  success: boolean;
-  route: {
-    distance: number;
-    duration: number;
-    start_location: { lat: number; lng: number };
-    end_location: { lat: number; lng: number };
-    geometry: string;
-  };
+  showMap?: boolean;
 }
 
 const MapPreview: React.FC<MapPreviewProps> = ({ 
   origin, 
   destination,
-  onRouteCalculated
+  onRouteCalculated,
+  showMap = true
 }) => {
   const [isCalculating, setIsCalculating] = useState(false);
   const [mapUrl, setMapUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [routeData, setRouteData] = useState<RouteInfo | null>(null);
+  
+  const shouldCalculateRoute = useMemo(() => {
+    return origin && destination && origin.length > 5 && destination.length > 5;
+  }, [origin, destination]);
   
   useEffect(() => {
-    if (origin && destination) {
+    if (shouldCalculateRoute) {
       fetchRouteData();
+    } else {
+      // Reset when inputs are cleared
+      setMapUrl(null);
+      setRouteData(null);
     }
-  }, [origin, destination]);
+  }, [shouldCalculateRoute, origin, destination]);
 
   const fetchRouteData = async () => {
+    if (!shouldCalculateRoute) return;
+    
     setIsCalculating(true);
     setError(null);
     
     try {
+      console.log('Calculating route between:', origin, destination);
       const routeInfo = await calculateRoute(origin, destination);
       
       if (!routeInfo) {
+        console.error("Failed to calculate route");
         setError("Não foi possível calcular a rota.");
         return;
       }
       
-      // Convert RouteInfo to RouteResult format
-      const result: RouteResult = {
-        success: true,
-        route: {
-          distance: routeInfo.distance,
-          duration: routeInfo.duration,
-          start_location: { lat: 0, lng: 0 }, // Default values
-          end_location: { lat: 0, lng: 0 }, // Default values
-          geometry: routeInfo.geometry || ""
-        }
-      };
-      
-      // Extract coordinates from geometry or use defaults
-      const startCoords = "0,0";
-      const endCoords = "0,0";
+      setRouteData(routeInfo);
       
       // Create Mapbox static image URL
       const mapboxToken = 'pk.eyJ1IjoiaW50ZWdyYXRpb25zIiwiYSI6ImNsZXhyYTB3bDBzZHQzeG82ZW04Z2lzdHIifQ.Gn1IoGg-zRmgmZxNWLdMHw';
       
-      let url;
-      if (result.route.geometry) {
-        const path = `path-2+0077ff-0.5(${encodeURIComponent(result.route.geometry)})`;
+      if (routeInfo.start_location && routeInfo.end_location) {
+        const startCoords = `${routeInfo.start_location.lng},${routeInfo.start_location.lat}`;
+        const endCoords = `${routeInfo.end_location.lng},${routeInfo.end_location.lat}`;
+        
+        // Create a static image with the route
         const markers = `pin-s-a+4A89F3(${startCoords}),pin-s-b+EB4C36(${endCoords})`;
-        url = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${path},${markers}/auto/500x300@2x?access_token=${mapboxToken}`;
-      } else {
-        // Fallback to a simple map centered on Brazil if no geometry is available
-        url = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/-53.2,-14.4,3/500x300@2x?access_token=${mapboxToken}`;
-      }
-      
-      setMapUrl(url);
-      
-      // Pass route data to parent component
-      if (onRouteCalculated) {
-        onRouteCalculated({
-          distance: result.route.distance,
-          duration: result.route.duration
-        });
+        const url = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/auto/500x300@2x?padding=50&markers=${markers}&access_token=${mapboxToken}`;
+        
+        setMapUrl(url);
+        
+        // Pass route data to parent component
+        if (onRouteCalculated) {
+          onRouteCalculated({
+            distance: routeInfo.distance,
+            duration: routeInfo.duration
+          });
+        }
       }
     } catch (err) {
       console.error("Erro ao calcular rota:", err);
@@ -93,6 +81,8 @@ const MapPreview: React.FC<MapPreviewProps> = ({
       setIsCalculating(false);
     }
   };
+
+  if (!showMap) return null;
 
   if (isCalculating) {
     return (
@@ -127,6 +117,12 @@ const MapPreview: React.FC<MapPreviewProps> = ({
         className="w-full h-full object-cover"
         onError={() => setError("Não foi possível carregar o mapa.")}
       />
+      {routeData && (
+        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 text-xs flex justify-around">
+          <div>Distância: {routeData.distance} km</div>
+          <div>Tempo estimado: {Math.floor(routeData.duration / 60)}h {routeData.duration % 60}min</div>
+        </div>
+      )}
     </div>
   );
 };
