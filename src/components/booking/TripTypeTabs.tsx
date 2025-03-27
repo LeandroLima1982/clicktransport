@@ -1,32 +1,53 @@
+
 import React from 'react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TransitionEffect from '@/components/TransitionEffect';
+import { Plane, ArrowLeftRight } from 'lucide-react';
+
 interface TripTypeTabsProps {
   value: 'oneway' | 'roundtrip';
   onChange: (value: 'oneway' | 'roundtrip') => void;
 }
+
 const TripTypeTabs: React.FC<TripTypeTabsProps> = ({
   value,
   onChange
 }) => {
   const isMobile = useIsMobile();
-  return <TransitionEffect direction="fade" delay={150}>
+  
+  return (
+    <TransitionEffect direction="fade" delay={150}>
       <div className="glass-switch rounded-full px-1.5 py-1 border border-amber-200/70 shadow-lg w-full max-w-[230px] md:max-w-[200px] flex justify-center mx-auto animate-float">
-        <ToggleGroup type="single" value={value} onValueChange={val => val && onChange(val as 'oneway' | 'roundtrip')} className="w-full flex mx-[27px]">
-          <ToggleGroupItem value="oneway" className="text-xs md:text-sm py-1.5 flex-1 data-[state=on]:shadow-md transition-all duration-300 
+        <ToggleGroup 
+          type="single" 
+          value={value} 
+          onValueChange={val => val && onChange(val as 'oneway' | 'roundtrip')} 
+          className="w-full flex mx-[27px]"
+        >
+          <ToggleGroupItem 
+            value="oneway" 
+            className="text-xs md:text-sm py-1.5 flex-1 data-[state=on]:shadow-md transition-all duration-300 
                       data-[state=on]:font-medium font-medium bg-gradient-to-r from-amber-400/90 to-amber-300/90 
-                      hover:from-amber-400 hover:to-amber-300 rounded-full text-[#002366] data-[state=on]:scale-105">
-            Agendar sua Ida
+                      hover:from-amber-400 hover:to-amber-300 rounded-full text-[#002366] data-[state=on]:scale-105"
+          >
+            <Plane className="w-3 h-3 mr-1" />
+            Somente Ida
           </ToggleGroupItem>
-          <ToggleGroupItem value="roundtrip" className="rounded-full text-xs md:text-sm py-1.5 flex-1 data-[state=on]:bg-gradient-to-r 
+          <ToggleGroupItem 
+            value="roundtrip" 
+            className="rounded-full text-xs md:text-sm py-1.5 flex-1 data-[state=on]:bg-gradient-to-r 
                       data-[state=on]:from-amber-400/90 data-[state=on]:to-amber-300/90 data-[state=on]:shadow-md 
                       data-[state=on]:text-[#002366] transition-all duration-300 data-[state=on]:font-medium 
-                      text-white font-medium data-[state=on]:scale-105">
+                      text-white font-medium data-[state=on]:scale-105"
+          >
+            <ArrowLeftRight className="w-3 h-3 mr-1" />
             Ida e Volta
           </ToggleGroupItem>
         </ToggleGroup>
       </div>
-    </TransitionEffect>;
+    </TransitionEffect>
+  );
 };
+
 export default TripTypeTabs;
