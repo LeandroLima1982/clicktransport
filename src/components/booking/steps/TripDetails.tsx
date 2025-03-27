@@ -1,10 +1,12 @@
 
 import React, { useEffect, useState } from 'react';
-import { Calendar, MapPin, Users, Clock, AlertTriangle, DollarSign, Navigation } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, AlertTriangle, DollarSign, Navigation, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Vehicle } from './VehicleSelection';
 import { useDestinationsService } from '@/hooks/useDestinationsService';
+import { Button } from '@/components/ui/button';
+import { shareViaWhatsApp, formatBookingShareMessage } from '@/services/notifications/notificationService';
 
 interface TripDetailsProps {
   selectedVehicle: Vehicle | undefined;
@@ -72,6 +74,31 @@ const TripDetails: React.FC<TripDetailsProps> = ({
   };
   
   const priceBreakdown = getPriceBreakdown();
+
+  // Handle sharing trip details via WhatsApp
+  const handleShareViaWhatsApp = () => {
+    if (!bookingData.date) return;
+    
+    const shareData = {
+      origin: bookingData.origin,
+      destination: bookingData.destination,
+      date: bookingData.date,
+      returnDate: bookingData.returnDate,
+      tripType: bookingData.tripType,
+      time: bookingData.time,
+      returnTime: bookingData.returnTime,
+      duration: estimatedTime,
+      passengerData: []
+    };
+    
+    const message = formatBookingShareMessage(shareData, {
+      simplified: true,
+      totalPrice: totalPrice,
+      includePrice: true
+    });
+    
+    shareViaWhatsApp(message);
+  };
 
   return (
     <div className="space-y-6">
@@ -205,6 +232,15 @@ const TripDetails: React.FC<TripDetailsProps> = ({
               </div>
             </div>
           )}
+          
+          <Button 
+            variant="outline" 
+            onClick={handleShareViaWhatsApp}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <Share2 className="h-4 w-4" />
+            Compartilhar detalhes da viagem via WhatsApp
+          </Button>
           
           <div className="flex items-start bg-yellow-50 p-4 rounded-lg">
             <AlertTriangle className="h-5 w-5 text-yellow-500 mr-2 mt-0.5" />
