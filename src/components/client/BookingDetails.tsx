@@ -66,19 +66,23 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
     }
   };
   
+  // Improved date formatting function with error handling
   const formatDate = (dateString: string) => {
     try {
       return format(parseISO(dateString), "dd 'de' MMMM, yyyy", { locale: ptBR });
     } catch (e) {
+      console.error('Error formatting date:', e, dateString);
       return dateString;
     }
   };
   
+  // Improved time formatting function with error handling
   const formatTime = (dateString: string) => {
     try {
       return format(parseISO(dateString), "HH:mm", { locale: ptBR });
     } catch (e) {
-      return "";
+      console.error('Error formatting time:', e, dateString);
+      return "--:--";
     }
   };
   
@@ -113,6 +117,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
       const formattedTime = format(date, "HH:mm", { locale: ptBR });
       return { date: formattedDate, time: formattedTime };
     } catch (e) {
+      console.error('Error formatting creation date time:', e, dateString);
       return { date: "", time: "" };
     }
   };
@@ -156,17 +161,18 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
   
   return (
     <Sheet open={isOpen} onOpenChange={onOpen => !onOpen && onClose()}>
-      <SheetContent side={isMobile ? "bottom" : "right"} className={isMobile ? "h-[90vh] rounded-t-xl" : "max-w-md"}>
+      <SheetContent side={isMobile ? "bottom" : "right"} className={isMobile ? "h-[90vh] max-h-[90vh] rounded-t-xl overflow-hidden" : "max-w-md overflow-hidden"}>
         {isMobile && <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4" />}
         
-        <SheetHeader className="mb-6">
+        <SheetHeader className="mb-4 sticky top-0 bg-background pb-2 z-10">
           <SheetTitle className="flex items-center justify-between">
             <span>Detalhes da Reserva</span>
             <BookingStatus status={booking.status} />
           </SheetTitle>
         </SheetHeader>
         
-        <div className="space-y-6 overflow-y-auto pb-16">
+        {/* Added overflow-y-auto to make content scrollable, max-h-full to ensure it stays within container */}
+        <div className="space-y-6 overflow-y-auto pb-20" style={{ maxHeight: 'calc(100% - 130px)' }}>
           <div>
             <div className="text-lg font-semibold mb-1">
               Código: {booking.reference_code}

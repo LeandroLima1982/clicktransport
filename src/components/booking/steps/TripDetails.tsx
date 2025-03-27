@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Calendar, MapPin, Users, Clock, AlertTriangle, DollarSign, Navigation, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
