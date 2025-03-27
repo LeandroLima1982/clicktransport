@@ -137,7 +137,7 @@ const TransportTypes: React.FC = () => {
     });
   };
   return <section className="w-full py-8 md:py-12 lg:py-16 bg-gradient-to-b from-gray-50 to-white">
-      <div className="w-full px-4 md:px-6 py-[4px] max-w-[1400px] mx-auto">
+      <div className="w-full px-4 max-w-[1400px] mx-auto my-0 md:px-0 py-0">
         <TransitionEffect direction="up" delay={200}>
           <div className="flex flex-col items-center justify-center mb-8 text-center">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Temos Diversas Opções de Transferes</h2>
@@ -150,7 +150,7 @@ const TransportTypes: React.FC = () => {
           align: "start",
           loop: true
         }} className="w-full" ref={carouselRef} onMouseEnter={pauseAutoplay} onMouseLeave={resumeAutoplay} onTouchStart={pauseAutoplay} onTouchEnd={resumeAutoplay}>
-            <CarouselContent className="-ml-2 md:-ml-4 px-0 mx-0 my-[41px]">
+            <CarouselContent className="-ml-2 md:-ml-4 px-0 my-0 mx-0">
               {transportTypes.map((type, index) => <CarouselItem key={index} className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 px-[12px] mx-[8px] my-[12px]">
                   <div className="relative h-full overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl" onMouseEnter={() => {
                 pauseAutoplay();
