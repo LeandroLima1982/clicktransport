@@ -1,3 +1,4 @@
+
 import { MAPBOX_TOKEN } from './mapbox';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -156,7 +157,7 @@ export const createStaticMapUrl = (
   return `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${markers}/auto/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
 };
 
-// Add the missing function that fetches vehicle rates
+// Add the function that fetches vehicle rates
 export const getVehicleRates = async (): Promise<VehicleRate[]> => {
   try {
     // Try to fetch vehicle rates from the database
@@ -174,8 +175,8 @@ export const getVehicleRates = async (): Promise<VehicleRate[]> => {
       return data.map((rate: any) => ({
         id: rate.id,
         name: rate.name,
-        basePrice: rate.base_price,
-        pricePerKm: rate.price_per_km,
+        basePrice: rate.base_price || rate.baseprice,
+        pricePerKm: rate.price_per_km || rate.priceperkm,
         capacity: rate.capacity
       }));
     }

@@ -8,6 +8,8 @@ export const useLocationSuggestions = () => {
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [requestCount, setRequestCount] = useState(0);
+  const [originSelected, setOriginSelected] = useState(false);
+  const [destinationSelected, setDestinationSelected] = useState(false);
   const originTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -28,6 +30,9 @@ export const useLocationSuggestions = () => {
       setOriginSuggestions([]);
       return;
     }
+    
+    // Mark as not selected when user types
+    setOriginSelected(false);
     
     if (originTimeoutRef.current) {
       clearTimeout(originTimeoutRef.current);
@@ -85,6 +90,9 @@ export const useLocationSuggestions = () => {
       return;
     }
     
+    // Mark as not selected when user types
+    setDestinationSelected(false);
+    
     if (destinationTimeoutRef.current) {
       clearTimeout(destinationTimeoutRef.current);
     }
@@ -136,24 +144,34 @@ export const useLocationSuggestions = () => {
   const selectOriginSuggestion = (suggestion: any) => {
     const placeName = suggestion.place_name || suggestion.text;
     setOriginSuggestions([]);
+    setOriginSelected(true); // Mark as selected
     return placeName;
   };
 
   const selectDestinationSuggestion = (suggestion: any) => {
     const placeName = suggestion.place_name || suggestion.text;
     setDestinationSuggestions([]);
+    setDestinationSelected(true); // Mark as selected
     return placeName;
+  };
+
+  // Function to check if both addresses have been selected from suggestions
+  const areBothAddressesSelected = () => {
+    return originSelected && destinationSelected;
   };
 
   return {
     originSuggestions,
     destinationSuggestions,
     isLoadingSuggestions,
+    originSelected,
+    destinationSelected,
     handleOriginChange,
     handleDestinationChange,
     selectOriginSuggestion,
     selectDestinationSuggestion,
     clearOriginSuggestions: () => setOriginSuggestions([]),
-    clearDestinationSuggestions: () => setDestinationSuggestions([])
+    clearDestinationSuggestions: () => setDestinationSuggestions([]),
+    areBothAddressesSelected
   };
 };

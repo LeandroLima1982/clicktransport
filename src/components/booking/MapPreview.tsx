@@ -8,35 +8,37 @@ interface MapPreviewProps {
   destination: string;
   onRouteCalculated?: (routeData: { distance: number; duration: number }) => void;
   showMap?: boolean;
+  shouldCalculate?: boolean; // New prop to control when to calculate
 }
 
 const MapPreview: React.FC<MapPreviewProps> = ({ 
   origin, 
   destination,
   onRouteCalculated,
-  showMap = true
+  showMap = true,
+  shouldCalculate = false // Default to false to prevent auto-calculation
 }) => {
   const [isCalculating, setIsCalculating] = useState(false);
   const [mapUrl, setMapUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [routeData, setRouteData] = useState<RouteInfo | null>(null);
   
-  const shouldCalculateRoute = useMemo(() => {
-    return origin && destination && origin.length > 5 && destination.length > 5;
-  }, [origin, destination]);
+  const hasRequiredData = useMemo(() => {
+    return origin && destination && origin.length > 5 && destination.length > 5 && shouldCalculate;
+  }, [origin, destination, shouldCalculate]);
   
   useEffect(() => {
-    if (shouldCalculateRoute) {
+    if (hasRequiredData) {
       fetchRouteData();
     } else {
       // Reset when inputs are cleared
       setMapUrl(null);
       setRouteData(null);
     }
-  }, [shouldCalculateRoute, origin, destination]);
+  }, [hasRequiredData, origin, destination]);
 
   const fetchRouteData = async () => {
-    if (!shouldCalculateRoute) return;
+    if (!hasRequiredData) return;
     
     setIsCalculating(true);
     setError(null);
