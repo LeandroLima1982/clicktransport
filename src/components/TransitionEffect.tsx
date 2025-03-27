@@ -40,9 +40,29 @@ const TransitionEffect: React.FC<TransitionEffectProps> = ({
     };
   }, []);
   
+  // Create transition class based on the direction
+  const getTransitionClass = () => {
+    switch(direction) {
+      case 'slide-up':
+        return 'animate-fade-in-up';
+      case 'slide-down':
+        return 'animate-fade-in-down';
+      case 'slide-left':
+        return 'animate-slide-in-left';
+      case 'slide-right':
+        return 'animate-slide-in-right';
+      case 'fade':
+      default:
+        return 'animate-fade-in';
+    }
+  };
+  
   // Return the children wrapped in a div with transition classes
   return (
-    <div className={`transition-${direction} duration-${duration}`}>
+    <div 
+      className={`${getTransitionClass()} transition-all duration-${duration}`}
+      style={{ animationDuration: `${duration}ms` }}
+    >
       {children}
     </div>
   );
