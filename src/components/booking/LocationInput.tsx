@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MapPin, X, Loader2 } from 'lucide-react';
@@ -30,18 +30,14 @@ const LocationInput: React.FC<LocationInputProps> = ({
   isLoading = false,
   className
 }) => {
+  const [isFocused, setIsFocused] = useState(false);
   const hasSuggestions = suggestions && suggestions.length > 0;
+  const isActive = isFocused || value.length > 0;
   
   return (
     <div className={cn("relative", className)}>
-      {label && (
-        <Label htmlFor={id} className="mb-1.5 block text-sm font-medium">
-          {label}
-        </Label>
-      )}
-      
       <div className="relative">
-        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10">
           <MapPin className="h-5 w-5" />
         </div>
         
@@ -49,16 +45,33 @@ const LocationInput: React.FC<LocationInputProps> = ({
           id={id}
           value={value}
           onChange={onChange}
-          placeholder={placeholder}
-          className="pl-10 pr-8 py-2 h-12 rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white"
-          autoComplete="off" // Desativa o autocompletar do navegador
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          placeholder=""
+          className={cn(
+            "pl-10 pr-8 py-2 h-12 rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white transition-all",
+            isActive ? "pt-6 pb-2" : "py-4"
+          )}
+          autoComplete="off"
         />
+        
+        <Label 
+          htmlFor={id} 
+          className={cn(
+            "absolute left-10 transition-all duration-200 pointer-events-none text-gray-500",
+            isActive 
+              ? "top-1 text-xs transform translate-y-0 text-blue-500" 
+              : "top-1/2 transform -translate-y-1/2"
+          )}
+        >
+          {label}
+        </Label>
         
         {value && (
           <button
             type="button"
             onClick={onClear}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
           >
             <X className="h-4 w-4" />
             <span className="sr-only">Limpar</span>
