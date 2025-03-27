@@ -1,13 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, ImageIcon, Loader2, RefreshCw, Check, AlertTriangle, Smartphone, Monitor } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Upload, ImageIcon, Loader2, RefreshCw, Check, AlertTriangle, Smartphone, Monitor, Layout } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import HeroStylesEditor from './HeroStylesEditor';
+import SectionReorder from './SectionReorder';
 
 interface SiteImage {
   id: string;
@@ -119,6 +120,7 @@ const AppearanceSettings: React.FC = () => {
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [updatedImages, setUpdatedImages] = useState<Record<string, string>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState('images');
 
   useEffect(() => {
     loadCurrentImages();
@@ -349,147 +351,220 @@ const AppearanceSettings: React.FC = () => {
         </Button>
       </div>
 
-      <HeroStylesEditor />
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="images" className="flex items-center">
+            <ImageIcon className="mr-2 h-4 w-4" />
+            Imagens
+          </TabsTrigger>
+          <TabsTrigger value="sections" className="flex items-center">
+            <Layout className="mr-2 h-4 w-4" />
+            Seções
+          </TabsTrigger>
+          <TabsTrigger value="styles" className="flex items-center">
+            <div className="mr-2 h-4 w-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500" />
+            Estilos
+          </TabsTrigger>
+        </TabsList>
 
-      {heroImages.length > 0 && (
-        <>
-          <h3 className="text-xl font-semibold mt-6">Banner Principal</h3>
-          <p className="text-muted-foreground mb-4">
-            Configure diferentes imagens para o banner principal em dispositivos desktop e móveis
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {heroImages.map((section) => (
-              <Card key={section.id} className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center">
-                    {getDeviceIcon(section)}
-                    {section.title}
-                  </CardTitle>
-                  <CardDescription>{section.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="relative aspect-video bg-muted rounded-md overflow-hidden">
-                    {getImageUrl(section) ? (
-                      <img 
-                        src={getImageUrl(section)} 
-                        alt={section.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+        <TabsContent value="images" className="space-y-6">
+          {heroImages.length > 0 && (
+            <>
+              <h3 className="text-xl font-semibold mt-6">Banner Principal</h3>
+              <p className="text-muted-foreground mb-4">
+                Configure diferentes imagens para o banner principal em dispositivos desktop e móveis
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {heroImages.map((section) => (
+                  <Card key={section.id} className="overflow-hidden">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center">
+                        {getDeviceIcon(section)}
+                        {section.title}
+                      </CardTitle>
+                      <CardDescription>{section.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="relative aspect-video bg-muted rounded-md overflow-hidden">
+                        {getImageUrl(section) ? (
+                          <img 
+                            src={getImageUrl(section)} 
+                            alt={section.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={`image-${section.id}`} className="text-sm font-medium">
-                      Carregar nova imagem
-                    </Label>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        id={`image-${section.id}`}
-                        type="file"
-                        accept="image/*"
-                        disabled={uploading[section.id]}
-                        onChange={(e) => handleFileChange(e, section.id)}
-                        className="flex-1"
-                      />
-                      {uploading[section.id] && (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      )}
-                      {updatedImages[section.id] && !uploading[section.id] && (
-                        <Check className="h-4 w-4 text-green-500" />
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {section.devices?.includes('mobile')
-                        ? 'Formato: JPG, PNG ou WebP. Tamanho ideal: 1080x1920px (vertical)'
-                        : 'Formato: JPG, PNG ou WebP. Tamanho ideal: 1920x1080px (horizontal)'}
-                    </p>
-                    <p className="text-xs text-amber-500 flex items-center">
-                      <AlertTriangle className="h-3 w-3 mr-1" /> 
-                      Após atualizar, recarregue a página para ver as mudanças
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </>
-      )}
-
-      {logoImages.length > 0 && (
-        <>
-          <h3 className="text-xl font-semibold mt-6">Logo do Site</h3>
-          <p className="text-muted-foreground mb-4">
-            Esta imagem será exibida como logo principal em todas as páginas do site
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {logoImages.map((section) => (
-              <Card key={section.id} className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <CardTitle>{section.title}</CardTitle>
-                  <CardDescription>{section.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="relative bg-muted rounded-md overflow-hidden p-4 flex justify-center">
-                    {getImageUrl(section) ? (
-                      <img 
-                        src={getImageUrl(section)} 
-                        alt={section.title}
-                        className="h-16 w-auto object-contain"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor={`image-${section.id}`} className="text-sm font-medium">
+                          Carregar nova imagem
+                        </Label>
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            id={`image-${section.id}`}
+                            type="file"
+                            accept="image/*"
+                            disabled={uploading[section.id]}
+                            onChange={(e) => handleFileChange(e, section.id)}
+                            className="flex-1"
+                          />
+                          {uploading[section.id] && (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          )}
+                          {updatedImages[section.id] && !uploading[section.id] && (
+                            <Check className="h-4 w-4 text-green-500" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {section.devices?.includes('mobile')
+                            ? 'Formato: JPG, PNG ou WebP. Tamanho ideal: 1080x1920px (vertical)'
+                            : 'Formato: JPG, PNG ou WebP. Tamanho ideal: 1920x1080px (horizontal)'}
+                        </p>
+                        <p className="text-xs text-amber-500 flex items-center">
+                          <AlertTriangle className="h-3 w-3 mr-1" /> 
+                          Após atualizar, recarregue a página para ver as mudanças
+                        </p>
                       </div>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={`image-${section.id}`} className="text-sm font-medium">
-                      Carregar nova logo
-                    </Label>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        id={`image-${section.id}`}
-                        type="file"
-                        accept="image/*"
-                        disabled={uploading[section.id]}
-                        onChange={(e) => handleFileChange(e, section.id)}
-                        className="flex-1"
-                      />
-                      {uploading[section.id] && (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      )}
-                      {updatedImages[section.id] && !uploading[section.id] && (
-                        <Check className="h-4 w-4 text-green-500" />
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Formato: PNG com fundo transparente recomendado
-                    </p>
-                    <p className="text-xs text-amber-500 flex items-center">
-                      <AlertTriangle className="h-3 w-3 mr-1" /> 
-                      Após atualizar, atualize a página para ver as mudanças
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </>
-      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
 
-      {vehicleImages.length > 0 && (
-        <>
-          <h3 className="text-xl font-semibold mt-6">Imagens de Veículos</h3>
-          <p className="text-muted-foreground mb-4">
-            Estas imagens serão exibidas na seção de seleção de veículos durante o processo de reserva
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {vehicleImages.map((section) => (
+          {logoImages.length > 0 && (
+            <>
+              <h3 className="text-xl font-semibold mt-6">Logo do Site</h3>
+              <p className="text-muted-foreground mb-4">
+                Esta imagem será exibida como logo principal em todas as páginas do site
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {logoImages.map((section) => (
+                  <Card key={section.id} className="overflow-hidden">
+                    <CardHeader className="pb-2">
+                      <CardTitle>{section.title}</CardTitle>
+                      <CardDescription>{section.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="relative bg-muted rounded-md overflow-hidden p-4 flex justify-center">
+                        {getImageUrl(section) ? (
+                          <img 
+                            src={getImageUrl(section)} 
+                            alt={section.title}
+                            className="h-16 w-auto object-contain"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor={`image-${section.id}`} className="text-sm font-medium">
+                          Carregar nova logo
+                        </Label>
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            id={`image-${section.id}`}
+                            type="file"
+                            accept="image/*"
+                            disabled={uploading[section.id]}
+                            onChange={(e) => handleFileChange(e, section.id)}
+                            className="flex-1"
+                          />
+                          {uploading[section.id] && (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          )}
+                          {updatedImages[section.id] && !uploading[section.id] && (
+                            <Check className="h-4 w-4 text-green-500" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Formato: PNG com fundo transparente recomendado
+                        </p>
+                        <p className="text-xs text-amber-500 flex items-center">
+                          <AlertTriangle className="h-3 w-3 mr-1" /> 
+                          Após atualizar, atualize a página para ver as mudanças
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+
+          {vehicleImages.length > 0 && (
+            <>
+              <h3 className="text-xl font-semibold mt-6">Imagens de Veículos</h3>
+              <p className="text-muted-foreground mb-4">
+                Estas imagens serão exibidas na seção de seleção de veículos durante o processo de reserva
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {vehicleImages.map((section) => (
+                  <Card key={section.id} className="overflow-hidden">
+                    <CardHeader className="pb-2">
+                      <CardTitle>{section.title}</CardTitle>
+                      <CardDescription>{section.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="relative aspect-video bg-muted rounded-md overflow-hidden">
+                        {getImageUrl(section) ? (
+                          <img 
+                            src={getImageUrl(section)} 
+                            alt={section.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor={`image-${section.id}`} className="text-sm font-medium">
+                          Carregar nova imagem
+                        </Label>
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            id={`image-${section.id}`}
+                            type="file"
+                            accept="image/*"
+                            disabled={uploading[section.id]}
+                            onChange={(e) => handleFileChange(e, section.id)}
+                            className="flex-1"
+                          />
+                          {uploading[section.id] && (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          )}
+                          {updatedImages[section.id] && !uploading[section.id] && (
+                            <Check className="h-4 w-4 text-green-500" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Formato: JPG, PNG ou WebP. Tamanho máximo: 5MB
+                        </p>
+                        <p className="text-xs text-amber-500 flex items-center">
+                          <AlertTriangle className="h-3 w-3 mr-1" /> 
+                          Componente: {section.componentPath}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+
+          <h3 className="text-xl font-semibold mt-6">Outras Imagens</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {otherImages.map((section) => (
               <Card key={section.id} className="overflow-hidden">
                 <CardHeader className="pb-2">
                   <CardTitle>{section.title}</CardTitle>
@@ -542,64 +617,16 @@ const AppearanceSettings: React.FC = () => {
               </Card>
             ))}
           </div>
-        </>
-      )}
+        </TabsContent>
 
-      <h3 className="text-xl font-semibold mt-6">Outras Imagens</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {otherImages.map((section) => (
-          <Card key={section.id} className="overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle>{section.title}</CardTitle>
-              <CardDescription>{section.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="relative aspect-video bg-muted rounded-md overflow-hidden">
-                {getImageUrl(section) ? (
-                  <img 
-                    src={getImageUrl(section)} 
-                    alt={section.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
-                  </div>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor={`image-${section.id}`} className="text-sm font-medium">
-                  Carregar nova imagem
-                </Label>
-                <div className="flex items-center space-x-2">
-                  <Input
-                    id={`image-${section.id}`}
-                    type="file"
-                    accept="image/*"
-                    disabled={uploading[section.id]}
-                    onChange={(e) => handleFileChange(e, section.id)}
-                    className="flex-1"
-                  />
-                  {uploading[section.id] && (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  )}
-                  {updatedImages[section.id] && !uploading[section.id] && (
-                    <Check className="h-4 w-4 text-green-500" />
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Formato: JPG, PNG ou WebP. Tamanho máximo: 5MB
-                </p>
-                <p className="text-xs text-amber-500 flex items-center">
-                  <AlertTriangle className="h-3 w-3 mr-1" /> 
-                  Componente: {section.componentPath}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        <TabsContent value="sections">
+          <SectionReorder />
+        </TabsContent>
+
+        <TabsContent value="styles">
+          <HeroStylesEditor />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

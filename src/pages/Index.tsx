@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import BookingForm from '@/components/BookingForm';
 import TransitionEffect from '@/components/TransitionEffect';
+import SectionController from '@/components/SectionController';
 
 const Index = () => {
   const {
@@ -29,34 +30,66 @@ const Index = () => {
       </div>;
   }
   
+  // Define sections for the homepage
+  const sections = {
+    hero: (
+      <section id="hero" key="hero">
+        <Hero />
+      </section>
+    ),
+    booking: (
+      <section id="booking" key="booking" className="w-full bg-gray-50 py-8">
+        <div className="relative z-10 max-w-[900px] mx-auto px-4 md:px-6">
+          <TransitionEffect direction="up" delay={100}>
+            <div className="shadow-2xl rounded-2xl overflow-hidden animate-scale-in">
+              <BookingForm />
+            </div>
+          </TransitionEffect>
+        </div>
+      </section>
+    ),
+    'transport-types': (
+      <section id="transport-types" key="transport-types" className="pt-8 md:pt-16 lg:pt-20">
+        <TransportTypes />
+      </section>
+    ),
+    solutions: (
+      <section id="solutions" key="solutions">
+        <Solutions />
+      </section>
+    ),
+    'process-steps': (
+      <section id="process-steps" key="process-steps">
+        <ProcessSteps />
+      </section>
+    ),
+    testimonials: (
+      <section id="testimonials" key="testimonials">
+        <Testimonials />
+      </section>
+    ),
+    faq: (
+      <section id="faq" key="faq">
+        <FAQ />
+      </section>
+    ),
+    cta: (
+      <section id="cta" key="cta">
+        <CTA />
+      </section>
+    )
+  };
+  
   return <main className="w-full overflow-x-hidden">
       <Navbar />
       <div className="w-full bg-slate-50/0 relative">
-        {/* Hero section */}
-        <Hero />
-        
-        {/* Booking form - posicionado em sua própria seção após o hero */}
-        <section className="w-full bg-gray-50 py-8">
-          <div className="relative z-10 max-w-[900px] mx-auto px-4 md:px-6">
-            <TransitionEffect direction="up" delay={100}>
-              <div className="shadow-2xl rounded-2xl overflow-hidden animate-scale-in">
-                <BookingForm />
-              </div>
-            </TransitionEffect>
-          </div>
-        </section>
-        
-        {/* Transport types card carousel */}
-        <div className="pt-8 md:pt-16 lg:pt-20">
-          <TransportTypes />
-        </div>
-        
-        {/* Rest of the page content */}
-        <Solutions />
-        <ProcessSteps />
-        <Testimonials />
-        <FAQ />
-        <CTA />
+        <SectionController defaultSections={sections}>
+          {/* We predefine sections above, but could also be done like this: */}
+          {/* 
+          <section id="hero"><Hero /></section>
+          <section id="booking">...</section>
+          */}
+        </SectionController>
         <Footer />
       </div>
     </main>;
