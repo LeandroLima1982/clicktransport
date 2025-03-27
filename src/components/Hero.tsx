@@ -89,12 +89,9 @@ const Hero: React.FC = () => {
       {/* Content container */}
       <div className="container px-4 md:px-6 z-10 my-8 md:my-12">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className={`text-3xl md:text-5xl font-extrabold mb-4 md:mb-6 tracking-tight text-${styles.title_color} drop-shadow-md`}>Sua Plataforma
- de Transporte Executivo</h1>
+          <h1 className={`text-3xl md:text-5xl font-extrabold mb-4 md:mb-6 tracking-tight text-${styles.title_color} drop-shadow-md`}>Transporte Executivo Premium</h1>
           
-          <p className={`text-base md:text-lg mb-6 md:mb-8 text-${styles.description_color} drop-shadow max-w-2xl mx-auto`}>Conectamos você a motoristas executivos
- que atendam suas necessidades de transporte
- com qualidade e pontualidade.</p>
+          <p className={`text-base md:text-lg mb-6 md:mb-8 text-${styles.description_color} drop-shadow max-w-2xl mx-auto`}>Conectamos você a motoristas profissionais e veículos de alto padrão, garantindo deslocamentos eficientes, seguros e personalizados para negócios, turismo ou eventos.</p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size={isMobile ? "default" : "lg"} className="gap-2 text-base font-medium bg-primary hover:bg-primary/90 shadow-lg transition-all duration-300" onClick={scrollToBookingForm}>
