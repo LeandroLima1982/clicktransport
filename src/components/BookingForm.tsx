@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingSteps } from './booking';
@@ -156,15 +155,15 @@ const BookingForm: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-gradient-to-b from-[#1C4D9B]/0 to-[#002366]/35 rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border-b border-l border-r border-white/30 shadow-[0_15px_50px_rgba(0,0,0,0.5)] glass-morphism transition-all duration-300">
-      <div className="relative pt-2 md:pt-3 pb-6 md:pb-8 px-5 md:px-6 lg:px-8">
-        <div className="flex justify-center mb-4">
+    <div className="w-full bg-gradient-to-b from-transparent to-[#002366]/70 rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border-b border-l border-r border-[#D4AF37]/60 shadow-[0_15px_50px_rgba(0,0,0,0.5)] glass-morphism transition-all duration-300">
+      <div className="relative pt-6 md:pt-7 pb-6 md:pb-8 px-5 md:px-6 lg:px-8">
+        <div className="flex justify-center mb-6 mt-1">
           <TripTypeTabs value={tripType} onChange={setTripType} />
         </div>
         
         <div className="space-y-5 md:space-y-6 mt-6">
           <div className="grid md:grid-cols-2 gap-4 md:gap-5">
-            <div className="rounded-lg border border-[#D4AF37]/60 p-3 bg-white/20 hover:bg-white/25 transition-colors duration-200 shadow-lg input-shadow">
+            <div className="rounded-lg border border-[#D4AF37] p-3 bg-white/20 hover:bg-white/25 transition-colors duration-200 shadow-lg input-shadow">
               <Label className="block text-sm font-semibold text-black mb-2">
                 De onde vai sair?
               </Label>
@@ -194,7 +193,7 @@ const BookingForm: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-[#D4AF37]/60 p-3 bg-white/20 hover:bg-white/25 transition-colors duration-200 shadow-lg input-shadow">
+            <div className="rounded-lg border border-[#D4AF37] p-3 bg-white/20 hover:bg-white/25 transition-colors duration-200 shadow-lg input-shadow">
               <Label className="block text-sm font-semibold text-black mb-2">
                 Para onde vai?
               </Label>
@@ -224,14 +223,14 @@ const BookingForm: React.FC = () => {
           </div>
 
           <div className="hidden md:flex justify-center items-center h-6 relative">
-            <Separator className="w-full bg-[#D4AF37]/40" />
+            <Separator className="w-full bg-[#D4AF37]/60" />
             <div className="absolute bg-white rounded-full p-1 shadow-md">
               <ArrowRight className="h-4 w-4 text-[#002366]" />
             </div>
           </div>
 
           <div className="flex md:hidden justify-center items-center h-6 relative mb-2">
-            <Separator className="w-full bg-[#D4AF37]/40" />
+            <Separator className="w-full bg-[#D4AF37]/60" />
             <div className="absolute bg-white rounded-full p-1 shadow-md">
               <ArrowDown className="h-4 w-4 text-[#002366]" />
             </div>
@@ -240,7 +239,7 @@ const BookingForm: React.FC = () => {
           {renderDistanceInfo()}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-            <div className="md:col-span-2 rounded-lg border border-[#D4AF37]/60 bg-white/20 hover:bg-white/25 p-3 shadow-lg input-shadow">
+            <div className="md:col-span-2 rounded-lg border border-[#D4AF37] bg-white/20 hover:bg-white/25 p-3 shadow-lg input-shadow">
               <Label className="text-black block text-sm font-semibold mb-2">
                 Vai quando?
               </Label>
@@ -254,13 +253,13 @@ const BookingForm: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-[#D4AF37]/60 bg-white/20 hover:bg-white/25 p-3 shadow-lg input-shadow">
+            <div className="rounded-lg border border-[#D4AF37] bg-white/20 hover:bg-white/25 p-3 shadow-lg input-shadow">
               <PassengerSelector value={passengers} onChange={setPassengers} />
             </div>
           </div>
 
-          {tripType === 'roundtrip' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-[#D4AF37]/40">
-              <div className="rounded-lg border border-[#D4AF37]/60 bg-white/20 hover:bg-white/25 p-3 shadow-lg input-shadow">
+          {tripType === 'roundtrip' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-[#D4AF37]/60">
+              <div className="rounded-lg border border-[#D4AF37] bg-white/20 hover:bg-white/25 p-3 shadow-lg input-shadow">
                 <Label className="text-black block text-sm font-semibold mb-2">
                   Volta quando?
                 </Label>

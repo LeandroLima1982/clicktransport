@@ -17,7 +17,7 @@ const TripTypeTabs: React.FC<TripTypeTabsProps> = ({
   
   return (
     <TransitionEffect direction="fade" delay={150}>
-      <div className="glass-switch rounded-full px-1.5 py-1 border border-white/80 shadow-lg w-full max-w-[170px] md:max-w-[190px] flex justify-center mt-5">
+      <div className="glass-switch rounded-full px-1.5 py-1 border border-white/80 shadow-lg w-full max-w-[170px] md:max-w-[190px] flex justify-center mx-auto">
         <ToggleGroup 
           type="single" 
           value={value} 
