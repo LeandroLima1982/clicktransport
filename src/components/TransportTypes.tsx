@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -145,12 +146,13 @@ const TransportTypes: React.FC = () => {
     });
   };
 
-  // Determine the number of slides to show based on screen size
+  // Configurações do carousel para todos os tamanhos de tela
   const getCarouselOptionsForScreenSize = () => {
-    // Remove align: "start" to ensure proper centering and looping
     return {
       loop: true,
-      dragFree: true
+      dragFree: true,
+      containScroll: false, // Importante para manter o scroll contínuo
+      slidesToScroll: 1
     };
   };
 
