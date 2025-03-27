@@ -39,7 +39,7 @@ const Hero: React.FC = () => {
       block: 'start'
     });
   };
-  return <section className="relative overflow-hidden py-[5px] md:py-[57px]">
+  return <section className="relative overflow-hidden md:py-[19px] py-[5px] text-gray-950 text-base bg-yellow-500 hover:bg-yellow-400">
       <div className="container mx-auto md:px-6 relative z-10 py-[25px] px-[38px]">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="tracking-tighter mb-6 mx-0 px-0 text-xl font-extrabold md:text-4xl">Sua Plataforma de Transporte Executivo</h1>
