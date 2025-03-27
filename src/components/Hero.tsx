@@ -85,7 +85,7 @@ const Hero: React.FC = () => {
         className="absolute inset-0 -z-10 bg-cover bg-center" 
         style={{ backgroundImage: `url(${backgroundImage})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/30 to-black/50 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/30 to-black/30 to-transparent"></div>
 
       </div>
     </section>
