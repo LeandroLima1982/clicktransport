@@ -16,7 +16,9 @@ import {
   Phone,
   Clock3,
   Share2,
-  MessageSquare
+  MessageSquare,
+  ChevronRight,
+  Eye
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -316,8 +318,7 @@ const Bookings: React.FC = () => {
               return (
                 <Card 
                   key={booking.id} 
-                  className="p-3 hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => setSelectedBooking(booking)}
+                  className="p-3 hover:shadow-md transition-shadow"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
                     <div className="mb-1 sm:mb-0">
@@ -333,7 +334,7 @@ const Bookings: React.FC = () => {
                     <BookingStatus status={booking.status} size="sm" />
                   </div>
                   
-                  <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <div className="flex items-center text-xs text-muted-foreground">
                         <Calendar className="h-3.5 w-3.5 mr-1" />
@@ -363,47 +364,56 @@ const Bookings: React.FC = () => {
                         <span className="truncate">{booking.destination}</span>
                       </div>
                     </div>
+                  </div>
+                  
+                  <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between">
+                    <div className="flex items-start gap-2 mb-2 sm:mb-0">
+                      <div className="flex items-center text-xs">
+                        <Users className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                        <span>{passengerCount} {passengerCount > 1 ? 'passageiros' : 'passageiro'}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-xs">
+                        <Car className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                        <span>{booking.vehicle_type || "Veículo"}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-xs font-medium">
+                        <CreditCard className="h-3.5 w-3.5 mr-1 text-primary" />
+                        <span className="text-primary">{formatCurrency(totalPrice)}</span>
+                      </div>
+                    </div>
                     
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap justify-between items-start">
-                        <div className="flex items-center text-xs text-muted-foreground mb-1">
-                          <Car className="h-3.5 w-3.5 mr-1" />
-                          {booking.vehicle_type || "Veículo"}
-                        </div>
-                        <div className="flex items-center text-xs">
-                          <Users className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                          <span>{passengerCount} {passengerCount > 1 ? 'passageiros' : 'passageiro'}</span>
-                        </div>
-                      </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="h-8 text-xs py-0 px-2 flex-grow sm:flex-grow-0"
+                        onClick={(e) => handleShareBooking(booking, e)}
+                      >
+                        <Share2 className="h-3.5 w-3.5 mr-1" />
+                        Compartilhar
+                      </Button>
                       
-                      <div className="bg-gray-50 p-2 rounded-md">
-                        <div className="flex justify-between text-sm font-medium">
-                          <span>Valor:</span>
-                          <span className="text-primary">{formatCurrency(totalPrice)}</span>
-                        </div>
-                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="h-8 text-xs py-0 px-2 flex-grow sm:flex-grow-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                        onClick={(e) => handleContact(booking, e)}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5 mr-1" />
+                        Contato
+                      </Button>
                       
-                      <div className="flex gap-1 mt-1">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="h-7 text-xs flex-1 px-1"
-                          onClick={(e) => handleShareBooking(booking, e)}
-                        >
-                          <Share2 className="h-3 w-3 mr-1" />
-                          Compartilhar
-                        </Button>
-                        
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="h-7 text-xs flex-1 px-1 text-green-600 hover:text-green-700 hover:bg-green-50"
-                          onClick={(e) => handleContact(booking, e)}
-                        >
-                          <MessageSquare className="h-3 w-3 mr-1" />
-                          Contato
-                        </Button>
-                      </div>
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        className="h-8 text-xs py-0 px-2 flex-grow sm:flex-grow-0"
+                        onClick={() => setSelectedBooking(booking)}
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1" />
+                        Ver Detalhes
+                      </Button>
                     </div>
                   </div>
                 </Card>

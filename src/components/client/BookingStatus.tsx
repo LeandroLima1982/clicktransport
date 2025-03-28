@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 type BookingStatusProps = {
   status: string;
   className?: string;
-  size?: string; // Add size prop
+  size?: string; // Size prop for responsive display
 };
 
 const BookingStatus: React.FC<BookingStatusProps> = ({ status, className, size }) => {
