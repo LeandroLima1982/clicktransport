@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import RatingDialog from '@/components/driver/RatingDialog';
 
 const DriverNavigation: React.FC = () => {
   const { user } = useAuth();
@@ -36,6 +37,8 @@ const DriverNavigation: React.FC = () => {
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [tripSummary, setTripSummary] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [completedOrder, setCompletedOrder] = useState<ServiceOrder | null>(null);
 
   const {
     location,
@@ -58,6 +61,13 @@ const DriverNavigation: React.FC = () => {
       toast.success('Viagem iniciada!', {
         description: 'O sistema está agora rastreando sua localização em tempo real'
       });
+    }
+    
+    if (payload.eventName === 'trip_completed') {
+      setCompletedOrder(payload.new as ServiceOrder);
+      setTimeout(() => {
+        setShowRatingDialog(true);
+      }, 1000);
     }
     
     if (payload.eventName !== 'location_update') {
@@ -635,6 +645,13 @@ const DriverNavigation: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <RatingDialog
+        order={completedOrder}
+        isOpen={showRatingDialog}
+        onClose={() => setShowRatingDialog(false)}
+        onRatingSubmitted={handleRatingSubmitted}
+      />
     </TransitionEffect>
   );
 };
