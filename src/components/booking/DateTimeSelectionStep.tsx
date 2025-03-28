@@ -2,11 +2,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import DateSelector from './DateSelector';
 import TimeSelector from '../TimeSelector';
-import TripTypeTabs from './TripTypeTabs';
-import { ArrowRightCircle } from 'lucide-react';
+import { ArrowRightCircle, Plane, ArrowLeftRight } from 'lucide-react';
 import StepTransition from './StepTransition';
+import PassengerSelector from './PassengerSelector';
 
 interface DateTimeSelectionStepProps {
   date: Date | undefined;
@@ -14,11 +15,13 @@ interface DateTimeSelectionStepProps {
   time: string;
   returnTime: string;
   tripType: "oneway" | "roundtrip";
+  passengers: string;
   setDate: (date: Date | undefined) => void;
   setReturnDate: (date: Date | undefined) => void;
   setTime: (time: string) => void;
   setReturnTime: (time: string) => void;
   setTripType: (type: "oneway" | "roundtrip") => void;
+  setPassengers: (passengers: string) => void;
   goToNextStep: () => void;
   goToPreviousStep: () => void;
   canProceedFromStep2: () => boolean;
@@ -32,31 +35,52 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
   time,
   returnTime,
   tripType,
+  passengers,
   setDate,
   setReturnDate,
   setTime,
   setReturnTime,
   setTripType,
+  setPassengers,
   goToNextStep,
   goToPreviousStep,
   canProceedFromStep2,
   direction,
   currentStep
 }) => {
+  const handleTripTypeToggle = (checked: boolean) => {
+    setTripType(checked ? "roundtrip" : "oneway");
+  };
+
   return (
     <StepTransition step={currentStep} direction={direction}>
       <div className="space-y-5 md:space-y-6">
-        <div className="flex justify-center mb-6 mt-1">
-          <TripTypeTabs value={tripType} onChange={setTripType} />
+        <div className="flex justify-between items-center mb-4">
+          <div className="text-sm font-medium text-white">Tipo de Viagem</div>
+          <div className="flex items-center space-x-3">
+            <span className="text-xs text-white/80 flex items-center">
+              <Plane className="w-3 h-3 mr-1" />
+              Somente Ida
+            </span>
+            <Switch 
+              checked={tripType === "roundtrip"}
+              onCheckedChange={handleTripTypeToggle}
+              className="data-[state=checked]:bg-amber-400 data-[state=checked]:border-amber-300"
+            />
+            <span className="text-xs text-white/80 flex items-center">
+              <ArrowLeftRight className="w-3 h-3 mr-1" />
+              Ida e Volta
+            </span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-          <div className="md:col-span-2 booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow">
-            <Label className="booking-label block text-sm font-semibold mb-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+          <div className="booking-input-container p-3 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
+            <Label className="block text-sm font-semibold booking-label mb-2">
               Vai quando?
             </Label>
-            <div className="flex flex-col sm:flex-row sm:space-x-0">
-              <div className="sm:w-1/2 mb-2 sm:mb-0">
+            <div className="flex flex-col space-y-2">
+              <div className="flex-1">
                 <DateSelector 
                   hideLabel 
                   date={date} 
@@ -66,21 +90,19 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
                   position="left" 
                 />
               </div>
-              <div className="sm:w-1/2">
+              <div className="w-full">
                 <TimeSelector value={time} onChange={setTime} connected position="right" />
               </div>
             </div>
           </div>
-        </div>
-
-        {tripType === 'roundtrip' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-[#D4AF37]">
-            <div className="booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow">
-              <Label className="booking-label block text-sm font-semibold mb-2">
-                Volta quando?
-              </Label>
-              <div className="flex flex-col sm:flex-row sm:space-x-0">
-                <div className="sm:w-1/2 mb-2 sm:mb-0">
+          
+          <div className="booking-input-container p-3 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
+            <Label className="block text-sm font-semibold booking-label mb-2">
+              {tripType === "roundtrip" ? "Volta quando?" : "Passageiros"}
+            </Label>
+            {tripType === "roundtrip" ? (
+              <div className="flex flex-col space-y-2">
+                <div className="flex-1">
                   <DateSelector 
                     hideLabel 
                     date={returnDate} 
@@ -90,11 +112,22 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
                     position="left" 
                   />
                 </div>
-                <div className="sm:w-1/2">
+                <div className="w-full">
                   <TimeSelector value={returnTime} onChange={setReturnTime} connected position="right" />
                 </div>
               </div>
-            </div>
+            ) : (
+              <PassengerSelector value={passengers} onChange={setPassengers} />
+            )}
+          </div>
+        </div>
+
+        {tripType === "roundtrip" && (
+          <div className="booking-input-container p-3 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
+            <Label className="block text-sm font-semibold booking-label mb-2">
+              Passageiros
+            </Label>
+            <PassengerSelector value={passengers} onChange={setPassengers} />
           </div>
         )}
 

@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import PassengerSelector from './PassengerSelector';
 import StepTransition from './StepTransition';
 
 interface PassengerSelectionStepProps {
@@ -26,8 +25,14 @@ const PassengerSelectionStep: React.FC<PassengerSelectionStepProps> = ({
   return (
     <StepTransition step={currentStep} direction={direction}>
       <div className="space-y-5 md:space-y-6">
-        <div className="booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow">
-          <PassengerSelector value={passengers} onChange={setPassengers} />
+        <div className="booking-input-container p-5 hover:bg-white/20 shadow-lg input-shadow text-center">
+          <h3 className="text-xl font-semibold text-white mb-3">Confirmar Reserva</h3>
+          <p className="text-white/80 mb-6">
+            Você está pronto para confirmar sua reserva de transporte com {passengers} {parseInt(passengers) === 1 ? 'passageiro' : 'passageiros'}.
+          </p>
+          <p className="text-amber-300 text-sm mb-4">
+            Ao clicar em "Buscar Motorista", você confirma seus dados de viagem e será direcionado para completar a reserva.
+          </p>
         </div>
 
         <div className="flex justify-between">

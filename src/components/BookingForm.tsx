@@ -77,14 +77,14 @@ const BookingForm: React.FC = () => {
   
   const canProceedFromStep2 = (): boolean => {
     if (tripType === 'oneway') {
-      return !!(date && time);
+      return !!(date && time && passengers);
     } else {
-      return !!(date && time && returnDate && returnTime);
+      return !!(date && time && returnDate && returnTime && passengers);
     }
   };
   
   const canFinishBooking = (): boolean => {
-    return !!(passengers && canProceedFromStep1() && canProceedFromStep2());
+    return true;
   };
   
   useEffect(() => {
@@ -190,11 +190,13 @@ const BookingForm: React.FC = () => {
             time={time}
             returnTime={returnTime}
             tripType={tripType}
+            passengers={passengers}
             setDate={setDate}
             setReturnDate={setReturnDate}
             setTime={setTime}
             setReturnTime={setReturnTime}
             setTripType={setTripType}
+            setPassengers={setPassengers}
             goToNextStep={goToNextStep}
             goToPreviousStep={goToPreviousStep}
             canProceedFromStep2={canProceedFromStep2}
