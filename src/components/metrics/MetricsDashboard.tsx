@@ -1,523 +1,449 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, LineChart, AreaChart, PieChart, Pie, Line, Bar, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { RefreshCw, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Skeleton } from '@/components/ui/skeleton';
-import { BarChart3, Calendar, TrendingUp, Users } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface MetricsDashboardProps {
-  userRole: string;
+  userRole: 'admin' | 'company' | 'driver';
   entityId?: string;
 }
 
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+
 const MetricsDashboard: React.FC<MetricsDashboardProps> = ({ userRole, entityId }) => {
-  const [activeTab, setActiveTab] = useState("orders");
+  const [activeTab, setActiveTab] = useState('overview');
   const [isLoading, setIsLoading] = useState(true);
   const [metrics, setMetrics] = useState({
-    orders: {
-      weeklyData: [],
-      monthlyData: [],
-      totalOrders: 0,
-      completedOrders: 0,
-      cancelledOrders: 0,
-      inProgressOrders: 0
-    },
-    drivers: {
-      totalDrivers: 0,
-      activeDrivers: 0,
-      driverRatings: [],
-      driversPerCompany: []
-    },
-    vehicles: {
-      totalVehicles: 0,
-      vehiclesByCategory: [],
-      vehicleUtilization: []
-    },
-    revenue: {
-      totalRevenue: 0,
-      monthlyRevenue: [],
-      revenueByCompany: []
-    }
+    ordersByStatus: [] as {name: string; value: number}[],
+    ordersTrend: [] as {date: string; orders: number}[],
+    driversStatus: [] as {name: string; value: number}[],
+    ratings: [] as {rating: number; count: number}[],
+    averageRating: 0,
+    totalOrders: 0,
+    completedOrders: 0,
+    cancelledOrders: 0,
+    activeDrivers: 0,
+    totalDrivers: 0
   });
 
   useEffect(() => {
-    const fetchMetrics = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch different metrics based on role and entity
-        const ordersData = await fetchOrderMetrics(userRole, entityId);
-        const driversData = await fetchDriverMetrics(userRole, entityId);
-        const vehiclesData = await fetchVehicleMetrics(userRole, entityId);
-        const revenueData = await fetchRevenueMetrics(userRole, entityId);
-
-        setMetrics({
-          orders: ordersData,
-          drivers: driversData,
-          vehicles: vehiclesData,
-          revenue: revenueData
-        });
-      } catch (error) {
-        console.error('Error fetching metrics:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchMetrics();
   }, [userRole, entityId]);
 
-  // Helper functions to fetch different metrics
-  const fetchOrderMetrics = async (role: string, id?: string) => {
-    // Demo data - in a real app, this would fetch from your database
-    const weeklyOrderData = [
-      { name: 'Seg', orders: 12 },
-      { name: 'Ter', orders: 19 },
-      { name: 'Qua', orders: 15 },
-      { name: 'Qui', orders: 22 },
-      { name: 'Sex', orders: 30 },
-      { name: 'Sab', orders: 18 },
-      { name: 'Dom', orders: 8 },
-    ];
+  const fetchMetrics = async () => {
+    setIsLoading(true);
+    try {
+      // Orders by status
+      const { data: orderStatusData, error: orderStatusError } = await supabase
+        .from('service_orders')
+        .select('status, count')
+        .select()
+        .eq(userRole === 'company' ? 'company_id' : '1', userRole === 'company' ? entityId : '1')
+        .or('1.eq.1', { foreignTable: 'company_id' })
+        .count()
+        .or('status.eq.pending,status.eq.assigned,status.eq.in_progress,status.eq.completed,status.eq.cancelled')
+        .group('status');
 
-    const monthlyOrderData = [
-      { name: 'Jan', orders: 65 },
-      { name: 'Fev', orders: 78 },
-      { name: 'Mar', orders: 90 },
-      { name: 'Abr', orders: 81 },
-      { name: 'Mai', orders: 93 },
-      { name: 'Jun', orders: 102 },
-      { name: 'Jul', orders: 110 },
-      { name: 'Ago', orders: 95 },
-      { name: 'Set', orders: 89 },
-      { name: 'Out', orders: 105 },
-      { name: 'Nov', orders: 120 },
-      { name: 'Dez', orders: 130 },
-    ];
+      if (orderStatusError) throw orderStatusError;
 
-    // For a real application, you'd fetch this data from Supabase
-    // For company users, add a filter for their company ID
-    let query = supabase.from('service_orders').select('*', { count: 'exact' });
-    
-    if (role === 'company' && id) {
-      query = query.eq('company_id', id);
+      // Order trends (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { data: orderTrendsData, error: orderTrendsError } = await supabase
+        .from('service_orders')
+        .select('created_at')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .eq(userRole === 'company' ? 'company_id' : '1', userRole === 'company' ? entityId : '1')
+        .or('1.eq.1', { foreignTable: 'company_id' });
+
+      if (orderTrendsError) throw orderTrendsError;
+
+      // Drivers status
+      const { data: driversData, error: driversError } = await supabase
+        .from('drivers')
+        .select('status, count')
+        .eq(userRole === 'company' ? 'company_id' : '1', userRole === 'company' ? entityId : '1')
+        .or('1.eq.1', { foreignTable: 'company_id' })
+        .count()
+        .group('status');
+
+      if (driversError) throw driversError;
+
+      // Ratings
+      const { data: ratingsData, error: ratingsError } = await supabase
+        .from('service_orders')
+        .select('driver_rating')
+        .not('driver_rating', 'is', null)
+        .eq(userRole === 'company' ? 'company_id' : '1', userRole === 'company' ? entityId : '1')
+        .or('1.eq.1', { foreignTable: 'company_id' });
+
+      if (ratingsError) throw ratingsError;
+
+      // Process data
+      const ordersByStatus = orderStatusData?.map(item => ({
+        name: formatStatusName(item.status),
+        value: item.count || 0
+      })) || [];
+
+      // Process order trends
+      const ordersByDate = orderTrendsData ? processOrderTrends(orderTrendsData) : [];
+
+      // Process drivers status
+      const driversStatus = driversData?.map(item => ({
+        name: formatDriverStatusName(item.status),
+        value: item.count || 0
+      })) || [];
+
+      // Process ratings
+      const ratingCounts = Array(5).fill(0);
+      let totalRating = 0;
+      
+      ratingsData?.forEach(order => {
+        if (order.driver_rating) {
+          const rating = Math.floor(order.driver_rating);
+          if (rating >= 1 && rating <= 5) {
+            ratingCounts[rating - 1]++;
+            totalRating += order.driver_rating;
+          }
+        }
+      });
+
+      const ratingData = ratingCounts.map((count, index) => ({
+        rating: index + 1,
+        count
+      }));
+
+      const averageRating = ratingsData?.length ? totalRating / ratingsData.length : 0;
+      
+      // Set metrics
+      setMetrics({
+        ordersByStatus,
+        ordersTrend: ordersByDate,
+        driversStatus,
+        ratings: ratingData,
+        averageRating: parseFloat(averageRating.toFixed(1)),
+        totalOrders: orderStatusData?.reduce((sum, item) => sum + (item.count || 0), 0) || 0,
+        completedOrders: orderStatusData?.find(item => item.status === 'completed')?.count || 0,
+        cancelledOrders: orderStatusData?.find(item => item.status === 'cancelled')?.count || 0,
+        activeDrivers: driversData?.find(item => item.status === 'active')?.count || 0,
+        totalDrivers: driversData?.reduce((sum, item) => sum + (item.count || 0), 0) || 0
+      });
+
+      toast.success('Métricas atualizadas com sucesso');
+    } catch (error) {
+      console.error('Error fetching metrics:', error);
+      toast.error('Erro ao carregar métricas');
+    } finally {
+      setIsLoading(false);
     }
-
-    const { count } = await query.select('status');
-    
-    // Count orders by status
-    const { data: statusCounts } = await supabase.rpc('count_orders_by_status', 
-      role === 'company' && id ? { company_filter: id } : {});
-
-    const completedOrders = statusCounts?.find(item => item.status === 'completed')?.count || 0;
-    const cancelledOrders = statusCounts?.find(item => item.status === 'cancelled')?.count || 0;
-    const inProgressOrders = (count || 0) - (completedOrders + cancelledOrders);
-
-    return {
-      weeklyData: weeklyOrderData,
-      monthlyData: monthlyOrderData,
-      totalOrders: count || 0,
-      completedOrders,
-      cancelledOrders,
-      inProgressOrders
-    };
   };
 
-  const fetchDriverMetrics = async (role: string, id?: string) => {
-    // Demo data for driver ratings
-    const driverRatingsData = [
-      { name: '5 estrelas', value: 68 },
-      { name: '4 estrelas', value: 22 },
-      { name: '3 estrelas', value: 7 },
-      { name: '2 estrelas', value: 2 },
-      { name: '1 estrela', value: 1 },
-    ];
+  const processOrderTrends = (orders: any[]) => {
+    const last30Days = Array.from({ length: 30 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      return date.toISOString().split('T')[0];
+    }).reverse();
 
-    // Demo data for drivers per company
-    const driversPerCompanyData = [
-      { name: 'RapidApp', drivers: 35 },
-      { name: 'FastCar', drivers: 28 },
-      { name: 'SkyTaxi', drivers: 42 },
-      { name: 'CityCar', drivers: 30 },
-      { name: 'ValleyRide', drivers: 22 },
-    ];
+    const orderCounts: Record<string, number> = {};
+    last30Days.forEach(date => {
+      orderCounts[date] = 0;
+    });
 
-    // For a real application, you would fetch this from Supabase
-    let query = supabase.from('drivers').select('*', { count: 'exact' });
-    
-    if (role === 'company' && id) {
-      query = query.eq('company_id', id);
-    }
-    
-    const { count: totalDrivers } = await query;
-    const { count: activeDrivers } = await query.eq('status', 'active');
+    orders.forEach(order => {
+      const orderDate = order.created_at.split('T')[0];
+      if (orderCounts[orderDate] !== undefined) {
+        orderCounts[orderDate]++;
+      }
+    });
 
-    return {
-      totalDrivers: totalDrivers || 0,
-      activeDrivers: activeDrivers || 0,
-      driverRatings: driverRatingsData,
-      driversPerCompany: role === 'admin' ? driversPerCompanyData : []
-    };
+    return Object.entries(orderCounts).map(([date, orders]) => ({
+      date: formatDate(date),
+      orders
+    }));
   };
 
-  const fetchVehicleMetrics = async (role: string, id?: string) => {
-    // Demo data for vehicles by category
-    const vehiclesByCategoryData = [
-      { name: 'Econômico', vehicles: 45 },
-      { name: 'Conforto', vehicles: 30 },
-      { name: 'Luxo', vehicles: 15 },
-      { name: 'Van', vehicles: 10 },
-    ];
-
-    // Demo data for vehicle utilization
-    const vehicleUtilizationData = [
-      { name: 'Seg', utilization: 75 },
-      { name: 'Ter', utilization: 82 },
-      { name: 'Qua', utilization: 78 },
-      { name: 'Qui', utilization: 85 },
-      { name: 'Sex', utilization: 90 },
-      { name: 'Sab', utilization: 95 },
-      { name: 'Dom', utilization: 65 },
-    ];
-
-    // For a real application, you would fetch this from Supabase
-    let query = supabase.from('vehicles').select('*', { count: 'exact' });
-    
-    if (role === 'company' && id) {
-      query = query.eq('company_id', id);
-    }
-    
-    const { count: totalVehicles } = await query;
-
-    return {
-      totalVehicles: totalVehicles || 0,
-      vehiclesByCategory: vehiclesByCategoryData,
-      vehicleUtilization: vehicleUtilizationData
-    };
+  const formatDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}`;
   };
 
-  const fetchRevenueMetrics = async (role: string, id?: string) => {
-    // This would only be shown to admins or company owners
-    // Demo data for monthly revenue
-    const monthlyRevenueData = [
-      { name: 'Jan', revenue: 25000 },
-      { name: 'Fev', revenue: 30000 },
-      { name: 'Mar', revenue: 32000 },
-      { name: 'Abr', revenue: 28000 },
-      { name: 'Mai', revenue: 33000 },
-      { name: 'Jun', revenue: 35000 },
-      { name: 'Jul', revenue: 38000 },
-      { name: 'Ago', revenue: 36000 },
-      { name: 'Set', revenue: 32000 },
-      { name: 'Out', revenue: 34000 },
-      { name: 'Nov', revenue: 40000 },
-      { name: 'Dez', revenue: 42000 },
-    ];
-
-    // Demo data for revenue by company
-    const revenueByCompanyData = [
-      { name: 'RapidApp', revenue: 120000 },
-      { name: 'FastCar', revenue: 85000 },
-      { name: 'SkyTaxi', revenue: 140000 },
-      { name: 'CityCar', revenue: 95000 },
-      { name: 'ValleyRide', revenue: 78000 },
-    ];
-
-    // For a real application, this would calculate from completed orders
-    const totalRevenue = monthlyRevenueData.reduce((sum, item) => sum + item.revenue, 0);
-
-    return {
-      totalRevenue,
-      monthlyRevenue: monthlyRevenueData,
-      revenueByCompany: role === 'admin' ? revenueByCompanyData : []
+  const formatStatusName = (status: string) => {
+    const statusMap: Record<string, string> = {
+      'pending': 'Pendente',
+      'assigned': 'Atribuído',
+      'in_progress': 'Em Progresso',
+      'completed': 'Concluído',
+      'cancelled': 'Cancelado'
     };
+    return statusMap[status] || status;
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Skeleton className="h-40 w-full" />
-          <Skeleton className="h-40 w-full" />
-          <Skeleton className="h-40 w-full" />
-          <Skeleton className="h-40 w-full" />
-        </div>
-        <Skeleton className="h-[400px] w-full" />
-      </div>
-    );
-  }
+  const formatDriverStatusName = (status: string) => {
+    const statusMap: Record<string, string> = {
+      'active': 'Ativo',
+      'inactive': 'Inativo',
+      'on_trip': 'Em Viagem',
+      'pending_approval': 'Pendente'
+    };
+    return statusMap[status] || status;
+  };
 
   return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 mb-8">
-          <TabsTrigger value="orders" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            <span>Ordens</span>
-          </TabsTrigger>
-          <TabsTrigger value="drivers" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span>Motoristas</span>
-          </TabsTrigger>
-          <TabsTrigger value="vehicles" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            <span>Veículos</span>
-          </TabsTrigger>
-          <TabsTrigger value="revenue" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            <span>Receita</span>
-          </TabsTrigger>
-        </TabsList>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold">Métricas de Desempenho</h2>
+        <Button
+          variant="outline"
+          onClick={fetchMetrics}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="mr-2 h-4 w-4" />
+          )}
+          Atualizar
+        </Button>
+      </div>
 
-        <TabsContent value="orders" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Carregando métricas...</span>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total de Ordens</CardTitle>
+                <CardTitle className="text-lg">Total de Ordens</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{metrics.orders.totalOrders}</div>
+                <div className="text-3xl font-bold">{metrics.totalOrders}</div>
+                <p className="text-sm text-muted-foreground">Todas as ordens de serviço</p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
+                <CardTitle className="text-lg">Concluídas</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-500">{metrics.orders.completedOrders}</div>
+                <div className="text-3xl font-bold text-green-600">{metrics.completedOrders}</div>
+                <p className="text-sm text-muted-foreground">
+                  {metrics.totalOrders > 0 
+                    ? `${((metrics.completedOrders / metrics.totalOrders) * 100).toFixed(1)}% do total`
+                    : 'Nenhuma ordem registrada'}
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Canceladas</CardTitle>
+                <CardTitle className="text-lg">Canceladas</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-500">{metrics.orders.cancelledOrders}</div>
+                <div className="text-3xl font-bold text-red-600">{metrics.cancelledOrders}</div>
+                <p className="text-sm text-muted-foreground">
+                  {metrics.totalOrders > 0 
+                    ? `${((metrics.cancelledOrders / metrics.totalOrders) * 100).toFixed(1)}% do total`
+                    : 'Nenhuma ordem registrada'}
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Em Progresso</CardTitle>
+                <CardTitle className="text-lg">Avaliação Média</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-500">{metrics.orders.inProgressOrders}</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Pedidos por Período</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="weekly">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="weekly">Semanal</TabsTrigger>
-                  <TabsTrigger value="monthly">Mensal</TabsTrigger>
-                </TabsList>
-                <TabsContent value="weekly">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={metrics.orders.weeklyData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="orders" fill="#3b82f6" name="Pedidos" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </TabsContent>
-                <TabsContent value="monthly">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={metrics.orders.monthlyData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="orders" stroke="#3b82f6" name="Pedidos" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="drivers" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total de Motoristas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metrics.drivers.totalDrivers}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Motoristas Ativos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-500">{metrics.drivers.activeDrivers}</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Avaliações de Motoristas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={metrics.drivers.driverRatings}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
+                <div className="text-3xl font-bold text-yellow-600">{metrics.averageRating}</div>
+                <div className="flex items-center">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <svg
+                      key={i}
+                      className={`h-4 w-4 ${
+                        i < Math.floor(metrics.averageRating)
+                          ? 'text-yellow-500 fill-yellow-500'
+                          : i < metrics.averageRating
+                          ? 'text-yellow-500 fill-yellow-500 opacity-50'
+                          : 'text-gray-300 fill-gray-300'
+                      }`}
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
                     >
-                      {metrics.drivers.driverRatings.map((entry, index) => (
-                        <Pie key={`cell-${index}`} fill={['#FF8042', '#FFBB28', '#00C49F', '#0088FE', '#8884d8'][index % 5]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                    </svg>
+                  ))}
+                </div>
               </CardContent>
             </Card>
+          </div>
 
-            {userRole === 'admin' && (
+          <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+              <TabsTrigger value="orders">Ordens</TabsTrigger>
+              <TabsTrigger value="drivers">Motoristas</TabsTrigger>
+              <TabsTrigger value="ratings">Avaliações</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="overview" className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Status das Ordens</CardTitle>
+                    <CardDescription>Distribuição por status</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={metrics.ordersByStatus}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {metrics.ordersByStatus.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Tendência de Ordens</CardTitle>
+                    <CardDescription>Últimos 30 dias</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={metrics.ordersTrend}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="orders" stroke="#8884d8" name="Ordens" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="orders" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Motoristas por Empresa</CardTitle>
+                  <CardTitle>Ordens por Status</CardTitle>
+                  <CardDescription>Distribuição de ordens por status</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={metrics.drivers.driversPerCompany}>
+                <CardContent className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={metrics.ordersByStatus}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="drivers" fill="#8884d8" name="Motoristas" />
+                      <Bar dataKey="value" name="Quantidade" fill="#8884d8" />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="vehicles" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total de Veículos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metrics.vehicles.totalVehicles}</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Veículos por Categoria</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={metrics.vehicles.vehiclesByCategory}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="vehicles" fill="#82ca9d" name="Veículos" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Utilização de Veículos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={metrics.vehicles.vehicleUtilization}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Area type="monotone" dataKey="utilization" stroke="#8884d8" fill="#8884d8" name="Utilização (%)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="revenue" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">R$ {metrics.revenue.totalRevenue.toLocaleString('pt-BR')}</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Receita Mensal</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={metrics.revenue.monthlyRevenue}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Area type="monotone" dataKey="revenue" stroke="#82ca9d" fill="#82ca9d" name="Receita (R$)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {userRole === 'admin' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Receita por Empresa</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={metrics.revenue.revenueByCompany}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="revenue" fill="#3b82f6" name="Receita (R$)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+            
+            <TabsContent value="drivers" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Motoristas Ativos</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">{metrics.activeDrivers}</div>
+                    <p className="text-sm text-muted-foreground">
+                      {metrics.totalDrivers > 0 
+                        ? `${((metrics.activeDrivers / metrics.totalDrivers) * 100).toFixed(1)}% do total`
+                        : 'Nenhum motorista registrado'}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Total de Motoristas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">{metrics.totalDrivers}</div>
+                    <p className="text-sm text-muted-foreground">Total de motoristas registrados</p>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Status dos Motoristas</CardTitle>
+                  <CardDescription>Distribuição por status</CardDescription>
+                </CardHeader>
+                <CardContent className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={metrics.driversStatus}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {metrics.driversStatus.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="ratings" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Distribuição de Avaliações</CardTitle>
+                  <CardDescription>Quantidade de avaliações por estrelas</CardDescription>
+                </CardHeader>
+                <CardContent className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={metrics.ratings}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="rating" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="count" name="Quantidade" fill="#FFBB28" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
     </div>
   );
 };
