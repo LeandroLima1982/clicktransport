@@ -2,14 +2,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface RatingData {
+export interface RatingData {
   order_id: string;
   driver_id: string;
   rating: number;
   feedback?: string;
 }
 
-interface DriverRatingStats {
+export interface DriverRatingStats {
   averageRating: number;
   totalRatings: number;
   starCounts: Record<number, number>;

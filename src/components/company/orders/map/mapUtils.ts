@@ -83,8 +83,32 @@ export const fetchRouteData = async (
   }
 };
 
-// Alias for compatibility with existing code
-export const getMapboxDirections = fetchRouteData;
+// Explicitly export getMapboxDirections as an alias for fetchRouteData
+export const getMapboxDirections = async (
+  originAddress: string,
+  destinationAddress: string
+): Promise<{
+  geometry: any;
+  distance: number;
+  duration: number;
+} | null> => {
+  try {
+    // First get coordinates from addresses
+    const originCoords = await getCoordinatesFromAddress(originAddress);
+    const destCoords = await getCoordinatesFromAddress(destinationAddress);
+    
+    if (!originCoords || !destCoords) {
+      console.error('Could not get coordinates for addresses');
+      return null;
+    }
+    
+    // Then fetch route data
+    return await fetchRouteData(originCoords, destCoords);
+  } catch (error) {
+    console.error('Error in getMapboxDirections:', error);
+    return null;
+  }
+};
 
 // Create a static map URL for fallback
 export const createStaticMapUrl = (
@@ -135,8 +159,28 @@ export const createStaticMapUrl = (
   }
 };
 
-// Alias for compatibility with existing code
-export const getStaticMapUrl = createStaticMapUrl;
+// Export getStaticMapUrl as an alias and add implementation for string addresses
+export const getStaticMapUrl = async (
+  originAddress: string,
+  destinationAddress: string
+): Promise<string | null> => {
+  try {
+    // First get coordinates from addresses
+    const originCoords = await getCoordinatesFromAddress(originAddress);
+    const destCoords = await getCoordinatesFromAddress(destinationAddress);
+    
+    if (!originCoords || !destCoords) {
+      console.error('Could not get coordinates for addresses');
+      return null;
+    }
+    
+    // Then create static map URL
+    return createStaticMapUrl(originCoords, destCoords);
+  } catch (error) {
+    console.error('Error in getStaticMapUrl:', error);
+    return null;
+  }
+};
 
 // Check if map can be initialized or if we need fallback
 export const validateMapboxToken = (): boolean => {
