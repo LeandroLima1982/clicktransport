@@ -1,117 +1,132 @@
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { notifyDriverNewAssignment, notifyTripStarted, notifyTripCompleted } from '@/services/notifications/workflowNotificationService';
+import { toast } from 'sonner';
 import { playNotificationSound } from '@/services/notifications/notificationService';
 import { ServiceOrder } from '@/types/serviceOrder';
 
-// Define a type for the notification payload
-export type ServiceOrderNotificationPayload = {
+export interface ServiceOrderNotificationPayload {
+  id?: string;
+  status?: string;
+  origin?: string;
+  destination?: string;
+  driver_id?: string;
+  company_id?: string;
   eventType?: string;
   eventName?: string;
   new?: ServiceOrder;
   old?: Partial<ServiceOrder>;
   [key: string]: any;
-};
+}
 
-export const useServiceOrderSubscription = (
-  driverId: string | null,
-  onNotification: (payload: ServiceOrderNotificationPayload) => void
-) => {
+interface UseServiceOrderSubscriptionProps {
+  driverId: string | null;
+  onNotification?: (payload: ServiceOrderNotificationPayload) => void;
+}
+
+export const useServiceOrderSubscription = ({
+  driverId,
+  onNotification
+}: UseServiceOrderSubscriptionProps) => {
+  const handleNotification = useCallback((payload: ServiceOrderNotificationPayload) => {
+    console.log('Service order notification received:', payload);
+    if (onNotification) {
+      onNotification(payload);
+    } else {
+      // Default notification handling
+      if (payload?.status === 'assigned' && payload?.driver_id === driverId) {
+        playNotificationSound();
+        toast.success('Nova corrida atribuída!', {
+          description: `Origem: ${payload.origin || 'Não especificada'}`,
+          duration: 6000,
+        });
+      }
+
+      if (payload?.status === 'cancelled' && payload?.driver_id === driverId) {
+        playNotificationSound();
+        toast.error('Corrida cancelada!', {
+          description: `A corrida para ${payload.destination || 'destino'} foi cancelada.`,
+          duration: 6000,
+        });
+      }
+    }
+  }, [driverId, onNotification]);
+
   useEffect(() => {
     if (!driverId) return;
 
-    const channel = supabase
-      .channel('service_orders_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'service_orders',
-          filter: `driver_id=eq.${driverId}`
-        },
-        (payload: ServiceOrderNotificationPayload) => {
-          console.log('Service order change detected:', payload);
+    console.log('Setting up service order subscription for driver:', driverId);
 
-          // Case 1: New order inserted with this driver assigned
-          if (payload.eventType === 'INSERT' && 
-              (payload.new?.status === 'assigned' || payload.new?.driver_id === driverId)) {
-            playNotificationSound();
-            notifyDriverNewAssignment(payload.new as ServiceOrder);
-            onNotification(payload);
-          }
-          
-          // Case 2: Existing order updated to assign this driver
-          if (payload.eventType === 'UPDATE' && 
-              payload.old?.driver_id !== payload.new?.driver_id && 
-              payload.new?.driver_id === driverId) {
-            playNotificationSound();
-            notifyDriverNewAssignment(payload.new as ServiceOrder);
-            onNotification(payload);
-          }
-          
-          // Case 3: Order status changed to assigned
-          if (payload.eventType === 'UPDATE' && 
-              payload.old?.status !== 'assigned' && 
-              payload.new?.status === 'assigned') {
-            playNotificationSound();
-            notifyDriverNewAssignment(payload.new as ServiceOrder);
-            onNotification(payload);
-          }
-          
-          // Case 4: Trip started - status changed to in_progress
-          if (payload.eventType === 'UPDATE' && 
-              payload.old?.status !== 'in_progress' && 
-              payload.new?.status === 'in_progress') {
-            playNotificationSound();
-            notifyTripStarted(payload.new as ServiceOrder);
-            onNotification({
-              ...payload,
-              eventName: 'trip_started'
-            });
-          }
-          
-          // Case 5: Trip completed - status changed to completed
-          if (payload.eventType === 'UPDATE' && 
-              payload.old?.status !== 'completed' && 
-              payload.new?.status === 'completed') {
-            playNotificationSound();
-            notifyTripCompleted(payload.new as ServiceOrder);
-            onNotification({
-              ...payload,
-              eventName: 'trip_completed'
-            });
-          }
+    // Get all channels the subscription is already active for
+    const existingChannels = supabase.getChannels();
+    const channelName = `driver_orders_${driverId}`;
+    
+    // Check if we already have an active subscription for this driver
+    const existingChannel = existingChannels.find(channel => channel.topic === channelName);
+    if (existingChannel) {
+      console.log('Channel already exists, removing it first');
+      supabase.removeChannel(existingChannel);
+    }
+
+    // Create a channel for service orders related to this driver
+    const channel = supabase.channel(channelName);
+    
+    // Use the channel.on method with correct parameters
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'service_orders',
+        filter: `driver_id=eq.${driverId}`
+      },
+      (payload) => {
+        console.log('Service order change detected:', payload);
+        
+        const newData = payload.new as ServiceOrderNotificationPayload;
+        
+        // Handle different types of events
+        if (payload.eventType === 'UPDATE') {
+          handleNotification(newData);
+        } else if (payload.eventType === 'INSERT') {
+          handleNotification(newData);
         }
-      )
-      .subscribe();
+      }
+    )
+    .subscribe((status) => {
+      console.log('Service order subscription status:', status);
+    });
 
     // Subscribe to location updates for this driver
-    const locationChannel = supabase
-      .channel('driver_location_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'driver_locations',
-          filter: `driver_id=eq.${driverId}`
-        },
-        (payload: ServiceOrderNotificationPayload) => {
-          console.log('Driver location update:', payload);
-          // Pass location updates to callback
-          onNotification({
-            ...payload,
-            eventName: 'location_update'
-          });
-        }
-      )
-      .subscribe();
+    const locationChannel = supabase.channel(`driver_location_${driverId}`);
+    
+    locationChannel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'driver_locations',
+        filter: `driver_id=eq.${driverId}`
+      },
+      (payload) => {
+        console.log('Driver location update:', payload);
+        // Pass location updates to callback
+        onNotification?.({
+          ...payload,
+          eventName: 'location_update'
+        });
+      }
+    )
+    .subscribe((status) => {
+      console.log('Location subscription status:', status);
+    });
 
     return () => {
+      console.log('Removing service order subscription');
       supabase.removeChannel(channel);
       supabase.removeChannel(locationChannel);
     };
-  }, [driverId, onNotification]);
+  }, [driverId, handleNotification, onNotification]);
+
+  return null;
 };

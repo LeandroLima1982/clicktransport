@@ -19,14 +19,16 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ driverId, isLoading
   const { 
     orders, 
     isLoading, 
-    handleUpdateStatus
+    handleUpdateStatus,
+    refreshOrders
   } = useServiceOrders(driverId);
 
-  // Subscribe to service order updates with empty callback to use default notification handling
+  // Subscribe to service order updates
   useServiceOrderSubscription({ 
     driverId, 
     onNotification: () => {
-      // Just refresh orders - default notifications will be handled by the hook
+      // Refresh orders when any notification is received
+      refreshOrders();
     }
   });
 

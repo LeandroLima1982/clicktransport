@@ -1,14 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { logError, logInfo } from '../monitoring/systemLogService';
-
-export interface RatingData {
-  order_id: string;
-  driver_id: string;
-  rating: number;
-  feedback?: string;
-  customer_id?: string;
-}
+import { RatingData } from '@/types/rating';
 
 export const submitRating = async (ratingData: RatingData): Promise<boolean> => {
   try {

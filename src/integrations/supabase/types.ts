@@ -184,6 +184,7 @@ export type Database = {
         Row: {
           accuracy: number | null
           driver_id: string
+          eta_seconds: number | null
           heading: number | null
           latitude: number
           longitude: number
@@ -194,6 +195,7 @@ export type Database = {
         Insert: {
           accuracy?: number | null
           driver_id: string
+          eta_seconds?: number | null
           heading?: number | null
           latitude: number
           longitude: number
@@ -204,6 +206,7 @@ export type Database = {
         Update: {
           accuracy?: number | null
           driver_id?: string
+          eta_seconds?: number | null
           heading?: number | null
           latitude?: number
           longitude?: number

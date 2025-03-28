@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
 import TransitionEffect from '@/components/TransitionEffect';
@@ -19,19 +18,7 @@ import { StarRating } from '@/components/ui/star-rating';
 import { Textarea } from '@/components/ui/textarea';
 import { updateServiceOrderStatus } from '@/services/booking/bookingService';
 import DriverMap from '@/components/driver/DriverMap';
-
-// Define ServiceOrder type if it's not imported from somewhere else
-interface ServiceOrder {
-  id: string;
-  status: string;
-  origin: string;
-  destination: string;
-  driver_id: string;
-  company_id: string;
-  pickup_date: string;
-  notes?: string;
-  created_at: string;
-}
+import { ServiceOrder } from '@/types/serviceOrder';
 
 const Navigation: React.FC = () => {
   const { user } = useAuth();
@@ -230,6 +217,11 @@ const Navigation: React.FC = () => {
       console.error('Error submitting rating:', error);
       toast.error('Erro ao enviar avaliação');
     }
+  };
+
+  const handleRatingSubmitted = () => {
+    setRatingSubmitted(true);
+    setShowRatingDialog(false);
   };
 
   // Handle ETA updates from the map component
