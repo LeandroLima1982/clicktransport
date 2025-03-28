@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -440,40 +441,42 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
         ) : (
           <>
             <div className="flex flex-col">
-              <DialogTitle className="text-2xl font-bold">Finalize sua reserva</DialogTitle>
-              <div className="text-gray-500 mt-1">
-                Sua viagem de {bookingData.origin} para {bookingData.destination}
+              <DialogTitle className="text-xl font-bold md:text-2xl">
+                Finalize sua reserva
+              </DialogTitle>
+              <div className="text-sm text-gray-500 mt-1">
+                {bookingData.origin} → {bookingData.destination}
               </div>
               
-              <div className="mt-8">
-                <div className="flex justify-between mb-8">
+              <div className="mt-4 md:mt-6">
+                <div className="flex justify-between mb-4 md:mb-6 px-2">
                   {['Veículo', 'Detalhes', 'Pagamento', 'Passageiros', 'Confirmação'].map((step, index) => (
                     <div 
                       key={index} 
                       className={`flex flex-col items-center ${index + 1 <= currentStep ? 'text-primary' : 'text-gray-400'}`}
                     >
-                      <div className={`w-10 h-10 flex items-center justify-center rounded-full mb-2 ${
+                      <div className={`w-7 h-7 md:w-9 md:h-9 flex items-center justify-center rounded-full mb-1 text-xs md:text-sm ${
                         index + 1 < currentStep ? 'bg-primary text-white' : 
                         index + 1 === currentStep ? 'border-2 border-primary text-primary' : 
                         'border-2 border-gray-300 text-gray-400'
                       }`}>
-                        {index + 1 < currentStep ? <CheckCircle className="w-6 h-6" /> : index + 1}
+                        {index + 1 < currentStep ? <CheckCircle className="w-4 h-4 md:w-5 md:h-5" /> : index + 1}
                       </div>
-                      <span className="text-xs font-medium">{step}</span>
+                      <span className="text-[10px] md:text-xs font-medium">{step}</span>
                     </div>
                   ))}
                 </div>
                 
-                <div className="mb-8">
+                <div className="mb-4 md:mb-6 px-2 md:px-0">
                   {renderStepContent()}
                 </div>
                 
-                <div className="flex justify-between pt-4">
+                <div className="flex justify-between pt-3 border-t border-gray-200 mt-2">
                   <Button
                     variant="outline"
                     onClick={handlePrevious}
                     disabled={currentStep === 1}
-                    className="flex items-center"
+                    className="flex items-center shadow-md hover:shadow-lg transition-all duration-300 rounded-lg"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Anterior
@@ -482,14 +485,14 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
                   <Button
                     onClick={handleNext}
                     disabled={isSubmitting}
-                    className="flex items-center"
+                    className="flex items-center bg-gradient-to-r from-amber-400 to-amber-300 hover:from-amber-500 hover:to-amber-400 text-[#002366] shadow-md hover:shadow-lg transition-all duration-300 rounded-lg"
                   >
                     {currentStep === 5 ? (
                       isSubmitting ? 'Confirmando...' : 'Confirmar Reserva'
                     ) : (
                       <>
                         Próximo
-                        <ArrowRight className="ml-2 h-4 w-4" />
+                        <ArrowRight className="ml-2 h-4 w-4 animate-pulse" />
                       </>
                     )}
                   </Button>

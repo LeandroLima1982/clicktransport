@@ -24,31 +24,31 @@ const PassengerSelectionStep: React.FC<PassengerSelectionStepProps> = ({
 }) => {
   return (
     <StepTransition step={currentStep} direction={direction}>
-      <div className="space-y-5 md:space-y-6">
-        <div className="booking-input-container p-5 hover:bg-white/20 shadow-lg input-shadow text-center">
-          <h3 className="text-xl font-semibold text-white mb-3">Confirmar Reserva</h3>
-          <p className="text-white/80 mb-6">
-            Você está pronto para confirmar sua reserva de transporte com {passengers} {parseInt(passengers) === 1 ? 'passageiro' : 'passageiros'}.
+      <div className="space-y-4">
+        <div className="booking-input-container p-4 hover:bg-white/20 shadow-lg input-shadow text-center rounded-lg">
+          <h3 className="text-lg font-semibold text-white mb-2">Confirmar Reserva</h3>
+          <p className="text-white/80 mb-3 text-sm">
+            Você está pronto para confirmar sua reserva com {passengers} {parseInt(passengers) === 1 ? 'passageiro' : 'passageiros'}.
           </p>
-          <p className="text-amber-300 text-sm mb-4">
-            Ao clicar em "Buscar Motorista", você confirma seus dados de viagem e será direcionado para completar a reserva.
+          <p className="text-amber-300 text-xs mb-2">
+            Ao clicar em "Buscar Motorista", você confirma seus dados de viagem.
           </p>
         </div>
 
-        <div className="flex justify-between">
+        <div className="flex justify-between mt-2">
           <Button 
             onClick={goToPreviousStep}
             variant="outline" 
-            className="px-4 rounded-lg text-white border-amber-300/50 hover:bg-white/10 hover:text-amber-300"
+            className="px-4 rounded-lg text-white border-amber-300/50 hover:bg-white/10 hover:text-amber-300 shadow-md hover:shadow-lg transition-all duration-300"
           >
             Voltar
           </Button>
           <Button 
             onClick={handleBooking} 
             disabled={!canFinishBooking()} 
-            className="w-40 rounded-lg text-[#002366] text-lg font-medium h-12 transition-all duration-300 
-                      shadow-xl relative overflow-hidden bg-gradient-to-r from-amber-400 to-amber-300 
-                      hover:from-amber-300 hover:to-amber-200 border border-amber-300"
+            className="rounded-lg text-[#002366] text-lg font-medium h-12 transition-all duration-300 
+                      shadow-xl hover:shadow-2xl relative overflow-hidden bg-gradient-to-r from-amber-400 to-amber-300 
+                      hover:from-amber-300 hover:to-amber-200 border border-amber-300 px-4 animate-pulse"
           >
             <span className="relative z-10 flex items-center justify-center">
               Buscar Motorista

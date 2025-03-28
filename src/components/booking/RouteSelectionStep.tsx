@@ -42,86 +42,78 @@ const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
 }) => {
   return (
     <StepTransition step={currentStep} direction={direction}>
-      <div className="space-y-5 md:space-y-6">
-        <div className="grid md:grid-cols-2 gap-4 md:gap-5">
-          <div className="booking-input-container p-3 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
-            <Label className="block text-sm font-semibold booking-label mb-2">
+      <div className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-3">
+          <div className="booking-input-container p-2 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow rounded-lg">
+            <Label className="block text-xs font-semibold booking-label mb-1">
               De onde vai sair?
             </Label>
             <div className="flex flex-col space-y-2">
-              <div className="flex-1">
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                    <MapPin className="h-4 w-4 text-[#F8D748]" />
-                  </div>
-                  <Input 
-                    placeholder="Digite seu endereço: rua, número, bairro" 
-                    value={originValue} 
-                    onChange={handleManualOriginChange} 
-                    className="pl-9 pr-3 py-2.5 text-sm booking-input h-10 focus:border-[#F8D748] focus:ring-[#F8D748] placeholder:text-white/50" 
-                  />
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                  <MapPin className="h-4 w-4 text-[#F8D748]" />
                 </div>
+                <Input 
+                  placeholder="Digite seu endereço: rua, número, bairro" 
+                  value={originValue} 
+                  onChange={handleManualOriginChange} 
+                  className="pl-9 pr-3 py-2 text-sm booking-input h-9 focus:border-[#F8D748] focus:ring-[#F8D748] placeholder:text-white/50" 
+                />
               </div>
-              <div className="w-full">
-                <Select value={originCityId} onValueChange={setOriginCityId}>
-                  <SelectTrigger className="h-10 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
-                    <SelectValue placeholder="Selecione cidade" className="text-white/50" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#002366] border border-[#D4AF37] text-white">
-                    {cities.filter(city => city.is_active !== false).map(city => (
-                      <SelectItem key={city.id} value={city.id} className="hover:bg-white/10 text-white">
-                        {formatCityLabel(city)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={originCityId} onValueChange={setOriginCityId}>
+                <SelectTrigger className="h-9 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
+                  <SelectValue placeholder="Selecione cidade" className="text-white/50" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#002366] border border-[#D4AF37] text-white">
+                  {cities.filter(city => city.is_active !== false).map(city => (
+                    <SelectItem key={city.id} value={city.id} className="hover:bg-white/10 text-white">
+                      {formatCityLabel(city)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <div className="booking-input-container p-3 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
-            <Label className="block text-sm font-semibold booking-label mb-2">
+          <div className="booking-input-container p-2 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow rounded-lg">
+            <Label className="block text-xs font-semibold booking-label mb-1">
               Para onde vai?
             </Label>
             <div className="flex flex-col space-y-2">
-              <div className="flex-1">
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                    <MapPin className="h-4 w-4 text-[#F8D748]" />
-                  </div>
-                  <Input 
-                    placeholder="Digite seu destino: rua, número, bairro" 
-                    value={destinationValue} 
-                    onChange={handleManualDestinationChange} 
-                    className="pl-9 pr-3 py-2.5 text-sm booking-input h-10 focus:border-[#F8D748] focus:ring-[#F8D748] placeholder:text-white/50" 
-                  />
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                  <MapPin className="h-4 w-4 text-[#F8D748]" />
                 </div>
+                <Input 
+                  placeholder="Digite seu destino: rua, número, bairro" 
+                  value={destinationValue} 
+                  onChange={handleManualDestinationChange} 
+                  className="pl-9 pr-3 py-2 text-sm booking-input h-9 focus:border-[#F8D748] focus:ring-[#F8D748] placeholder:text-white/50" 
+                />
               </div>
-              <div className="w-full">
-                <Select value={destinationCityId} onValueChange={setDestinationCityId}>
-                  <SelectTrigger className="h-10 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
-                    <SelectValue placeholder="Selecione cidade" className="text-white/50" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#002366] border border-[#D4AF37] text-white">
-                    {cities.filter(city => city.is_active !== false).map(city => (
-                      <SelectItem key={city.id} value={city.id} className="hover:bg-white/10 text-white">
-                        {formatCityLabel(city)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={destinationCityId} onValueChange={setDestinationCityId}>
+                <SelectTrigger className="h-9 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
+                  <SelectValue placeholder="Selecione cidade" className="text-white/50" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#002366] border border-[#D4AF37] text-white">
+                  {cities.filter(city => city.is_active !== false).map(city => (
+                    <SelectItem key={city.id} value={city.id} className="hover:bg-white/10 text-white">
+                      {formatCityLabel(city)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex justify-center mt-2">
           <Button 
             onClick={goToNextStep} 
             disabled={!canProceedFromStep1()} 
             className="px-6 rounded-lg text-[#002366] font-medium h-10 transition-all duration-300 
-                      shadow-xl relative overflow-hidden bg-gradient-to-r from-amber-400 to-amber-300 
-                      hover:from-amber-300 hover:to-amber-200 border border-amber-300 flex items-center"
+                      shadow-xl hover:shadow-2xl relative overflow-hidden bg-gradient-to-r from-amber-400 to-amber-300 
+                      hover:from-amber-300 hover:to-amber-200 border border-amber-300 flex items-center animate-pulse"
           >
             Próximo
             <ArrowRightCircle className="ml-2 h-4 w-4" />
