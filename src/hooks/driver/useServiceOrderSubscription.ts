@@ -71,29 +71,26 @@ export const useServiceOrderSubscription = ({
     // Create a channel for service orders related to this driver
     const channel = supabase.channel(channelName);
     
-    // Use the channel.on method with correct parameters
+    // Fix: Using the correct syntax for the on method with postgres_changes
     channel.on(
-      'postgres_changes',
+      'postgres_changes', 
       {
         event: '*',
         schema: 'public',
         table: 'service_orders',
         filter: `driver_id=eq.${driverId}`
       },
-      (payload: any) => {
+      (payload) => {
         console.log('Service order change detected:', payload);
         
-        // Convert payload to expected format
-        const notificationPayload: ServiceOrderNotificationPayload = {
-          ...payload.new,
-          eventType: payload.eventType,
-          eventName: 'service_order_update',
-          new: payload.new,
-          old: payload.old
-        };
+        const newData = payload.new as ServiceOrderNotificationPayload;
         
         // Handle different types of events
-        handleNotification(notificationPayload);
+        if (payload.eventType === 'UPDATE') {
+          handleNotification(newData);
+        } else if (payload.eventType === 'INSERT') {
+          handleNotification(newData);
+        }
       }
     )
     .subscribe((status) => {
@@ -103,6 +100,7 @@ export const useServiceOrderSubscription = ({
     // Subscribe to location updates for this driver
     const locationChannel = supabase.channel(`driver_location_${driverId}`);
     
+    // Fix: Using the correct syntax for the on method with postgres_changes
     locationChannel.on(
       'postgres_changes',
       {
@@ -111,7 +109,7 @@ export const useServiceOrderSubscription = ({
         table: 'driver_locations',
         filter: `driver_id=eq.${driverId}`
       },
-      (payload: any) => {
+      (payload) => {
         console.log('Driver location update:', payload);
         // Pass location updates to callback
         if (onNotification) {
