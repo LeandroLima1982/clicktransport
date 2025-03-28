@@ -5,9 +5,18 @@ import { notifyDriverNewAssignment, notifyTripStarted, notifyTripCompleted } fro
 import { playNotificationSound } from '@/services/notifications/notificationService';
 import { ServiceOrder } from '@/types/serviceOrder';
 
+// Define a type for the notification payload
+export type ServiceOrderNotificationPayload = {
+  eventType?: string;
+  eventName?: string;
+  new?: ServiceOrder;
+  old?: Partial<ServiceOrder>;
+  [key: string]: any;
+};
+
 export const useServiceOrderSubscription = (
   driverId: string | null,
-  onNotification: (payload?: any) => void
+  onNotification: (payload: ServiceOrderNotificationPayload) => void
 ) => {
   useEffect(() => {
     if (!driverId) return;
@@ -22,12 +31,12 @@ export const useServiceOrderSubscription = (
           table: 'service_orders',
           filter: `driver_id=eq.${driverId}`
         },
-        (payload: any) => {
+        (payload: ServiceOrderNotificationPayload) => {
           console.log('Service order change detected:', payload);
 
           // Case 1: New order inserted with this driver assigned
           if (payload.eventType === 'INSERT' && 
-              (payload.new.status === 'assigned' || payload.new.driver_id === driverId)) {
+              (payload.new?.status === 'assigned' || payload.new?.driver_id === driverId)) {
             playNotificationSound();
             notifyDriverNewAssignment(payload.new as ServiceOrder);
             onNotification(payload);
@@ -35,8 +44,8 @@ export const useServiceOrderSubscription = (
           
           // Case 2: Existing order updated to assign this driver
           if (payload.eventType === 'UPDATE' && 
-              payload.old.driver_id !== payload.new.driver_id && 
-              payload.new.driver_id === driverId) {
+              payload.old?.driver_id !== payload.new?.driver_id && 
+              payload.new?.driver_id === driverId) {
             playNotificationSound();
             notifyDriverNewAssignment(payload.new as ServiceOrder);
             onNotification(payload);
@@ -44,8 +53,8 @@ export const useServiceOrderSubscription = (
           
           // Case 3: Order status changed to assigned
           if (payload.eventType === 'UPDATE' && 
-              payload.old.status !== 'assigned' && 
-              payload.new.status === 'assigned') {
+              payload.old?.status !== 'assigned' && 
+              payload.new?.status === 'assigned') {
             playNotificationSound();
             notifyDriverNewAssignment(payload.new as ServiceOrder);
             onNotification(payload);
@@ -53,8 +62,8 @@ export const useServiceOrderSubscription = (
           
           // Case 4: Trip started - status changed to in_progress
           if (payload.eventType === 'UPDATE' && 
-              payload.old.status !== 'in_progress' && 
-              payload.new.status === 'in_progress') {
+              payload.old?.status !== 'in_progress' && 
+              payload.new?.status === 'in_progress') {
             playNotificationSound();
             notifyTripStarted(payload.new as ServiceOrder);
             onNotification({
@@ -65,8 +74,8 @@ export const useServiceOrderSubscription = (
           
           // Case 5: Trip completed - status changed to completed
           if (payload.eventType === 'UPDATE' && 
-              payload.old.status !== 'completed' && 
-              payload.new.status === 'completed') {
+              payload.old?.status !== 'completed' && 
+              payload.new?.status === 'completed') {
             playNotificationSound();
             notifyTripCompleted(payload.new as ServiceOrder);
             onNotification({
@@ -89,7 +98,7 @@ export const useServiceOrderSubscription = (
           table: 'driver_locations',
           filter: `driver_id=eq.${driverId}`
         },
-        (payload: any) => {
+        (payload: ServiceOrderNotificationPayload) => {
           console.log('Driver location update:', payload);
           // Pass location updates to callback
           onNotification({

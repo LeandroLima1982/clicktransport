@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import TransitionEffect from '@/components/TransitionEffect';
@@ -7,7 +6,7 @@ import DriverHeader from '@/components/driver/DriverHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Navigation, AlertTriangle, Check, MapIcon, Clock, Timer, CheckCircle } from 'lucide-react';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
-import { useServiceOrderSubscription } from '@/hooks/driver/useServiceOrderSubscription';
+import { useServiceOrderSubscription, ServiceOrderNotificationPayload } from '@/hooks/driver/useServiceOrderSubscription';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -38,7 +37,6 @@ const DriverNavigation: React.FC = () => {
   const [tripSummary, setTripSummary] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize location tracking
   const {
     location,
     error: locationError,
@@ -48,14 +46,12 @@ const DriverNavigation: React.FC = () => {
     stopTracking,
     updateNow
   } = useDriverLocation(driverId, currentOrderId, {
-    updateInterval: 15000 // Update every 15 seconds
+    updateInterval: 15000
   });
 
-  // Handle service order notifications
-  const handleOrderNotification = useCallback((payload: any) => {
+  const handleOrderNotification = useCallback((payload: ServiceOrderNotificationPayload) => {
     console.log('Order notification:', payload);
     
-    // Handle trip started event
     if (payload.eventName === 'trip_started') {
       setTripStarted(true);
       setTripStartTime(new Date());
@@ -64,28 +60,23 @@ const DriverNavigation: React.FC = () => {
       });
     }
     
-    // Refresh order details when relevant
     if (payload.eventName !== 'location_update') {
       fetchCurrentOrder();
     }
   }, []);
 
-  // Subscribe to order updates
   useServiceOrderSubscription(driverId, handleOrderNotification);
 
-  // Fetch driver ID when component mounts
   useEffect(() => {
     if (user) {
       fetchDriverId();
     }
   }, [user]);
 
-  // Fetch current order when driver ID is available
   useEffect(() => {
     if (driverId) {
       fetchCurrentOrder();
       
-      // Subscribe to order changes for this driver
       const channel = supabase
         .channel('driver_orders')
         .on(
@@ -99,7 +90,6 @@ const DriverNavigation: React.FC = () => {
           (payload: any) => {
             console.log('Order update received:', payload);
             
-            // Check if trip was just started
             if (payload.new && payload.old && 
                 payload.new.status === 'in_progress' && 
                 payload.old.status !== 'in_progress') {
@@ -118,7 +108,6 @@ const DriverNavigation: React.FC = () => {
     }
   }, [driverId]);
 
-  // Start/stop tracking based on whether there's an active order
   useEffect(() => {
     if (driverId && currentOrderId) {
       if (!isTracking) {
@@ -180,7 +169,7 @@ const DriverNavigation: React.FC = () => {
         .single();
 
       if (error) {
-        if (error.code !== 'PGRST116') { // No rows returned
+        if (error.code !== 'PGRST116') {
           console.error('Error fetching current order:', error);
         }
         setCurrentOrderId(null);
@@ -194,10 +183,8 @@ const DriverNavigation: React.FC = () => {
         setCurrentOrderId(data.id);
         setCurrentOrder(data);
         
-        // If status is already in_progress, update trip started state
         if (data.status === 'in_progress') {
           setTripStarted(true);
-          // Set trip start time if not already set
           if (!tripStartTime) {
             setTripStartTime(new Date());
           }
@@ -208,15 +195,12 @@ const DriverNavigation: React.FC = () => {
     }
   };
 
-  // Calcular resumo da viagem para exibir no diálogo de conclusão
   const calculateTripSummary = () => {
     if (!currentOrder || !tripStartTime) return null;
     
     const now = new Date();
-    const tripDuration = Math.floor((now.getTime() - tripStartTime.getTime()) / 60000); // em minutos
+    const tripDuration = Math.floor((now.getTime() - tripStartTime.getTime()) / 60000);
     
-    // Calcular distância estimada baseada em uma velocidade média de 40km/h
-    // Em uma implementação real, isto seria calculado usando as coordenadas de GPS registradas
     const estimatedDistance = Math.round((tripDuration / 60) * 40);
     
     return {
@@ -243,19 +227,16 @@ const DriverNavigation: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      // Capturar a localização atual para registro
       const currentPosition = location ? {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude
       } : null;
       
-      // Calcular o tempo total da viagem
       const tripEndTime = new Date();
       const tripDuration = tripStartTime 
         ? Math.floor((tripEndTime.getTime() - tripStartTime.getTime()) / 60000) 
         : 0;
       
-      // Atualizar o status da ordem e incluir detalhes da conclusão
       const { error } = await supabase
         .from('service_orders')
         .update({ 
@@ -272,7 +253,6 @@ const DriverNavigation: React.FC = () => {
         throw error;
       }
       
-      // Atualizar status do motorista para disponível
       if (driverId) {
         await supabase
           .from('drivers')
@@ -280,7 +260,6 @@ const DriverNavigation: React.FC = () => {
           .eq('id', driverId);
       }
       
-      // Registrar o evento de conclusão da viagem
       await supabase
         .from('system_logs')
         .insert({
@@ -295,10 +274,8 @@ const DriverNavigation: React.FC = () => {
           }
         });
       
-      // Parar o rastreamento de localização
       stopTracking();
       
-      // Notificar sucesso e atualizar interface
       toast.success('Viagem finalizada com sucesso!', {
         description: `Duração total: ${tripDuration} minutos`
       });
@@ -384,7 +361,6 @@ const DriverNavigation: React.FC = () => {
     );
   };
 
-  // Formatar a data/hora para exibição no modal de conclusão
   const formatDateTime = (date: Date) => {
     return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
   };
@@ -566,7 +542,6 @@ const DriverNavigation: React.FC = () => {
         </div>
       </SidebarProvider>
       
-      {/* Modal de Finalização de Viagem */}
       <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
