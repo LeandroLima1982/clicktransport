@@ -4,51 +4,58 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface LocationState {
-  coords: GeolocationCoordinates;
-  timestamp: number;
+  location: GeolocationPosition | null;
+  error: GeolocationPositionError | null;
+  isTracking: boolean;
+  lastUpdateTime: Date | null;
+  uploading: boolean;
+  startTracking: () => void;
+  stopTracking: () => void;
+  updateNow: () => void;
 }
 
-export function useDriverLocation(driverId: string | null) {
+export const useDriverLocation = (driverId: string | null): LocationState => {
   const [location, setLocation] = useState<GeolocationPosition | null>(null);
   const [error, setError] = useState<GeolocationPositionError | null>(null);
   const [isTracking, setIsTracking] = useState(false);
-  const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const [uploading, setUploading] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   
+  // Use refs to hold the watch ID and tracking state for use in cleanup
   const watchIdRef = useRef<number | null>(null);
-  const uploadIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const trackingRef = useRef<boolean>(false);
 
-  // Function to update location in the database
-  const updateLocationInDb = useCallback(async (position: GeolocationPosition) => {
+  // Save location to Supabase
+  const saveLocation = useCallback(async (position: GeolocationPosition, orderId?: string) => {
     if (!driverId) return;
     
-    setUploading(true);
     try {
-      const { coords } = position;
-      
-      const locationData = {
-        driver_id: driverId,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        heading: coords.heading || null,
-        speed: coords.speed || null,
-        accuracy: coords.accuracy || null,
-        timestamp: new Date().toISOString(),
-        order_id: currentOrderId
-      };
+      setUploading(true);
       
       const { error } = await supabase
         .from('driver_locations')
-        .upsert(locationData, { onConflict: 'driver_id' });
+        .insert({
+          driver_id: driverId,
+          order_id: orderId || currentOrderId,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          heading: position.coords.heading || null,
+          speed: position.coords.speed || null,
+          accuracy: position.coords.accuracy || null,
+          timestamp: new Date().toISOString()
+        });
       
       if (error) {
-        console.error('Error updating location:', error);
-      } else {
-        setLastUpdateTime(new Date());
+        console.error('Error saving location:', error);
+        return false;
       }
-    } catch (err) {
-      console.error('Error saving location data:', err);
+      
+      setLastUpdateTime(new Date());
+      return true;
+    } catch (error) {
+      console.error('Error in saveLocation:', error);
+      return false;
     } finally {
       setUploading(false);
     }
@@ -59,124 +66,118 @@ export function useDriverLocation(driverId: string | null) {
     setLocation(position);
     setError(null);
     
-    // Only update every 10 seconds to reduce database writes
-    const now = new Date();
-    const timeSinceLastUpdate = now.getTime() - lastUpdateTime.getTime();
-    if (timeSinceLastUpdate > 10000 || !lastUpdateTime) {
-      updateLocationInDb(position);
+    // Save location if we're actively tracking
+    if (trackingRef.current) {
+      saveLocation(position);
     }
-  }, [updateLocationInDb, lastUpdateTime]);
+  }, [saveLocation]);
 
   // Error handler for geolocation
   const handleError = useCallback((error: GeolocationPositionError) => {
     setError(error);
+    console.error('Geolocation error:', error);
     
-    let errorMessage;
-    switch (error.code) {
-      case error.PERMISSION_DENIED:
-        errorMessage = 'Permissão para acessar localização negada.';
-        break;
-      case error.POSITION_UNAVAILABLE:
-        errorMessage = 'Informação de localização indisponível.';
-        break;
-      case error.TIMEOUT:
-        errorMessage = 'Tempo esgotado ao obter localização.';
-        break;
-      default:
-        errorMessage = 'Erro desconhecido ao obter localização.';
+    if (error.code === error.PERMISSION_DENIED) {
+      toast.error('Permissão de localização negada', {
+        description: 'Por favor, habilite o acesso à localização para rastrear sua posição.'
+      });
+    } else if (error.code === error.POSITION_UNAVAILABLE) {
+      toast.error('Localização indisponível', {
+        description: 'Não foi possível determinar sua posição atual.'
+      });
+    } else if (error.code === error.TIMEOUT) {
+      toast.error('Tempo esgotado', {
+        description: 'A solicitação de localização expirou.'
+      });
     }
-    
-    toast.error(errorMessage);
-    setIsTracking(false);
   }, []);
 
-  // Force a location update now
-  const updateNow = useCallback(() => {
-    if (location) {
-      updateLocationInDb(location);
-    }
-  }, [location, updateLocationInDb]);
-
-  // Start tracking location
+  // Function to start tracking location
   const startTracking = useCallback((orderId?: string) => {
     if (orderId) {
       setCurrentOrderId(orderId);
     }
     
-    setIsTracking(true);
-    
-    if ('geolocation' in navigator) {
-      // Clear any existing watch
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-      
-      // Set up regular uploads
-      if (uploadIntervalRef.current) {
-        clearInterval(uploadIntervalRef.current);
-      }
-      
-      // Start watching position
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        handleSuccess,
-        handleError,
-        {
-          enableHighAccuracy: true,
-          maximumAge: 30000,
-          timeout: 27000
-        }
-      );
-      
-      // Set up a backup interval to ensure we're uploading location regularly
-      uploadIntervalRef.current = setInterval(() => {
-        if (location) {
-          updateLocationInDb(location);
-        }
-      }, 60000); // every minute
-      
-      // Also get a one-time immediate position
-      navigator.geolocation.getCurrentPosition(
-        handleSuccess,
-        handleError,
-        { enableHighAccuracy: true }
-      );
-      
-      toast.success('Rastreamento de localização iniciado');
-      
-      return () => stopTracking();
-    } else {
-      toast.error('Geolocalização não suportada neste dispositivo');
-      setIsTracking(false);
+    if (!navigator.geolocation) {
+      toast.error('Geolocalização não suportada', {
+        description: 'Seu navegador não suporta geolocalização.'
+      });
+      return;
     }
-  }, [handleSuccess, handleError, updateLocationInDb, location]);
 
-  // Stop tracking location
-  const stopTracking = useCallback(() => {
-    setIsTracking(false);
+    // Clear any existing watchers
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+    }
+
+    setIsTracking(true);
+    trackingRef.current = true;
     
+    // Start watching position
+    const watchId = navigator.geolocation.watchPosition(
+      handleSuccess,
+      handleError,
+      {
+        enableHighAccuracy: true,
+        maximumAge: 10000, // 10 seconds
+        timeout: 60000 // 1 minute
+      }
+    );
+    
+    watchIdRef.current = watchId;
+    
+    // Also get position immediately
+    navigator.geolocation.getCurrentPosition(
+      handleSuccess,
+      handleError,
+      { enableHighAccuracy: true }
+    );
+    
+    toast.success('Rastreamento iniciado', {
+      description: 'Sua localização está sendo monitorada em tempo real.'
+    });
+    
+    // Return cleanup function
+    return () => stopTracking();
+  }, [handleSuccess, handleError]);
+
+  // Function to stop tracking location
+  const stopTracking = useCallback(() => {
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
     
-    if (uploadIntervalRef.current) {
-      clearInterval(uploadIntervalRef.current);
-      uploadIntervalRef.current = null;
-    }
-    
+    setIsTracking(false);
+    trackingRef.current = false;
     setCurrentOrderId(null);
-    toast.info('Rastreamento de localização desativado');
+    
+    toast.info('Rastreamento finalizado', {
+      description: 'O monitoramento de localização foi interrompido.'
+    });
   }, []);
+
+  // Function to force an immediate location update
+  const updateNow = useCallback(() => {
+    if (!navigator.geolocation) return;
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation(position);
+        if (driverId) {
+          saveLocation(position);
+        }
+      },
+      handleError,
+      { enableHighAccuracy: true }
+    );
+  }, [driverId, handleError, saveLocation]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-      
-      if (uploadIntervalRef.current) {
-        clearInterval(uploadIntervalRef.current);
       }
     };
   }, []);
@@ -191,4 +192,4 @@ export function useDriverLocation(driverId: string | null) {
     stopTracking,
     updateNow
   };
-}
+};

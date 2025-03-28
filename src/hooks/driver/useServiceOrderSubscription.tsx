@@ -71,7 +71,7 @@ export const useServiceOrderSubscription = ({
     // Create a channel for service orders related to this driver
     const channel = supabase.channel(channelName);
     
-    // Add subscription using the updated syntax
+    // Add subscription using the updated syntax for Supabase v2
     channel.on(
       'postgres_changes',
       {

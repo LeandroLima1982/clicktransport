@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
 import TransitionEffect from '@/components/TransitionEffect';
@@ -110,7 +111,7 @@ const Navigation: React.FC = () => {
         
         // Start tracking location
         if (data.status === 'in_progress') {
-          startTracking(data.id);
+          startTracking();
         }
       }
     } catch (error) {
@@ -130,7 +131,7 @@ const Navigation: React.FC = () => {
       if (error) throw error;
       
       // Start location tracking
-      startTracking(currentOrder.id);
+      startTracking();
       
       toast.success('Viagem iniciada!');
       
@@ -193,7 +194,7 @@ const Navigation: React.FC = () => {
     }
   };
 
-  const handleRatingSubmitted = async () => {
+  const handleRatingSubmit = async () => {
     if (!currentOrder || !driverId) return;
     
     try {
@@ -424,7 +425,7 @@ const Navigation: React.FC = () => {
                 Pular
               </Button>
               <Button 
-                onClick={handleRatingSubmitted}
+                onClick={handleRatingSubmit}
                 disabled={ratingSubmitted}
               >
                 {ratingSubmitted ? 'Enviado' : 'Enviar Avaliação'}
