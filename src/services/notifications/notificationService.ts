@@ -22,6 +22,35 @@ export const playNotificationSound = () => {
   }
 };
 
+// Vibration patterns for different notifications
+export const feedbackPatterns = {
+  success: [100, 50, 100],
+  error: [100, 50, 100, 50, 100],
+  warning: [100, 50, 100],
+  notification: [200],
+};
+
+// Function to vibrate device if supported
+export const vibrate = (pattern: number[] = [100]) => {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
+
+// Function to show assignment notifications
+export const showAssignmentNotification = (serviceOrder: any) => {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    const notification = new Notification('Nova Atribuição de Serviço', {
+      body: `Origem: ${serviceOrder.origin || 'Não especificado'}\nDestino: ${serviceOrder.destination || 'Não especificado'}`,
+      icon: '/vehicle-icon.svg',
+    });
+    
+    notification.onclick = () => {
+      window.focus();
+    };
+  }
+};
+
 // Format booking message for sharing
 export const formatBookingShareMessage = (
   bookingData: any, 
@@ -44,7 +73,7 @@ export const formatBookingShareMessage = (
       `📅 *Data:* ${bookingData.date ? new Date(bookingData.date).toLocaleDateString('pt-BR') : 'Não definida'}\n` +
       `🕒 *Horário:* ${bookingData.time || '00:00'}\n` +
       (bookingData.returnDate ? `📅 *Retorno:* ${new Date(bookingData.returnDate).toLocaleDateString('pt-BR')} às ${bookingData.returnTime || '00:00'}\n` : '') +
-      `👥 *Passageiros:* ${bookingData.passengerData.length}\n` +
+      `👥 *Passageiros:* ${bookingData.passengerData ? bookingData.passengerData.length : 0}\n` +
       `💰 *Valor:* ${formatCurrency(totalPrice)}\n\n` +
       `Reserva realizada em ${bookingData.creationDate || 'data não disponível'}`;
   }

@@ -43,13 +43,15 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
       destination: bookingData.destination || '',
       date: bookingData.date,
       tripType: bookingData.tripType,
-      passengerData: bookingData.passengerData
+      passengerData: bookingData.passengerData,
+      creationDate: new Date().toLocaleDateString('pt-BR'),
+      time: format(new Date(), 'HH:mm')
     };
     
     const message = formatBookingShareMessage(shareData, {
       simplified: true,
       referenceCode: bookingReference,
-      includePassengers: true
+      totalPrice: totalPrice
     });
     
     shareViaWhatsApp(message);
