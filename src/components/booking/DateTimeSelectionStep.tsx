@@ -54,8 +54,8 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
 
   return (
     <StepTransition step={currentStep} direction={direction}>
-      <div className="space-y-4">
-        <div className="flex justify-between items-center mb-2">
+      <div className="space-y-3">
+        <div className="flex justify-between items-center mb-1">
           <div className="text-xs font-medium text-white">Tipo de Viagem</div>
           <div className="flex items-center space-x-2">
             <span className="text-[10px] text-white/80 flex items-center">
@@ -74,8 +74,8 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="booking-input-container p-2 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="booking-input-container p-2 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow rounded-lg">
             <Label className="block text-xs font-semibold booking-label mb-1">
               Vai quando?
             </Label>
@@ -92,7 +92,7 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
             </div>
           </div>
           
-          <div className="booking-input-container p-2 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
+          <div className="booking-input-container p-2 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow rounded-lg">
             <Label className="block text-xs font-semibold booking-label mb-1">
               {tripType === "roundtrip" ? "Volta quando?" : "Passageiros"}
             </Label>
@@ -115,7 +115,7 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
         </div>
 
         {tripType === "roundtrip" && (
-          <div className="booking-input-container p-2 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow">
+          <div className="booking-input-container p-2 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow rounded-lg">
             <Label className="block text-xs font-semibold booking-label mb-1">
               Passageiros
             </Label>

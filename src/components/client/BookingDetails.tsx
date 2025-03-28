@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Sheet,
@@ -22,7 +21,10 @@ import {
   CreditCard,
   Phone,
   AlertTriangle,
+  Share2,
+  MessageSquare,
 } from 'lucide-react';
+import { shareViaWhatsApp, formatBookingShareMessage } from '@/services/notifications/notificationService';
 
 interface BookingDetailsProps {
   booking: Booking;
@@ -93,9 +95,67 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
   const passengerData = getPassengerData();
   const isRoundTrip = booking.return_date !== null;
 
+  // Handle sharing via WhatsApp
+  const handleShareViaWhatsApp = () => {
+    const bookingData = {
+      origin: booking.origin,
+      destination: booking.destination,
+      date: booking.travel_date,
+      returnDate: booking.return_date,
+      time: formatTime(booking.travel_date),
+      returnTime: booking.return_date ? formatTime(booking.return_date) : undefined,
+      tripType: isRoundTrip ? 'roundtrip' : 'oneway',
+      passengerData: passengerData,
+      creationDate: format(parseISO(booking.booking_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+    };
+
+    const message = formatBookingShareMessage(bookingData, {
+      simplified: true, 
+      referenceCode: booking.reference_code,
+      totalPrice: booking.total_price || 0
+    });
+
+    shareViaWhatsApp(message);
+  };
+
+  // Function to get relevant contact info (driver or company)
+  const getContactInfo = () => {
+    if (booking.driver_id && booking.driver_phone) {
+      return {
+        type: 'driver',
+        name: booking.driver_name || 'Motorista',
+        phone: booking.driver_phone
+      };
+    } else if (booking.company_id && booking.company_phone) {
+      return {
+        type: 'company',
+        name: booking.company_name || 'Empresa',
+        phone: booking.company_phone
+      };
+    }
+    
+    // Default fallback
+    return {
+      type: 'support',
+      name: 'Suporte',
+      phone: '+5511999999999' // Replace with your actual support phone
+    };
+  };
+
+  const contactInfo = getContactInfo();
+
+  // Function to contact via WhatsApp
+  const handleContactViaWhatsApp = () => {
+    const phoneNumber = contactInfo.phone.replace(/\D/g, '');
+    const message = `Olá, estou entrando em contato sobre a reserva #${booking.reference_code} de ${formatDate(booking.travel_date)} às ${formatTime(booking.travel_date)}`;
+    
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="sm:max-w-lg overflow-y-auto">
+      <SheetContent className="sm:max-w-lg overflow-y-auto px-4">
         <SheetHeader>
           <SheetTitle>Detalhes da Reserva</SheetTitle>
           <SheetDescription>
@@ -104,26 +164,51 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
         </SheetHeader>
 
         <div className="py-4">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
             <BookingStatus status={booking.status} className="py-1 px-3" />
-            {booking.status !== 'cancelled' && booking.status !== 'completed' && (
+            
+            <div className="flex flex-wrap gap-2">
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={handleCancelBooking}
-                disabled={isCancelling}
+                onClick={handleShareViaWhatsApp}
+                className="h-8 text-xs sm:text-sm flex items-center gap-1"
               >
-                {isCancelling ? 'Cancelando...' : 'Cancelar Reserva'}
+                <Share2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Compartilhar</span>
               </Button>
-            )}
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleContactViaWhatsApp}
+                className="h-8 text-xs sm:text-sm flex items-center gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Falar com {contactInfo.type === 'driver' ? 'Motorista' : 'Empresa'}</span>
+                <span className="sm:hidden">Contato</span>
+              </Button>
+              
+              {booking.status !== 'cancelled' && booking.status !== 'completed' && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCancelBooking}
+                  disabled={isCancelling}
+                  className="h-8 text-xs sm:text-sm"
+                >
+                  {isCancelling ? 'Cancelando...' : 'Cancelar'}
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Service Order Status Flow */}
-          <ServiceOrderStatus status={booking.status} className="my-6" />
+          <ServiceOrderStatus status={booking.status} className="my-4" />
 
-          <div className="space-y-4 mt-6">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-semibold flex items-center mb-2">
+          <div className="space-y-3 mt-4">
+            <div className="bg-gray-50 rounded-lg p-3">
+              <h3 className="font-semibold flex items-center mb-2 text-sm">
                 <Calendar className="h-4 w-4 mr-2 text-primary" />
                 Data e Horário
               </h3>
@@ -152,7 +237,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-gray-50 rounded-lg p-3">
               <h3 className="font-semibold flex items-center mb-2">
                 <MapPin className="h-4 w-4 mr-2 text-primary" />
                 Trajeto
@@ -169,7 +254,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-gray-50 rounded-lg p-3">
               <h3 className="font-semibold flex items-center mb-2">
                 <Car className="h-4 w-4 mr-2 text-primary" />
                 Veículo
@@ -187,7 +272,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
             </div>
 
             {passengerData.length > 0 && (
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 rounded-lg p-3">
                 <h3 className="font-semibold flex items-center mb-2">
                   <Users className="h-4 w-4 mr-2 text-primary" />
                   Passageiros
@@ -195,7 +280,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
                 <div className="space-y-2">
                   {passengerData.map((passenger: any, index: number) => (
                     <div key={index} className="border border-gray-200 rounded p-2">
-                      <div className="font-medium">{passenger.name}</div>
+                      <div className="font-medium text-sm">{passenger.name}</div>
                       <a 
                         href={`https://wa.me/${passenger.phone.replace(/\D/g, '')}`}
                         target="_blank"
@@ -211,7 +296,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
               </div>
             )}
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-gray-50 rounded-lg p-3">
               <h3 className="font-semibold flex items-center mb-2">
                 <CreditCard className="h-4 w-4 mr-2 text-primary" />
                 Pagamento
@@ -231,7 +316,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
             </div>
 
             {booking.additional_notes && (
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 rounded-lg p-3">
                 <h3 className="font-semibold mb-2">Observações</h3>
                 <p className="text-sm text-gray-700 whitespace-pre-line">{booking.additional_notes}</p>
               </div>

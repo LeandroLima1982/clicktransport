@@ -14,7 +14,9 @@ import {
   Filter,
   Users,
   Phone,
-  Clock3
+  Clock3,
+  Share2,
+  MessageSquare
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -39,6 +41,8 @@ import { useBookings } from '@/hooks/useBookings';
 import BookingStatus from '@/components/client/BookingStatus';
 import BookingDetails from '@/components/client/BookingDetails';
 import { Booking } from '@/types/booking';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { shareViaWhatsApp, formatBookingShareMessage } from '@/services/notifications/notificationService';
 
 const Bookings: React.FC = () => {
   const { user, userRole } = useAuth();
@@ -47,11 +51,12 @@ const Bookings: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const isMobile = useIsMobile();
   
   if (!user || userRole !== 'client') {
     return (
-      <div className="container mx-auto p-8 text-center">
-        <h2 className="text-2xl font-bold mb-4">Acesso Restrito</h2>
+      <div className="container mx-auto p-4 text-center">
+        <h2 className="text-xl font-bold mb-4">Acesso Restrito</h2>
         <p className="mb-6">Você precisa estar logado como cliente para acessar esta página.</p>
         <Button onClick={() => navigate('/auth')}>Fazer Login</Button>
       </div>
@@ -144,11 +149,75 @@ const Bookings: React.FC = () => {
     
     return { totalPrice, oneWayPrice, returnPrice, isRoundTrip };
   };
+
+  // Handle sharing via WhatsApp
+  const handleShareBooking = (booking: Booking, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const passengerData = getPassengerData(booking);
+    const isRoundTrip = booking.return_date !== null;
+    
+    const bookingData = {
+      origin: booking.origin,
+      destination: booking.destination,
+      date: booking.travel_date,
+      returnDate: booking.return_date,
+      time: formatTime(booking.travel_date),
+      returnTime: booking.return_date ? formatTime(booking.return_date) : undefined,
+      tripType: isRoundTrip ? 'roundtrip' : 'oneway',
+      passengerData: passengerData,
+      creationDate: format(parseISO(booking.booking_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+    };
+
+    const message = formatBookingShareMessage(bookingData, {
+      simplified: true, 
+      referenceCode: booking.reference_code,
+      totalPrice: booking.total_price || 0
+    });
+
+    shareViaWhatsApp(message);
+  };
+
+  // Function to get relevant contact info (driver or company)
+  const getContactInfo = (booking: Booking) => {
+    if (booking.driver_id && booking.driver_phone) {
+      return {
+        type: 'driver',
+        name: booking.driver_name || 'Motorista',
+        phone: booking.driver_phone
+      };
+    } else if (booking.company_id && booking.company_phone) {
+      return {
+        type: 'company',
+        name: booking.company_name || 'Empresa',
+        phone: booking.company_phone
+      };
+    }
+    
+    // Default fallback
+    return {
+      type: 'support',
+      name: 'Suporte',
+      phone: '+5511999999999' // Replace with actual support phone
+    };
+  };
+
+  // Function to contact via WhatsApp
+  const handleContact = (booking: Booking, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const contactInfo = getContactInfo(booking);
+    const phoneNumber = contactInfo.phone.replace(/\D/g, '');
+    const message = `Olá, estou entrando em contato sobre a reserva #${booking.reference_code} de ${formatDate(booking.travel_date)} às ${formatTime(booking.travel_date)}`;
+    
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
   
   return (
     <TransitionEffect>
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+      <div className="container mx-auto px-4 py-4 pb-20">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
           <div>
             <Button
               variant="ghost"
@@ -159,26 +228,27 @@ const Bookings: React.FC = () => {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">Minhas Reservas</h1>
-            <p className="text-muted-foreground">Gerencie todas as suas viagens em um só lugar</p>
+            <h1 className="text-xl md:text-2xl font-bold">Minhas Reservas</h1>
+            <p className="text-muted-foreground text-sm">Gerencie suas viagens em um só lugar</p>
           </div>
           
           <Button 
             onClick={() => navigate('/')}
-            className="mt-4 md:mt-0"
+            className="mt-3 md:mt-0"
+            size={isMobile ? "sm" : "default"}
           >
             <Plus className="h-4 w-4 mr-2" />
             Nova Reserva
           </Button>
         </div>
         
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-2 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Buscar reservas..."
-              className="pl-8"
+              className="pl-8 h-9"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -189,7 +259,7 @@ const Bookings: React.FC = () => {
               value={statusFilter}
               onValueChange={setStatusFilter}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <div className="flex items-center">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Filtrar" />
@@ -211,12 +281,12 @@ const Bookings: React.FC = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : filteredBookings.length === 0 ? (
-          <Card className="p-8 text-center">
+          <Card className="p-6 text-center">
             <div className="mb-4 text-gray-400">
               {searchTerm || statusFilter !== 'all' ? (
                 // No results with filters
                 <>
-                  <Search className="h-12 w-12 mx-auto mb-2" />
+                  <Search className="h-10 w-10 mx-auto mb-2" />
                   <p className="text-lg mb-2">Nenhuma reserva encontrada</p>
                   <p className="text-sm text-muted-foreground">
                     Tente ajustar seus filtros de busca
@@ -225,7 +295,7 @@ const Bookings: React.FC = () => {
               ) : (
                 // No bookings at all
                 <>
-                  <CheckCircle className="h-12 w-12 mx-auto mb-2" />
+                  <CheckCircle className="h-10 w-10 mx-auto mb-2" />
                   <p className="text-lg mb-2">Você ainda não possui reservas</p>
                   <p className="text-sm text-muted-foreground mb-4">
                     Faça sua primeira reserva agora mesmo!
@@ -236,141 +306,104 @@ const Bookings: React.FC = () => {
             </div>
           </Card>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {filteredBookings.map((booking) => {
               const { totalPrice, oneWayPrice, returnPrice, isRoundTrip } = getPriceInfo(booking);
               const passengerCount = getPassengerCount(booking);
-              const passengerData = getPassengerData(booking);
               const creationDateTime = formatCreationDateTime(booking.booking_date);
+              const contactInfo = getContactInfo(booking);
               
               return (
                 <Card 
                   key={booking.id} 
-                  className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  className="p-3 hover:shadow-md transition-shadow cursor-pointer"
                   onClick={() => setSelectedBooking(booking)}
                 >
-                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-3">
-                    <div className="mb-2 md:mb-0">
-                      <div className="flex items-center">
-                        <span className="font-semibold">{booking.reference_code}</span>
-                        <span className="mx-2 text-gray-400">•</span>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Clock3 className="h-3.5 w-3.5 mr-1" />
-                          <span>
-                            Reserva em {creationDateTime.date} às {creationDateTime.time}
-                          </span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
+                    <div className="mb-1 sm:mb-0">
+                      <div className="flex items-center flex-wrap gap-1">
+                        <span className="font-semibold text-sm">{booking.reference_code}</span>
+                        <span className="mx-1 text-gray-400 text-xs">•</span>
+                        <div className="flex items-center text-xs text-muted-foreground">
+                          <Clock3 className="h-3 w-3 mr-1" />
+                          <span>{creationDateTime.date}</span>
                         </div>
                       </div>
                     </div>
-                    <BookingStatus status={booking.status} />
+                    <BookingStatus status={booking.status} size="sm" />
                   </div>
                   
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        {isRoundTrip ? 'Viagem de ida e volta' : 'Viagem de ida'}
+                  <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5 mr-1" />
+                        {isRoundTrip ? 'Ida e volta' : 'Somente ida'}
                       </div>
-                      <div className="font-medium">{formatDate(booking.travel_date)}</div>
-                      <div className="flex items-center text-sm">
-                        <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <div className="font-medium text-sm">{formatDate(booking.travel_date)}</div>
+                      <div className="flex items-center text-xs">
+                        <Clock className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
                         {formatTime(booking.travel_date)}
                       </div>
                       {isRoundTrip && booking.return_date && (
-                        <div className="text-sm mt-1">
+                        <div className="text-xs">
                           <span className="text-muted-foreground">Volta: </span>
-                          {formatDate(booking.return_date)}
+                          {formatDate(booking.return_date)} às {formatTime(booking.return_date)}
                         </div>
                       )}
                     </div>
                     
-                    <div className="space-y-2">
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4 mr-2" />
+                    <div className="space-y-1">
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <MapPin className="h-3.5 w-3.5 mr-1" />
                         Trajeto
                       </div>
-                      <div className="font-medium truncate">{booking.origin}</div>
-                      <div className="flex items-center text-sm">
-                        <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <div className="font-medium text-sm truncate">{booking.origin}</div>
+                      <div className="flex items-center text-xs">
+                        <MapPin className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
                         <span className="truncate">{booking.destination}</span>
                       </div>
                     </div>
                     
                     <div className="space-y-2">
                       <div className="flex flex-wrap justify-between items-start">
-                        <div className="flex items-center text-sm text-muted-foreground mb-1">
-                          <Car className="h-4 w-4 mr-2" />
+                        <div className="flex items-center text-xs text-muted-foreground mb-1">
+                          <Car className="h-3.5 w-3.5 mr-1" />
                           {booking.vehicle_type || "Veículo"}
                         </div>
-                        <div className="flex items-center text-sm">
-                          <Users className="h-4 w-4 mr-1 text-muted-foreground" />
+                        <div className="flex items-center text-xs">
+                          <Users className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
                           <span>{passengerCount} {passengerCount > 1 ? 'passageiros' : 'passageiro'}</span>
                         </div>
                       </div>
                       
                       <div className="bg-gray-50 p-2 rounded-md">
-                        {isRoundTrip ? (
-                          <>
-                            <div className="flex justify-between text-xs text-gray-600">
-                              <span>Ida:</span>
-                              <span>{formatCurrency(oneWayPrice)}</span>
-                            </div>
-                            <div className="flex justify-between text-xs text-gray-600">
-                              <span>Volta:</span>
-                              <span>{formatCurrency(returnPrice)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm font-medium pt-1 mt-1 border-t border-gray-200">
-                              <span>Total:</span>
-                              <span className="text-primary">{formatCurrency(totalPrice)}</span>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="flex justify-between text-sm font-medium">
-                            <span>Valor:</span>
-                            <span className="text-primary">{formatCurrency(totalPrice)}</span>
-                          </div>
-                        )}
+                        <div className="flex justify-between text-sm font-medium">
+                          <span>Valor:</span>
+                          <span className="text-primary">{formatCurrency(totalPrice)}</span>
+                        </div>
                       </div>
                       
-                      {passengerData.length > 0 && (
-                        <Collapsible className="w-full">
-                          <CollapsibleTrigger className="w-full">
-                            <div className="flex items-center justify-between text-sm text-primary hover:underline">
-                              <span>Ver passageiros</span>
-                              <Users className="h-3.5 w-3.5 ml-1" />
-                            </div>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="mt-2 space-y-2">
-                            {passengerData.map((passenger: any, index: number) => (
-                              <div key={index} className="bg-gray-50 p-2 rounded-md text-sm">
-                                <div className="font-medium">{passenger.name}</div>
-                                <a 
-                                  href={`https://wa.me/${passenger.phone.replace(/\D/g, '')}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center text-xs text-green-600 hover:text-green-700 transition-colors"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <Phone className="h-3 w-3 mr-1" />
-                                  {passenger.phone}
-                                </a>
-                              </div>
-                            ))}
-                          </CollapsibleContent>
-                        </Collapsible>
-                      )}
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full mt-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedBooking(booking);
-                        }}
-                      >
-                        Ver Detalhes
-                      </Button>
+                      <div className="flex gap-1 mt-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="h-7 text-xs flex-1 px-1"
+                          onClick={(e) => handleShareBooking(booking, e)}
+                        >
+                          <Share2 className="h-3 w-3 mr-1" />
+                          Compartilhar
+                        </Button>
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="h-7 text-xs flex-1 px-1 text-green-600 hover:text-green-700 hover:bg-green-50"
+                          onClick={(e) => handleContact(booking, e)}
+                        >
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                          Contato
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </Card>
