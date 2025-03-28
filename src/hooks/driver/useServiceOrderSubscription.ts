@@ -71,8 +71,9 @@ export const useServiceOrderSubscription = ({
     // Create a channel for service orders related to this driver
     const channel = supabase.channel(channelName);
     
+    // Fix: Using the correct syntax for the on method with postgres_changes
     channel.on(
-      'postgres_changes',  
+      'postgres_changes', 
       {
         event: '*',
         schema: 'public',
@@ -99,6 +100,7 @@ export const useServiceOrderSubscription = ({
     // Subscribe to location updates for this driver
     const locationChannel = supabase.channel(`driver_location_${driverId}`);
     
+    // Fix: Using the correct syntax for the on method with postgres_changes
     locationChannel.on(
       'postgres_changes',
       {

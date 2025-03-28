@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CompanyDashboard from './CompanyDashboard';
 import ServiceOrderList from './ServiceOrderList';
 import VehiclesManagement from './VehiclesManagement';
 import DriversManagement from './DriversManagement';
-import CompanyMetrics from './CompanyMetrics';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -152,7 +152,6 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
               <TabsTrigger value="orders">Ordens de Serviço</TabsTrigger>
               <TabsTrigger value="vehicles">Veículos</TabsTrigger>
               <TabsTrigger value="drivers">Motoristas</TabsTrigger>
-              <TabsTrigger value="metrics">Métricas</TabsTrigger>
             </TabsList>
             <div className="p-4">
               <TabsContent value="dashboard">
@@ -166,9 +165,6 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
               </TabsContent>
               <TabsContent value="drivers">
                 <DriversManagement companyId={resolvedCompanyId} />
-              </TabsContent>
-              <TabsContent value="metrics">
-                <CompanyMetrics companyId={resolvedCompanyId} />
               </TabsContent>
             </div>
           </Tabs>

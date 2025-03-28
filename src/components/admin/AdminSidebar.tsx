@@ -1,150 +1,194 @@
 
-import React from "react";
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { adminTabs } from './AdminTabItems';
+import { useAuth } from '@/hooks/useAuth';
 import {
-  BarChart3,
-  Building2,
-  LayoutDashboard,
-  ListChecks,
-  MapPin,
-  Settings,
-  Users,
-  FileText,
-  Bell,
-  TrendingUp,
-  Truck,
-  Paintbrush2,
-  Database,
-  TestTube,
-  LogOut
-} from "lucide-react";
-
-import { Separator } from "@/components/ui/separator"
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { AuthError } from "@supabase/supabase-js";
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import { Settings, LogOut, Database, TestTube, HelpCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { AuthError } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminSidebarProps {
   signOut: () => Promise<{ error: AuthError | Error | null }>;
 }
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
-  const navigate = useNavigate();
+  const location = useLocation();
+  const { userRole } = useAuth();
+  const [logoUrl, setLogoUrl] = useState<string>('/lovable-uploads/8a9d78f7-0536-4e85-9c4b-0debc4c61fcf.png');
+  
+  useEffect(() => {
+    const fetchLogoSetting = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('site_images')
+          .select('image_url')
+          .eq('section_id', 'logo')
+          .single();
+        
+        if (error) {
+          console.error('Error fetching logo from settings:', error);
+          return;
+        }
+        
+        if (data && data.image_url) {
+          setLogoUrl(data.image_url);
+        }
+      } catch (error) {
+        console.error('Error loading logo from settings:', error);
+      }
+    };
 
-  const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (error) {
-      console.error("Error signing out:", error);
-      toast.error("Erro ao sair");
-      return;
+    fetchLogoSetting();
+  }, []);
+  
+  const isActive = (path: string) => {
+    // For root admin path
+    if (path === '/admin') {
+      const queryParams = new URLSearchParams(location.search);
+      const currentTab = queryParams.get('tab');
+      return location.pathname === '/admin' && (!currentTab || currentTab === 'overview');
     }
-    toast.success("Você saiu com sucesso");
-    navigate("/");
+    
+    // For tab routes
+    if (path.includes('?tab=')) {
+      const queryParams = new URLSearchParams(location.search);
+      const currentTab = queryParams.get('tab');
+      const tabInPath = path.split('?tab=')[1];
+      return location.pathname === '/admin' && currentTab === tabInPath;
+    }
+    
+    // For other routes without query params
+    return location.pathname === path || 
+      (path !== '/admin' && location.pathname.startsWith(path));
   };
 
+  const handleSignOut = async () => {
+    try {
+      const { error } = await signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+        toast.error('Erro ao sair');
+        return;
+      }
+      toast.success('Logout realizado com sucesso');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      toast.error('Erro ao sair');
+    }
+  };
+
+  const filteredTabs = adminTabs.filter(tab => 
+    !tab.roles || tab.roles.includes(userRole || '')
+  );
+
   return (
-    <div className="w-64 min-h-screen border-r bg-white flex flex-col">
-      <div className="p-4 border-b">
+    <Sidebar>
+      <SidebarHeader className="p-4">
         <div className="flex items-center">
           <img 
-            src="/lovable-uploads/4255bded-5013-43c0-a67a-c56a55e34118.png" 
-            alt="LaTransfer" 
-            className="h-8"
+            src={logoUrl} 
+            alt="LaTransfer Logo" 
+            className="h-10 w-auto mr-2" 
           />
-          <div className="ml-2">
-            <h3 className="font-semibold text-lg">Admin</h3>
-            <p className="text-xs text-muted-foreground">Panel</p>
-          </div>
+          <div className="font-semibold text-lg">Admin Panel</div>
         </div>
-      </div>
+      </SidebarHeader>
+      
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Principal</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {filteredTabs.map((tab) => (
+                <SidebarMenuItem key={tab.id}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={isActive(tab.href)}
+                    tooltip={tab.label}
+                  >
+                    <Link to={tab.href} onClick={(e) => {
+                      // For normal links, allow normal navigation
+                      // This prevents issues with the tab state getting out of sync
+                    }}>
+                      {tab.icon}
+                      <span>{tab.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-      <div className="flex-1 overflow-auto">
-        <div className="px-3 py-2">
-          <h3 className="text-xs font-medium text-muted-foreground mb-2">Principal</h3>
-          <nav className="space-y-1">
-            <a href="/admin" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <LayoutDashboard className="h-4 w-4 mr-3 text-muted-foreground" />
-              Dashboard
-            </a>
-            <a href="/admin?tab=orders" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <ListChecks className="h-4 w-4 mr-3 text-muted-foreground" />
-              Reservas
-            </a>
-            <a href="/admin?tab=users" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <Users className="h-4 w-4 mr-3 text-muted-foreground" />
-              Usuários
-            </a>
-            <a href="/admin?tab=companies" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <Building2 className="h-4 w-4 mr-3 text-muted-foreground" />
-              Empresas
-            </a>
-            <a href="/admin?tab=vehicles" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <Truck className="h-4 w-4 mr-3 text-muted-foreground" />
-              Veículos
-            </a>
-            <a href="/admin?tab=vehicle-categories" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <Truck className="h-4 w-4 mr-3 text-muted-foreground" />
-              Categorias de Veículos
-            </a>
-            <a href="/admin?tab=destinations" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <MapPin className="h-4 w-4 mr-3 text-muted-foreground" />
-              Destinos
-            </a>
-            <a href="/admin?tab=notifications" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <Bell className="h-4 w-4 mr-3 text-muted-foreground" />
-              Notificações
-            </a>
-            <a href="/admin?tab=investors" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <TrendingUp className="h-4 w-4 mr-3 text-muted-foreground" />
-              Investidores
-            </a>
-            <a href="/admin?tab=appearance" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <Paintbrush2 className="h-4 w-4 mr-3 text-muted-foreground" />
-              Aparência
-            </a>
-            <a href="/admin?tab=content" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <FileText className="h-4 w-4 mr-3 text-muted-foreground" />
-              Conteúdo
-            </a>
-            <a href="/admin?tab=settings" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <Settings className="h-4 w-4 mr-3 text-muted-foreground" />
-              Configurações
-            </a>
-            <a href="/admin?tab=metrics" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <BarChart3 className="h-4 w-4 mr-3 text-muted-foreground" />
-              Métricas
-            </a>
-          </nav>
-        </div>
-
-        <div className="px-3 py-2">
-          <h3 className="text-xs font-medium text-muted-foreground mb-2">Sistema</h3>
-          <nav className="space-y-1">
-            <a href="/admin?tab=database" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <Database className="h-4 w-4 mr-3 text-muted-foreground" />
-              Banco de Dados
-            </a>
-            <a href="/admin?tab=tests" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <TestTube className="h-4 w-4 mr-3 text-muted-foreground" />
-              Testes
-            </a>
-            <a href="/admin?tab=settings" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
-              <Settings className="h-4 w-4 mr-3 text-muted-foreground" />
-              Configurações
-            </a>
-          </nav>
-        </div>
-      </div>
-
-      <div className="p-4 border-t">
-        <button
-          className="w-full flex items-center px-3 py-2 text-sm rounded-md text-red-600 hover:bg-red-50"
-          onClick={handleSignOut}
-        >
-          <LogOut className="h-4 w-4 mr-3" />
-          Sair
-        </button>
-      </div>
-    </div>
+        <SidebarGroup>
+          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Configuração do Banco" isActive={location.pathname === '/admin/database-setup'}>
+                  <Link to="/admin/database-setup">
+                    <Database className="h-5 w-5" />
+                    <span>Banco de Dados</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Ambiente de Testes" isActive={location.pathname === '/admin/test-workflow'}>
+                  <Link to="/admin/test-workflow">
+                    <TestTube className="h-5 w-5" />
+                    <span>Testes</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Documentação" isActive={isActive('/admin?tab=docs')}>
+                  <Link to="/admin?tab=docs">
+                    <HelpCircle className="h-5 w-5" />
+                    <span>Documentação</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      
+      <SidebarFooter>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Configurações" isActive={isActive('/admin?tab=settings')}>
+                  <Link to="/admin?tab=settings">
+                    <Settings className="h-5 w-5" />
+                    <span>Configurações</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleSignOut} tooltip="Sair">
+                  <LogOut className="h-5 w-5" />
+                  <span>Sair</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarFooter>
+    </Sidebar>
   );
 };
 
