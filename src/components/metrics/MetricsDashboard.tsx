@@ -39,15 +39,13 @@ const MetricsDashboard: React.FC<MetricsDashboardProps> = ({ userRole, entityId 
     setIsLoading(true);
     try {
       // Orders by status
-      const { data: orderStatusData, error: orderStatusError } = await supabase
-        .from('service_orders')
-        .select('status, count')
-        .select()
-        .eq(userRole === 'company' ? 'company_id' : '1', userRole === 'company' ? entityId : '1')
-        .or('1.eq.1', { foreignTable: 'company_id' })
-        .count()
-        .or('status.eq.pending,status.eq.assigned,status.eq.in_progress,status.eq.completed,status.eq.cancelled')
-        .group('status');
+      const orderStatusQuery = supabase.from('service_orders').select('status');
+      
+      if (userRole === 'company' && entityId) {
+        orderStatusQuery.eq('company_id', entityId);
+      }
+      
+      const { data: orderStatusData, error: orderStatusError } = await orderStatusQuery;
 
       if (orderStatusError) throw orderStatusError;
 
@@ -55,61 +53,86 @@ const MetricsDashboard: React.FC<MetricsDashboardProps> = ({ userRole, entityId 
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const { data: orderTrendsData, error: orderTrendsError } = await supabase
+      const orderTrendsQuery = supabase
         .from('service_orders')
         .select('created_at')
-        .gte('created_at', thirtyDaysAgo.toISOString())
-        .eq(userRole === 'company' ? 'company_id' : '1', userRole === 'company' ? entityId : '1')
-        .or('1.eq.1', { foreignTable: 'company_id' });
+        .gte('created_at', thirtyDaysAgo.toISOString());
+        
+      if (userRole === 'company' && entityId) {
+        orderTrendsQuery.eq('company_id', entityId);
+      }
+      
+      const { data: orderTrendsData, error: orderTrendsError } = await orderTrendsQuery;
 
       if (orderTrendsError) throw orderTrendsError;
 
       // Drivers status
-      const { data: driversData, error: driversError } = await supabase
-        .from('drivers')
-        .select('status, count')
-        .eq(userRole === 'company' ? 'company_id' : '1', userRole === 'company' ? entityId : '1')
-        .or('1.eq.1', { foreignTable: 'company_id' })
-        .count()
-        .group('status');
+      const driversQuery = supabase.from('drivers').select('status');
+      
+      if (userRole === 'company' && entityId) {
+        driversQuery.eq('company_id', entityId);
+      }
+      
+      const { data: driversData, error: driversError } = await driversQuery;
 
       if (driversError) throw driversError;
 
-      // Ratings
-      const { data: ratingsData, error: ratingsError } = await supabase
-        .from('service_orders')
-        .select('driver_rating')
-        .not('driver_rating', 'is', null)
-        .eq(userRole === 'company' ? 'company_id' : '1', userRole === 'company' ? entityId : '1')
-        .or('1.eq.1', { foreignTable: 'company_id' });
+      // Ratings from driver_ratings table
+      const ratingsQuery = supabase.from('driver_ratings').select('rating');
+      
+      if (userRole === 'company' && entityId) {
+        // First get driver_ids for this company
+        const { data: companyDrivers } = await supabase
+          .from('drivers')
+          .select('id')
+          .eq('company_id', entityId);
+        
+        if (companyDrivers && companyDrivers.length > 0) {
+          const driverIds = companyDrivers.map(driver => driver.id);
+          ratingsQuery.in('driver_id', driverIds);
+        }
+      }
+      
+      const { data: ratingsData, error: ratingsError } = await ratingsQuery;
 
       if (ratingsError) throw ratingsError;
 
       // Process data
-      const ordersByStatus = orderStatusData?.map(item => ({
-        name: formatStatusName(item.status),
-        value: item.count || 0
-      })) || [];
+      // Count orders by status
+      const statusCounts: Record<string, number> = {};
+      orderStatusData?.forEach(order => {
+        statusCounts[order.status] = (statusCounts[order.status] || 0) + 1;
+      });
+      
+      const ordersByStatus = Object.entries(statusCounts).map(([status, count]) => ({
+        name: formatStatusName(status),
+        value: count
+      }));
 
       // Process order trends
       const ordersByDate = orderTrendsData ? processOrderTrends(orderTrendsData) : [];
 
-      // Process drivers status
-      const driversStatus = driversData?.map(item => ({
-        name: formatDriverStatusName(item.status),
-        value: item.count || 0
-      })) || [];
+      // Count drivers by status
+      const driverStatusCounts: Record<string, number> = {};
+      driversData?.forEach(driver => {
+        driverStatusCounts[driver.status] = (driverStatusCounts[driver.status] || 0) + 1;
+      });
+      
+      const driversStatus = Object.entries(driverStatusCounts).map(([status, count]) => ({
+        name: formatDriverStatusName(status),
+        value: count
+      }));
 
       // Process ratings
       const ratingCounts = Array(5).fill(0);
       let totalRating = 0;
       
-      ratingsData?.forEach(order => {
-        if (order.driver_rating) {
-          const rating = Math.floor(order.driver_rating);
+      ratingsData?.forEach(item => {
+        if (item.rating) {
+          const rating = Math.floor(item.rating);
           if (rating >= 1 && rating <= 5) {
             ratingCounts[rating - 1]++;
-            totalRating += order.driver_rating;
+            totalRating += item.rating;
           }
         }
       });
@@ -128,11 +151,11 @@ const MetricsDashboard: React.FC<MetricsDashboardProps> = ({ userRole, entityId 
         driversStatus,
         ratings: ratingData,
         averageRating: parseFloat(averageRating.toFixed(1)),
-        totalOrders: orderStatusData?.reduce((sum, item) => sum + (item.count || 0), 0) || 0,
-        completedOrders: orderStatusData?.find(item => item.status === 'completed')?.count || 0,
-        cancelledOrders: orderStatusData?.find(item => item.status === 'cancelled')?.count || 0,
-        activeDrivers: driversData?.find(item => item.status === 'active')?.count || 0,
-        totalDrivers: driversData?.reduce((sum, item) => sum + (item.count || 0), 0) || 0
+        totalOrders: orderStatusData?.length || 0,
+        completedOrders: statusCounts['completed'] || 0,
+        cancelledOrders: statusCounts['cancelled'] || 0,
+        activeDrivers: driverStatusCounts['active'] || 0,
+        totalDrivers: driversData?.length || 0
       });
 
       toast.success('Métricas atualizadas com sucesso');
