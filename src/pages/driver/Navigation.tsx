@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
 import TransitionEffect from '@/components/TransitionEffect';
@@ -46,7 +45,7 @@ const Navigation: React.FC = () => {
       console.log("Received notification for order:", payload);
       // If there's a status update for the current order, refresh the order data
       if (payload.id === currentOrder?.id && payload.status) {
-        fetchCurrentOrder(driverId);
+        fetchCurrentOrder(driverId!);
       }
     }
   });
@@ -106,7 +105,8 @@ const Navigation: React.FC = () => {
         }
       } else {
         console.log('Current order found:', data);
-        setCurrentOrder(data);
+        // Type assertion to ensure the data matches ServiceOrder type
+        setCurrentOrder(data as ServiceOrder);
         
         // Start tracking location
         if (data.status === 'in_progress') {
