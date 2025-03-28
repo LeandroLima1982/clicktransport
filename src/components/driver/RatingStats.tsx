@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { getDriverRatingStats, DriverRatingStats } from '@/services/rating/ratingService';
+import { getDriverRatingStats } from '@/services/rating/ratingService';
+import type { DriverRatingStats } from '@/services/rating/ratingService';
 import { RatingStats } from '@/types/rating';
 import RatingDisplay from './RatingDisplay';
 import { Skeleton } from '@/components/ui/skeleton';
