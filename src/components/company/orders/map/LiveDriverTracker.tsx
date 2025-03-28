@@ -1,188 +1,173 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { formatTravelTime } from '@/utils/routeUtils';
-import { Clock, MapPin } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Map, Marker } from 'mapbox-gl';
+import { AlertTriangle, Clock, Navigation } from 'lucide-react';
 
 interface LiveDriverTrackerProps {
-  orderId: string;
-  onLocationUpdate?: (coords: [number, number], heading?: number) => void;
-  onEtaUpdate?: (etaSeconds: number) => void;
+  driverId: string;
+  map: Map | null;
+  markerId?: string;
 }
 
-export const LiveDriverTracker: React.FC<LiveDriverTrackerProps> = ({
-  orderId,
-  onLocationUpdate,
-  onEtaUpdate
-}) => {
-  const [driverLocation, setDriverLocation] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+interface DriverLocation {
+  latitude: number;
+  longitude: number;
+  heading?: number | null;
+  timestamp: string;
+  eta_seconds?: number | null;
+  [key: string]: any;
+}
+
+const LiveDriverTracker: React.FC<LiveDriverTrackerProps> = ({ driverId, map, markerId }) => {
+  const [driverLocation, setDriverLocation] = useState<DriverLocation | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  // Initial fetch of driver location
   useEffect(() => {
-    const fetchDriverLocation = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('driver_locations')
-          .select('*')
-          .eq('order_id', orderId)
-          .single();
+    if (!driverId) return;
 
-        if (error) {
-          if (error.code !== 'PGRST116') { // Not found is expected sometimes
-            console.error('Error fetching driver location:', error);
-            setError('Não foi possível obter a localização atual do motorista.');
-          }
-        } else if (data) {
-          setDriverLocation(data);
-          
-          // Call the location update callback
-          if (onLocationUpdate && data.latitude && data.longitude) {
-            onLocationUpdate([data.longitude, data.latitude], data.heading);
-          }
-          
-          // Call the ETA update callback
-          if (onEtaUpdate && data.eta_seconds) {
-            onEtaUpdate(data.eta_seconds);
-          }
-        }
-      } catch (err) {
-        console.error('Exception fetching driver location:', err);
-        setError('Erro ao buscar localização do motorista.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
+    // Initial fetch
     fetchDriverLocation();
-  }, [orderId, onLocationUpdate, onEtaUpdate]);
 
-  // Subscribe to real-time updates
-  useEffect(() => {
+    // Set up realtime subscription
     const channel = supabase
-      .channel(`order_driver_${orderId}`)
+      .channel(`driver_location_${driverId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'driver_locations',
-          filter: `order_id=eq.${orderId}`
+          filter: `driver_id=eq.${driverId}`
         },
         (payload) => {
           console.log('Driver location update:', payload);
-          setDriverLocation(payload.new);
-          
-          // Call the location update callback
-          if (onLocationUpdate && payload.new.latitude && payload.new.longitude) {
-            onLocationUpdate(
-              [payload.new.longitude, payload.new.latitude],
-              payload.new.heading
-            );
-          }
-          
-          // Call the ETA update callback
-          if (onEtaUpdate && payload.new.eta_seconds) {
-            onEtaUpdate(payload.new.eta_seconds);
-          }
+          handleLocationUpdate(payload.new as DriverLocation);
         }
       )
-      .subscribe((status) => {
-        console.log('Driver location subscription status:', status);
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [orderId, onLocationUpdate, onEtaUpdate]);
+  }, [driverId, map]);
 
-  if (loading) {
-    return (
-      <div className="p-3 bg-muted/50 rounded-md animate-pulse">
-        <p className="text-sm text-muted-foreground">Buscando informações do motorista...</p>
-      </div>
-    );
-  }
+  const fetchDriverLocation = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('driver_locations')
+        .select('*')
+        .eq('driver_id', driverId)
+        .single();
+
+      if (error) {
+        setError('Não foi possível obter a localização do motorista');
+        return;
+      }
+
+      if (data) {
+        handleLocationUpdate(data as DriverLocation);
+      }
+    } catch (err) {
+      console.error('Error fetching driver location:', err);
+      setError('Erro ao obter localização do motorista');
+    }
+  };
+
+  const handleLocationUpdate = (location: DriverLocation) => {
+    if (!location || !location.latitude || !location.longitude) return;
+    
+    setDriverLocation(location);
+    
+    // Update the marker on the map if map is available
+    if (map && location.longitude && location.latitude) {
+      updateMapMarker(location);
+      
+      // Format last update time
+      if (location.timestamp) {
+        setLastUpdate(
+          formatDistanceToNow(new Date(location.timestamp), {
+            addSuffix: true,
+            locale: ptBR
+          })
+        );
+      }
+      
+      // Show ETA if available
+      const etaSeconds = location.eta_seconds;
+      if (etaSeconds) {
+        console.log(`ETA: ${Math.round(etaSeconds / 60)} minutos`);
+      }
+    }
+  };
+
+  const updateMapMarker = (location: DriverLocation) => {
+    if (!map) return;
+    
+    // Find or create marker
+    const marker = document.getElementById(markerId || 'driver-marker');
+    
+    if (marker) {
+      // Update existing marker
+      const markerLngLat = [location.longitude, location.latitude];
+      
+      // Update marker location using Mapbox's API
+      const mapboxMarker = map.getMarkerById?.(markerId || 'driver-marker');
+      if (mapboxMarker) {
+        mapboxMarker.setLngLat(markerLngLat);
+      } else {
+        // If map.getMarkerById is not available, we need to use Mapbox's normal API
+        // This would require keeping track of the marker instance elsewhere
+        console.log('Marker reference not found in map');
+      }
+      
+      // Update marker rotation if heading is available
+      if (location.heading !== null && location.heading !== undefined) {
+        marker.style.transform = `rotate(${location.heading}deg)`;
+      }
+    } else {
+      console.log('Marker element not found in DOM');
+    }
+  };
 
   if (error) {
     return (
-      <div className="p-3 bg-destructive/10 rounded-md">
-        <p className="text-sm text-destructive">{error}</p>
-      </div>
-    );
-  }
-
-  if (!driverLocation) {
-    return (
-      <div className="p-3 bg-muted/50 rounded-md">
-        <p className="text-sm text-muted-foreground">Motorista ainda não iniciou rastreamento.</p>
+      <div className="text-yellow-500 flex items-center gap-2 text-sm">
+        <AlertTriangle className="h-4 w-4" />
+        {error}
       </div>
     );
   }
 
   return (
-    <div className="p-4 bg-primary/5 rounded-md border border-primary/20">
-      <h3 className="text-sm font-medium mb-3">Rastreamento em Tempo Real</h3>
-      
-      <div className="space-y-2">
-        <div className="flex items-center">
-          <MapPin className="h-4 w-4 text-primary mr-2" />
-          <div className="text-sm">
-            <span className="font-medium">Localização atual:</span>
-            <span className="ml-1 font-mono text-xs">
-              {driverLocation.latitude.toFixed(5)}, {driverLocation.longitude.toFixed(5)}
-            </span>
+    <div className="text-sm">
+      {driverLocation ? (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-blue-600">
+            <Navigation className="h-4 w-4" />
+            <span>Motorista em movimento</span>
           </div>
+          
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span>Atualizado {lastUpdate}</span>
+          </div>
+          
+          {driverLocation.eta_seconds && (
+            <div className="mt-1 font-medium">
+              ETA: {Math.round(driverLocation.eta_seconds / 60)} minutos
+            </div>
+          )}
         </div>
-        
-        {driverLocation.eta_seconds && (
-          <div className="flex items-center">
-            <Clock className="h-4 w-4 text-primary mr-2" />
-            <div className="text-sm">
-              <span className="font-medium">Tempo estimado de chegada:</span>
-              <span className="ml-1">
-                {formatTravelTime(Math.ceil(driverLocation.eta_seconds / 60))}
-              </span>
-            </div>
-          </div>
-        )}
-        
-        {driverLocation.speed && (
-          <div className="flex items-center">
-            <svg className="h-4 w-4 text-primary mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 8v4l3 3" />
-            </svg>
-            <div className="text-sm">
-              <span className="font-medium">Velocidade:</span>
-              <span className="ml-1">
-                {Math.round(driverLocation.speed * 3.6)} km/h
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
-      
-      <div className="text-xs text-gray-500 mt-3 flex items-center">
-        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-1.5"></span>
-        Atualizado {formatTimestamp(driverLocation.timestamp || driverLocation.updated_at)}
-      </div>
+      ) : (
+        <div className="text-muted-foreground">
+          Aguardando atualização de localização...
+        </div>
+      )}
     </div>
   );
-};
-
-// Helper function to format the timestamp in a user-friendly way
-const formatTimestamp = (timestamp: string): string => {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
-  if (diffSeconds < 10) return 'agora mesmo';
-  if (diffSeconds < 60) return `há ${diffSeconds} segundos`;
-  if (diffSeconds < 3600) return `há ${Math.floor(diffSeconds / 60)} minutos`;
-  
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
 export default LiveDriverTracker;

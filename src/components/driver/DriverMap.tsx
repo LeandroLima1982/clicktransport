@@ -1,393 +1,278 @@
+
 import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
+import mapboxgl, { Map, Marker } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Loader2 } from 'lucide-react';
-import { MAPBOX_TOKEN } from '@/utils/mapbox';
-import { calculateRoute } from '@/utils/routeUtils';
-import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, Navigation2 } from 'lucide-react';
+import { useDriverLocation } from '@/hooks/useDriverLocation';
+import { toast } from 'sonner';
+import { getMapboxToken } from '@/utils/mapbox';
 
 interface DriverMapProps {
-  currentOrder: any;
-  currentLocation?: [number, number];
-  heading?: number;
-  onEtaUpdate?: (eta: number) => void;
+  driverId: string | null;
+  origin?: string;
+  destination?: string;
+  autoStartTracking?: boolean;
 }
 
 const DriverMap: React.FC<DriverMapProps> = ({ 
-  currentOrder, 
-  currentLocation,
-  heading,
-  onEtaUpdate
+  driverId, 
+  origin, 
+  destination,
+  autoStartTracking = false
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const markerRef = useRef<mapboxgl.Marker | null>(null);
-  const routeRef = useRef<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [routeGeometry, setRouteGeometry] = useState<any>(null);
-  const [estimatedArrival, setEstimatedArrival] = useState<Date | null>(null);
-  const [distanceRemaining, setDistanceRemaining] = useState<number | null>(null);
+  const map = useRef<Map | null>(null);
+  const driverMarker = useRef<Marker | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
   
+  const { 
+    location, 
+    isTracking, 
+    startTracking, 
+    stopTracking, 
+    updateNow,
+    error: locationError
+  } = useDriverLocation(driverId || '');
+
+  // Initialize map
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || map.current) return;
     
-    if (!MAPBOX_TOKEN) {
-      setError('Mapbox token is missing. Please configure it in the environment settings.');
-      setLoading(false);
+    const token = getMapboxToken();
+    if (!token) {
+      console.error('Mapbox token not available');
       return;
     }
     
-    try {
-      mapboxgl.accessToken = MAPBOX_TOKEN;
-      
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        zoom: 12,
-        center: currentLocation || [-43.2096, -22.9035], // Default to Rio de Janeiro
-        attributionControl: false
-      });
-      
-      map.current.addControl(
-        new mapboxgl.NavigationControl({ showCompass: true }),
-        'bottom-right'
-      );
-      
-      map.current.on('load', () => {
-        setLoading(false);
-        
-        fetchRouteAndAddMarkers();
-      });
-      
-      map.current.on('error', (err) => {
-        console.error('Map error:', err);
-        setError('Erro ao carregar mapa: ' + err.error?.message || 'Erro desconhecido');
-        setLoading(false);
-      });
-    } catch (err) {
-      console.error('Error initializing map:', err);
-      setError('Erro ao inicializar mapa');
-      setLoading(false);
-    }
+    mapboxgl.accessToken = token;
     
-    return () => {
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!currentOrder?.id) return;
-
-    const channel = supabase
-      .channel(`order_drivers_${currentOrder.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'driver_locations',
-          filter: `order_id=eq.${currentOrder.id}`
-        },
-        (payload) => {
-          console.log('Driver location updated:', payload);
-          updateDriverMarker(payload.new);
-        }
-      )
-      .subscribe((status) => {
-        console.log('Driver location subscription status:', status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentOrder?.id]);
-  
-  const updateDriverMarker = (driverData: any) => {
-    if (!map.current || !driverData) return;
+    const initialLocation = location?.coords || { latitude: -23.5505, longitude: -46.6333 }; // São Paulo default
     
-    if (driverData.driver_id === currentOrder.driver_id) return;
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [initialLocation.longitude, initialLocation.latitude],
+      zoom: 12
+    });
     
-    const coords: [number, number] = [driverData.longitude, driverData.latitude];
-    const markerId = `driver-${driverData.driver_id}`;
-    
-    const existingMarker = document.getElementById(markerId);
-    if (existingMarker) {
-      const marker = map.current.getMarkerById(markerId);
-      if (marker) {
-        marker.setLngLat(coords);
-        if (driverData.heading) {
-          marker.setRotation(driverData.heading);
-        }
-      }
-    } else {
+    map.current.on('load', () => {
+      setMapLoaded(true);
+      
+      // Add navigation control
+      map.current?.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      
+      // Create driver marker
       const el = document.createElement('div');
-      el.className = 'other-vehicle-marker';
-      el.id = markerId;
-      el.style.width = '20px';
-      el.style.height = '20px';
+      el.id = "driver-marker";
+      el.className = 'driver-marker';
+      el.style.width = '24px';
+      el.style.height = '24px';
       el.style.backgroundImage = 'url(/vehicle-icon.svg)';
       el.style.backgroundSize = 'cover';
-      el.style.transform = `rotate(${driverData.heading || 0}deg)`;
+      el.style.borderRadius = '50%';
       
-      new mapboxgl.Marker({
-        element: el,
-        rotationAlignment: 'map'
-      })
-        .setLngLat(coords)
+      driverMarker.current = new mapboxgl.Marker(el)
+        .setLngLat([initialLocation.longitude, initialLocation.latitude])
         .addTo(map.current);
-    }
-  };
-  
-  const fetchRouteAndAddMarkers = async () => {
-    if (!map.current || !currentOrder) return;
-    
-    try {
-      const routeInfo = await calculateRoute(currentOrder.origin, currentOrder.destination);
       
-      if (routeInfo && routeInfo.geometry) {
-        setRouteGeometry(routeInfo.geometry);
-        routeRef.current = routeInfo;
-        
-        if (routeInfo.duration) {
-          const eta = new Date();
-          eta.setSeconds(eta.getSeconds() + routeInfo.duration * 60);
-          setEstimatedArrival(eta);
-          
-          if (onEtaUpdate) {
-            onEtaUpdate(routeInfo.duration * 60);
-          }
-        }
-        
-        new mapboxgl.Marker({ color: '#00FF00' })
-          .setLngLat(routeInfo.geometry.coordinates[0])
-          .setPopup(new mapboxgl.Popup().setHTML(`<h3>Origem</h3><p>${currentOrder.origin}</p>`))
-          .addTo(map.current);
-        
-        new mapboxgl.Marker({ color: '#FF0000' })
-          .setLngLat(routeInfo.geometry.coordinates[routeInfo.geometry.coordinates.length - 1])
-          .setPopup(new mapboxgl.Popup().setHTML(`<h3>Destino</h3><p>${currentOrder.destination}</p>`))
-          .addTo(map.current);
-        
-        if (map.current.getSource('route')) {
-          const source = map.current.getSource('route') as mapboxgl.GeoJSONSource;
-          source.setData({
-            type: 'Feature',
-            properties: {},
-            geometry: routeInfo.geometry
-          });
-        } else {
-          map.current.addSource('route', {
-            type: 'geojson',
-            data: {
-              type: 'Feature',
-              properties: {},
-              geometry: routeInfo.geometry
-            }
-          });
-          
-          map.current.addLayer({
-            id: 'route',
-            type: 'line',
-            source: 'route',
-            layout: {
-              'line-join': 'round',
-              'line-cap': 'round'
-            },
-            paint: {
-              'line-color': '#3887be',
-              'line-width': 5,
-              'line-opacity': 0.75
-            }
-          });
-        }
-        
-        const bounds = new mapboxgl.LngLatBounds();
-        routeInfo.geometry.coordinates.forEach((coord: [number, number]) => {
-          bounds.extend(coord);
-        });
-        
-        map.current.fitBounds(bounds, {
-          padding: 50,
-          duration: 1000
-        });
-      } else {
-        console.error('No route geometry returned');
-      }
-    } catch (err) {
-      console.error('Error fetching route:', err);
-    }
-  };
-  
-  useEffect(() => {
-    if (!map.current || !currentLocation) return;
-    
-    if (routeRef.current && routeRef.current.geometry && onEtaUpdate) {
-      try {
-        const remaining = calculateRemainingDistance(currentLocation, routeRef.current.geometry.coordinates);
-        setDistanceRemaining(remaining / 1000);
-        
-        const speedKmh = estimateCurrentSpeed(remaining);
-        const remainingTimeSeconds = (remaining / 1000) / (speedKmh / 3600);
-        
-        const eta = new Date();
-        eta.setSeconds(eta.getSeconds() + remainingTimeSeconds);
-        setEstimatedArrival(eta);
-        
-        onEtaUpdate(remainingTimeSeconds);
-        
-        console.log(`Updated ETA: ${formatTime(remainingTimeSeconds)}, Distance: ${(remaining/1000).toFixed(2)}km, Speed: ${speedKmh.toFixed(1)}km/h`);
-      } catch (err) {
-        console.error('Error updating ETA:', err);
-      }
-    }
-    
-    if (markerRef.current) {
-      markerRef.current.remove();
-    }
-    
-    const el = document.createElement('div');
-    el.className = 'vehicle-marker';
-    el.style.width = '24px';
-    el.style.height = '24px';
-    el.style.backgroundImage = 'url(/vehicle-icon.svg)';
-    el.style.backgroundSize = 'cover';
-    el.style.transform = `rotate(${heading || 0}deg)`;
-    
-    markerRef.current = new mapboxgl.Marker({
-      element: el,
-      rotationAlignment: 'map'
-    })
-      .setLngLat(currentLocation)
-      .addTo(map.current);
-    
-    if (!loading) {
-      map.current.easeTo({
-        center: currentLocation,
-        zoom: 15,
-        duration: 1000
-      });
-    }
-  }, [currentLocation, heading, onEtaUpdate]);
-  
-  const estimateCurrentSpeed = (distanceRemaining: number): number => {
-    const baseSpeed = 40;
-    
-    if (currentLocation && navigator.geolocation) {
-      const actualSpeed = navigator.geolocation.getCurrentPosition(
-        (position) => position.coords.speed || 0
-      );
-      if (actualSpeed) {
-        return actualSpeed * 3.6;
-      }
-    }
-    
-    if (distanceRemaining > 10000) return baseSpeed + 20;
-    if (distanceRemaining > 5000) return baseSpeed + 10;
-    if (distanceRemaining > 1000) return baseSpeed;
-    return baseSpeed - 10;
-  };
-  
-  const calculateRemainingDistance = (currentLocation: [number, number], routeCoordinates: [number, number][]) => {
-    let minDistance = Infinity;
-    let closestPointIndex = 0;
-    
-    routeCoordinates.forEach((coord, index) => {
-      const distance = getDistance(currentLocation, coord);
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestPointIndex = index;
+      // Start tracking automatically if requested
+      if (autoStartTracking && !isTracking) {
+        startTracking();
       }
     });
     
-    let remainingDistance = 0;
-    for (let i = closestPointIndex; i < routeCoordinates.length - 1; i++) {
-      remainingDistance += getDistance(routeCoordinates[i], routeCoordinates[i + 1]);
-    }
-    
-    return remainingDistance;
-  };
-  
-  const getDistance = (point1: [number, number], point2: [number, number]) => {
-    const R = 6371e3;
-    const φ1 = point1[1] * Math.PI/180;
-    const φ2 = point2[1] * Math.PI/180;
-    const Δφ = (point2[1] - point1[1]) * Math.PI/180;
-    const Δλ = (point2[0] - point1[0]) * Math.PI/180;
+    return () => {
+      map.current?.remove();
+      map.current = null;
+    };
+  }, []);
 
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const d = R * c;
+  // Update driver location on map
+  useEffect(() => {
+    if (!map.current || !location || !mapLoaded) return;
     
-    return d;
-  };
-  
-  const formatDistance = () => {
-    if (distanceRemaining === null) return 'Calculando...';
-    if (distanceRemaining < 1) return `${Math.round(distanceRemaining * 1000)} m`;
-    return `${distanceRemaining.toFixed(1)} km`;
-  };
-  
-  const formatEta = () => {
-    if (!estimatedArrival) return 'Calculando...';
-    return estimatedArrival.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-  };
-  
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+    const { latitude, longitude } = location.coords;
     
-    if (hours > 0) {
-      return `${hours}h ${minutes}min`;
+    // Update marker position
+    if (driverMarker.current) {
+      driverMarker.current.setLngLat([longitude, latitude]);
+    } else {
+      // Create marker if it doesn't exist
+      const el = document.createElement('div');
+      el.id = "driver-marker";
+      el.className = 'driver-marker';
+      el.style.width = '24px';
+      el.style.height = '24px';
+      el.style.backgroundImage = 'url(/vehicle-icon.svg)';
+      el.style.backgroundSize = 'cover';
+      el.style.borderRadius = '50%';
+      
+      driverMarker.current = new mapboxgl.Marker(el)
+        .setLngLat([longitude, latitude])
+        .addTo(map.current);
     }
-    return `${minutes} min`;
+    
+    // Pan map to driver location
+    map.current.panTo([longitude, latitude], { duration: 500 });
+    
+    // Update marker rotation if heading is available
+    if (location.coords.heading !== null && location.coords.heading !== undefined) {
+      const markerEl = document.getElementById('driver-marker');
+      if (markerEl) {
+        markerEl.style.transform = `rotate(${location.coords.heading}deg)`;
+      }
+    }
+  }, [location, mapLoaded]);
+
+  // Handle location tracking error
+  useEffect(() => {
+    if (locationError) {
+      toast.error('Erro de localização', {
+        description: locationError.message,
+        duration: 5000
+      });
+    }
+  }, [locationError]);
+
+  // Handle route display
+  useEffect(() => {
+    // Only attempt to add route if we have origin and destination
+    if (!map.current || !mapLoaded || !origin || !destination) return;
+    
+    const getRoute = async () => {
+      try {
+        const token = getMapboxToken();
+        const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${encodeURIComponent(origin)};${encodeURIComponent(destination)}?geometries=geojson&access_token=${token}`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          
+          // Add route to map
+          if (map.current?.getSource('route')) {
+            // Update existing source
+            const source = map.current.getSource('route');
+            if ('setData' in source) {
+              source.setData({
+                type: 'Feature',
+                properties: {},
+                geometry: route.geometry
+              });
+            }
+          } else {
+            // Add new source and layer
+            map.current?.addSource('route', {
+              type: 'geojson',
+              data: {
+                type: 'Feature',
+                properties: {},
+                geometry: route.geometry
+              }
+            });
+            
+            map.current?.addLayer({
+              id: 'route',
+              type: 'line',
+              source: 'route',
+              layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+              },
+              paint: {
+                'line-color': '#3887be',
+                'line-width': 5,
+                'line-opacity': 0.75
+              }
+            });
+          }
+          
+          // Fit bounds to show entire route
+          const bounds = new mapboxgl.LngLatBounds();
+          route.geometry.coordinates.forEach((coord) => {
+            bounds.extend(coord as [number, number]);
+          });
+          
+          map.current?.fitBounds(bounds, {
+            padding: 50,
+            duration: 1000
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching route:', error);
+      }
+    };
+    
+    getRoute();
+  }, [origin, destination, mapLoaded]);
+
+  const handleStartTracking = () => {
+    startTracking();
+    toast.success('Localização ativada', {
+      description: 'O mapa agora mostrará sua localização em tempo real.'
+    });
   };
   
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
-        <div className="text-center text-destructive">
-          <p className="font-medium">{error}</p>
-          <p className="text-sm mt-1">Verifique sua conexão e as configurações do mapa</p>
-        </div>
-      </div>
-    );
-  }
+  const handleStopTracking = () => {
+    stopTracking();
+    toast.info('Localização desativada', {
+      description: 'O rastreamento de localização foi interrompido.'
+    });
+  };
   
+  const handleUpdateLocation = () => {
+    updateNow();
+    toast.success('Localização atualizada', {
+      description: 'Sua posição foi atualizada no mapa.'
+    });
+  };
+
   return (
-    <div className="relative h-full w-full">
-      {loading && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100 bg-opacity-70">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-            <p className="mt-2">Carregando mapa...</p>
-          </div>
-        </div>
-      )}
+    <div className="space-y-4">
       <div 
         ref={mapContainer} 
-        className="h-full w-full rounded-lg" 
+        className="w-full h-[400px] rounded-lg border border-border"
       />
       
-      {(estimatedArrival || distanceRemaining !== null) && (
-        <div className="absolute bottom-4 left-4 z-10 bg-background/80 backdrop-blur-sm p-3 rounded-lg shadow-md">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-xs text-gray-500 font-medium">Chegada prevista</div>
-              <div className="text-lg font-bold text-primary">{formatEta()}</div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-500 font-medium">Distância restante</div>
-              <div className="text-lg font-bold text-primary">{formatDistance()}</div>
-            </div>
+      <div className="flex gap-2 items-center">
+        {!isTracking ? (
+          <Button 
+            onClick={handleStartTracking}
+            className="flex items-center gap-2"
+            variant="default"
+          >
+            <Navigation2 className="h-4 w-4" />
+            Iniciar rastreamento
+          </Button>
+        ) : (
+          <>
+            <Button 
+              onClick={handleStopTracking}
+              className="flex items-center gap-2"
+              variant="destructive"
+            >
+              Parar rastreamento
+            </Button>
+            
+            <Button 
+              onClick={handleUpdateLocation}
+              className="flex items-center gap-2"
+              variant="outline"
+            >
+              Atualizar agora
+            </Button>
+          </>
+        )}
+        
+        {locationError && (
+          <div className="text-red-500 flex items-center gap-2 text-sm ml-auto">
+            <AlertCircle className="h-4 w-4" />
+            Erro: {locationError.message}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

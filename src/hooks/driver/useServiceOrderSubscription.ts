@@ -14,7 +14,7 @@ export interface ServiceOrderNotificationPayload {
   company_id?: string;
   eventType?: string;
   eventName?: string;
-  new?: ServiceOrder;
+  new?: Partial<ServiceOrder>;
   old?: Partial<ServiceOrder>;
   [key: string]: any;
 }
@@ -80,17 +80,20 @@ export const useServiceOrderSubscription = ({
         table: 'service_orders',
         filter: `driver_id=eq.${driverId}`
       },
-      (payload) => {
+      (payload: any) => {
         console.log('Service order change detected:', payload);
         
-        const newData = payload.new as ServiceOrderNotificationPayload;
+        // Convert payload to expected format
+        const notificationPayload: ServiceOrderNotificationPayload = {
+          ...payload.new,
+          eventType: payload.eventType,
+          eventName: 'service_order_update',
+          new: payload.new,
+          old: payload.old
+        };
         
         // Handle different types of events
-        if (payload.eventType === 'UPDATE') {
-          handleNotification(newData);
-        } else if (payload.eventType === 'INSERT') {
-          handleNotification(newData);
-        }
+        handleNotification(notificationPayload);
       }
     )
     .subscribe((status) => {
@@ -108,13 +111,15 @@ export const useServiceOrderSubscription = ({
         table: 'driver_locations',
         filter: `driver_id=eq.${driverId}`
       },
-      (payload) => {
+      (payload: any) => {
         console.log('Driver location update:', payload);
         // Pass location updates to callback
-        onNotification?.({
-          ...payload,
-          eventName: 'location_update'
-        });
+        if (onNotification) {
+          onNotification({
+            ...payload,
+            eventName: 'location_update'
+          });
+        }
       }
     )
     .subscribe((status) => {

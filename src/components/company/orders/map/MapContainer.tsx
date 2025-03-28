@@ -1,160 +1,117 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Map, Activity } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import InteractiveMap from './InteractiveMap';
 import StaticMap from './StaticMap';
-import RouteInfo from './RouteInfo';
-import LiveDriverTracker from './LiveDriverTracker';
-import { supabase } from '@/integrations/supabase/client';
+import LoadingState from './LoadingState';
+import ErrorState from './ErrorState';
+import { Button } from '@/components/ui/button';
+import { Eye, Map } from 'lucide-react';
+import { getMapboxDirections, getStaticMapUrl } from './mapUtils';
 
 interface MapContainerProps {
-  orderId: string;
-  originCoords: [number, number];
-  destinationCoords: [number, number];
-  useStaticMap: boolean;
-  staticMapUrl: string | null;
-  routeGeometry: any;
-  routeDistance: number;
-  routeDuration: number;
-  originAddress?: string;
-  destinationAddress?: string;
-  onToggleMapType?: () => void;
+  originAddress: string;
+  destinationAddress: string;
+  driverId?: string | null;
+  orderId?: string | null;
+  interactive?: boolean;
 }
 
 const MapContainer: React.FC<MapContainerProps> = ({
-  orderId,
-  originCoords,
-  destinationCoords,
-  useStaticMap,
-  staticMapUrl,
-  routeGeometry,
-  routeDistance,
-  routeDuration,
   originAddress,
   destinationAddress,
-  onToggleMapType
+  driverId,
+  orderId,
+  interactive = false,
 }) => {
-  const [activeTab, setActiveTab] = useState('map');
-  const [driverLocation, setDriverLocation] = useState<[number, number] | null>(null);
-  const [driverHeading, setDriverHeading] = useState<number | undefined>(undefined);
-  const [eta, setEta] = useState<number | null>(null);
-  const [isInProgress, setIsInProgress] = useState(false);
+  const [isInteractive, setIsInteractive] = useState(interactive);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [staticMapUrl, setStaticMapUrl] = useState<string>('');
+  const [routeData, setRouteData] = useState<any>(null);
+  
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
-  // Check if the order is in progress
   useEffect(() => {
-    const checkOrderStatus = async () => {
-      const { data, error } = await supabase
-        .from('service_orders')
-        .select('status')
-        .eq('id', orderId)
-        .single();
+    if (!originAddress || !destinationAddress) {
+      setError("Endereços de origem e destino são necessários para mostrar o mapa");
+      setIsLoading(false);
+      return;
+    }
+
+    const loadMapData = async () => {
+      try {
+        setIsLoading(true);
         
-      if (!error && data) {
-        setIsInProgress(data.status === 'in_progress');
+        // Get static map URL regardless of mode
+        const mapUrl = await getStaticMapUrl(originAddress, destinationAddress);
+        setStaticMapUrl(mapUrl);
+        
+        // Get route data for interactive map
+        if (isInteractive) {
+          const route = await getMapboxDirections(originAddress, destinationAddress);
+          setRouteData(route);
+        }
+        
+        setError(null);
+      } catch (err) {
+        console.error('Error loading map data:', err);
+        setError('Não foi possível carregar o mapa. Verifique os endereços e tente novamente.');
+      } finally {
+        setIsLoading(false);
       }
     };
-    
-    checkOrderStatus();
-    
-    // Subscribe to order status changes
-    const channel = supabase
-      .channel(`order_status_${orderId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'service_orders',
-          filter: `id=eq.${orderId}`
-        },
-        (payload) => {
-          if (payload.new && payload.new.status) {
-            setIsInProgress(payload.new.status === 'in_progress');
-          }
-        }
-      )
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [orderId]);
 
-  // Handler for driver location updates
-  const handleLocationUpdate = (coords: [number, number], heading?: number) => {
-    setDriverLocation(coords);
-    setDriverHeading(heading);
+    loadMapData();
+  }, [originAddress, destinationAddress, isInteractive]);
+
+  const toggleMapMode = () => {
+    setIsInteractive(prev => !prev);
   };
-  
-  // Handler for ETA updates
-  const handleEtaUpdate = (etaSeconds: number) => {
-    setEta(etaSeconds);
-  };
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} />;
+  }
 
   return (
-    <div className="flex flex-col h-full space-y-4">
-      <Tabs defaultValue="map" value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-        <div className="flex justify-between items-center">
-          <TabsList>
-            <TabsTrigger value="map" className="flex items-center gap-1">
-              <Map className="h-4 w-4" />
-              <span>Mapa</span>
-            </TabsTrigger>
-            <TabsTrigger value="info" className="flex items-center gap-1">
-              <Activity className="h-4 w-4" />
-              <span>Informações</span>
-            </TabsTrigger>
-          </TabsList>
-
-          {activeTab === 'map' && (
-            <Button variant="outline" size="sm" onClick={onToggleMapType}>
-              {useStaticMap ? 'Mapa Interativo' : 'Mapa Estático'}
-            </Button>
-          )}
-        </div>
-
-        <TabsContent value="map" className="flex-1 mt-2 h-[400px]">
-          {useStaticMap ? (
-            <StaticMap
-              staticMapUrl={staticMapUrl}
-              originAddress={originAddress}
-              destinationAddress={destinationAddress}
-            />
-          ) : (
-            <InteractiveMap
-              originCoords={originCoords}
-              destinationCoords={destinationCoords}
-              routeGeometry={routeGeometry}
-              originAddress={originAddress}
-              destinationAddress={destinationAddress}
-              currentLocation={driverLocation}
-              heading={driverHeading}
-            />
-          )}
-        </TabsContent>
-
-        <TabsContent value="info" className="mt-2">
-          <div className="space-y-4">
-            <RouteInfo
-              distance={routeDistance}
-              duration={routeDuration}
-              originAddress={originAddress}
-              destinationAddress={destinationAddress}
-              eta={eta}
-            />
-            
-            {isInProgress && (
-              <LiveDriverTracker 
-                orderId={orderId}
-                onLocationUpdate={handleLocationUpdate}
-                onEtaUpdate={handleEtaUpdate}
-              />
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={toggleMapMode}
+          className="flex items-center gap-2"
+        >
+          {isInteractive ? <Eye className="h-4 w-4" /> : <Map className="h-4 w-4" />}
+          {isInteractive ? 'Ver Mapa Simples' : 'Ver Mapa Interativo'}
+        </Button>
+      </div>
+      
+      <div className="h-[300px] bg-slate-50 rounded-lg overflow-hidden border">
+        {isInteractive ? (
+          <InteractiveMap
+            ref={mapContainerRef}
+            mapRef={mapRef}
+            originAddress={originAddress}
+            destinationAddress={destinationAddress}
+            routeData={routeData}
+            driverId={driverId}
+            orderId={orderId}
+          />
+        ) : (
+          <StaticMap
+            mapUrl={staticMapUrl}
+            originAddress={originAddress}
+            destinationAddress={destinationAddress}
+          />
+        )}
+      </div>
     </div>
   );
 };
