@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
 import TransitionEffect from '@/components/TransitionEffect';
@@ -17,20 +18,7 @@ import { submitRating } from '@/services/rating/ratingService';
 import { StarRating } from '@/components/ui/star-rating';
 import { Textarea } from '@/components/ui/textarea';
 import { updateServiceOrderStatus } from '@/services/booking/bookingService';
-
-// Define a ServiceOrder interface to match what's returned from the API
-interface ServiceOrder {
-  id: string;
-  status: string;
-  origin: string;
-  destination: string;
-  pickup_date: string;
-  notes?: string;
-  driver_id: string;
-  company_id: string;
-  vehicle_id?: string;
-  delivery_date?: string;
-}
+import { ServiceOrder } from '@/types/serviceOrder';
 
 const Navigation: React.FC = () => {
   const { user } = useAuth();
@@ -43,7 +31,7 @@ const Navigation: React.FC = () => {
   const [feedback, setFeedback] = useState('');
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   
-  const { position, startTracking, stopTracking } = useDriverLocation(driverId);
+  const { location, startTracking, stopTracking } = useDriverLocation(driverId);
 
   useEffect(() => {
     if (user) {
@@ -52,11 +40,14 @@ const Navigation: React.FC = () => {
   }, [user]);
 
   // Subscribe to service order updates
-  useServiceOrderSubscription(driverId, (payload: ServiceOrderNotificationPayload) => {
-    console.log("Received notification for order:", payload);
-    // If there's a status update for the current order, refresh the order data
-    if (payload.id === currentOrder?.id && payload.status) {
-      fetchCurrentOrder(driverId);
+  useServiceOrderSubscription({
+    driverId, 
+    onNotification: (payload: ServiceOrderNotificationPayload) => {
+      console.log("Received notification for order:", payload);
+      // If there's a status update for the current order, refresh the order data
+      if (payload.id === currentOrder?.id && payload.status) {
+        fetchCurrentOrder(driverId);
+      }
     }
   });
 
@@ -307,7 +298,7 @@ const Navigation: React.FC = () => {
               </CardFooter>
             </Card>
             
-            {position && (
+            {location && (
               <Card>
                 <CardHeader>
                   <CardTitle>Sua Localização Atual</CardTitle>
@@ -316,22 +307,22 @@ const Navigation: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Latitude</p>
-                      <p className="font-mono">{position.coords.latitude.toFixed(6)}</p>
+                      <p className="font-mono">{location.coords.latitude.toFixed(6)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Longitude</p>
-                      <p className="font-mono">{position.coords.longitude.toFixed(6)}</p>
+                      <p className="font-mono">{location.coords.longitude.toFixed(6)}</p>
                     </div>
-                    {position.coords.heading && (
+                    {location.coords.heading && (
                       <div>
                         <p className="text-sm text-gray-500">Direção</p>
-                        <p className="font-mono">{position.coords.heading.toFixed(1)}°</p>
+                        <p className="font-mono">{location.coords.heading.toFixed(1)}°</p>
                       </div>
                     )}
-                    {position.coords.speed && (
+                    {location.coords.speed && (
                       <div>
                         <p className="text-sm text-gray-500">Velocidade</p>
-                        <p className="font-mono">{(position.coords.speed * 3.6).toFixed(1)} km/h</p>
+                        <p className="font-mono">{(location.coords.speed * 3.6).toFixed(1)} km/h</p>
                       </div>
                     )}
                   </div>

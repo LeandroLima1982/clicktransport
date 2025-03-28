@@ -4,6 +4,9 @@ import { RatingData, RatingStats } from '@/types/rating';
 import { toast } from 'sonner';
 import { logInfo } from '../monitoring/systemLogService';
 
+// Define enum for log categories
+type LogCategory = 'user' | 'admin' | 'system' | 'booking' | 'driver' | 'company';
+
 export const submitRating = async (ratingData: RatingData): Promise<boolean> => {
   try {
     const { data, error } = await supabase
@@ -16,7 +19,7 @@ export const submitRating = async (ratingData: RatingData): Promise<boolean> => 
     
     logInfo(
       `Rating submitted for driver: ${ratingData.driver_id}`,
-      'rating',
+      'driver' as LogCategory,
       { driver_id: ratingData.driver_id, order_id: ratingData.order_id, rating: ratingData.rating }
     );
     
@@ -38,7 +41,7 @@ export const getDriverRatings = async (driverId: string): Promise<RatingData[]> 
       
     if (error) throw error;
     
-    return data || [];
+    return data as unknown as RatingData[];
   } catch (error) {
     console.error('Error fetching driver ratings:', error);
     return [];
@@ -66,7 +69,8 @@ export const getDriverRatingStats = async (driverId: string): Promise<RatingStat
       };
     }
     
-    const ratings = data.map(item => item.rating);
+    // Type assertion to access the rating property
+    const ratings = (data as unknown as { rating: number }[]).map(item => item.rating);
     const totalRatings = ratings.length;
     const sumRatings = ratings.reduce((sum, rating) => sum + rating, 0);
     const averageRating = parseFloat((sumRatings / totalRatings).toFixed(1));
@@ -108,7 +112,7 @@ export const getServiceOrderRating = async (orderId: string): Promise<RatingData
       throw error;
     }
     
-    return data;
+    return data as unknown as RatingData;
   } catch (error) {
     console.error('Error fetching order rating:', error);
     return null;

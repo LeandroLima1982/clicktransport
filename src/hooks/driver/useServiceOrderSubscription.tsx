@@ -3,14 +3,19 @@ import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { playNotificationSound } from '@/services/notifications/notificationService';
+import { ServiceOrder } from '@/types/serviceOrder';
 
 export interface ServiceOrderNotificationPayload {
-  id: string;
+  id?: string;
   status?: string;
   origin?: string;
   destination?: string;
   driver_id?: string;
   company_id?: string;
+  eventType?: string;
+  eventName?: string;
+  new?: ServiceOrder;
+  old?: Partial<ServiceOrder>;
   [key: string]: any;
 }
 
@@ -19,10 +24,10 @@ interface UseServiceOrderSubscriptionProps {
   onNotification?: (payload: ServiceOrderNotificationPayload) => void;
 }
 
-export const useServiceOrderSubscription = (
-  driverId: string | null,
-  onNotification?: (payload: ServiceOrderNotificationPayload) => void
-) => {
+export const useServiceOrderSubscription = ({
+  driverId,
+  onNotification
+}: UseServiceOrderSubscriptionProps) => {
   const handleNotification = useCallback((payload: ServiceOrderNotificationPayload) => {
     console.log('Service order notification received:', payload);
     if (onNotification) {
@@ -64,31 +69,33 @@ export const useServiceOrderSubscription = (
     }
 
     // Create a channel for service orders related to this driver
-    const channel = supabase.channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'service_orders',
-          filter: `driver_id=eq.${driverId}`
-        },
-        (payload) => {
-          console.log('Service order change detected:', payload);
-          
-          const newData = payload.new as ServiceOrderNotificationPayload;
-          
-          // Handle different types of events
-          if (payload.eventType === 'UPDATE') {
-            handleNotification(newData);
-          } else if (payload.eventType === 'INSERT') {
-            handleNotification(newData);
-          }
+    const channel = supabase.channel(channelName);
+    
+    // Add 'postgres_changes' subscription using the correct method
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'service_orders',
+        filter: `driver_id=eq.${driverId}`
+      },
+      (payload) => {
+        console.log('Service order change detected:', payload);
+        
+        const newData = payload.new as ServiceOrderNotificationPayload;
+        
+        // Handle different types of events
+        if (payload.eventType === 'UPDATE') {
+          handleNotification(newData);
+        } else if (payload.eventType === 'INSERT') {
+          handleNotification(newData);
         }
-      )
-      .subscribe((status) => {
-        console.log('Service order subscription status:', status);
-      });
+      }
+    )
+    .subscribe((status) => {
+      console.log('Service order subscription status:', status);
+    });
 
     return () => {
       console.log('Removing service order subscription');

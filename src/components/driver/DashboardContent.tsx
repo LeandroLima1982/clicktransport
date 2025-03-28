@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useServiceOrderSubscription } from '@/hooks/driver/useServiceOrderSubscription';
 
 interface DashboardContentProps {
   driverId: string | null;
@@ -20,6 +21,14 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ driverId, isLoading
     isLoading, 
     handleUpdateStatus
   } = useServiceOrders(driverId);
+
+  // Subscribe to service order updates with empty callback to use default notification handling
+  useServiceOrderSubscription({ 
+    driverId, 
+    onNotification: () => {
+      // Just refresh orders - default notifications will be handled by the hook
+    }
+  });
 
   if (isLoadingDriver || isLoading) {
     return (
