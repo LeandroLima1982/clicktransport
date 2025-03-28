@@ -1,73 +1,91 @@
 
 import React from 'react';
-import { Clock, Navigation } from 'lucide-react';
-import { formatDistance } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Card, CardContent } from '@/components/ui/card';
+import { formatTravelTime } from '@/utils/routeUtils';
+import { MapPin, Clock, ArrowRight } from 'lucide-react';
 
 interface RouteInfoProps {
   distance: number;
   duration: number;
-  isRealTimeData?: boolean;
-  lastUpdate?: Date | null;
+  originAddress?: string;
+  destinationAddress?: string;
+  eta?: number | null;
 }
 
-const RouteInfo: React.FC<RouteInfoProps> = ({ 
-  distance, 
-  duration, 
-  isRealTimeData = false,
-  lastUpdate = null 
+const RouteInfo: React.FC<RouteInfoProps> = ({
+  distance,
+  duration,
+  originAddress = 'Origem',
+  destinationAddress = 'Destino',
+  eta
 }) => {
-  // Format distance in km with 1 decimal place
-  const formatDistanceText = (meters: number) => {
-    const km = meters / 1000;
+  // Format distance for display
+  const formatDistance = (km: number) => {
+    if (km < 1) {
+      return `${Math.round(km * 1000)} m`;
+    }
     return `${km.toFixed(1)} km`;
   };
   
-  // Format duration in hours and minutes
-  const formatDurationText = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+  // Format ETA for display
+  const formatEta = () => {
+    if (!eta) return null;
     
-    if (hours > 0) {
-      return `${hours}h ${minutes}min`;
-    } else {
-      return `${minutes} min`;
-    }
-  };
-
-  // Format last update time
-  const formatLastUpdate = (date: Date | null) => {
-    if (!date) return 'Dados ao vivo não disponíveis';
+    const minutes = Math.ceil(eta / 60);
+    const etaTime = new Date();
+    etaTime.setMinutes(etaTime.getMinutes() + minutes);
     
-    return formatDistance(date, new Date(), { 
-      addSuffix: true,
-      locale: ptBR
-    });
+    return etaTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-background/90 p-2 rounded-t-md border-t backdrop-blur-sm">
-      <div className="flex justify-between items-center px-2">
-        <div className="flex items-center">
-          <Navigation className="h-4 w-4 mr-1 text-primary" />
-          <span className="text-sm font-medium">{formatDistanceText(distance)}</span>
+    <Card>
+      <CardContent className="p-4 space-y-4">
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium flex items-center">
+            <MapPin className="h-4 w-4 mr-1 text-green-600" /> 
+            Origem
+          </h3>
+          <p className="text-sm text-muted-foreground ml-5">{originAddress}</p>
         </div>
         
-        <div className="flex items-center">
-          <Clock className="h-4 w-4 mr-1 text-primary" />
-          <span className="text-sm font-medium">{formatDurationText(duration)}</span>
+        <div className="flex justify-center">
+          <ArrowRight className="text-muted-foreground" />
         </div>
         
-        {isRealTimeData && (
-          <div className="flex items-center">
-            <span className="text-xs text-muted-foreground">
-              Atualizado: {formatLastUpdate(lastUpdate)}
-            </span>
-            <div className={`ml-2 h-2 w-2 rounded-full ${lastUpdate && (new Date().getTime() - lastUpdate.getTime() < 5 * 60 * 1000) ? 'bg-green-500' : 'bg-amber-500'}`}></div>
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium flex items-center">
+            <MapPin className="h-4 w-4 mr-1 text-red-600" /> 
+            Destino
+          </h3>
+          <p className="text-sm text-muted-foreground ml-5">{destinationAddress}</p>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+          <div className="space-y-1">
+            <h4 className="text-xs text-muted-foreground">Distância</h4>
+            <p className="font-medium">{formatDistance(distance)}</p>
+          </div>
+          
+          <div className="space-y-1">
+            <h4 className="text-xs text-muted-foreground">Tempo estimado</h4>
+            <p className="font-medium">{formatTravelTime(duration)}</p>
+          </div>
+        </div>
+        
+        {eta && (
+          <div className="pt-3 border-t">
+            <div className="space-y-1">
+              <h4 className="text-xs flex items-center">
+                <Clock className="h-3 w-3 mr-1 text-primary" />
+                Chegada prevista (tempo real)
+              </h4>
+              <p className="font-medium text-primary">{formatEta()}</p>
+            </div>
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

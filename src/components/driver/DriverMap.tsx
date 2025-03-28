@@ -1,10 +1,10 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Loader2 } from 'lucide-react';
 import { MAPBOX_TOKEN } from '@/utils/mapbox';
 import { calculateRoute } from '@/utils/routeUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DriverMapProps {
   currentOrder: any;
@@ -27,8 +27,8 @@ const DriverMap: React.FC<DriverMapProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [routeGeometry, setRouteGeometry] = useState<any>(null);
   const [estimatedArrival, setEstimatedArrival] = useState<Date | null>(null);
+  const [distanceRemaining, setDistanceRemaining] = useState<number | null>(null);
   
-  // Initialize map when component mounts
   useEffect(() => {
     if (!mapContainer.current) return;
     
@@ -54,15 +54,12 @@ const DriverMap: React.FC<DriverMapProps> = ({
         'bottom-right'
       );
       
-      // Handle successful map load
       map.current.on('load', () => {
         setLoading(false);
         
-        // Add origin and destination markers
         fetchRouteAndAddMarkers();
       });
       
-      // Handle map errors
       map.current.on('error', (err) => {
         console.error('Map error:', err);
         setError('Erro ao carregar mapa: ' + err.error?.message || 'Erro desconhecido');
@@ -74,7 +71,6 @@ const DriverMap: React.FC<DriverMapProps> = ({
       setLoading(false);
     }
     
-    // Clean up on unmount
     return () => {
       if (map.current) {
         map.current.remove();
@@ -82,8 +78,70 @@ const DriverMap: React.FC<DriverMapProps> = ({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!currentOrder?.id) return;
+
+    const channel = supabase
+      .channel(`order_drivers_${currentOrder.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'driver_locations',
+          filter: `order_id=eq.${currentOrder.id}`
+        },
+        (payload) => {
+          console.log('Driver location updated:', payload);
+          updateDriverMarker(payload.new);
+        }
+      )
+      .subscribe((status) => {
+        console.log('Driver location subscription status:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentOrder?.id]);
   
-  // Fetch route and add markers
+  const updateDriverMarker = (driverData: any) => {
+    if (!map.current || !driverData) return;
+    
+    if (driverData.driver_id === currentOrder.driver_id) return;
+    
+    const coords: [number, number] = [driverData.longitude, driverData.latitude];
+    const markerId = `driver-${driverData.driver_id}`;
+    
+    const existingMarker = document.getElementById(markerId);
+    if (existingMarker) {
+      const marker = map.current.getMarkerById(markerId);
+      if (marker) {
+        marker.setLngLat(coords);
+        if (driverData.heading) {
+          marker.setRotation(driverData.heading);
+        }
+      }
+    } else {
+      const el = document.createElement('div');
+      el.className = 'other-vehicle-marker';
+      el.id = markerId;
+      el.style.width = '20px';
+      el.style.height = '20px';
+      el.style.backgroundImage = 'url(/vehicle-icon.svg)';
+      el.style.backgroundSize = 'cover';
+      el.style.transform = `rotate(${driverData.heading || 0}deg)`;
+      
+      new mapboxgl.Marker({
+        element: el,
+        rotationAlignment: 'map'
+      })
+        .setLngLat(coords)
+        .addTo(map.current);
+    }
+  };
+  
   const fetchRouteAndAddMarkers = async () => {
     if (!map.current || !currentOrder) return;
     
@@ -94,56 +152,59 @@ const DriverMap: React.FC<DriverMapProps> = ({
         setRouteGeometry(routeInfo.geometry);
         routeRef.current = routeInfo;
         
-        // Calculate ETA based on route duration
         if (routeInfo.duration) {
           const eta = new Date();
-          eta.setSeconds(eta.getSeconds() + routeInfo.duration);
+          eta.setSeconds(eta.getSeconds() + routeInfo.duration * 60);
           setEstimatedArrival(eta);
           
-          // Call callback with ETA information
           if (onEtaUpdate) {
-            onEtaUpdate(routeInfo.duration);
+            onEtaUpdate(routeInfo.duration * 60);
           }
         }
         
-        // Add origin marker
         new mapboxgl.Marker({ color: '#00FF00' })
           .setLngLat(routeInfo.geometry.coordinates[0])
           .setPopup(new mapboxgl.Popup().setHTML(`<h3>Origem</h3><p>${currentOrder.origin}</p>`))
           .addTo(map.current);
         
-        // Add destination marker
         new mapboxgl.Marker({ color: '#FF0000' })
           .setLngLat(routeInfo.geometry.coordinates[routeInfo.geometry.coordinates.length - 1])
           .setPopup(new mapboxgl.Popup().setHTML(`<h3>Destino</h3><p>${currentOrder.destination}</p>`))
           .addTo(map.current);
         
-        // Add route to map
-        map.current.addSource('route', {
-          type: 'geojson',
-          data: {
+        if (map.current.getSource('route')) {
+          const source = map.current.getSource('route') as mapboxgl.GeoJSONSource;
+          source.setData({
             type: 'Feature',
             properties: {},
             geometry: routeInfo.geometry
-          }
-        });
+          });
+        } else {
+          map.current.addSource('route', {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              properties: {},
+              geometry: routeInfo.geometry
+            }
+          });
+          
+          map.current.addLayer({
+            id: 'route',
+            type: 'line',
+            source: 'route',
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round'
+            },
+            paint: {
+              'line-color': '#3887be',
+              'line-width': 5,
+              'line-opacity': 0.75
+            }
+          });
+        }
         
-        map.current.addLayer({
-          id: 'route',
-          type: 'line',
-          source: 'route',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round'
-          },
-          paint: {
-            'line-color': '#3887be',
-            'line-width': 5,
-            'line-opacity': 0.75
-          }
-        });
-        
-        // Fit bounds to include the entire route
         const bounds = new mapboxgl.LngLatBounds();
         routeInfo.geometry.coordinates.forEach((coord: [number, number]) => {
           bounds.extend(coord);
@@ -161,37 +222,33 @@ const DriverMap: React.FC<DriverMapProps> = ({
     }
   };
   
-  // Update vehicle marker when location changes
   useEffect(() => {
     if (!map.current || !currentLocation) return;
     
-    // Update ETA based on current position if we have route data
     if (routeRef.current && routeRef.current.geometry && onEtaUpdate) {
       try {
-        // Find closest point on route to current location
-        // Simplified version - in production would use more sophisticated proximity calculation
-        const distanceRemaining = calculateRemainingDistance(currentLocation, routeRef.current.geometry.coordinates);
-        const speedKmh = 50; // Assumed average speed in km/h
-        const remainingTimeSeconds = (distanceRemaining / 1000) / (speedKmh / 3600);
+        const remaining = calculateRemainingDistance(currentLocation, routeRef.current.geometry.coordinates);
+        setDistanceRemaining(remaining / 1000);
         
-        // Update ETA
+        const speedKmh = estimateCurrentSpeed(remaining);
+        const remainingTimeSeconds = (remaining / 1000) / (speedKmh / 3600);
+        
         const eta = new Date();
         eta.setSeconds(eta.getSeconds() + remainingTimeSeconds);
         setEstimatedArrival(eta);
         
-        // Call callback with updated ETA
         onEtaUpdate(remainingTimeSeconds);
+        
+        console.log(`Updated ETA: ${formatTime(remainingTimeSeconds)}, Distance: ${(remaining/1000).toFixed(2)}km, Speed: ${speedKmh.toFixed(1)}km/h`);
       } catch (err) {
         console.error('Error updating ETA:', err);
       }
     }
     
-    // Remove existing marker if it exists
     if (markerRef.current) {
       markerRef.current.remove();
     }
     
-    // Create element for the custom marker
     const el = document.createElement('div');
     el.className = 'vehicle-marker';
     el.style.width = '24px';
@@ -200,7 +257,6 @@ const DriverMap: React.FC<DriverMapProps> = ({
     el.style.backgroundSize = 'cover';
     el.style.transform = `rotate(${heading || 0}deg)`;
     
-    // Create and add new marker
     markerRef.current = new mapboxgl.Marker({
       element: el,
       rotationAlignment: 'map'
@@ -208,7 +264,6 @@ const DriverMap: React.FC<DriverMapProps> = ({
       .setLngLat(currentLocation)
       .addTo(map.current);
     
-    // Center map on current location if not first load
     if (!loading) {
       map.current.easeTo({
         center: currentLocation,
@@ -218,9 +273,25 @@ const DriverMap: React.FC<DriverMapProps> = ({
     }
   }, [currentLocation, heading, onEtaUpdate]);
   
-  // Helper function to calculate remaining distance
+  const estimateCurrentSpeed = (distanceRemaining: number): number => {
+    const baseSpeed = 40;
+    
+    if (currentLocation && navigator.geolocation) {
+      const actualSpeed = navigator.geolocation.getCurrentPosition(
+        (position) => position.coords.speed || 0
+      );
+      if (actualSpeed) {
+        return actualSpeed * 3.6;
+      }
+    }
+    
+    if (distanceRemaining > 10000) return baseSpeed + 20;
+    if (distanceRemaining > 5000) return baseSpeed + 10;
+    if (distanceRemaining > 1000) return baseSpeed;
+    return baseSpeed - 10;
+  };
+  
   const calculateRemainingDistance = (currentLocation: [number, number], routeCoordinates: [number, number][]) => {
-    // Find closest point on route to current location
     let minDistance = Infinity;
     let closestPointIndex = 0;
     
@@ -232,7 +303,6 @@ const DriverMap: React.FC<DriverMapProps> = ({
       }
     });
     
-    // Calculate remaining distance by summing distances between remaining points
     let remainingDistance = 0;
     for (let i = closestPointIndex; i < routeCoordinates.length - 1; i++) {
       remainingDistance += getDistance(routeCoordinates[i], routeCoordinates[i + 1]);
@@ -241,9 +311,8 @@ const DriverMap: React.FC<DriverMapProps> = ({
     return remainingDistance;
   };
   
-  // Helper function to calculate distance between two points in meters
   const getDistance = (point1: [number, number], point2: [number, number]) => {
-    const R = 6371e3; // Earth radius in meters
+    const R = 6371e3;
     const φ1 = point1[1] * Math.PI/180;
     const φ2 = point2[1] * Math.PI/180;
     const Δφ = (point2[1] - point1[1]) * Math.PI/180;
@@ -255,12 +324,28 @@ const DriverMap: React.FC<DriverMapProps> = ({
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     const d = R * c;
     
-    return d; // Distance in meters
+    return d;
+  };
+  
+  const formatDistance = () => {
+    if (distanceRemaining === null) return 'Calculando...';
+    if (distanceRemaining < 1) return `${Math.round(distanceRemaining * 1000)} m`;
+    return `${distanceRemaining.toFixed(1)} km`;
   };
   
   const formatEta = () => {
     if (!estimatedArrival) return 'Calculando...';
     return estimatedArrival.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  };
+  
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}min`;
+    }
+    return `${minutes} min`;
   };
   
   if (error) {
@@ -289,10 +374,18 @@ const DriverMap: React.FC<DriverMapProps> = ({
         className="h-full w-full rounded-lg" 
       />
       
-      {estimatedArrival && (
-        <div className="absolute bottom-4 left-4 z-10 bg-background/80 backdrop-blur-sm p-2 rounded shadow">
-          <div className="text-sm font-medium">Chegada prevista</div>
-          <div className="text-lg font-bold text-primary">{formatEta()}</div>
+      {(estimatedArrival || distanceRemaining !== null) && (
+        <div className="absolute bottom-4 left-4 z-10 bg-background/80 backdrop-blur-sm p-3 rounded-lg shadow-md">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-xs text-gray-500 font-medium">Chegada prevista</div>
+              <div className="text-lg font-bold text-primary">{formatEta()}</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 font-medium">Distância restante</div>
+              <div className="text-lg font-bold text-primary">{formatDistance()}</div>
+            </div>
+          </div>
         </div>
       )}
     </div>

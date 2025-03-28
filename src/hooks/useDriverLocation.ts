@@ -35,7 +35,7 @@ export const useDriverLocation = (driverId: string | null): LocationState => {
       
       const { error } = await supabase
         .from('driver_locations')
-        .insert({
+        .upsert({
           driver_id: driverId,
           order_id: orderId || currentOrderId,
           latitude: position.coords.latitude,
@@ -44,6 +44,8 @@ export const useDriverLocation = (driverId: string | null): LocationState => {
           speed: position.coords.speed || null,
           accuracy: position.coords.accuracy || null,
           timestamp: new Date().toISOString()
+        }, {
+          onConflict: 'driver_id'
         });
       
       if (error) {
@@ -93,11 +95,7 @@ export const useDriverLocation = (driverId: string | null): LocationState => {
   }, []);
 
   // Function to start tracking location
-  const startTracking = useCallback((orderId?: string) => {
-    if (orderId) {
-      setCurrentOrderId(orderId);
-    }
-    
+  const startTracking = useCallback(() => {
     if (!navigator.geolocation) {
       toast.error('Geolocalização não suportada', {
         description: 'Seu navegador não suporta geolocalização.'
@@ -136,9 +134,6 @@ export const useDriverLocation = (driverId: string | null): LocationState => {
     toast.success('Rastreamento iniciado', {
       description: 'Sua localização está sendo monitorada em tempo real.'
     });
-    
-    // Return cleanup function
-    return () => stopTracking();
   }, [handleSuccess, handleError]);
 
   // Function to stop tracking location

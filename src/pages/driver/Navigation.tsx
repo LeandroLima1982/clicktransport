@@ -18,7 +18,20 @@ import { submitRating } from '@/services/rating/ratingService';
 import { StarRating } from '@/components/ui/star-rating';
 import { Textarea } from '@/components/ui/textarea';
 import { updateServiceOrderStatus } from '@/services/booking/bookingService';
-import { ServiceOrder } from '@/types/serviceOrder';
+import DriverMap from '@/components/driver/DriverMap';
+
+// Define ServiceOrder type if it's not imported from somewhere else
+interface ServiceOrder {
+  id: string;
+  status: string;
+  origin: string;
+  destination: string;
+  driver_id: string;
+  company_id: string;
+  pickup_date: string;
+  notes?: string;
+  created_at: string;
+}
 
 const Navigation: React.FC = () => {
   const { user } = useAuth();
@@ -30,6 +43,7 @@ const Navigation: React.FC = () => {
   const [rating, setRating] = useState(5);
   const [feedback, setFeedback] = useState('');
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [eta, setEta] = useState<number | null>(null);
   
   const { location, startTracking, stopTracking } = useDriverLocation(driverId);
 
@@ -218,6 +232,51 @@ const Navigation: React.FC = () => {
     }
   };
 
+  // Handle ETA updates from the map component
+  const handleEtaUpdate = (etaSeconds: number) => {
+    setEta(etaSeconds);
+    // Update the ETA in the driver_locations table to make it available to clients
+    if (driverId && currentOrder) {
+      updateDriverEta(etaSeconds);
+    }
+  };
+
+  // Function to update driver ETA in the database
+  const updateDriverEta = async (etaSeconds: number) => {
+    if (!driverId || !currentOrder) return;
+    
+    try {
+      const { error } = await supabase
+        .from('driver_locations')
+        .update({ 
+          eta_seconds: etaSeconds,
+          updated_at: new Date().toISOString()
+        })
+        .eq('driver_id', driverId);
+        
+      if (error) {
+        console.error('Error updating ETA:', error);
+      }
+    } catch (error) {
+      console.error('Exception updating ETA:', error);
+    }
+  };
+
+  // Format ETA for display
+  const formatEta = () => {
+    if (eta === null) return 'Calculando...';
+    
+    const minutes = Math.floor(eta / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+      const remainingMinutes = minutes % 60;
+      return `${hours}h${remainingMinutes > 0 ? ` ${remainingMinutes}min` : ''}`;
+    }
+    
+    return `${minutes} min`;
+  };
+
   return (
     <TransitionEffect>
       <div className="container mx-auto px-4 py-8">
@@ -270,6 +329,13 @@ const Navigation: React.FC = () => {
                   <span>{formatDate(currentOrder.pickup_date)}</span>
                 </div>
                 
+                {eta !== null && (
+                  <div className="flex items-center text-primary">
+                    <span className="font-medium mr-2">Tempo estimado de chegada:</span>
+                    <span className="font-bold">{formatEta()}</span>
+                  </div>
+                )}
+                
                 {currentOrder.notes && (
                   <div className="mt-4 p-3 bg-gray-50 rounded-md">
                     <p className="text-sm font-medium text-gray-700">Observações:</p>
@@ -298,6 +364,18 @@ const Navigation: React.FC = () => {
                 )}
               </CardFooter>
             </Card>
+            
+            {/* Add real-time map with the current trip */}
+            {currentOrder && (
+              <div className="h-[350px] md:h-[500px] rounded-lg overflow-hidden">
+                <DriverMap 
+                  currentOrder={currentOrder}
+                  currentLocation={location ? [location.coords.longitude, location.coords.latitude] : undefined}
+                  heading={location?.coords.heading}
+                  onEtaUpdate={handleEtaUpdate}
+                />
+              </div>
+            )}
             
             {location && (
               <Card>

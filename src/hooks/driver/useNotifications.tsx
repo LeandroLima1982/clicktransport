@@ -2,18 +2,22 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDriverId } from './useDriverId';
-import { useServiceOrderSubscription } from './useServiceOrderSubscription';
+import { useServiceOrderSubscription, ServiceOrderNotificationPayload } from './useServiceOrderSubscription';
 import { toast } from 'sonner';
+import { playNotificationSound } from '@/services/notifications/notificationService';
 
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<number>(0);
   const { user } = useAuth();
   const driverId = useDriverId(user);
 
-  // Subscribe to service order changes with the correct parameter structure
+  // Subscribe to service order changes
   useServiceOrderSubscription({
     driverId,
-    onNotification: () => {
+    onNotification: (payload: ServiceOrderNotificationPayload) => {
+      // Play notification sound
+      playNotificationSound();
+      
       // Show a toast notification
       toast.success('Nova ordem de serviço!', {
         description: 'Você recebeu uma nova atribuição de serviço.',
