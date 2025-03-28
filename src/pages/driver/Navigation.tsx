@@ -40,12 +40,10 @@ const Navigation: React.FC = () => {
     }
   }, [user]);
 
-  // Subscribe to service order updates
   useServiceOrderSubscription({
     driverId, 
     onNotification: (payload: ServiceOrderNotificationPayload) => {
       console.log("Received notification for order:", payload);
-      // If there's a status update for the current order, refresh the order data
       if (payload.id === currentOrder?.id && payload.status) {
         fetchCurrentOrder(driverId!);
       }
@@ -86,7 +84,6 @@ const Navigation: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Look for active orders (in_progress or assigned)
       const { data, error } = await supabase
         .from('service_orders')
         .select('*')
@@ -98,7 +95,6 @@ const Navigation: React.FC = () => {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // No order found, this is expected sometimes
           console.log('No active order found');
           setCurrentOrder(null);
         } else {
@@ -107,10 +103,8 @@ const Navigation: React.FC = () => {
         }
       } else {
         console.log('Current order found:', data);
-        // Type assertion to ensure the data matches ServiceOrder type
         setCurrentOrder(data as ServiceOrder);
         
-        // Start tracking location
         if (data.status === 'in_progress') {
           startTracking();
         }
@@ -131,12 +125,10 @@ const Navigation: React.FC = () => {
       
       if (error) throw error;
       
-      // Start location tracking
       startTracking();
       
       toast.success('Viagem iniciada!');
       
-      // Update the current order status locally
       setCurrentOrder(prev => prev ? {...prev, status: 'in_progress'} : null);
       
       logInfo(
@@ -162,7 +154,6 @@ const Navigation: React.FC = () => {
       
       if (error) throw error;
       
-      // Stop location tracking
       stopTracking();
       
       toast.success('Viagem concluída com sucesso!');
@@ -181,11 +172,9 @@ const Navigation: React.FC = () => {
         }
       );
       
-      // Open rating dialog
       setShowCompletionDialog(false);
       setShowRatingDialog(true);
       
-      // Refresh current order data
       fetchCurrentOrder(driverId!);
       
     } catch (error) {
@@ -224,16 +213,13 @@ const Navigation: React.FC = () => {
     setShowRatingDialog(false);
   };
 
-  // Handle ETA updates from the map component
   const handleEtaUpdate = (etaSeconds: number) => {
     setEta(etaSeconds);
-    // Update the ETA in the driver_locations table to make it available to clients
     if (driverId && currentOrder) {
       updateDriverEta(etaSeconds);
     }
   };
 
-  // Function to update driver ETA in the database
   const updateDriverEta = async (etaSeconds: number) => {
     if (!driverId || !currentOrder) return;
     
@@ -254,7 +240,6 @@ const Navigation: React.FC = () => {
     }
   };
 
-  // Format ETA for display
   const formatEta = () => {
     if (eta === null) return 'Calculando...';
     
@@ -357,11 +342,12 @@ const Navigation: React.FC = () => {
               </CardFooter>
             </Card>
             
-            {/* Add real-time map with the current trip */}
             {currentOrder && (
               <div className="h-[350px] md:h-[500px] rounded-lg overflow-hidden">
                 <DriverMap 
-                  currentOrder={currentOrder}
+                  driverId={driverId}
+                  origin={currentOrder.origin}
+                  destination={currentOrder.destination}
                   currentLocation={location ? [location.coords.longitude, location.coords.latitude] : undefined}
                   heading={location?.coords.heading}
                   onEtaUpdate={handleEtaUpdate}
@@ -415,7 +401,6 @@ const Navigation: React.FC = () => {
           </Card>
         )}
         
-        {/* Trip Completion Confirmation Dialog */}
         <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
           <DialogContent>
             <DialogHeader>
@@ -453,7 +438,6 @@ const Navigation: React.FC = () => {
           </DialogContent>
         </Dialog>
         
-        {/* Rating Dialog */}
         <Dialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
           <DialogContent>
             <DialogHeader>

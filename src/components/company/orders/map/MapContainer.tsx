@@ -9,21 +9,38 @@ import ErrorState from './ErrorState';
 import { Button } from '@/components/ui/button';
 import { Eye, Map } from 'lucide-react';
 import { getMapboxDirections, getStaticMapUrl } from './mapUtils';
+import LiveDriverTracker from './LiveDriverTracker';
 
-interface MapContainerProps {
+export interface MapContainerProps {
   originAddress: string;
   destinationAddress: string;
+  originCoords?: [number, number];
+  destinationCoords?: [number, number];
   driverId?: string | null;
   orderId?: string | null;
   interactive?: boolean;
+  useStaticMap?: boolean;
+  staticMapUrl?: string | null;
+  routeGeometry?: any;
+  routeDistance?: number;
+  routeDuration?: number;
+  onToggleMapType?: () => void;
 }
 
 const MapContainer: React.FC<MapContainerProps> = ({
   originAddress,
   destinationAddress,
+  originCoords,
+  destinationCoords,
   driverId,
   orderId,
   interactive = false,
+  useStaticMap,
+  staticMapUrl: externalStaticMapUrl,
+  routeGeometry: externalRouteGeometry,
+  routeDistance: externalRouteDistance,
+  routeDuration: externalRouteDuration,
+  onToggleMapType,
 }) => {
   const [isInteractive, setIsInteractive] = useState(interactive);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,7 +51,36 @@ const MapContainer: React.FC<MapContainerProps> = ({
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
+  // If external props for static mode are provided, use those instead
   useEffect(() => {
+    if (useStaticMap !== undefined) {
+      setIsInteractive(!useStaticMap);
+    }
+  }, [useStaticMap]);
+
+  useEffect(() => {
+    if (externalStaticMapUrl) {
+      setStaticMapUrl(externalStaticMapUrl);
+    }
+  }, [externalStaticMapUrl]);
+
+  useEffect(() => {
+    if (externalRouteGeometry) {
+      setRouteData({
+        geometry: externalRouteGeometry,
+        distance: externalRouteDistance,
+        duration: externalRouteDuration
+      });
+    }
+  }, [externalRouteGeometry, externalRouteDistance, externalRouteDuration]);
+
+  useEffect(() => {
+    // Skip API calls if coords and data are provided externally
+    if ((originCoords && destinationCoords) || externalRouteGeometry) {
+      setIsLoading(false);
+      return;
+    }
+
     if (!originAddress || !destinationAddress) {
       setError("Endereços de origem e destino são necessários para mostrar o mapa");
       setIsLoading(false);
@@ -47,7 +93,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
         
         // Get static map URL regardless of mode
         const mapUrl = await getStaticMapUrl(originAddress, destinationAddress);
-        setStaticMapUrl(mapUrl);
+        setStaticMapUrl(mapUrl || '');
         
         // Get route data for interactive map
         if (isInteractive) {
@@ -65,10 +111,39 @@ const MapContainer: React.FC<MapContainerProps> = ({
     };
 
     loadMapData();
-  }, [originAddress, destinationAddress, isInteractive]);
+  }, [originAddress, destinationAddress, isInteractive, originCoords, destinationCoords, externalRouteGeometry]);
 
   const toggleMapMode = () => {
-    setIsInteractive(prev => !prev);
+    if (onToggleMapType) {
+      onToggleMapType();
+    } else {
+      setIsInteractive(prev => !prev);
+    }
+  };
+
+  const handleRetry = () => {
+    // Reload map data
+    setIsLoading(true);
+    setError(null);
+    
+    const loadMapData = async () => {
+      try {
+        const mapUrl = await getStaticMapUrl(originAddress, destinationAddress);
+        setStaticMapUrl(mapUrl || '');
+        
+        if (isInteractive) {
+          const route = await getMapboxDirections(originAddress, destinationAddress);
+          setRouteData(route);
+        }
+      } catch (err) {
+        console.error('Error reloading map data:', err);
+        setError('Não foi possível carregar o mapa. Verifique os endereços e tente novamente.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadMapData();
   };
 
   if (isLoading) {
@@ -76,7 +151,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
   }
 
   if (error) {
-    return <ErrorState message={error} />;
+    return <ErrorState message={error} onRetry={handleRetry} />;
   }
 
   return (
@@ -96,13 +171,12 @@ const MapContainer: React.FC<MapContainerProps> = ({
       <div className="h-[300px] bg-slate-50 rounded-lg overflow-hidden border">
         {isInteractive ? (
           <InteractiveMap
-            ref={mapContainerRef}
-            mapRef={mapRef}
+            originCoords={originCoords || [0, 0]}
+            destinationCoords={destinationCoords || [0, 0]}
+            routeGeometry={routeData?.geometry || externalRouteGeometry}
             originAddress={originAddress}
             destinationAddress={destinationAddress}
-            routeData={routeData}
-            driverId={driverId}
-            orderId={orderId}
+            onMapLoadFailure={() => setIsInteractive(false)}
           />
         ) : (
           <StaticMap
@@ -112,6 +186,17 @@ const MapContainer: React.FC<MapContainerProps> = ({
           />
         )}
       </div>
+      
+      {driverId && (
+        <div className="mt-4">
+          <h3 className="text-sm font-medium mb-2">Localização do motorista</h3>
+          <LiveDriverTracker 
+            driverId={driverId}
+            map={null}
+            markerId={`driver-${driverId}`}
+          />
+        </div>
+      )}
     </div>
   );
 };

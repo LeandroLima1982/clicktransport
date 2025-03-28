@@ -35,31 +35,26 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const [mapInitError, setMapInitError] = useState<string | null>(null);
   const initTimerRef = useRef<number | null>(null);
 
-  // Initialize map
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    // Set a timeout to detect stalled map initialization
     const initTimeout = window.setTimeout(() => {
       console.error("Map initialization timed out");
       setMapInitError("Map initialization timed out");
       if (onMapLoadFailure) {
         onMapLoadFailure();
       }
-    }, 10000); // 10 seconds timeout
+    }, 10000);
 
     initTimerRef.current = initTimeout;
 
-    // Initialize map
     try {
       mapboxgl.accessToken = MAPBOX_TOKEN;
     
-      // Clear any existing map instance
       if (map.current) {
         map.current.remove();
       }
 
-      // Apply explicit styling to ensure map container is visible
       if (mapContainer.current) {
         mapContainer.current.style.minHeight = '400px';
         mapContainer.current.style.height = '100%';
@@ -68,24 +63,22 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         mapContainer.current.style.position = 'relative';
         mapContainer.current.style.display = 'block';
       }
-    
-      // Create new map instance
+
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12',
         zoom: 12,
-        center: originCoords, // Start centered on origin
+        center: originCoords,
         minZoom: 2,
-        fadeDuration: 0, // Disable fade animations to help with rendering
-        renderWorldCopies: false, // Disable rendering multiple copies of world to reduce load
-        attributionControl: false, // Disable attribution to simplify the map
-        preserveDrawingBuffer: false, // Better performance
-        antialias: false, // Better performance on low-end devices
-        maxPitch: 45, // Limit pitch to improve performance
+        fadeDuration: 0,
+        renderWorldCopies: false,
+        attributionControl: false,
+        preserveDrawingBuffer: false,
+        antialias: false,
+        maxPitch: 45,
         trackResize: true,
       });
 
-      // Handle map errors
       map.current.on('error', (error) => {
         console.error('Mapbox error:', error);
         setMapInitError(`Map error: ${error.error?.message || 'Unknown error'}`);
@@ -94,11 +87,9 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         }
       });
 
-      // Handle successful map load
       map.current.on('load', () => {
         if (!map.current) return;
         
-        // Clear the timeout as map loaded successfully
         if (initTimerRef.current) {
           clearTimeout(initTimerRef.current);
           initTimerRef.current = null;
@@ -108,7 +99,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           console.log("Map loaded successfully, adding markers");
           setIsMapLoading(false);
           
-          // Add origin and destination markers
           new mapboxgl.Marker({ color: '#00FF00' })
             .setLngLat(originCoords)
             .setPopup(new mapboxgl.Popup().setHTML(`<h3>Origem</h3><p>${originAddress}</p>`))
@@ -119,7 +109,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             .setPopup(new mapboxgl.Popup().setHTML(`<h3>Destino</h3><p>${destinationAddress}</p>`))
             .addTo(map.current);
           
-          // Create marker for the vehicle
           vehicleMarkerRef.current = new mapboxgl.Marker({ 
             color: '#3FB1CE',
             rotation: heading
@@ -127,21 +116,17 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             .setLngLat(currentLocation || originCoords)
             .addTo(map.current);
           
-          // Set bounds to include both markers
           const bounds = new mapboxgl.LngLatBounds()
             .extend(originCoords)
             .extend(destinationCoords);
           
-          // If we have current location, include it in the bounds
           if (currentLocation) {
             bounds.extend(currentLocation);
           }
           
           map.current.fitBounds(bounds, { padding: 70, maxZoom: 15 });
           
-          // Add route to map if routeGeometry is available
           if (routeGeometry && routeGeometry.coordinates && routeGeometry.coordinates.length > 0) {
-            // Add route to map
             map.current.addSource('route', {
               type: 'geojson',
               data: {
@@ -166,7 +151,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
               }
             });
 
-            // Start animation only if we don't have real-time location
             if (!currentLocation && vehicleMarkerRef.current && routeGeometry.coordinates.length > 0) {
               animateMarkerAlongRoute(routeGeometry.coordinates);
             }
@@ -187,20 +171,17 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       }
     }
 
-    // Cleanup on unmount
     return () => {
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
       
-      // Cancel any ongoing animation
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
       }
 
-      // Clear the initialization timeout
       if (initTimerRef.current) {
         clearTimeout(initTimerRef.current);
         initTimerRef.current = null;
@@ -209,12 +190,10 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   }, [originCoords, destinationCoords, routeGeometry, originAddress, destinationAddress, onMapLoadFailure]);
 
   const animateMarkerAlongRoute = (coordinates: [number, number][]) => {
-    // Cancel any ongoing animation
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
     }
 
-    // If we have a very simple route with just two points, add some interpolation
     if (coordinates.length <= 2) {
       const interpolated = [];
       for (let i = 0; i < 100; i++) {
@@ -228,7 +207,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     }
 
     let start: number;
-    const animationDuration = 30000; // 30 seconds for the full route animation
+    const animationDuration = 30000;
 
     const animate = (timestamp: number) => {
       if (!startTimeRef.current) {
@@ -237,17 +216,14 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       const elapsed = timestamp - startTimeRef.current;
       const progress = Math.min(elapsed / animationDuration, 1);
       
-      // Get the current point along the route based on progress
       const pointIndex = Math.min(
         Math.floor(progress * coordinates.length),
         coordinates.length - 1
       );
       
-      // Update marker position
       if (vehicleMarkerRef.current && map.current) {
         vehicleMarkerRef.current.setLngLat(coordinates[pointIndex]);
         
-        // Calculate heading (direction) based on the next point
         if (pointIndex < coordinates.length - 1) {
           const currentPoint = coordinates[pointIndex];
           const nextPoint = coordinates[pointIndex + 1];
@@ -260,30 +236,24 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         }
       }
       
-      // Continue animation if not complete
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
-        // Animation complete, reset for potential replay
         startTimeRef.current = null;
       }
     };
     
-    // Start the animation
     animationRef.current = requestAnimationFrame(animate);
   };
 
-  // Update vehicle marker position when currentLocation changes
   useEffect(() => {
     if (!map.current || !currentLocation || !vehicleMarkerRef.current) return;
 
-    // Cancel any ongoing animation
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
     }
 
-    // Update marker position and rotation
     vehicleMarkerRef.current
       .setLngLat(currentLocation);
     
@@ -291,14 +261,12 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       vehicleMarkerRef.current.setRotation(heading);
     }
 
-    // Check if the marker is in the current viewport
     const bounds = map.current.getBounds();
     if (!bounds.contains({ lng: currentLocation[0], lat: currentLocation[1] })) {
-      // If not in viewport, adjust the map view
       map.current.easeTo({
         center: currentLocation,
         duration: 1000,
-        zoom: map.current.getZoom() // Keep current zoom level
+        zoom: map.current.getZoom()
       });
     }
   }, [currentLocation, heading]);

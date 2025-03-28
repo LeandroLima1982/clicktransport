@@ -1,184 +1,79 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { logError, logInfo } from '@/services/monitoring/systemLogService';
-import { RatingData, RatingStats } from '@/types/rating';
+import { toast } from 'sonner';
 
-export const submitRating = async (ratingData: RatingData): Promise<boolean> => {
+interface RatingData {
+  order_id: string;
+  driver_id: string;
+  rating: number;
+  feedback?: string;
+}
+
+interface DriverRatingStats {
+  averageRating: number;
+  totalRatings: number;
+  starCounts: Record<number, number>;
+}
+
+export const submitRating = async (data: RatingData): Promise<boolean> => {
   try {
-    // Validate the rating data
-    if (!ratingData.order_id || !ratingData.driver_id || !ratingData.rating) {
-      logError('Invalid rating data', 'driver', {
-        error: 'Missing required fields',
-        data: ratingData
-      });
-      return false;
-    }
-    
-    // Insert the rating into the driver_ratings table
     const { error } = await supabase
       .from('driver_ratings')
-      .insert({
-        order_id: ratingData.order_id,
-        driver_id: ratingData.driver_id,
-        rating: ratingData.rating,
-        feedback: ratingData.feedback,
-        customer_id: ratingData.customer_id
-      });
+      .insert([data]);
     
-    if (error) {
-      logError('Error submitting rating', 'driver', {
-        error: error.message,
-        data: ratingData
-      });
-      return false;
-    }
-    
-    logInfo('Rating submitted successfully', 'driver', {
-      driver_id: ratingData.driver_id,
-      order_id: ratingData.order_id,
-      rating: ratingData.rating
-    });
+    if (error) throw error;
     
     return true;
   } catch (error) {
-    logError('Exception in submitRating', 'driver', { error });
+    console.error('Error submitting rating:', error);
+    toast.error('Erro ao enviar avaliação');
     return false;
   }
 };
 
-export const getDriverRatings = async (driverId: string) => {
+export const getDriverRatingStats = async (driverId: string): Promise<DriverRatingStats | null> => {
   try {
-    const { data, error } = await supabase
-      .from('driver_ratings')
-      .select('*')
-      .eq('driver_id', driverId)
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      logError('Error fetching driver ratings', 'driver', {
-        error: error.message,
-        driver_id: driverId
-      });
-      return { ratings: [], error };
+    if (!driverId) {
+      return null;
     }
     
-    return { ratings: data || [], error: null };
-  } catch (error) {
-    logError('Exception in getDriverRatings', 'driver', { 
-      error,
-      driver_id: driverId
-    });
-    return { ratings: [], error };
-  }
-};
-
-export const getDriverAverageRating = async (driverId: string): Promise<number> => {
-  try {
     const { data, error } = await supabase
       .from('driver_ratings')
       .select('rating')
       .eq('driver_id', driverId);
     
     if (error) {
-      logError('Error fetching driver ratings for average', 'driver', {
-        error: error.message,
-        driver_id: driverId
-      });
-      return 0;
+      console.error('Error fetching driver ratings:', error);
+      return null;
     }
     
     if (!data || data.length === 0) {
-      return 0;
+      return {
+        averageRating: 0,
+        totalRatings: 0,
+        starCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+      };
     }
     
     // Calculate average rating
     const sum = data.reduce((acc, curr) => acc + curr.rating, 0);
-    return sum / data.length;
-  } catch (error) {
-    logError('Exception in getDriverAverageRating', 'driver', { 
-      error,
-      driver_id: driverId
-    });
-    return 0;
-  }
-};
-
-// New function to get driver rating statistics
-export const getDriverRatingStats = async (driverId: string): Promise<RatingStats> => {
-  try {
-    const { data, error } = await supabase
-      .from('driver_ratings')
-      .select('rating')
-      .eq('driver_id', driverId);
-    
-    if (error) {
-      logError('Error fetching driver rating stats', 'driver', {
-        error: error.message,
-        driver_id: driverId
-      });
-      
-      return {
-        averageRating: 0,
-        totalRatings: 0,
-        fiveStarCount: 0,
-        fourStarCount: 0,
-        threeStarCount: 0,
-        twoStarCount: 0,
-        oneStarCount: 0
-      };
-    }
-    
-    if (!data || data.length === 0) {
-      return {
-        averageRating: 0,
-        totalRatings: 0,
-        fiveStarCount: 0,
-        fourStarCount: 0,
-        threeStarCount: 0,
-        twoStarCount: 0,
-        oneStarCount: 0
-      };
-    }
+    const average = sum / data.length;
     
     // Count ratings by star
-    const ratingCounts = {
-      1: 0,
-      2: 0,
-      3: 0,
-      4: 0,
-      5: 0
-    };
-    
-    // Calculate average and count by star
-    const sum = data.reduce((acc, curr) => {
-      // Increment the count for this rating
-      ratingCounts[curr.rating as keyof typeof ratingCounts] += 1;
-      return acc + curr.rating;
-    }, 0);
-    
-    return {
-      averageRating: sum / data.length,
-      totalRatings: data.length,
-      fiveStarCount: ratingCounts[5],
-      fourStarCount: ratingCounts[4],
-      threeStarCount: ratingCounts[3],
-      twoStarCount: ratingCounts[2],
-      oneStarCount: ratingCounts[1]
-    };
-  } catch (error) {
-    logError('Exception in getDriverRatingStats', 'driver', { 
-      error,
-      driver_id: driverId
+    const starCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    data.forEach(item => {
+      if (item.rating >= 1 && item.rating <= 5) {
+        starCounts[item.rating]++;
+      }
     });
     
     return {
-      averageRating: 0,
-      totalRatings: 0,
-      fiveStarCount: 0,
-      fourStarCount: 0,
-      threeStarCount: 0,
-      twoStarCount: 0,
-      oneStarCount: 0
+      averageRating: parseFloat(average.toFixed(1)),
+      totalRatings: data.length,
+      starCounts
     };
+  } catch (error) {
+    console.error('Error calculating driver stats:', error);
+    return null;
   }
 };

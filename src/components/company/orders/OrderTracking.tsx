@@ -157,10 +157,14 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
           {loading ? (
             <LoadingState />
           ) : mapError ? (
-            <ErrorState message={mapError} onRetry={handleRetry} />
+            <ErrorState 
+              message={mapError} 
+              onRetry={handleRetry} 
+            />
           ) : originCoords && destinationCoords ? (
             <MapContainer 
               orderId={orderId}
+              driverId={order?.driver_id || null}
               originCoords={originCoords}
               destinationCoords={destinationCoords}
               useStaticMap={useStaticMap}
@@ -168,8 +172,8 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, isOpen, onClose 
               routeGeometry={routeGeometry}
               routeDistance={routeDistance}
               routeDuration={routeDuration}
-              originAddress={order?.origin}
-              destinationAddress={order?.destination}
+              originAddress={order?.origin || ''}
+              destinationAddress={order?.destination || ''}
               onToggleMapType={handleToggleMapType}
             />
           ) : (

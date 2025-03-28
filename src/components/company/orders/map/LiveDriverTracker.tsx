@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
@@ -106,21 +107,26 @@ const LiveDriverTracker: React.FC<LiveDriverTrackerProps> = ({ driverId, map, ma
   const updateMapMarker = (location: DriverLocation) => {
     if (!map) return;
     
-    // Find or create marker
+    // Find marker in DOM
     const marker = document.getElementById(markerId || 'driver-marker');
     
     if (marker) {
-      // Update existing marker
+      // Update existing marker position
       const markerLngLat = [location.longitude, location.latitude];
       
-      // Update marker location using Mapbox's API
-      const mapboxMarker = map.getMarkerById?.(markerId || 'driver-marker');
-      if (mapboxMarker) {
-        mapboxMarker.setLngLat(markerLngLat);
-      } else {
-        // If map.getMarkerById is not available, we need to use Mapbox's normal API
-        // This would require keeping track of the marker instance elsewhere
-        console.log('Marker reference not found in map');
+      // Find the marker in the map's markers collection
+      // This is a workaround since mapbox-gl doesn't expose getMarkerById directly
+      const markers = Array.from(document.querySelectorAll('.mapboxgl-marker'))
+        .filter(el => el.id === (markerId || 'driver-marker'));
+      
+      if (markers.length > 0) {
+        // Get marker instance from DOM reference (not ideal but works)
+        const markerInstance = (markers[0] as any)._mapboxMarker;
+        if (markerInstance && typeof markerInstance.setLngLat === 'function') {
+          markerInstance.setLngLat(markerLngLat);
+        } else {
+          console.log('Could not access marker instance');
+        }
       }
       
       // Update marker rotation if heading is available

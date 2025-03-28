@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { MAPBOX_TOKEN, isValidMapboxToken } from '@/utils/mapbox';
 import mapboxgl from 'mapbox-gl';
@@ -84,6 +83,9 @@ export const fetchRouteData = async (
   }
 };
 
+// Alias for compatibility with existing code
+export const getMapboxDirections = fetchRouteData;
+
 // Create a static map URL for fallback
 export const createStaticMapUrl = (
   start: [number, number], 
@@ -132,6 +134,9 @@ export const createStaticMapUrl = (
     return null;
   }
 };
+
+// Alias for compatibility with existing code
+export const getStaticMapUrl = createStaticMapUrl;
 
 // Check if map can be initialized or if we need fallback
 export const validateMapboxToken = (): boolean => {
