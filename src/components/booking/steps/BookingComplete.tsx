@@ -40,11 +40,11 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const formatDateTime = (date: Date | undefined) => {
+  const formatDateTime = (date: Date | undefined, time?: string) => {
     if (!date) return '';
     
     const formattedDate = format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-    const formattedTime = format(date, "HH:mm", { locale: ptBR });
+    const formattedTime = time || format(date, "HH:mm", { locale: ptBR });
     
     return `${formattedDate} às ${formattedTime}`;
   };
@@ -92,13 +92,13 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
             <div className="flex justify-between">
               <span className="text-gray-500 flex items-center"><Calendar className="w-4 h-4 mr-2" /> Data e hora:</span>
               <span className="font-medium">
-                {formatDateTime(bookingData.date)}
+                {formatDateTime(bookingData.date, bookingData.time)}
               </span>
             </div>
             {bookingData.returnDate && (
               <div className="flex justify-between">
                 <span className="text-gray-500">Retorno:</span>
-                <span className="font-medium">{formatDateTime(bookingData.returnDate)}</span>
+                <span className="font-medium">{formatDateTime(bookingData.returnDate, bookingData.returnTime)}</span>
               </div>
             )}
             <div className="flex justify-between">

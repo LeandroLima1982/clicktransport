@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Sheet,
@@ -170,10 +169,10 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
       <SheetContent className="sm:max-w-lg overflow-y-auto px-4">
         <SheetHeader>
           <SheetTitle>Detalhes da Reserva</SheetTitle>
-          <SheetDescription className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <span>Reserva #{booking.reference_code}</span>
             <BookingStatus status={booking.status} className="ml-2" />
-          </SheetDescription>
+          </div>
         </SheetHeader>
 
         <div className="py-4">

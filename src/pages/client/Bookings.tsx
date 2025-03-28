@@ -16,7 +16,6 @@ import {
   Clock3,
   Share2,
   MessageSquare,
-  ChevronRight,
   Eye
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -296,6 +295,7 @@ const Bookings: React.FC = () => {
               const passengerCount = getPassengerCount(booking);
               const creationDateTime = formatCreationDateTime(booking.booking_date);
               const contactInfo = getContactInfo(booking);
+              const travelTime = formatTime(booking.travel_date);
               
               return (
                 <Card 
@@ -325,7 +325,7 @@ const Bookings: React.FC = () => {
                       <div className="font-medium text-sm">{formatDate(booking.travel_date)}</div>
                       <div className="flex items-center text-xs">
                         <Clock className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                        <span className="font-medium text-primary">{formatTime(booking.travel_date)}</span>
+                        <span className="font-medium text-primary">{travelTime}</span>
                       </div>
                       {isRoundTrip && booking.return_date && (
                         <div className="text-xs">

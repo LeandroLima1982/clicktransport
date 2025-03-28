@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Users, Share2, Phone, MapPin } from 'lucide-react';
+import { CheckCircle, Users, Phone, MapPin } from 'lucide-react';
 import { Vehicle } from './steps/VehicleSelection';
 import { shareViaWhatsApp, formatBookingShareMessage } from '@/services/notifications/notificationService';
 
@@ -16,6 +16,8 @@ interface BookingCompleteProps {
     tripType?: string;
     origin?: string;
     destination?: string;
+    time?: string;
+    returnTime?: string;
     passengerData?: {
       name: string;
       phone: string;
@@ -43,6 +45,8 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
       destination: bookingData.destination || '',
       date: bookingData.date,
       tripType: bookingData.tripType,
+      time: bookingData.time,
+      returnTime: bookingData.returnTime,
       passengerData: bookingData.passengerData,
       creationDate: new Date().toLocaleDateString('pt-BR'),
       time: format(new Date(), 'HH:mm')
@@ -57,11 +61,11 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
     shareViaWhatsApp(message);
   };
 
-  const formatDateTime = (date: Date | undefined) => {
+  const formatDateTime = (date: Date | undefined, time?: string) => {
     if (!date) return 'Não especificado';
     
     const formattedDate = format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-    const formattedTime = format(date, "HH:mm", { locale: ptBR });
+    const formattedTime = time || '00:00';
     
     return `${formattedDate} às ${formattedTime}`;
   };
@@ -119,9 +123,18 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
             <div className="flex justify-between">
               <span className="text-gray-500">Data e hora:</span>
               <span className="font-medium">
-                {formatDateTime(bookingData.date)}
+                {formatDateTime(bookingData.date, bookingData.time)}
               </span>
             </div>
+            
+            {bookingData.tripType === 'roundtrip' && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Retorno:</span>
+                <span className="font-medium">
+                  {formatDateTime(bookingData.date, bookingData.returnTime)}
+                </span>
+              </div>
+            )}
             
             {bookingData.passengerData && bookingData.passengerData.length > 0 && (
               <div className="mt-2">
