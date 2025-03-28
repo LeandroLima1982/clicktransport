@@ -83,7 +83,7 @@ const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
             <Label className="block text-sm font-semibold booking-label mb-2">
               Para onde vai?
             </Label>
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            <div className="flex flex-col space-y-2">
               <div className="flex-1">
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -97,7 +97,7 @@ const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
                   />
                 </div>
               </div>
-              <div className="w-full sm:w-[180px]">
+              <div className="w-full">
                 <Select value={destinationCityId} onValueChange={setDestinationCityId}>
                   <SelectTrigger className="h-10 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
                     <SelectValue placeholder="Selecione cidade" className="text-white/50" />
