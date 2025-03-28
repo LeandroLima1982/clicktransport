@@ -72,7 +72,7 @@ export const useServiceOrderSubscription = ({
     const channel = supabase.channel(channelName);
     
     channel.on(
-      'postgres_changes', 
+      'postgres_changes',  
       {
         event: '*',
         schema: 'public',

@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   BarChart3,
@@ -11,7 +12,6 @@ import {
   Bell,
   TrendingUp,
   Truck,
-  Cog6Tooth,
   Paintbrush2
 } from "lucide-react";
 
@@ -22,7 +22,15 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Separator } from "@/components/ui/separator"
-import { Sidebar, SidebarClose, SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarNav } from "@/components/ui/sidebar"
+import { 
+  Sidebar, 
+  SidebarContent, 
+  SidebarFooter, 
+  SidebarHeader, 
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton
+} from "@/components/ui/sidebar"
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -103,7 +111,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
     },
     {
       title: "Configurações",
-      icon: <Cog6Tooth className="h-5 w-5" />,
+      icon: <Settings className="h-5 w-5" />,
       href: "/admin?tab=settings",
       tab: "settings"
     },
@@ -132,36 +140,41 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarNav>
+        <SidebarMenu>
           {sidebarItems.map((item) => (
-            <SidebarItem
-              key={item.title}
-              title={item.title}
-              icon={item.icon}
-              href={item.href}
-              tab={item.tab}
-            />
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild>
+                <a href={item.href} className="flex items-center gap-2">
+                  {item.icon}
+                  <span>{item.title}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           ))}
-        </SidebarNav>
+        </SidebarMenu>
         <Separator className="my-6" />
         <Accordion type="single" collapsible>
           <AccordionItem value="item-1">
             <AccordionTrigger>Avançado</AccordionTrigger>
             <AccordionContent>
-              <SidebarNav>
-                <SidebarItem
-                  title="Definições de Preço"
-                  icon={<Settings className="h-5 w-5" />}
-                  href="/admin?tab=rates"
-                  tab="rates"
-                />
-                <SidebarItem
-                  title="Categorias de Veículos"
-                  icon={<Truck className="h-5 w-5" />}
-                  href="/admin?tab=vehicle-categories"
-                  tab="vehicle-categories"
-                />
-              </SidebarNav>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <a href="/admin?tab=rates" className="flex items-center gap-2">
+                      <Settings className="h-5 w-5" />
+                      <span>Definições de Preço</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <a href="/admin?tab=vehicle-categories" className="flex items-center gap-2">
+                      <Truck className="h-5 w-5" />
+                      <span>Categorias de Veículos</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
             </AccordionContent>
           </AccordionItem>
         </Accordion>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,7 @@ import VehicleCategoriesSettings from '@/components/admin/VehicleCategoriesSetti
 import DriverManagement from '@/components/admin/drivers/DriverManagement';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AuthError } from '@supabase/supabase-js';
+import PerformanceMetrics from '@/components/admin/PerformanceMetrics';
 
 const AdminDashboard: React.FC = () => {
   const { user, userRole, signOut: authSignOut, isAuthenticating } = useAuth();
@@ -49,16 +49,13 @@ const AdminDashboard: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { fixQueuePositions, resetQueue } = useCompanyQueue();
 
-  // Update active tab when URL query parameter changes
   useEffect(() => {
     if (tabFromQuery && tabFromQuery !== activeTab) {
       setActiveTab(tabFromQuery);
     }
   }, [tabFromQuery]);
 
-  // Update URL when active tab changes (but prevent circular updates)
   useEffect(() => {
-    // Skip URL update if we're currently in sync with the URL
     if ((tabFromQuery === activeTab) || 
         (activeTab === "overview" && !tabFromQuery)) {
       return;
