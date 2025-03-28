@@ -12,26 +12,13 @@ import {
   Bell,
   TrendingUp,
   Truck,
-  Paintbrush2
+  Paintbrush2,
+  Database,
+  TestTube,
+  LogOut
 } from "lucide-react";
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Sidebar, 
-  SidebarContent, 
-  SidebarFooter, 
-  SidebarHeader, 
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton
-} from "@/components/ui/sidebar"
-import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { AuthError } from "@supabase/supabase-js";
@@ -54,140 +41,110 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
     navigate("/");
   };
 
-  const sidebarItems = [
-    {
-      title: "Visão Geral",
-      icon: <LayoutDashboard className="h-5 w-5" />,
-      href: "/admin",
-      tab: "overview"
-    },
-    {
-      title: "Empresas",
-      icon: <Building2 className="h-5 w-5" />,
-      href: "/admin?tab=companies",
-      tab: "companies"
-    },
-    {
-      title: "Motoristas",
-      icon: <Users className="h-5 w-5" />,
-      href: "/admin?tab=drivers",
-      tab: "drivers"
-    },
-    {
-      title: "Ordens",
-      icon: <ListChecks className="h-5 w-5" />,
-      href: "/admin?tab=orders",
-      tab: "orders"
-    },
-    {
-      title: "Destinos",
-      icon: <MapPin className="h-5 w-5" />,
-      href: "/admin?tab=destinations",
-      tab: "destinations"
-    },
-    {
-      title: "Métricas",
-      icon: <BarChart3 className="h-5 w-5" />,
-      href: "/admin?tab=metrics",
-      tab: "metrics"
-    },
-    {
-      title: "Relatórios",
-      icon: <TrendingUp className="h-5 w-5" />,
-      href: "/admin?tab=reports",
-      tab: "reports"
-    },
-    {
-      title: "Veículos",
-      icon: <Truck className="h-5 w-5" />,
-      href: "/admin?tab=vehicles",
-      tab: "vehicles"
-    },
-    {
-      title: "Notificações",
-      icon: <Bell className="h-5 w-5" />,
-      href: "/admin?tab=notifications",
-      tab: "notifications"
-    },
-    {
-      title: "Configurações",
-      icon: <Settings className="h-5 w-5" />,
-      href: "/admin?tab=settings",
-      tab: "settings"
-    },
-    {
-      title: "Aparência",
-      icon: <Paintbrush2 className="h-5 w-5" />,
-      href: "/admin?tab=appearance",
-      tab: "appearance"
-    },
-    {
-      title: "Documentação",
-      icon: <FileText className="h-5 w-5" />,
-      href: "/admin?tab=docs",
-      tab: "docs"
-    }
-  ];
-
   return (
-    <Sidebar className="bg-gray-50">
-      <SidebarHeader>
-        <div className="space-y-2">
-          <h4 className="font-semibold text-muted-foreground">Lovable Transfers</h4>
-          <p className="text-xs text-muted-foreground">
-            Painel de Administração
-          </p>
+    <div className="w-64 min-h-screen border-r bg-white flex flex-col">
+      <div className="p-4 border-b">
+        <div className="flex items-center">
+          <img 
+            src="/lovable-uploads/4255bded-5013-43c0-a67a-c56a55e34118.png" 
+            alt="LaTransfer" 
+            className="h-8"
+          />
+          <div className="ml-2">
+            <h3 className="font-semibold text-lg">Admin</h3>
+            <p className="text-xs text-muted-foreground">Panel</p>
+          </div>
         </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarMenu>
-          {sidebarItems.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <a href={item.href} className="flex items-center gap-2">
-                  {item.icon}
-                  <span>{item.title}</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-        <Separator className="my-6" />
-        <Accordion type="single" collapsible>
-          <AccordionItem value="item-1">
-            <AccordionTrigger>Avançado</AccordionTrigger>
-            <AccordionContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <a href="/admin?tab=rates" className="flex items-center gap-2">
-                      <Settings className="h-5 w-5" />
-                      <span>Definições de Preço</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <a href="/admin?tab=vehicle-categories" className="flex items-center gap-2">
-                      <Truck className="h-5 w-5" />
-                      <span>Categorias de Veículos</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </SidebarContent>
-      <SidebarFooter>
+      </div>
+
+      <div className="flex-1 overflow-auto">
+        <div className="px-3 py-2">
+          <h3 className="text-xs font-medium text-muted-foreground mb-2">Principal</h3>
+          <nav className="space-y-1">
+            <a href="/admin" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <LayoutDashboard className="h-4 w-4 mr-3 text-muted-foreground" />
+              Dashboard
+            </a>
+            <a href="/admin?tab=orders" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <ListChecks className="h-4 w-4 mr-3 text-muted-foreground" />
+              Reservas
+            </a>
+            <a href="/admin?tab=users" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <Users className="h-4 w-4 mr-3 text-muted-foreground" />
+              Usuários
+            </a>
+            <a href="/admin?tab=companies" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <Building2 className="h-4 w-4 mr-3 text-muted-foreground" />
+              Empresas
+            </a>
+            <a href="/admin?tab=vehicles" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <Truck className="h-4 w-4 mr-3 text-muted-foreground" />
+              Veículos
+            </a>
+            <a href="/admin?tab=vehicle-categories" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <Truck className="h-4 w-4 mr-3 text-muted-foreground" />
+              Categorias de Veículos
+            </a>
+            <a href="/admin?tab=destinations" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <MapPin className="h-4 w-4 mr-3 text-muted-foreground" />
+              Destinos
+            </a>
+            <a href="/admin?tab=notifications" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <Bell className="h-4 w-4 mr-3 text-muted-foreground" />
+              Notificações
+            </a>
+            <a href="/admin?tab=investors" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <TrendingUp className="h-4 w-4 mr-3 text-muted-foreground" />
+              Investidores
+            </a>
+            <a href="/admin?tab=appearance" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <Paintbrush2 className="h-4 w-4 mr-3 text-muted-foreground" />
+              Aparência
+            </a>
+            <a href="/admin?tab=content" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <FileText className="h-4 w-4 mr-3 text-muted-foreground" />
+              Conteúdo
+            </a>
+            <a href="/admin?tab=settings" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <Settings className="h-4 w-4 mr-3 text-muted-foreground" />
+              Configurações
+            </a>
+            <a href="/admin?tab=metrics" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <BarChart3 className="h-4 w-4 mr-3 text-muted-foreground" />
+              Métricas
+            </a>
+          </nav>
+        </div>
+
+        <div className="px-3 py-2">
+          <h3 className="text-xs font-medium text-muted-foreground mb-2">Sistema</h3>
+          <nav className="space-y-1">
+            <a href="/admin?tab=database" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <Database className="h-4 w-4 mr-3 text-muted-foreground" />
+              Banco de Dados
+            </a>
+            <a href="/admin?tab=tests" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <TestTube className="h-4 w-4 mr-3 text-muted-foreground" />
+              Testes
+            </a>
+            <a href="/admin?tab=settings" className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <Settings className="h-4 w-4 mr-3 text-muted-foreground" />
+              Configurações
+            </a>
+          </nav>
+        </div>
+      </div>
+
+      <div className="p-4 border-t">
         <button
-          className="w-full rounded-md border border-transparent bg-red-500 p-3 text-center font-medium text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:bg-red-500 data-[state=open]:text-white"
+          className="w-full flex items-center px-3 py-2 text-sm rounded-md text-red-600 hover:bg-red-50"
           onClick={handleSignOut}
         >
+          <LogOut className="h-4 w-4 mr-3" />
           Sair
         </button>
-      </SidebarFooter>
-    </Sidebar>
+      </div>
+    </div>
   );
 };
 

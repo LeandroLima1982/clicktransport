@@ -38,47 +38,47 @@ const MetricsDashboard: React.FC<MetricsDashboardProps> = ({ userRole, entityId 
   const fetchMetrics = async () => {
     setIsLoading(true);
     try {
-      // Orders by status
-      const orderStatusQuery = supabase.from('service_orders').select('status');
+      // Get orders by status
+      let orderStatusQuery = supabase.from('service_orders').select('status');
       
       if (userRole === 'company' && entityId) {
-        orderStatusQuery.eq('company_id', entityId);
+        orderStatusQuery = orderStatusQuery.eq('company_id', entityId);
       }
       
       const { data: orderStatusData, error: orderStatusError } = await orderStatusQuery;
 
       if (orderStatusError) throw orderStatusError;
 
-      // Order trends (last 30 days)
+      // Get order trends (last 30 days)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const orderTrendsQuery = supabase
+      let orderTrendsQuery = supabase
         .from('service_orders')
         .select('created_at')
         .gte('created_at', thirtyDaysAgo.toISOString());
         
       if (userRole === 'company' && entityId) {
-        orderTrendsQuery.eq('company_id', entityId);
+        orderTrendsQuery = orderTrendsQuery.eq('company_id', entityId);
       }
       
       const { data: orderTrendsData, error: orderTrendsError } = await orderTrendsQuery;
 
       if (orderTrendsError) throw orderTrendsError;
 
-      // Drivers status
-      const driversQuery = supabase.from('drivers').select('status');
+      // Get drivers status
+      let driversQuery = supabase.from('drivers').select('status');
       
       if (userRole === 'company' && entityId) {
-        driversQuery.eq('company_id', entityId);
+        driversQuery = driversQuery.eq('company_id', entityId);
       }
       
       const { data: driversData, error: driversError } = await driversQuery;
 
       if (driversError) throw driversError;
 
-      // Ratings from driver_ratings table
-      const ratingsQuery = supabase.from('driver_ratings').select('rating');
+      // Get ratings from driver_ratings table
+      let ratingsQuery = supabase.from('driver_ratings').select('rating');
       
       if (userRole === 'company' && entityId) {
         // First get driver_ids for this company
@@ -89,7 +89,7 @@ const MetricsDashboard: React.FC<MetricsDashboardProps> = ({ userRole, entityId 
         
         if (companyDrivers && companyDrivers.length > 0) {
           const driverIds = companyDrivers.map(driver => driver.id);
-          ratingsQuery.in('driver_id', driverIds);
+          ratingsQuery = ratingsQuery.in('driver_id', driverIds);
         }
       }
       

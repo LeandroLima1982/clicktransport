@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,14 +55,14 @@ const QueueDiagnostics: React.FC = () => {
   };
   
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Diagnóstico de Filas de Empresas</CardTitle>
-        <CardDescription>
+    <div className="border border-yellow-300 rounded-md bg-white mb-6">
+      <div className="p-4 border-b">
+        <h2 className="text-xl font-semibold">Diagnóstico de Filas de Empresas</h2>
+        <p className="text-muted-foreground text-sm">
           Visualize e gerencie a fila de empresas para atribuição de ordens de serviço
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+        </p>
+      </div>
+      <div className="p-4">
         {error && (
           <Alert variant="error" className="mb-4">
             <AlertTriangle className="h-4 w-4" />
@@ -120,11 +119,11 @@ const QueueDiagnostics: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Posição</TableHead>
+                <TableHead className="w-24">Posição</TableHead>
                 <TableHead>Empresa</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Última Atribuição</TableHead>
-                <TableHead>Ações</TableHead>
+                <TableHead className="w-32">Status</TableHead>
+                <TableHead className="w-48">Última Atribuição</TableHead>
+                <TableHead className="w-32">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -147,6 +146,11 @@ const QueueDiagnostics: React.FC = () => {
                           company.status === 'inactive' ? 'secondary' : 
                           'outline'
                         }
+                        className={
+                          company.status === 'active' ? 'bg-blue-600' : 
+                          company.status === 'pending' ? 'bg-yellow-500 text-black' : 
+                          undefined
+                        }
                       >
                         {company.status === 'active' ? 'Ativa' : 
                          company.status === 'inactive' ? 'Inativa' : 
@@ -163,7 +167,7 @@ const QueueDiagnostics: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Button 
-                        variant="ghost" 
+                        variant="outline" 
                         size="sm" 
                         onClick={() => handleMoveToEnd(company.id)}
                         disabled={isMoving === company.id || isLoading}
@@ -187,8 +191,8 @@ const QueueDiagnostics: React.FC = () => {
             </TableBody>
           </Table>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
