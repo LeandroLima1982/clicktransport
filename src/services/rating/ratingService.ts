@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { logError, logInfo } from '../monitoring/systemLogService';
-import { RatingData } from '@/types/rating';
+import { logError, logInfo } from '@/services/monitoring/systemLogService';
+import { RatingData, RatingStats } from '@/types/rating';
 
 export const submitRating = async (ratingData: RatingData): Promise<boolean> => {
   try {
@@ -100,5 +100,85 @@ export const getDriverAverageRating = async (driverId: string): Promise<number> 
       driver_id: driverId
     });
     return 0;
+  }
+};
+
+// New function to get driver rating statistics
+export const getDriverRatingStats = async (driverId: string): Promise<RatingStats> => {
+  try {
+    const { data, error } = await supabase
+      .from('driver_ratings')
+      .select('rating')
+      .eq('driver_id', driverId);
+    
+    if (error) {
+      logError('Error fetching driver rating stats', 'driver', {
+        error: error.message,
+        driver_id: driverId
+      });
+      
+      return {
+        averageRating: 0,
+        totalRatings: 0,
+        fiveStarCount: 0,
+        fourStarCount: 0,
+        threeStarCount: 0,
+        twoStarCount: 0,
+        oneStarCount: 0
+      };
+    }
+    
+    if (!data || data.length === 0) {
+      return {
+        averageRating: 0,
+        totalRatings: 0,
+        fiveStarCount: 0,
+        fourStarCount: 0,
+        threeStarCount: 0,
+        twoStarCount: 0,
+        oneStarCount: 0
+      };
+    }
+    
+    // Count ratings by star
+    const ratingCounts = {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0
+    };
+    
+    // Calculate average and count by star
+    const sum = data.reduce((acc, curr) => {
+      // Increment the count for this rating
+      ratingCounts[curr.rating as keyof typeof ratingCounts] += 1;
+      return acc + curr.rating;
+    }, 0);
+    
+    return {
+      averageRating: sum / data.length,
+      totalRatings: data.length,
+      fiveStarCount: ratingCounts[5],
+      fourStarCount: ratingCounts[4],
+      threeStarCount: ratingCounts[3],
+      twoStarCount: ratingCounts[2],
+      oneStarCount: ratingCounts[1]
+    };
+  } catch (error) {
+    logError('Exception in getDriverRatingStats', 'driver', { 
+      error,
+      driver_id: driverId
+    });
+    
+    return {
+      averageRating: 0,
+      totalRatings: 0,
+      fiveStarCount: 0,
+      fourStarCount: 0,
+      threeStarCount: 0,
+      twoStarCount: 0,
+      oneStarCount: 0
+    };
   }
 };
