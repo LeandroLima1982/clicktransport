@@ -294,6 +294,8 @@ const AdminDashboard: React.FC = () => {
         return <DocumentationContent />;
       case 'settings':
         return <SettingsContent />;
+      case 'metrics':
+        return <PerformanceMetrics />;
       case 'notifications':
         return (
           <Card>

@@ -1,192 +1,178 @@
-
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { adminTabs } from './AdminTabItems';
-import { useAuth } from '@/hooks/useAuth';
+import React from "react";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { Settings, LogOut, Database, TestTube, HelpCircle } from 'lucide-react';
-import { toast } from 'sonner';
-import { AuthError } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+  BarChart3,
+  Building2,
+  LayoutDashboard,
+  ListChecks,
+  MapPin,
+  Settings,
+  Users,
+  FileText,
+  Bell,
+  TrendingUp,
+  Truck,
+  Cog6Tooth,
+  Paintbrush2
+} from "lucide-react";
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import { Separator } from "@/components/ui/separator"
+import { Sidebar, SidebarClose, SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarNav } from "@/components/ui/sidebar"
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { AuthError } from "@supabase/supabase-js";
 
 interface AdminSidebarProps {
   signOut: () => Promise<{ error: AuthError | Error | null }>;
 }
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
-  const location = useLocation();
-  const { userRole } = useAuth();
-  const [logoUrl, setLogoUrl] = useState<string>('/lovable-uploads/8a9d78f7-0536-4e85-9c4b-0debc4c61fcf.png');
-  
-  useEffect(() => {
-    const fetchLogoSetting = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('site_images')
-          .select('image_url')
-          .eq('section_id', 'logo')
-          .single();
-        
-        if (error) {
-          console.error('Error fetching logo from settings:', error);
-          return;
-        }
-        
-        if (data && data.image_url) {
-          setLogoUrl(data.image_url);
-        }
-      } catch (error) {
-        console.error('Error loading logo from settings:', error);
-      }
-    };
-
-    fetchLogoSetting();
-  }, []);
-  
-  const isActive = (path: string) => {
-    // For root admin path
-    if (path === '/admin') {
-      const queryParams = new URLSearchParams(location.search);
-      const currentTab = queryParams.get('tab');
-      return location.pathname === '/admin' && (!currentTab || currentTab === 'overview');
-    }
-    
-    // For tab routes
-    if (path.includes('?tab=')) {
-      const queryParams = new URLSearchParams(location.search);
-      const currentTab = queryParams.get('tab');
-      const tabInPath = path.split('?tab=')[1];
-      return location.pathname === '/admin' && currentTab === tabInPath;
-    }
-    
-    // For other routes without query params
-    return location.pathname === path || 
-      (path !== '/admin' && location.pathname.startsWith(path));
-  };
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    try {
-      const { error } = await signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-        toast.error('Erro ao sair');
-        return;
-      }
-      toast.success('Logout realizado com sucesso');
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      toast.error('Erro ao sair');
+    const { error } = await signOut();
+    if (error) {
+      console.error("Error signing out:", error);
+      toast.error("Erro ao sair");
+      return;
     }
+    toast.success("Você saiu com sucesso");
+    navigate("/");
   };
 
-  const filteredTabs = adminTabs.filter(tab => 
-    !tab.roles || tab.roles.includes(userRole || '')
-  );
+  const sidebarItems = [
+    {
+      title: "Visão Geral",
+      icon: <LayoutDashboard className="h-5 w-5" />,
+      href: "/admin",
+      tab: "overview"
+    },
+    {
+      title: "Empresas",
+      icon: <Building2 className="h-5 w-5" />,
+      href: "/admin?tab=companies",
+      tab: "companies"
+    },
+    {
+      title: "Motoristas",
+      icon: <Users className="h-5 w-5" />,
+      href: "/admin?tab=drivers",
+      tab: "drivers"
+    },
+    {
+      title: "Ordens",
+      icon: <ListChecks className="h-5 w-5" />,
+      href: "/admin?tab=orders",
+      tab: "orders"
+    },
+    {
+      title: "Destinos",
+      icon: <MapPin className="h-5 w-5" />,
+      href: "/admin?tab=destinations",
+      tab: "destinations"
+    },
+    {
+      title: "Métricas",
+      icon: <BarChart3 className="h-5 w-5" />,
+      href: "/admin?tab=metrics",
+      tab: "metrics"
+    },
+    {
+      title: "Relatórios",
+      icon: <TrendingUp className="h-5 w-5" />,
+      href: "/admin?tab=reports",
+      tab: "reports"
+    },
+    {
+      title: "Veículos",
+      icon: <Truck className="h-5 w-5" />,
+      href: "/admin?tab=vehicles",
+      tab: "vehicles"
+    },
+    {
+      title: "Notificações",
+      icon: <Bell className="h-5 w-5" />,
+      href: "/admin?tab=notifications",
+      tab: "notifications"
+    },
+    {
+      title: "Configurações",
+      icon: <Cog6Tooth className="h-5 w-5" />,
+      href: "/admin?tab=settings",
+      tab: "settings"
+    },
+    {
+      title: "Aparência",
+      icon: <Paintbrush2 className="h-5 w-5" />,
+      href: "/admin?tab=appearance",
+      tab: "appearance"
+    },
+    {
+      title: "Documentação",
+      icon: <FileText className="h-5 w-5" />,
+      href: "/admin?tab=docs",
+      tab: "docs"
+    }
+  ];
 
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4">
-        <div className="flex items-center">
-          <img 
-            src={logoUrl} 
-            alt="LaTransfer Logo" 
-            className="h-10 w-auto mr-2" 
-          />
-          <div className="font-semibold text-lg">Admin Panel</div>
+    <Sidebar className="bg-gray-50">
+      <SidebarHeader>
+        <div className="space-y-2">
+          <h4 className="font-semibold text-muted-foreground">Lovable Transfers</h4>
+          <p className="text-xs text-muted-foreground">
+            Painel de Administração
+          </p>
         </div>
       </SidebarHeader>
-      
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Principal</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredTabs.map((tab) => (
-                <SidebarMenuItem key={tab.id}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={isActive(tab.href)}
-                    tooltip={tab.label}
-                  >
-                    <Link to={tab.href} onClick={(e) => {
-                      // For normal links, allow normal navigation
-                      // This prevents issues with the tab state getting out of sync
-                    }}>
-                      {tab.icon}
-                      <span>{tab.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Configuração do Banco" isActive={location.pathname === '/admin/database-setup'}>
-                  <Link to="/admin/database-setup">
-                    <Database className="h-5 w-5" />
-                    <span>Banco de Dados</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Ambiente de Testes" isActive={location.pathname === '/admin/test-workflow'}>
-                  <Link to="/admin/test-workflow">
-                    <TestTube className="h-5 w-5" />
-                    <span>Testes</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Documentação" isActive={isActive('/admin?tab=docs')}>
-                  <Link to="/admin?tab=docs">
-                    <HelpCircle className="h-5 w-5" />
-                    <span>Documentação</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <SidebarNav>
+          {sidebarItems.map((item) => (
+            <SidebarItem
+              key={item.title}
+              title={item.title}
+              icon={item.icon}
+              href={item.href}
+              tab={item.tab}
+            />
+          ))}
+        </SidebarNav>
+        <Separator className="my-6" />
+        <Accordion type="single" collapsible>
+          <AccordionItem value="item-1">
+            <AccordionTrigger>Avançado</AccordionTrigger>
+            <AccordionContent>
+              <SidebarNav>
+                <SidebarItem
+                  title="Definições de Preço"
+                  icon={<Settings className="h-5 w-5" />}
+                  href="/admin?tab=rates"
+                  tab="rates"
+                />
+                <SidebarItem
+                  title="Categorias de Veículos"
+                  icon={<Truck className="h-5 w-5" />}
+                  href="/admin?tab=vehicle-categories"
+                  tab="vehicle-categories"
+                />
+              </SidebarNav>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </SidebarContent>
-      
       <SidebarFooter>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Configurações" isActive={isActive('/admin?tab=settings')}>
-                  <Link to="/admin?tab=settings">
-                    <Settings className="h-5 w-5" />
-                    <span>Configurações</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleSignOut} tooltip="Sair">
-                  <LogOut className="h-5 w-5" />
-                  <span>Sair</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <button
+          className="w-full rounded-md border border-transparent bg-red-500 p-3 text-center font-medium text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:bg-red-500 data-[state=open]:text-white"
+          onClick={handleSignOut}
+        >
+          Sair
+        </button>
       </SidebarFooter>
     </Sidebar>
   );
