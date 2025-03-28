@@ -5,7 +5,7 @@ import TransitionEffect from '@/components/TransitionEffect';
 import DriverSidebar from '@/components/driver/DriverSidebar';
 import DriverHeader from '@/components/driver/DriverHeader';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Navigation, AlertTriangle, Check, MapIcon, Clock, Timer } from 'lucide-react';
+import { MapPin, Navigation, AlertTriangle, Check, MapIcon, Clock, Timer, CheckCircle } from 'lucide-react';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
 import { useServiceOrderSubscription } from '@/hooks/driver/useServiceOrderSubscription';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,14 @@ import { toast } from 'sonner';
 import DriverMap from '@/components/driver/DriverMap';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const DriverNavigation: React.FC = () => {
   const { user } = useAuth();
@@ -26,6 +34,9 @@ const DriverNavigation: React.FC = () => {
   const [eta, setEta] = useState<number | null>(null);
   const [tripStarted, setTripStarted] = useState(false);
   const [tripStartTime, setTripStartTime] = useState<Date | null>(null);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [tripSummary, setTripSummary] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize location tracking
   const {
@@ -85,11 +96,13 @@ const DriverNavigation: React.FC = () => {
             table: 'service_orders',
             filter: `driver_id=eq.${driverId} AND status=in.('assigned','in_progress')`
           },
-          (payload) => {
+          (payload: any) => {
             console.log('Order update received:', payload);
             
             // Check if trip was just started
-            if (payload.new.status === 'in_progress' && payload.old.status !== 'in_progress') {
+            if (payload.new && payload.old && 
+                payload.new.status === 'in_progress' && 
+                payload.old.status !== 'in_progress') {
               setTripStarted(true);
               setTripStartTime(new Date());
             }
@@ -195,16 +208,63 @@ const DriverNavigation: React.FC = () => {
     }
   };
 
+  // Calcular resumo da viagem para exibir no diálogo de conclusão
+  const calculateTripSummary = () => {
+    if (!currentOrder || !tripStartTime) return null;
+    
+    const now = new Date();
+    const tripDuration = Math.floor((now.getTime() - tripStartTime.getTime()) / 60000); // em minutos
+    
+    // Calcular distância estimada baseada em uma velocidade média de 40km/h
+    // Em uma implementação real, isto seria calculado usando as coordenadas de GPS registradas
+    const estimatedDistance = Math.round((tripDuration / 60) * 40);
+    
+    return {
+      orderId: currentOrder.id,
+      origin: currentOrder.origin,
+      destination: currentOrder.destination,
+      company: currentOrder.companies?.name || 'Empresa',
+      startTime: tripStartTime,
+      endTime: now,
+      duration: tripDuration,
+      distance: estimatedDistance,
+    };
+  };
+
+  const handleFinishTrip = () => {
+    const summary = calculateTripSummary();
+    setTripSummary(summary);
+    setShowCompletionDialog(true);
+  };
+
   const updateOrderStatus = async (newStatus: string) => {
     if (!currentOrderId) return;
     
     try {
+      setIsSubmitting(true);
+      
+      // Capturar a localização atual para registro
+      const currentPosition = location ? {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude
+      } : null;
+      
+      // Calcular o tempo total da viagem
+      const tripEndTime = new Date();
+      const tripDuration = tripStartTime 
+        ? Math.floor((tripEndTime.getTime() - tripStartTime.getTime()) / 60000) 
+        : 0;
+      
+      // Atualizar o status da ordem e incluir detalhes da conclusão
       const { error } = await supabase
         .from('service_orders')
         .update({ 
           status: newStatus,
-          ...(newStatus === 'in_progress' ? { start_time: new Date().toISOString() } : {}),
-          ...(newStatus === 'completed' ? { end_time: new Date().toISOString() } : {})
+          delivery_date: tripEndTime.toISOString(),
+          end_time: tripEndTime.toISOString(),
+          trip_duration_minutes: tripDuration,
+          end_location: currentPosition ? `${currentPosition.latitude},${currentPosition.longitude}` : null,
+          completion_notes: `Viagem finalizada pelo motorista. Duração: ${tripDuration} minutos.`
         })
         .eq('id', currentOrderId);
       
@@ -212,19 +272,44 @@ const DriverNavigation: React.FC = () => {
         throw error;
       }
       
-      // Update local state
-      if (newStatus === 'in_progress') {
-        setTripStarted(true);
-        setTripStartTime(new Date());
-        toast.success('Viagem iniciada!');
-      } else if (newStatus === 'completed') {
-        toast.success('Viagem finalizada com sucesso!');
+      // Atualizar status do motorista para disponível
+      if (driverId) {
+        await supabase
+          .from('drivers')
+          .update({ status: 'available' })
+          .eq('id', driverId);
       }
       
+      // Registrar o evento de conclusão da viagem
+      await supabase
+        .from('system_logs')
+        .insert({
+          message: `Corrida concluída: ${currentOrderId}`,
+          category: 'trip',
+          severity: 'info',
+          details: {
+            driver_id: driverId,
+            order_id: currentOrderId,
+            duration: tripDuration,
+            trip_summary: tripSummary
+          }
+        });
+      
+      // Parar o rastreamento de localização
+      stopTracking();
+      
+      // Notificar sucesso e atualizar interface
+      toast.success('Viagem finalizada com sucesso!', {
+        description: `Duração total: ${tripDuration} minutos`
+      });
+      
+      setShowCompletionDialog(false);
       fetchCurrentOrder();
     } catch (error) {
       console.error('Error updating order status:', error);
-      toast.error('Erro ao atualizar status da ordem');
+      toast.error('Erro ao finalizar a viagem');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -297,6 +382,11 @@ const DriverNavigation: React.FC = () => {
         <span>Tempo de viagem: {minutes}min {seconds}s</span>
       </div>
     );
+  };
+
+  // Formatar a data/hora para exibição no modal de conclusão
+  const formatDateTime = (date: Date) => {
+    return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
   };
 
   return (
@@ -414,9 +504,10 @@ const DriverNavigation: React.FC = () => {
                         
                         {currentOrder.status === 'in_progress' && (
                           <Button 
-                            onClick={() => updateOrderStatus('completed')}
-                            className="flex-1"
+                            onClick={handleFinishTrip}
+                            className="flex-1 bg-green-600 hover:bg-green-700"
                           >
+                            <CheckCircle className="mr-2 h-4 w-4" />
                             Finalizar Corrida
                           </Button>
                         )}
@@ -474,6 +565,101 @@ const DriverNavigation: React.FC = () => {
           </div>
         </div>
       </SidebarProvider>
+      
+      {/* Modal de Finalização de Viagem */}
+      <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Resumo da Viagem</DialogTitle>
+            <DialogDescription>
+              Confira os detalhes e confirme a finalização da corrida.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {tripSummary && (
+            <div className="space-y-5 py-2">
+              <div className="space-y-1.5">
+                <h3 className="font-semibold text-sm">Informações da Corrida</h3>
+                <div className="text-sm grid grid-cols-2 gap-2">
+                  <div className="text-muted-foreground">Empresa:</div>
+                  <div>{tripSummary.company}</div>
+                  <div className="text-muted-foreground">Referência:</div>
+                  <div>#{tripSummary.orderId.substring(0, 8)}</div>
+                </div>
+              </div>
+              
+              <div className="space-y-1.5">
+                <h3 className="font-semibold text-sm">Trajeto</h3>
+                <div className="text-sm grid grid-cols-1 gap-1">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-shrink-0 h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
+                      <MapPin className="h-3 w-3 text-green-600" />
+                    </div>
+                    <div className="text-muted-foreground">De:</div>
+                    <div className="flex-1">{tripSummary.origin}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-shrink-0 h-5 w-5 rounded-full bg-red-100 flex items-center justify-center">
+                      <MapPin className="h-3 w-3 text-red-600" />
+                    </div>
+                    <div className="text-muted-foreground">Para:</div>
+                    <div className="flex-1">{tripSummary.destination}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-1.5">
+                <h3 className="font-semibold text-sm">Período</h3>
+                <div className="text-sm grid grid-cols-2 gap-2">
+                  <div className="text-muted-foreground">Início:</div>
+                  <div>{formatDateTime(tripSummary.startTime)}</div>
+                  <div className="text-muted-foreground">Fim:</div>
+                  <div>{formatDateTime(tripSummary.endTime)}</div>
+                  <div className="text-muted-foreground">Duração:</div>
+                  <div>{tripSummary.duration} minutos</div>
+                </div>
+              </div>
+              
+              <div className="rounded-md bg-primary-foreground p-3 space-y-1.5">
+                <h3 className="font-semibold text-sm">Métricas da Viagem</h3>
+                <div className="text-sm grid grid-cols-2 gap-2">
+                  <div className="text-muted-foreground">Distância estimada:</div>
+                  <div className="font-semibold">{tripSummary.distance} km</div>
+                  <div className="text-muted-foreground">Tempo total:</div>
+                  <div className="font-semibold">{tripSummary.duration} minutos</div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowCompletionDialog(false)}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => updateOrderStatus('completed')}
+              disabled={isSubmitting}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="animate-spin mr-2">◌</span>
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Confirmar Conclusão
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </TransitionEffect>
   );
 };

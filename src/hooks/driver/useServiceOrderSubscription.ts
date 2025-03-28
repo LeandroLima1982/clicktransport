@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { notifyDriverNewAssignment, notifyTripStarted } from '@/services/notifications/workflowNotificationService';
+import { notifyDriverNewAssignment, notifyTripStarted, notifyTripCompleted } from '@/services/notifications/workflowNotificationService';
 import { playNotificationSound } from '@/services/notifications/notificationService';
 import { ServiceOrder } from '@/types/serviceOrder';
 
@@ -60,6 +60,18 @@ export const useServiceOrderSubscription = (
             onNotification({
               ...payload,
               eventName: 'trip_started'
+            });
+          }
+          
+          // Case 5: Trip completed - status changed to completed
+          if (payload.eventType === 'UPDATE' && 
+              payload.old.status !== 'completed' && 
+              payload.new.status === 'completed') {
+            playNotificationSound();
+            notifyTripCompleted(payload.new as ServiceOrder);
+            onNotification({
+              ...payload,
+              eventName: 'trip_completed'
             });
           }
         }
