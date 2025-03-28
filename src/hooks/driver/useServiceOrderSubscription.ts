@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { notifyDriverNewAssignment } from '@/services/notifications/workflowNotificationService';
+import { notifyDriverNewAssignment, notifyTripStarted } from '@/services/notifications/workflowNotificationService';
 import { playNotificationSound } from '@/services/notifications/notificationService';
 import { ServiceOrder } from '@/types/serviceOrder';
 
@@ -50,12 +50,47 @@ export const useServiceOrderSubscription = (
             notifyDriverNewAssignment(payload.new as ServiceOrder);
             onNotification(payload);
           }
+          
+          // Case 4: Trip started - status changed to in_progress
+          if (payload.eventType === 'UPDATE' && 
+              payload.old.status !== 'in_progress' && 
+              payload.new.status === 'in_progress') {
+            playNotificationSound();
+            notifyTripStarted(payload.new as ServiceOrder);
+            onNotification({
+              ...payload,
+              eventName: 'trip_started'
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to location updates for this driver
+    const locationChannel = supabase
+      .channel('driver_location_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'driver_locations',
+          filter: `driver_id=eq.${driverId}`
+        },
+        (payload: any) => {
+          console.log('Driver location update:', payload);
+          // Pass location updates to callback
+          onNotification({
+            ...payload,
+            eventName: 'location_update'
+          });
         }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(locationChannel);
     };
   }, [driverId, onNotification]);
 };

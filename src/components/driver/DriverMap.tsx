@@ -10,19 +10,23 @@ interface DriverMapProps {
   currentOrder: any;
   currentLocation?: [number, number];
   heading?: number;
+  onEtaUpdate?: (eta: number) => void;
 }
 
 const DriverMap: React.FC<DriverMapProps> = ({ 
   currentOrder, 
   currentLocation,
-  heading 
+  heading,
+  onEtaUpdate
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const routeRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [routeGeometry, setRouteGeometry] = useState<any>(null);
+  const [estimatedArrival, setEstimatedArrival] = useState<Date | null>(null);
   
   // Initialize map when component mounts
   useEffect(() => {
@@ -88,6 +92,19 @@ const DriverMap: React.FC<DriverMapProps> = ({
       
       if (routeInfo && routeInfo.geometry) {
         setRouteGeometry(routeInfo.geometry);
+        routeRef.current = routeInfo;
+        
+        // Calculate ETA based on route duration
+        if (routeInfo.duration) {
+          const eta = new Date();
+          eta.setSeconds(eta.getSeconds() + routeInfo.duration);
+          setEstimatedArrival(eta);
+          
+          // Call callback with ETA information
+          if (onEtaUpdate) {
+            onEtaUpdate(routeInfo.duration);
+          }
+        }
         
         // Add origin marker
         new mapboxgl.Marker({ color: '#00FF00' })
@@ -148,6 +165,27 @@ const DriverMap: React.FC<DriverMapProps> = ({
   useEffect(() => {
     if (!map.current || !currentLocation) return;
     
+    // Update ETA based on current position if we have route data
+    if (routeRef.current && routeRef.current.geometry && onEtaUpdate) {
+      try {
+        // Find closest point on route to current location
+        // Simplified version - in production would use more sophisticated proximity calculation
+        const distanceRemaining = calculateRemainingDistance(currentLocation, routeRef.current.geometry.coordinates);
+        const speedKmh = 50; // Assumed average speed in km/h
+        const remainingTimeSeconds = (distanceRemaining / 1000) / (speedKmh / 3600);
+        
+        // Update ETA
+        const eta = new Date();
+        eta.setSeconds(eta.getSeconds() + remainingTimeSeconds);
+        setEstimatedArrival(eta);
+        
+        // Call callback with updated ETA
+        onEtaUpdate(remainingTimeSeconds);
+      } catch (err) {
+        console.error('Error updating ETA:', err);
+      }
+    }
+    
     // Remove existing marker if it exists
     if (markerRef.current) {
       markerRef.current.remove();
@@ -178,7 +216,52 @@ const DriverMap: React.FC<DriverMapProps> = ({
         duration: 1000
       });
     }
-  }, [currentLocation, heading]);
+  }, [currentLocation, heading, onEtaUpdate]);
+  
+  // Helper function to calculate remaining distance
+  const calculateRemainingDistance = (currentLocation: [number, number], routeCoordinates: [number, number][]) => {
+    // Find closest point on route to current location
+    let minDistance = Infinity;
+    let closestPointIndex = 0;
+    
+    routeCoordinates.forEach((coord, index) => {
+      const distance = getDistance(currentLocation, coord);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestPointIndex = index;
+      }
+    });
+    
+    // Calculate remaining distance by summing distances between remaining points
+    let remainingDistance = 0;
+    for (let i = closestPointIndex; i < routeCoordinates.length - 1; i++) {
+      remainingDistance += getDistance(routeCoordinates[i], routeCoordinates[i + 1]);
+    }
+    
+    return remainingDistance;
+  };
+  
+  // Helper function to calculate distance between two points in meters
+  const getDistance = (point1: [number, number], point2: [number, number]) => {
+    const R = 6371e3; // Earth radius in meters
+    const φ1 = point1[1] * Math.PI/180;
+    const φ2 = point2[1] * Math.PI/180;
+    const Δφ = (point2[1] - point1[1]) * Math.PI/180;
+    const Δλ = (point2[0] - point1[0]) * Math.PI/180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const d = R * c;
+    
+    return d; // Distance in meters
+  };
+  
+  const formatEta = () => {
+    if (!estimatedArrival) return 'Calculando...';
+    return estimatedArrival.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  };
   
   if (error) {
     return (
@@ -205,6 +288,13 @@ const DriverMap: React.FC<DriverMapProps> = ({
         ref={mapContainer} 
         className="h-full w-full rounded-lg" 
       />
+      
+      {estimatedArrival && (
+        <div className="absolute bottom-4 left-4 z-10 bg-background/80 backdrop-blur-sm p-2 rounded shadow">
+          <div className="text-sm font-medium">Chegada prevista</div>
+          <div className="text-lg font-bold text-primary">{formatEta()}</div>
+        </div>
+      )}
     </div>
   );
 };

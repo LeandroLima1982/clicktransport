@@ -1,17 +1,20 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import TransitionEffect from '@/components/TransitionEffect';
 import DriverSidebar from '@/components/driver/DriverSidebar';
 import DriverHeader from '@/components/driver/DriverHeader';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Navigation, AlertTriangle, Check, MapIcon } from 'lucide-react';
+import { MapPin, Navigation, AlertTriangle, Check, MapIcon, Clock, Timer } from 'lucide-react';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
+import { useServiceOrderSubscription } from '@/hooks/driver/useServiceOrderSubscription';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import DriverMap from '@/components/driver/DriverMap';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const DriverNavigation: React.FC = () => {
   const { user } = useAuth();
@@ -20,6 +23,9 @@ const DriverNavigation: React.FC = () => {
   const [currentOrder, setCurrentOrder] = useState<any | null>(null);
   const [isLoadingDriver, setIsLoadingDriver] = useState(true);
   const [showMap, setShowMap] = useState(false);
+  const [eta, setEta] = useState<number | null>(null);
+  const [tripStarted, setTripStarted] = useState(false);
+  const [tripStartTime, setTripStartTime] = useState<Date | null>(null);
 
   // Initialize location tracking
   const {
@@ -33,6 +39,28 @@ const DriverNavigation: React.FC = () => {
   } = useDriverLocation(driverId, currentOrderId, {
     updateInterval: 15000 // Update every 15 seconds
   });
+
+  // Handle service order notifications
+  const handleOrderNotification = useCallback((payload: any) => {
+    console.log('Order notification:', payload);
+    
+    // Handle trip started event
+    if (payload.eventName === 'trip_started') {
+      setTripStarted(true);
+      setTripStartTime(new Date());
+      toast.success('Viagem iniciada!', {
+        description: 'O sistema está agora rastreando sua localização em tempo real'
+      });
+    }
+    
+    // Refresh order details when relevant
+    if (payload.eventName !== 'location_update') {
+      fetchCurrentOrder();
+    }
+  }, []);
+
+  // Subscribe to order updates
+  useServiceOrderSubscription(driverId, handleOrderNotification);
 
   // Fetch driver ID when component mounts
   useEffect(() => {
@@ -59,6 +87,13 @@ const DriverNavigation: React.FC = () => {
           },
           (payload) => {
             console.log('Order update received:', payload);
+            
+            // Check if trip was just started
+            if (payload.new.status === 'in_progress' && payload.old.status !== 'in_progress') {
+              setTripStarted(true);
+              setTripStartTime(new Date());
+            }
+            
             fetchCurrentOrder();
           }
         )
@@ -84,7 +119,7 @@ const DriverNavigation: React.FC = () => {
         stopTracking();
       }
     }
-  }, [driverId, currentOrderId, isTracking]);
+  }, [driverId, currentOrderId, isTracking, startTracking, stopTracking]);
 
   const fetchDriverId = async () => {
     setIsLoadingDriver(true);
@@ -137,12 +172,23 @@ const DriverNavigation: React.FC = () => {
         }
         setCurrentOrderId(null);
         setCurrentOrder(null);
+        setTripStarted(false);
+        setTripStartTime(null);
         return;
       }
 
       if (data) {
         setCurrentOrderId(data.id);
         setCurrentOrder(data);
+        
+        // If status is already in_progress, update trip started state
+        if (data.status === 'in_progress') {
+          setTripStarted(true);
+          // Set trip start time if not already set
+          if (!tripStartTime) {
+            setTripStartTime(new Date());
+          }
+        }
       }
     } catch (error) {
       console.error('Exception fetching current order:', error);
@@ -155,14 +201,26 @@ const DriverNavigation: React.FC = () => {
     try {
       const { error } = await supabase
         .from('service_orders')
-        .update({ status: newStatus })
+        .update({ 
+          status: newStatus,
+          ...(newStatus === 'in_progress' ? { start_time: new Date().toISOString() } : {}),
+          ...(newStatus === 'completed' ? { end_time: new Date().toISOString() } : {})
+        })
         .eq('id', currentOrderId);
       
       if (error) {
         throw error;
       }
       
-      toast.success(`Status atualizado para ${newStatus}`);
+      // Update local state
+      if (newStatus === 'in_progress') {
+        setTripStarted(true);
+        setTripStartTime(new Date());
+        toast.success('Viagem iniciada!');
+      } else if (newStatus === 'completed') {
+        toast.success('Viagem finalizada com sucesso!');
+      }
+      
       fetchCurrentOrder();
     } catch (error) {
       console.error('Error updating order status:', error);
@@ -173,6 +231,22 @@ const DriverNavigation: React.FC = () => {
   const handleForceUpdate = () => {
     updateNow();
     toast.success('Localização atualizada');
+  };
+  
+  const handleEtaUpdate = (etaSeconds: number) => {
+    setEta(etaSeconds);
+  };
+
+  const formatEta = () => {
+    if (eta === null) return 'Calculando...';
+    
+    const minutes = Math.floor(eta / 60);
+    const seconds = Math.floor(eta % 60);
+    
+    if (minutes > 0) {
+      return `${minutes}min ${seconds}s`;
+    }
+    return `${seconds}s`;
   };
 
   const renderTrackingStatus = () => {
@@ -208,6 +282,22 @@ const DriverNavigation: React.FC = () => {
   const toggleMap = () => {
     setShowMap(!showMap);
   };
+  
+  const renderElapsedTime = () => {
+    if (!tripStarted || !tripStartTime) return null;
+    
+    const now = new Date();
+    const diffMs = now.getTime() - tripStartTime.getTime();
+    const minutes = Math.floor(diffMs / 60000);
+    const seconds = Math.floor((diffMs % 60000) / 1000);
+    
+    return (
+      <div className="flex items-center gap-2 text-primary font-medium">
+        <Timer className="h-4 w-4" />
+        <span>Tempo de viagem: {minutes}min {seconds}s</span>
+      </div>
+    );
+  };
 
   return (
     <TransitionEffect>
@@ -237,10 +327,27 @@ const DriverNavigation: React.FC = () => {
                             {currentOrder.companies?.name}
                           </p>
                         </div>
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          currentOrder.status === 'in_progress' 
+                            ? 'bg-blue-100 text-blue-700' 
+                            : 'bg-primary/10 text-primary'
+                        }`}>
                           {currentOrder.status === 'assigned' ? 'Aguardando início' : 'Em andamento'}
                         </span>
                       </div>
+                      
+                      {tripStarted && tripStartTime && (
+                        <div className="bg-blue-50 p-3 rounded-lg mb-4 flex flex-col gap-1">
+                          <div className="font-medium">Status da Viagem</div>
+                          {renderElapsedTime()}
+                          {eta !== null && (
+                            <div className="flex items-center gap-2 text-primary">
+                              <Clock className="h-4 w-4" />
+                              <span>Chegada estimada: {formatEta()}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       
                       <div className="space-y-3 mb-6">
                         <div className="flex gap-3 items-start">
@@ -260,6 +367,18 @@ const DriverNavigation: React.FC = () => {
                           <div>
                             <p className="text-sm text-muted-foreground">Destino</p>
                             <p className="font-medium">{currentOrder.destination}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-3 items-start">
+                          <div className="flex-shrink-0 h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
+                            <Clock className="h-4 w-4 text-amber-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Data</p>
+                            <p className="font-medium">
+                              {format(new Date(currentOrder.pickup_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -326,8 +445,15 @@ const DriverNavigation: React.FC = () => {
                               undefined
                             }
                             heading={location?.coords.heading}
+                            onEtaUpdate={handleEtaUpdate}
                           />
                         </div>
+                        
+                        {eta !== null && (
+                          <div className="mt-3 p-3 bg-primary/5 rounded-lg">
+                            <p className="text-sm font-medium">Tempo estimado até o destino: <span className="text-primary">{formatEta()}</span></p>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   )}
