@@ -228,8 +228,54 @@ export type Database = {
           },
         ]
       }
+      driver_ratings: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          driver_id: string
+          feedback: string | null
+          id: string
+          order_id: string
+          rating: number
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          driver_id: string
+          feedback?: string | null
+          id?: string
+          order_id: string
+          rating: number
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          driver_id?: string
+          feedback?: string | null
+          id?: string
+          order_id?: string
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_ratings_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_ratings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drivers: {
         Row: {
+          assignment_score: number | null
           company_id: string | null
           created_at: string | null
           email: string | null
@@ -244,6 +290,7 @@ export type Database = {
           vehicle_id: string | null
         }
         Insert: {
+          assignment_score?: number | null
           company_id?: string | null
           created_at?: string | null
           email?: string | null
@@ -258,6 +305,7 @@ export type Database = {
           vehicle_id?: string | null
         }
         Update: {
+          assignment_score?: number | null
           company_id?: string | null
           created_at?: string | null
           email?: string | null
@@ -786,6 +834,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_driver_rating: {
+        Args: {
+          driver_id: string
+        }
+        Returns: number
+      }
       increment_queue_position: {
         Args: {
           row_id: string

@@ -9,50 +9,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
-const DashboardContent: React.FC = () => {
-  const { user } = useAuth();
-  const [driverId, setDriverId] = useState<string | null>(null);
-  const [isLoadingDriver, setIsLoadingDriver] = useState(true);
-  
+interface DashboardContentProps {
+  driverId: string | null;
+  isLoading: boolean;
+}
+
+const DashboardContent: React.FC<DashboardContentProps> = ({ driverId, isLoading: isLoadingDriver }) => {
   const { 
     orders, 
     isLoading, 
     handleUpdateStatus
   } = useServiceOrders(driverId);
-
-  useEffect(() => {
-    if (user) {
-      fetchDriverId();
-    }
-  }, [user]);
-
-  const fetchDriverId = async () => {
-    setIsLoadingDriver(true);
-    try {
-      const { data, error } = await supabase
-        .from('drivers')
-        .select('id')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (error) {
-        console.error('Erro ao buscar ID do motorista:', error);
-        toast.error('Erro ao buscar perfil do motorista');
-        return;
-      }
-
-      if (data) {
-        setDriverId(data.id);
-      } else {
-        toast.error('Perfil de motorista não encontrado');
-      }
-    } catch (error) {
-      console.error('Erro ao buscar ID do motorista:', error);
-      toast.error('Erro ao carregar perfil do motorista');
-    } finally {
-      setIsLoadingDriver(false);
-    }
-  };
 
   if (isLoadingDriver || isLoading) {
     return (
