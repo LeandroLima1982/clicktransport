@@ -15,4 +15,12 @@ export interface Booking {
   created_at: string;
   user_id: string;
   passenger_data?: any;
+  
+  // Adding driver and company related properties
+  driver_id?: string | null;
+  driver_name?: string | null;
+  driver_phone?: string | null;
+  company_id?: string | null;
+  company_name?: string | null;
+  company_phone?: string | null;
 }
