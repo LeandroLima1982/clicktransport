@@ -49,7 +49,7 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
       returnTime: bookingData.returnTime,
       passengerData: bookingData.passengerData,
       creationDate: new Date().toLocaleDateString('pt-BR'),
-      creationTime: format(new Date(), 'HH:mm')
+      formattedTime: format(new Date(), 'HH:mm')
     };
     
     const message = formatBookingShareMessage(shareData, {
