@@ -240,7 +240,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Horário:</span>
-                    <span>{formatTime(booking.travel_date)}</span>
+                    <span className="font-medium text-primary">{formatTime(booking.travel_date)}</span>
                   </div>
                   {isRoundTrip && booking.return_date && (
                     <>
@@ -251,7 +251,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Horário de retorno:</span>
-                        <span>{formatTime(booking.return_date)}</span>
+                        <span className="font-medium text-primary">{formatTime(booking.return_date)}</span>
                       </div>
                     </>
                   )}
@@ -278,13 +278,19 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
               
               {expandedSection === 'route' && (
                 <div className="px-3 pb-3 text-sm space-y-2 border-t border-gray-200">
-                  <div className="flex flex-col">
-                    <span className="text-muted-foreground">Origem:</span>
-                    <span className="font-medium">{booking.origin}</span>
+                  <div className="flex items-start mt-2">
+                    <MapPin className="h-4 w-4 mr-2 text-green-500 shrink-0 mt-0.5" />
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground">Origem:</span>
+                      <span className="font-medium">{booking.origin}</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-muted-foreground">Destino:</span>
-                    <span className="font-medium">{booking.destination}</span>
+                  <div className="flex items-start mt-2">
+                    <MapPin className="h-4 w-4 mr-2 text-red-500 shrink-0 mt-0.5" />
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground">Destino:</span>
+                      <span className="font-medium">{booking.destination}</span>
+                    </div>
                   </div>
                 </div>
               )}

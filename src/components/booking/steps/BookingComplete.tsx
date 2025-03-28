@@ -40,9 +40,13 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const formatDate = (date: Date | undefined) => {
+  const formatDateTime = (date: Date | undefined) => {
     if (!date) return '';
-    return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+    
+    const formattedDate = format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+    const formattedTime = format(date, "HH:mm", { locale: ptBR });
+    
+    return `${formattedDate} às ${formattedTime}`;
   };
 
   const handleViewBookings = () => {
@@ -73,20 +77,30 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
               <span className="text-gray-500 flex items-center"><Car className="w-4 h-4 mr-2" /> Veículo:</span>
               <span className="font-medium">{selectedVehicle?.name}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500 flex items-center"><MapPin className="w-4 h-4 mr-2" /> Origem:</span>
+            <div className="flex justify-between items-start">
+              <span className="text-gray-500 flex items-center">
+                <MapPin className="w-4 h-4 mr-2 text-green-500" /> Origem:
+              </span>
               <span className="font-medium truncate max-w-[240px]">{bookingData.origin}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500 flex items-center"><MapPin className="w-4 h-4 mr-2" /> Destino:</span>
+            <div className="flex justify-between items-start">
+              <span className="text-gray-500 flex items-center">
+                <MapPin className="w-4 h-4 mr-2 text-red-500" /> Destino:
+              </span>
               <span className="font-medium truncate max-w-[240px]">{bookingData.destination}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500 flex items-center"><Calendar className="w-4 h-4 mr-2" /> Data:</span>
+              <span className="text-gray-500 flex items-center"><Calendar className="w-4 h-4 mr-2" /> Data e hora:</span>
               <span className="font-medium">
-                {formatDate(bookingData.date)}
+                {formatDateTime(bookingData.date)}
               </span>
             </div>
+            {bookingData.returnDate && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Retorno:</span>
+                <span className="font-medium">{formatDateTime(bookingData.returnDate)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-gray-500">Total:</span>
               <span className="font-medium text-primary">{formatCurrency(totalPrice)}</span>

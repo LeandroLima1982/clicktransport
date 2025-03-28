@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Users, Share2, Phone } from 'lucide-react';
+import { CheckCircle, Users, Share2, Phone, MapPin } from 'lucide-react';
 import { Vehicle } from './steps/VehicleSelection';
 import { shareViaWhatsApp, formatBookingShareMessage } from '@/services/notifications/notificationService';
 
@@ -57,6 +57,15 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
     shareViaWhatsApp(message);
   };
 
+  const formatDateTime = (date: Date | undefined) => {
+    if (!date) return 'Não especificado';
+    
+    const formattedDate = format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+    const formattedTime = format(date, "HH:mm", { locale: ptBR });
+    
+    return `${formattedDate} às ${formattedTime}`;
+  };
+
   return (
     <div className="text-center py-6">
       <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 text-primary mb-4">
@@ -92,21 +101,25 @@ const BookingComplete: React.FC<BookingCompleteProps> = ({
             
             {bookingData.origin && bookingData.destination && (
               <>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Origem:</span>
-                  <span className="font-medium">{bookingData.origin}</span>
+                <div className="flex justify-between items-start">
+                  <span className="text-gray-500 flex items-center">
+                    <MapPin className="h-4 w-4 mr-1 text-green-500" />Origem:
+                  </span>
+                  <span className="font-medium text-right max-w-[240px]">{bookingData.origin}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Destino:</span>
-                  <span className="font-medium">{bookingData.destination}</span>
+                <div className="flex justify-between items-start">
+                  <span className="text-gray-500 flex items-center">
+                    <MapPin className="h-4 w-4 mr-1 text-red-500" />Destino:
+                  </span>
+                  <span className="font-medium text-right max-w-[240px]">{bookingData.destination}</span>
                 </div>
               </>
             )}
             
             <div className="flex justify-between">
-              <span className="text-gray-500">Data:</span>
+              <span className="text-gray-500">Data e hora:</span>
               <span className="font-medium">
-                {bookingData.date ? format(bookingData.date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : 'Não especificado'}
+                {formatDateTime(bookingData.date)}
               </span>
             </div>
             

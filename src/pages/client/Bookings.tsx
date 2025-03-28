@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -34,11 +33,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { useBookings } from '@/hooks/useBookings';
 import BookingStatus from '@/components/client/BookingStatus';
 import BookingDetails from '@/components/client/BookingDetails';
@@ -89,19 +83,16 @@ const Bookings: React.FC = () => {
   };
   
   const filteredBookings = bookings.filter(booking => {
-    // Filter by search term
     const matchesSearch = 
       booking.reference_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.destination.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filter by status
     const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
   
-  // Helper to get passenger count
   const getPassengerCount = (booking: Booking) => {
     if (booking.passenger_data) {
       try {
@@ -116,7 +107,6 @@ const Bookings: React.FC = () => {
     return booking.passengers || 1;
   };
   
-  // Helper to get parsed passenger data
   const getPassengerData = (booking: Booking) => {
     if (booking.passenger_data) {
       try {
@@ -130,7 +120,6 @@ const Bookings: React.FC = () => {
     return [];
   };
   
-  // Helper to format creation date and time
   const formatCreationDateTime = (dateString: string) => {
     try {
       const date = parseISO(dateString);
@@ -142,7 +131,6 @@ const Bookings: React.FC = () => {
     }
   };
   
-  // Helper to calculate price breakdown
   const getPriceInfo = (booking: Booking) => {
     const totalPrice = booking.total_price || 0;
     const isRoundTrip = booking.return_date !== null;
@@ -152,7 +140,6 @@ const Bookings: React.FC = () => {
     return { totalPrice, oneWayPrice, returnPrice, isRoundTrip };
   };
 
-  // Handle sharing via WhatsApp
   const handleShareBooking = (booking: Booking, e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -180,7 +167,6 @@ const Bookings: React.FC = () => {
     shareViaWhatsApp(message);
   };
 
-  // Function to get relevant contact info (driver or company)
   const getContactInfo = (booking: Booking) => {
     if (booking.driver_id && booking.driver_phone) {
       return {
@@ -196,15 +182,13 @@ const Bookings: React.FC = () => {
       };
     }
     
-    // Default fallback
     return {
       type: 'support',
       name: 'Suporte',
-      phone: '+5511999999999' // Replace with actual support phone
+      phone: '+5511999999999'
     };
   };
 
-  // Function to contact via WhatsApp
   const handleContact = (booking: Booking, e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -286,7 +270,6 @@ const Bookings: React.FC = () => {
           <Card className="p-6 text-center">
             <div className="mb-4 text-gray-400">
               {searchTerm || statusFilter !== 'all' ? (
-                // No results with filters
                 <>
                   <Search className="h-10 w-10 mx-auto mb-2" />
                   <p className="text-lg mb-2">Nenhuma reserva encontrada</p>
@@ -295,7 +278,6 @@ const Bookings: React.FC = () => {
                   </p>
                 </>
               ) : (
-                // No bookings at all
                 <>
                   <CheckCircle className="h-10 w-10 mx-auto mb-2" />
                   <p className="text-lg mb-2">Você ainda não possui reservas</p>
@@ -343,7 +325,7 @@ const Bookings: React.FC = () => {
                       <div className="font-medium text-sm">{formatDate(booking.travel_date)}</div>
                       <div className="flex items-center text-xs">
                         <Clock className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                        {formatTime(booking.travel_date)}
+                        <span className="font-medium text-primary">{formatTime(booking.travel_date)}</span>
                       </div>
                       {isRoundTrip && booking.return_date && (
                         <div className="text-xs">
@@ -358,9 +340,12 @@ const Bookings: React.FC = () => {
                         <MapPin className="h-3.5 w-3.5 mr-1" />
                         Trajeto
                       </div>
-                      <div className="font-medium text-sm truncate">{booking.origin}</div>
-                      <div className="flex items-center text-xs">
-                        <MapPin className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                      <div className="font-medium text-sm truncate flex items-start">
+                        <MapPin className="h-3.5 w-3.5 mr-1 text-green-500 shrink-0 mt-0.5" />
+                        <span className="truncate">{booking.origin}</span>
+                      </div>
+                      <div className="flex items-start text-xs">
+                        <MapPin className="h-3.5 w-3.5 mr-1 text-red-500 shrink-0 mt-0.5" />
                         <span className="truncate">{booking.destination}</span>
                       </div>
                     </div>
