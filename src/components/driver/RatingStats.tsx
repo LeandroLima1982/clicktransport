@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { getDriverRatingStats } from '@/services/rating/ratingService';
+import { getDriverRatingStats, DriverRatingStats } from '@/services/rating/ratingService';
 import { RatingStats } from '@/types/rating';
 import RatingDisplay from './RatingDisplay';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,7 +24,20 @@ const DriverRatingStats: React.FC<RatingStatsProps> = ({ driverId, className }) 
       setIsLoading(true);
       try {
         const ratingStats = await getDriverRatingStats(driverId);
-        setStats(ratingStats);
+        
+        if (ratingStats) {
+          // Convert DriverRatingStats to RatingStats format
+          const convertedStats: RatingStats = {
+            averageRating: ratingStats.averageRating,
+            totalRatings: ratingStats.totalRatings,
+            fiveStarCount: ratingStats.starCounts[5] || 0,
+            fourStarCount: ratingStats.starCounts[4] || 0,
+            threeStarCount: ratingStats.starCounts[3] || 0,
+            twoStarCount: ratingStats.starCounts[2] || 0,
+            oneStarCount: ratingStats.starCounts[1] || 0
+          };
+          setStats(convertedStats);
+        }
       } catch (error) {
         console.error('Error fetching rating stats:', error);
       } finally {

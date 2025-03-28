@@ -47,6 +47,8 @@ const MapContainer: React.FC<MapContainerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [staticMapUrl, setStaticMapUrl] = useState<string>('');
   const [routeData, setRouteData] = useState<any>(null);
+  const [parsedOriginCoords, setParsedOriginCoords] = useState<[number, number] | null>(null);
+  const [parsedDestinationCoords, setParsedDestinationCoords] = useState<[number, number] | null>(null);
   
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -74,9 +76,19 @@ const MapContainer: React.FC<MapContainerProps> = ({
     }
   }, [externalRouteGeometry, externalRouteDistance, externalRouteDuration]);
 
+  // Parse coordinates if they're provided as an array or get them from API
   useEffect(() => {
+    // Set parsed coordinates if they're provided directly
+    if (originCoords && Array.isArray(originCoords) && originCoords.length === 2) {
+      setParsedOriginCoords(originCoords as [number, number]);
+    }
+    
+    if (destinationCoords && Array.isArray(destinationCoords) && destinationCoords.length === 2) {
+      setParsedDestinationCoords(destinationCoords as [number, number]);
+    }
+    
     // Skip API calls if coords and data are provided externally
-    if ((originCoords && destinationCoords) || externalRouteGeometry) {
+    if ((parsedOriginCoords && parsedDestinationCoords) || externalRouteGeometry) {
       setIsLoading(false);
       return;
     }
@@ -98,7 +110,18 @@ const MapContainer: React.FC<MapContainerProps> = ({
         // Get route data for interactive map
         if (isInteractive) {
           const route = await getMapboxDirections(originAddress, destinationAddress);
-          setRouteData(route);
+          if (route) {
+            setRouteData(route);
+            
+            // Get coordinates from the route if not provided directly
+            if (!parsedOriginCoords || !parsedDestinationCoords) {
+              const coords = route.geometry?.coordinates;
+              if (coords && coords.length >= 2) {
+                setParsedOriginCoords(coords[0] as [number, number]);
+                setParsedDestinationCoords(coords[coords.length - 1] as [number, number]);
+              }
+            }
+          }
         }
         
         setError(null);
@@ -111,7 +134,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
     };
 
     loadMapData();
-  }, [originAddress, destinationAddress, isInteractive, originCoords, destinationCoords, externalRouteGeometry]);
+  }, [originAddress, destinationAddress, isInteractive, originCoords, destinationCoords, externalRouteGeometry, parsedOriginCoords, parsedDestinationCoords]);
 
   const toggleMapMode = () => {
     if (onToggleMapType) {
@@ -133,7 +156,18 @@ const MapContainer: React.FC<MapContainerProps> = ({
         
         if (isInteractive) {
           const route = await getMapboxDirections(originAddress, destinationAddress);
-          setRouteData(route);
+          if (route) {
+            setRouteData(route);
+            
+            // Get coordinates from the route if not provided directly
+            if (!parsedOriginCoords || !parsedDestinationCoords) {
+              const coords = route.geometry?.coordinates;
+              if (coords && coords.length >= 2) {
+                setParsedOriginCoords(coords[0] as [number, number]);
+                setParsedDestinationCoords(coords[coords.length - 1] as [number, number]);
+              }
+            }
+          }
         }
       } catch (err) {
         console.error('Error reloading map data:', err);
@@ -171,8 +205,8 @@ const MapContainer: React.FC<MapContainerProps> = ({
       <div className="h-[300px] bg-slate-50 rounded-lg overflow-hidden border">
         {isInteractive ? (
           <InteractiveMap
-            originCoords={originCoords || [0, 0]}
-            destinationCoords={destinationCoords || [0, 0]}
+            originCoords={parsedOriginCoords || [0, 0]}
+            destinationCoords={parsedDestinationCoords || [0, 0]}
             routeGeometry={routeData?.geometry || externalRouteGeometry}
             originAddress={originAddress}
             destinationAddress={destinationAddress}
