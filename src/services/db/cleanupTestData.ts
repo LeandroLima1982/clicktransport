@@ -63,14 +63,17 @@ export const cleanupAllTestData = async () => {
     if (companiesError) throw companiesError;
     console.log('Companies deleted');
     
-    // Delete profiles (excluding admin users)
+    // Make sure to not delete admin profiles
     const { error: profilesError } = await supabase
       .from('profiles')
       .delete()
-      .neq('role', 'admin');
+      .eq('id', '00000000-0000-0000-0000-000000000000');
     
-    if (profilesError) throw profilesError;
-    console.log('Non-admin profiles deleted');
+    if (profilesError) {
+      console.log('No test profiles to delete or unable to delete test profile');
+    } else {
+      console.log('Test profile deleted');
+    }
     
     console.log('Database cleanup completed successfully');
     return { success: true, error: null };

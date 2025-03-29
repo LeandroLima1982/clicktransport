@@ -251,6 +251,33 @@ export const createSampleBooking = async () => {
   try {
     console.log('Creating sample booking...');
     
+    // Ensure the test user exists
+    const testUserId = '00000000-0000-0000-0000-000000000000';
+    
+    // Check if the test user exists, if not create it
+    const { data: userExists, error: userCheckError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', testUserId)
+      .single();
+      
+    if (userCheckError || !userExists) {
+      // Create a test user profile if it doesn't exist
+      const { error: createProfileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: testUserId,
+          full_name: 'Test User',
+          email: 'test@example.com',
+          role: 'client'
+        });
+        
+      if (createProfileError) {
+        console.error('Error creating test profile:', createProfileError);
+        throw new Error('Unable to create test user profile');
+      }
+    }
+    
     const bookingData = {
       reference_code: `BK-${Math.floor(10000 + Math.random() * 90000)}`,
       status: 'confirmed',
@@ -260,7 +287,7 @@ export const createSampleBooking = async () => {
       booking_date: new Date().toISOString(),
       total_price: 150.00,
       passengers: 2,
-      user_id: '00000000-0000-0000-0000-000000000000', // Placeholder user ID
+      user_id: testUserId,
       additional_notes: 'Cliente solicitou motorista que fale inglês'
     };
     

@@ -46,7 +46,8 @@ export const createTestServiceOrder = async (booking?: Booking) => {
  */
 export const generateSampleBookingAndOrder = async () => {
   try {
-    // Create booking
+    // Create booking with a static test user ID that exists in the profiles table
+    // This is for testing purposes only
     const bookingData = {
       reference_code: `BK-${Math.floor(10000 + Math.random() * 90000)}`,
       status: 'confirmed' as const,
@@ -56,10 +57,47 @@ export const generateSampleBookingAndOrder = async () => {
       booking_date: new Date().toISOString(),
       total_price: 120.00,
       passengers: 1,
-      user_id: '00000000-0000-0000-0000-000000000000', // Placeholder user ID
+      user_id: '00000000-0000-0000-0000-000000000000', // This is a placeholder user ID that should exist in your test environment
       additional_notes: 'Cliente precisa de espaço para bagagem extra'
     };
     
+    // Check if the test user exists, if not create it
+    const { data: userExists, error: userCheckError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', bookingData.user_id)
+      .single();
+      
+    if (userCheckError || !userExists) {
+      // Create a test user profile if it doesn't exist
+      const { error: createProfileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: bookingData.user_id,
+          full_name: 'Test User',
+          email: 'test@example.com',
+          role: 'client'
+        });
+        
+      if (createProfileError) {
+        console.error('Error creating test profile:', createProfileError);
+        // If we cannot create a profile, we'll try to find any existing profile to use
+        const { data: anyProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .limit(1)
+          .single();
+          
+        if (profileError || !anyProfile) {
+          throw new Error('No valid user profile found and unable to create one. Please set up test environment first.');
+        }
+        
+        // Use this profile instead
+        bookingData.user_id = anyProfile.id;
+      }
+    }
+    
+    // Create the booking
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .insert(bookingData)
