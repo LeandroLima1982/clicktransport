@@ -8,12 +8,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useAdminSql } from '@/hooks/useAdminSql';
+import { toast } from 'sonner';
 
 const CleanupTestData: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isForceLoading, setIsForceLoading] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message?: string } | null>(null);
-  const { isExecuting } = useAdminSql();
+  const { isExecuting, executeSQL } = useAdminSql();
   
   const handleCleanup = async () => {
     try {
@@ -46,14 +47,43 @@ const CleanupTestData: React.FC = () => {
       setIsForceLoading(true);
       setResult(null);
       
-      const { success, error } = await forceCleanupAllData();
+      // Use direct SQL execution to force remove all data
+      const sqlCommand = `
+        -- Disable triggers temporarily to bypass foreign key constraints
+        SET session_replication_role = 'replica';
+        
+        -- Delete from all tables in the reverse order of dependencies
+        DELETE FROM driver_locations;
+        DELETE FROM driver_ratings;
+        DELETE FROM service_orders;
+        DELETE FROM bookings;
+        DELETE FROM drivers;
+        DELETE FROM vehicles;
+        DELETE FROM companies;
+        DELETE FROM financial_metrics;
+        
+        -- Re-enable triggers
+        SET session_replication_role = 'origin';
+      `;
       
-      if (success) {
-        setResult({ success: true, message: "Limpeza forçada de dados executada com sucesso. Todos os dados foram removidos." });
-      } else {
+      console.log('Executing force cleanup SQL command');
+      const { data, error } = await executeSQL(sqlCommand);
+      
+      if (error) {
+        console.error('SQL execution error:', error);
+        toast.error('Erro ao executar limpeza forçada', { 
+          description: error.message 
+        });
         setResult({ 
           success: false, 
-          message: error instanceof Error ? error.message : "Erro desconhecido durante limpeza forçada."
+          message: `Erro ao executar limpeza forçada: ${error.message}`
+        });
+      } else {
+        console.log('Force cleanup successful:', data);
+        toast.success('Limpeza forçada concluída com sucesso');
+        setResult({ 
+          success: true, 
+          message: "Limpeza forçada executada com sucesso. Todos os dados foram removidos."
         });
       }
     } catch (error) {

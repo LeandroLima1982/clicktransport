@@ -2,7 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logWarning, logInfo, logError } from '@/services/monitoring/systemLogService';
-import { useAdminSql } from '@/hooks/useAdminSql';
 
 /**
  * Cleans up all test data from the database
@@ -40,8 +39,7 @@ export const cleanupAllTestData = async () => {
       const { error: locationsError } = await supabase
         .from('driver_locations')
         .delete()
-        .is('driver_id', null)
-        .or('driver_id.neq.00000000-0000-0000-0000-000000000000');
+        .not('driver_id', 'is', null);
       
       if (locationsError) {
         console.error('Error deleting driver locations:', locationsError);
@@ -55,8 +53,7 @@ export const cleanupAllTestData = async () => {
       const { error: ratingsError } = await supabase
         .from('driver_ratings')
         .delete()
-        .is('driver_id', null)
-        .or('driver_id.neq.00000000-0000-0000-0000-000000000000');
+        .not('driver_id', 'is', null);
       
       if (ratingsError) {
         console.error('Error deleting driver ratings:', ratingsError);
@@ -70,8 +67,7 @@ export const cleanupAllTestData = async () => {
       const { error: ordersError } = await supabase
         .from('service_orders')
         .delete()
-        .is('id', null)
-        .or('id.neq.00000000-0000-0000-0000-000000000000');
+        .not('id', 'is', null);
       
       if (ordersError) {
         console.error('Error deleting service orders:', ordersError);
@@ -85,8 +81,7 @@ export const cleanupAllTestData = async () => {
       const { error: bookingsError } = await supabase
         .from('bookings')
         .delete()
-        .is('id', null)
-        .or('id.neq.00000000-0000-0000-0000-000000000000');
+        .not('id', 'is', null);
       
       if (bookingsError) {
         console.error('Error deleting bookings:', bookingsError);
@@ -100,8 +95,8 @@ export const cleanupAllTestData = async () => {
       const { error: driversError } = await supabase
         .from('drivers')
         .delete()
-        .is('id', null)
-        .or('id.neq.00000000-0000-0000-0000-000000000000');
+        .not('id', 'is', null)
+        .neq('id', '00000000-0000-0000-0000-000000000000');
       
       if (driversError) {
         console.error('Error deleting drivers:', driversError);
@@ -115,8 +110,8 @@ export const cleanupAllTestData = async () => {
       const { error: vehiclesError } = await supabase
         .from('vehicles')
         .delete()
-        .is('id', null)
-        .or('id.neq.00000000-0000-0000-0000-000000000000');
+        .not('id', 'is', null)
+        .neq('id', '00000000-0000-0000-0000-000000000000');
       
       if (vehiclesError) {
         console.error('Error deleting vehicles:', vehiclesError);
@@ -130,8 +125,8 @@ export const cleanupAllTestData = async () => {
       const { error: companiesError } = await supabase
         .from('companies')
         .delete()
-        .is('id', null)
-        .or('id.neq.00000000-0000-0000-0000-000000000000');
+        .not('id', 'is', null)
+        .neq('id', '00000000-0000-0000-0000-000000000000');
       
       if (companiesError) {
         console.error('Error deleting companies:', companiesError);
@@ -139,6 +134,7 @@ export const cleanupAllTestData = async () => {
         // More specific error handling for foreign key constraints
         if (companiesError.message.includes('violates foreign key constraint')) {
           toast.error('Não foi possível excluir empresas devido a restrições de chave estrangeira. Alguns registros relacionados ainda existem.');
+          return { success: false, error: new Error('Não foi possível excluir empresas devido a restrições de chave estrangeira. Use a opção de "Limpeza Forçada" para remover todos os dados.') };
         }
       } else {
         console.log('Companies deleted');
@@ -173,53 +169,11 @@ export const forceCleanupAllData = async () => {
     console.log('Starting force cleanup with SQL command...');
     logInfo('Running force cleanup with SQL', 'data-cleanup');
     
-    // Create a basic SQL command to clean up all tables
-    // Using TRUNCATE with CASCADE to handle foreign key constraints
-    const sqlCommand = `
-      -- Disable triggers temporarily
-      SET session_replication_role = 'replica';
-      
-      -- Delete from all tables in the right order
-      DELETE FROM driver_locations;
-      DELETE FROM driver_ratings;
-      DELETE FROM service_orders;
-      DELETE FROM bookings;
-      DELETE FROM drivers;
-      DELETE FROM vehicles;
-      DELETE FROM companies;
-      DELETE FROM financial_metrics;
-      
-      -- Re-enable triggers
-      SET session_replication_role = 'origin';
-    `;
-    
-    // Use the admin SQL hook to execute the command
-    // This is a security definer function that can bypass RLS
-    try {
-      const { executeSQL } = useAdminSql();
-      const { data, error } = await executeSQL(sqlCommand);
-      
-      if (error) {
-        console.error('SQL execution error:', error);
-        toast.error('Erro ao executar limpeza forçada', { 
-          description: error.message
-        });
-        return { success: false, error };
-      }
-      
-      console.log('Force cleanup successful:', data);
-      toast.success('Limpeza forçada concluída com sucesso');
-      return { success: true, error: null };
-    } catch (sqlError) {
-      console.error('Failed to execute SQL cleanup:', sqlError);
-      toast.error('Falha na limpeza via SQL', {
-        description: sqlError instanceof Error ? sqlError.message : 'Erro na execução do SQL'
-      });
-      
-      // If the SQL approach failed, try the regular cleanup
-      console.log('Falling back to regular cleanup...');
-      return await cleanupAllTestData();
-    }
+    // Return an error message instructing to use the admin SQL execution in the component
+    return { 
+      success: false, 
+      error: new Error('Esta função agora usa execução SQL direta para limpeza. Use o botão de "Limpeza Forçada".')
+    };
   } catch (error) {
     console.error('Error during force cleanup:', error);
     toast.error('Erro durante limpeza forçada', { 
