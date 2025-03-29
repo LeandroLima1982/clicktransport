@@ -20,6 +20,7 @@ interface CompanyPanelProps {
 interface CompanyInfo {
   id: string;
   name: string;
+  status: string;
 }
 
 const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
@@ -64,17 +65,43 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
   const fetchCompanyInfo = async () => {
     try {
       setIsLoading(true);
+      
+      // Verify that we're fetching a valid, active company (not a duplicate marked as deleted)
       const { data, error } = await supabase
         .from('companies')
-        .select('id, name')
+        .select('id, name, status')
         .eq('id', resolvedCompanyId)
+        .neq('status', 'deleted') // Exclude companies marked as deleted
         .single();
 
       if (error) {
-        throw error;
+        // If company not found or marked as deleted, try to fetch a company by user_id
+        const session = await supabase.auth.getSession();
+        if (session.data?.session?.user?.id) {
+          const userId = session.data.session.user.id;
+          const { data: userCompany, error: userCompanyError } = await supabase
+            .from('companies')
+            .select('id, name, status')
+            .eq('user_id', userId)
+            .neq('status', 'deleted')
+            .single();
+            
+          if (userCompanyError) {
+            throw error; // If both attempts fail, throw the original error
+          }
+          
+          setCompanyInfo(userCompany);
+          // Navigate to the correct company URL if we found the user's company
+          if (userCompany && userCompany.id !== resolvedCompanyId) {
+            navigate(`/company/${userCompany.id}`, { replace: true });
+            return;
+          }
+        } else {
+          throw error;
+        }
+      } else {
+        setCompanyInfo(data);
       }
-
-      setCompanyInfo(data);
     } catch (error) {
       console.error('Error fetching company info:', error);
       toast.error('Erro ao carregar informações da empresa');
@@ -119,6 +146,17 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
     );
   }
 
+  // If no company info or company is marked as deleted, show error
+  if (!companyInfo || companyInfo.status === 'deleted') {
+    return (
+      <div className="container mx-auto p-4 text-center">
+        <h2 className="text-xl font-bold mb-4">Empresa não encontrada ou inativa</h2>
+        <p className="mb-4">Esta empresa não está disponível ou foi removida do sistema.</p>
+        <Button onClick={handleBackToHome}>Voltar para Home</Button>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-4">
       {companyInfo && (
@@ -130,6 +168,11 @@ const CompanyPanel: React.FC<CompanyPanelProps> = ({ companyId }) => {
               className="h-12 w-auto mr-4" 
             />
             <h1 className="text-2xl font-bold">{companyInfo.name}</h1>
+            {companyInfo.status !== 'active' && (
+              <span className="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                {companyInfo.status === 'pending' ? 'Pendente' : companyInfo.status}
+              </span>
+            )}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleBackToHome}>
