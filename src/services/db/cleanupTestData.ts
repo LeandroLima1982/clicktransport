@@ -16,7 +16,8 @@ export const cleanupAllTestData = async () => {
       
       // Disable RLS temporarily for this operation via a direct SQL query
       // This is safer than modifying RLS policies permanently
-      const { error: financialMetricsError } = await supabase.rpc('admin_delete_financial_metrics');
+      // Using 'as any' to bypass TypeScript checking since our new function isn't in the types yet
+      const { error: financialMetricsError } = await supabase.rpc('admin_delete_financial_metrics' as any);
       
       if (financialMetricsError) {
         console.warn('Could not delete financial_metrics:', financialMetricsError);

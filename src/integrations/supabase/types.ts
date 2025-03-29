@@ -837,6 +837,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_financial_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_driver_rating: {
         Args: {
           driver_id: string
