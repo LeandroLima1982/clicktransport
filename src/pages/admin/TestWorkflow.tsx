@@ -4,11 +4,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import QueueDiagnostics from '@/components/admin/QueueDiagnostics';
 import TestEnvironmentSetup from '@/components/admin/TestEnvironmentSetup';
-import { CheckCircle2, Building2, LayoutGrid, ServerOff, Trash2 } from 'lucide-react';
+import { CheckCircle2, Building2, LayoutGrid, ServerOff, Trash2, GitMerge } from 'lucide-react';
 import BookingAssignmentDiagnostics from '@/components/admin/BookingAssignmentDiagnostics';
 import TestDataGenerator from '@/components/admin/TestDataGenerator';
 import TransitionEffect from '@/components/TransitionEffect';
 import CleanupTestData from '@/components/admin/CleanupTestData';
+import WorkflowTester from '@/components/admin/WorkflowTester';
 
 const TestWorkflow: React.FC = () => {
   return (
@@ -20,7 +21,7 @@ const TestWorkflow: React.FC = () => {
         </p>
         
         <Tabs defaultValue="setup">
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 mb-8">
+          <TabsList className="grid grid-cols-2 md:grid-cols-6 mb-8">
             <TabsTrigger value="setup" className="flex items-center">
               <LayoutGrid className="mr-2 h-4 w-4" />
               Configuração
@@ -36,6 +37,10 @@ const TestWorkflow: React.FC = () => {
             <TabsTrigger value="queue" className="flex items-center">
               <Building2 className="mr-2 h-4 w-4" />
               Filas
+            </TabsTrigger>
+            <TabsTrigger value="workflow" className="flex items-center">
+              <GitMerge className="mr-2 h-4 w-4" />
+              Workflow
             </TabsTrigger>
             <TabsTrigger value="diagnostics" className="flex items-center">
               <ServerOff className="mr-2 h-4 w-4" />
@@ -57,6 +62,10 @@ const TestWorkflow: React.FC = () => {
           
           <TabsContent value="queue">
             <QueueDiagnostics />
+          </TabsContent>
+          
+          <TabsContent value="workflow">
+            <WorkflowTester />
           </TabsContent>
           
           <TabsContent value="diagnostics">
