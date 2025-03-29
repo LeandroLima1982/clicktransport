@@ -244,7 +244,8 @@ export const getQueueDiagnostics = async () => {
       activeCompaniesResult,
       zeroPositionResult,
       nullPositionResult,
-      recentOrdersResult
+      recentOrdersResult,
+      pendingBookingsResult
     ] = await Promise.all([
       // Get total company count
       supabase.from('companies').select('id', { count: 'exact' }),
@@ -259,7 +260,10 @@ export const getQueueDiagnostics = async () => {
       supabase.from('companies').select('id', { count: 'exact' }).is('queue_position', null),
       
       // Get recent orders
-      supabase.from('service_orders').select('*').order('created_at', { ascending: false }).limit(5)
+      supabase.from('service_orders').select('*').order('created_at', { ascending: false }).limit(5),
+      
+      // Get pending bookings not assigned to service orders
+      supabase.from('bookings').select('*').eq('status', 'pending').order('created_at', { ascending: false }).limit(5)
     ]);
     
     if (allCompaniesResult.error) throw allCompaniesResult.error;
@@ -267,6 +271,7 @@ export const getQueueDiagnostics = async () => {
     if (zeroPositionResult.error) throw zeroPositionResult.error;
     if (nullPositionResult.error) throw nullPositionResult.error;
     if (recentOrdersResult.error) throw recentOrdersResult.error;
+    if (pendingBookingsResult.error) throw pendingBookingsResult.error;
     
     // Get recent logs
     const { logs: recentLogs } = await getSystemLogs({ 
@@ -284,6 +289,7 @@ export const getQueueDiagnostics = async () => {
           null_queue_position_count: nullPositionResult.count || 0,
         },
         recentOrders: recentOrdersResult.data || [],
+        pendingBookings: pendingBookingsResult.data || [],
         recentLogs: recentLogs || []
       },
       error: null
@@ -294,11 +300,131 @@ export const getQueueDiagnostics = async () => {
   }
 };
 
+/**
+ * Process pending bookings and create service orders
+ */
+export const processUnassignedBookings = async () => {
+  try {
+    // Get pending bookings that don't have service orders yet
+    const { data: pendingBookings, error: bookingsError } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+      .limit(10);
+    
+    if (bookingsError) throw bookingsError;
+    
+    if (!pendingBookings || pendingBookings.length === 0) {
+      return { 
+        processed: 0, 
+        success: true, 
+        message: 'No pending bookings to process', 
+        error: null 
+      };
+    }
+    
+    // Get the next company in queue to assign orders
+    const { company, error: companyError } = await getNextCompanyInQueue();
+    
+    if (companyError || !company) {
+      await logWarning('Não foi possível obter empresa para atribuir reservas pendentes', 'booking', { error: companyError });
+      return { 
+        processed: 0, 
+        success: false, 
+        message: 'No active company available to assign bookings', 
+        error: companyError 
+      };
+    }
+    
+    // Process each booking
+    let processedCount = 0;
+    let errors = [];
+    
+    for (const booking of pendingBookings) {
+      try {
+        // Create service order
+        const orderData = {
+          company_id: company.id,
+          origin: booking.origin,
+          destination: booking.destination,
+          pickup_date: booking.travel_date,
+          status: 'pending' as const,
+          notes: `Reserva: ${booking.reference_code}\n${booking.additional_notes || ''}`,
+        };
+        
+        const { data: order, error: orderError } = await supabase
+          .from('service_orders')
+          .insert(orderData)
+          .select()
+          .single();
+        
+        if (orderError) throw orderError;
+        
+        // Update booking status to confirmed
+        const { error: updateError } = await supabase
+          .from('bookings')
+          .update({ status: 'confirmed' })
+          .eq('id', booking.id);
+        
+        if (updateError) throw updateError;
+        
+        // Update company queue position
+        await updateCompanyQueuePosition(company.id);
+        
+        // Log the service order creation
+        await logInfo('Service order created from pending booking', 'booking', {
+          booking_id: booking.id,
+          order_id: order.id,
+          company_id: company.id
+        });
+        
+        processedCount++;
+      } catch (error) {
+        console.error(`Error processing booking ${booking.id}:`, error);
+        errors.push({ booking_id: booking.id, error: error });
+      }
+    }
+    
+    return { 
+      processed: processedCount, 
+      success: processedCount > 0, 
+      message: `Processed ${processedCount} of ${pendingBookings.length} bookings`,
+      errors: errors.length > 0 ? errors : null,
+      error: null 
+    };
+  } catch (error) {
+    console.error('Error processing unassigned bookings:', error);
+    await logError('Falha no processamento de reservas não atribuídas', 'booking', { error });
+    return { processed: 0, success: false, error };
+  }
+};
+
+// Automatic startup initialization to fix any queue issues
+(async () => {
+  try {
+    // Fix any invalid queue positions on startup
+    const { fixed } = await fixInvalidQueuePositions();
+    if (fixed > 0) {
+      console.log(`Fixed ${fixed} companies with invalid queue positions on startup`);
+    }
+    
+    // Process any unassigned bookings that might have been missed
+    const { processed } = await processUnassignedBookings();
+    if (processed > 0) {
+      console.log(`Processed ${processed} unassigned bookings on startup`);
+    }
+  } catch (err) {
+    console.error('Error during queue service initialization:', err);
+  }
+})();
+
 export default {
   getCompanyQueueStatus,
   resetCompanyQueuePositions,
   getNextCompanyInQueue,
   updateCompanyQueuePosition,
   fixInvalidQueuePositions,
-  getQueueDiagnostics
+  getQueueDiagnostics,
+  processUnassignedBookings
 };
