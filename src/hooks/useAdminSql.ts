@@ -15,8 +15,9 @@ export const useAdminSql = () => {
     try {
       setIsExecuting(true);
       
-      // Call the exec_sql function
-      const { data, error } = await supabase.rpc('exec_sql', {
+      // Use type assertion to bypass TypeScript checking
+      // We know the function exists but it's not in the generated types
+      const { data, error } = await (supabase.rpc as any)('exec_sql', {
         query
       });
       

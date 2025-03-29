@@ -19,11 +19,11 @@ export const cleanupAllTestData = async () => {
       try {
         logInfo('Attempting to delete financial_metrics data', 'data-cleanup');
         
-        // Delete financial metrics
+        // Delete financial metrics - use a more direct approach to avoid type issues
         const { error: financialMetricsError } = await supabase
           .from('financial_metrics')
           .delete()
-          .is('id', 'not null');
+          .not('id', 'is', null);
         
         if (financialMetricsError) {
           console.warn('Could not delete financial_metrics:', financialMetricsError);
