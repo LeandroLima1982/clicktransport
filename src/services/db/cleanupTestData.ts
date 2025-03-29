@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { logWarning, logInfo } from '@/services/monitoring/systemLogService';
+import { logWarning, logInfo, logError } from '@/services/monitoring/systemLogService';
 
 /**
  * Cleans up all test data from the database
@@ -9,6 +9,7 @@ import { logWarning, logInfo } from '@/services/monitoring/systemLogService';
 export const cleanupAllTestData = async () => {
   try {
     console.log('Starting comprehensive cleanup of all test data...');
+    logInfo('Starting deep cleanup of all test data', 'data-cleanup');
     
     // First try to clean financial_metrics which might have RLS issues
     try {
@@ -37,7 +38,8 @@ export const cleanupAllTestData = async () => {
       const { error: locationsError } = await supabase
         .from('driver_locations')
         .delete()
-        .neq('driver_id', '00000000-0000-0000-0000-000000000000');
+        .is('driver_id', null)
+        .or('driver_id.neq.00000000-0000-0000-0000-000000000000');
       
       if (locationsError) {
         console.error('Error deleting driver locations:', locationsError);
@@ -46,11 +48,26 @@ export const cleanupAllTestData = async () => {
         console.log('Driver locations deleted');
       }
       
+      // Delete driver ratings
+      const { error: ratingsError } = await supabase
+        .from('driver_ratings')
+        .delete()
+        .is('driver_id', null)
+        .or('driver_id.neq.00000000-0000-0000-0000-000000000000');
+      
+      if (ratingsError) {
+        console.error('Error deleting driver ratings:', ratingsError);
+        await logWarning('Failed to delete driver ratings', 'data-cleanup', ratingsError);
+      } else {
+        console.log('Driver ratings deleted');
+      }
+      
       // Delete service orders (they have driver_id foreign keys)
       const { error: ordersError } = await supabase
         .from('service_orders')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+        .is('id', null)
+        .or('id.neq.00000000-0000-0000-0000-000000000000');
       
       if (ordersError) {
         console.error('Error deleting service orders:', ordersError);
@@ -63,7 +80,8 @@ export const cleanupAllTestData = async () => {
       const { error: bookingsError } = await supabase
         .from('bookings')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+        .is('id', null)
+        .or('id.neq.00000000-0000-0000-0000-000000000000');
       
       if (bookingsError) {
         console.error('Error deleting bookings:', bookingsError);
@@ -76,7 +94,8 @@ export const cleanupAllTestData = async () => {
       const { error: driversError } = await supabase
         .from('drivers')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+        .is('id', null)
+        .or('id.neq.00000000-0000-0000-0000-000000000000');
       
       if (driversError) {
         console.error('Error deleting drivers:', driversError);
@@ -89,7 +108,8 @@ export const cleanupAllTestData = async () => {
       const { error: vehiclesError } = await supabase
         .from('vehicles')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+        .is('id', null)
+        .or('id.neq.00000000-0000-0000-0000-000000000000');
       
       if (vehiclesError) {
         console.error('Error deleting vehicles:', vehiclesError);
@@ -102,7 +122,8 @@ export const cleanupAllTestData = async () => {
       const { error: companiesError } = await supabase
         .from('companies')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+        .is('id', null)
+        .or('id.neq.00000000-0000-0000-0000-000000000000');
       
       if (companiesError) {
         console.error('Error deleting companies:', companiesError);

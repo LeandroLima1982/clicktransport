@@ -1,7 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logInfo, logWarning, logError } from '@/services/monitoring/systemLogService';
+import { cleanupAllTestData } from './cleanupTestData';
 
 /**
  * Cleans up existing test data from the database
@@ -10,91 +10,11 @@ export const cleanDatabase = async () => {
   try {
     console.log('Cleaning up test data from database...');
     
-    // First try to clean financial_metrics which might have RLS issues
-    try {
-      // Using 'as any' to bypass TypeScript checking since our new function isn't in the types yet
-      const { error: financialMetricsError } = await supabase.rpc('admin_delete_financial_metrics' as any);
-      
-      if (financialMetricsError) {
-        console.warn('Could not delete financial_metrics:', financialMetricsError);
-      } else {
-        console.log('Financial metrics deleted');
-      }
-    } catch (financialError) {
-      console.warn('Error deleting financial metrics:', financialError);
-      // Continue with other deletions even if this fails
+    // Call our comprehensive cleanup function
+    const cleanupResult = await cleanupAllTestData();
+    if (!cleanupResult.success) {
+      throw cleanupResult.error || new Error('Failed to clean database');
     }
-    
-    // Delete in proper order to handle foreign key constraints
-    
-    // First delete driver_locations as they reference drivers
-    const { error: locationsError } = await supabase
-      .from('driver_locations')
-      .delete()
-      .neq('driver_id', '00000000-0000-0000-0000-000000000000');
-    
-    if (locationsError) {
-      console.warn('Error deleting driver locations:', locationsError);
-    } else {
-      console.log('Driver locations deleted');
-    }
-    
-    // Delete service orders (they have driver_id foreign keys)
-    const { error: ordersError } = await supabase
-      .from('service_orders')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    if (ordersError) {
-      console.error('Error deleting service orders:', ordersError);
-      throw ordersError;
-    }
-    
-    // Delete bookings
-    const { error: bookingsError } = await supabase
-      .from('bookings')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    if (bookingsError) {
-      console.error('Error deleting bookings:', bookingsError);
-      throw bookingsError;
-    }
-    
-    // Delete drivers (must delete after orders that reference them)
-    const { error: driversError } = await supabase
-      .from('drivers')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    if (driversError) {
-      console.error('Error deleting drivers:', driversError);
-      throw driversError;
-    }
-    
-    // Delete vehicles
-    const { error: vehiclesError } = await supabase
-      .from('vehicles')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    if (vehiclesError) {
-      console.error('Error deleting vehicles:', vehiclesError);
-      throw vehiclesError;
-    }
-    
-    // Delete companies last (after drivers and vehicles that reference them)
-    const { error: companiesError } = await supabase
-      .from('companies')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    if (companiesError) {
-      console.error('Error deleting companies:', companiesError);
-      throw companiesError;
-    }
-    
-    // Note: We don't delete from auth.users to avoid removing actual admin users
     
     console.log('Database cleaned successfully');
     return { success: true, error: null };
@@ -351,38 +271,38 @@ export const setupTestEnvironment = async () => {
     logInfo('Starting test environment setup...', 'test-environment');
     toast.info('Iniciando configuração do ambiente de teste...', { duration: 3000 });
     
-    // Step 1: Clean the database
+    // Step 1: Clean the database using our thorough cleanup function
     const { success: cleanSuccess, error: cleanError } = await cleanDatabase();
     if (!cleanSuccess) {
       logError('Database cleanup failed', 'test-environment', cleanError);
-      throw cleanError;
+      throw cleanError || new Error('Falha ao limpar o banco de dados');
     }
     logInfo('Database cleaned successfully', 'test-environment');
     toast.success('Banco de dados limpo com sucesso', { duration: 2000 });
     
     // Step 2: Setup companies
     const { success: companiesSuccess, companies, error: companiesError } = await setupTestCompanies();
-    if (!companiesSuccess || !companies) {
+    if (!companiesSuccess || !companies || companies.length === 0) {
       logError('Failed to create test companies', 'test-environment', companiesError);
-      throw companiesError;
+      throw companiesError || new Error('Falha ao criar empresas de teste');
     }
     logInfo(`${companies.length} test companies created`, 'test-environment');
     toast.success(`${companies.length} empresas de teste criadas`, { duration: 2000 });
     
     // Step 3: Setup drivers
     const { success: driversSuccess, drivers, error: driversError } = await setupTestDrivers(companies);
-    if (!driversSuccess) {
+    if (!driversSuccess || !drivers || drivers.length === 0) {
       logError('Failed to create test drivers', 'test-environment', driversError);
-      throw driversError;
+      throw driversError || new Error('Falha ao criar motoristas de teste');
     }
     logInfo(`${drivers.length} test drivers created`, 'test-environment');
     toast.success(`${drivers.length} motoristas de teste criados`, { duration: 2000 });
     
     // Step 4: Setup vehicles
     const { success: vehiclesSuccess, vehicles, error: vehiclesError } = await setupTestVehicles(companies);
-    if (!vehiclesSuccess) {
+    if (!vehiclesSuccess || !vehicles || vehicles.length === 0) {
       logError('Failed to create test vehicles', 'test-environment', vehiclesError);
-      throw vehiclesError;
+      throw vehiclesError || new Error('Falha ao criar veículos de teste');
     }
     logInfo(`${vehicles.length} test vehicles created`, 'test-environment');
     toast.success(`${vehicles.length} veículos de teste criados`, { duration: 2000 });
