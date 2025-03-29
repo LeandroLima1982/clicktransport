@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logWarning, logInfo, logError } from '@/services/monitoring/systemLogService';
