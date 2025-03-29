@@ -87,6 +87,43 @@ export const getLogsByCategory = async (category: string, limit: number = 50) =>
 };
 
 /**
+ * Get system logs with optional filters
+ */
+export const getSystemLogs = async ({ 
+  category = null, 
+  severity = null, 
+  limit = 50 
+}: { 
+  category?: string | null, 
+  severity?: string | null, 
+  limit?: number 
+} = {}) => {
+  try {
+    let query = supabase
+      .from('system_logs')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (category) {
+      query = query.eq('category', category);
+    }
+    
+    if (severity) {
+      query = query.eq('severity', severity);
+    }
+    
+    const { data, error } = await query.limit(limit);
+      
+    if (error) throw error;
+    
+    return { logs: data, error: null };
+  } catch (error) {
+    console.error('Error fetching system logs:', error);
+    return { logs: [], error };
+  }
+};
+
+/**
  * Clean logs by category
  */
 export const cleanLogsByCategory = async (category: string) => {
@@ -111,5 +148,6 @@ export default {
   logError,
   logCritical,
   getLogsByCategory,
+  getSystemLogs,
   cleanLogsByCategory
 };
