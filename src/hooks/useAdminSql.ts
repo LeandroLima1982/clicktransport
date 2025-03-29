@@ -15,8 +15,8 @@ export const useAdminSql = () => {
     try {
       setIsExecuting(true);
       
-      // Fix: Use any to bypass the type check since exec_sql does exist but types aren't correctly defined
-      const { data, error } = await supabase.rpc('exec_sql' as any, {
+      // Call the exec_sql function
+      const { data, error } = await supabase.rpc('exec_sql', {
         query
       });
       

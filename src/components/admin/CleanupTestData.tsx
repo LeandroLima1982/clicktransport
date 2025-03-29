@@ -59,7 +59,7 @@ const CleanupTestData: React.FC = () => {
         DELETE FROM bookings;
         DELETE FROM drivers;
         DELETE FROM vehicles;
-        DELETE FROM companies;
+        DELETE FROM companies WHERE id != '00000000-0000-0000-0000-000000000000';
         DELETE FROM financial_metrics;
         
         -- Re-enable triggers
