@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logWarning } from '@/services/monitoring/systemLogService';
 
 /**
  * Cleans up all test data from the database
@@ -8,6 +9,24 @@ import { toast } from 'sonner';
 export const cleanupAllTestData = async () => {
   try {
     console.log('Starting comprehensive cleanup of all test data...');
+    
+    // First try to clean financial_metrics which might have RLS issues
+    try {
+      const { error: financialMetricsError } = await supabase
+        .from('financial_metrics')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all
+      
+      if (financialMetricsError) {
+        console.warn('Could not delete financial_metrics due to RLS policies:', financialMetricsError);
+        await logWarning('Could not delete financial_metrics during cleanup', 'data-cleanup', financialMetricsError);
+      } else {
+        console.log('Financial metrics deleted');
+      }
+    } catch (financialError) {
+      console.warn('Error deleting financial metrics:', financialError);
+      // Continue with other deletions even if this fails
+    }
     
     // Delete service orders first (due to foreign key constraints)
     const { error: ordersError } = await supabase
