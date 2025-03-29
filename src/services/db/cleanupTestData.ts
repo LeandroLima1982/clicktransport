@@ -30,90 +30,102 @@ export const cleanupAllTestData = async () => {
       // Continue with other deletions even if this fails
     }
     
-    // Delete service orders first (due to foreign key constraints)
-    const { error: ordersError } = await supabase
-      .from('service_orders')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all
-    
-    if (ordersError) {
-      console.error('Error deleting service orders:', ordersError);
-      await logWarning('Failed to delete service orders', 'data-cleanup', ordersError);
-    } else {
-      console.log('Service orders deleted');
-    }
-    
-    // Delete bookings
-    const { error: bookingsError } = await supabase
-      .from('bookings')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all
-    
-    if (bookingsError) {
-      console.error('Error deleting bookings:', bookingsError);
-      await logWarning('Failed to delete bookings', 'data-cleanup', bookingsError);
-    } else {
-      console.log('Bookings deleted');
-    }
-    
-    // Clean driver locations
-    const { error: locationsError } = await supabase
-      .from('driver_locations')
-      .delete()
-      .neq('driver_id', '00000000-0000-0000-0000-000000000000'); // This will delete all
-    
-    if (locationsError) {
-      console.error('Error deleting driver locations:', locationsError);
-      await logWarning('Failed to delete driver locations', 'data-cleanup', locationsError);
-    } else {
-      console.log('Driver locations deleted');
-    }
-    
-    // Delete drivers
-    const { error: driversError } = await supabase
-      .from('drivers')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all
-    
-    if (driversError) {
-      console.error('Error deleting drivers:', driversError);
-      await logWarning('Failed to delete drivers', 'data-cleanup', driversError);
-    } else {
-      console.log('Drivers deleted');
-    }
-    
-    // Delete vehicles
-    const { error: vehiclesError } = await supabase
-      .from('vehicles')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all
-    
-    if (vehiclesError) {
-      console.error('Error deleting vehicles:', vehiclesError);
-      await logWarning('Failed to delete vehicles', 'data-cleanup', vehiclesError);
-    } else {
-      console.log('Vehicles deleted');
-    }
-    
-    // Delete companies
-    const { error: companiesError } = await supabase
-      .from('companies')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all
-    
-    if (companiesError) {
-      console.error('Error deleting companies:', companiesError);
-      await logWarning('Failed to delete companies', 'data-cleanup', companiesError);
-    } else {
-      console.log('Companies deleted');
+    try {
+      // Delete in proper order to handle foreign key constraints
+      
+      // First delete driver_locations as they reference drivers
+      const { error: locationsError } = await supabase
+        .from('driver_locations')
+        .delete()
+        .neq('driver_id', '00000000-0000-0000-0000-000000000000');
+      
+      if (locationsError) {
+        console.error('Error deleting driver locations:', locationsError);
+        await logWarning('Failed to delete driver locations', 'data-cleanup', locationsError);
+      } else {
+        console.log('Driver locations deleted');
+      }
+      
+      // Delete service orders (they have driver_id foreign keys)
+      const { error: ordersError } = await supabase
+        .from('service_orders')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (ordersError) {
+        console.error('Error deleting service orders:', ordersError);
+        await logWarning('Failed to delete service orders', 'data-cleanup', ordersError);
+      } else {
+        console.log('Service orders deleted');
+      }
+      
+      // Delete bookings
+      const { error: bookingsError } = await supabase
+        .from('bookings')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (bookingsError) {
+        console.error('Error deleting bookings:', bookingsError);
+        await logWarning('Failed to delete bookings', 'data-cleanup', bookingsError);
+      } else {
+        console.log('Bookings deleted');
+      }
+      
+      // Delete drivers (must delete after orders that reference them)
+      const { error: driversError } = await supabase
+        .from('drivers')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (driversError) {
+        console.error('Error deleting drivers:', driversError);
+        await logWarning('Failed to delete drivers', 'data-cleanup', driversError);
+      } else {
+        console.log('Drivers deleted');
+      }
+      
+      // Delete vehicles
+      const { error: vehiclesError } = await supabase
+        .from('vehicles')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (vehiclesError) {
+        console.error('Error deleting vehicles:', vehiclesError);
+        await logWarning('Failed to delete vehicles', 'data-cleanup', vehiclesError);
+      } else {
+        console.log('Vehicles deleted');
+      }
+      
+      // Delete companies last (after drivers and vehicles that reference them)
+      const { error: companiesError } = await supabase
+        .from('companies')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (companiesError) {
+        console.error('Error deleting companies:', companiesError);
+        await logWarning('Failed to delete companies', 'data-cleanup', companiesError);
+      } else {
+        console.log('Companies deleted');
+      }
+    } catch (error) {
+      console.error('Error during specific table cleanup:', error);
+      await logWarning('Database cleanup encountered errors', 'data-cleanup', error);
+      return { success: false, error };
     }
     
     // Do not attempt to delete profiles linked to auth.users
     // Just log success message
     console.log('Database cleanup completed successfully');
+    toast.success('Dados de teste removidos com sucesso');
     return { success: true, error: null };
   } catch (error) {
     console.error('Error during database cleanup:', error);
+    toast.error('Erro ao limpar dados de teste', { 
+      description: error instanceof Error ? error.message : 'Erro desconhecido'
+    });
     return { success: false, error };
   }
 };

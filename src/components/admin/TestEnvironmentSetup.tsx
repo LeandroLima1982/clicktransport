@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { setupTestEnvironment } from '@/services/db/setupTestEnvironment';
-import { Loader2 } from 'lucide-react';
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const TestEnvironmentSetup: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -55,8 +55,10 @@ const TestEnvironmentSetup: React.FC = () => {
           
           {error && (
             <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Erro ao configurar ambiente</AlertTitle>
               <AlertDescription>
-                Erro ao configurar ambiente de teste: {error}
+                {error}
               </AlertDescription>
             </Alert>
           )}

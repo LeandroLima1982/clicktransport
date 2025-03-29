@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logInfo, logWarning, logError } from '@/services/monitoring/systemLogService';
 
 /**
  * Cleans up existing test data from the database
@@ -9,53 +10,89 @@ export const cleanDatabase = async () => {
   try {
     console.log('Cleaning up test data from database...');
     
-    // Delete service orders first (due to foreign key constraints)
+    // First try to clean financial_metrics which might have RLS issues
+    try {
+      // Using 'as any' to bypass TypeScript checking since our new function isn't in the types yet
+      const { error: financialMetricsError } = await supabase.rpc('admin_delete_financial_metrics' as any);
+      
+      if (financialMetricsError) {
+        console.warn('Could not delete financial_metrics:', financialMetricsError);
+      } else {
+        console.log('Financial metrics deleted');
+      }
+    } catch (financialError) {
+      console.warn('Error deleting financial metrics:', financialError);
+      // Continue with other deletions even if this fails
+    }
+    
+    // Delete in proper order to handle foreign key constraints
+    
+    // First delete driver_locations as they reference drivers
+    const { error: locationsError } = await supabase
+      .from('driver_locations')
+      .delete()
+      .neq('driver_id', '00000000-0000-0000-0000-000000000000');
+    
+    if (locationsError) {
+      console.warn('Error deleting driver locations:', locationsError);
+    } else {
+      console.log('Driver locations deleted');
+    }
+    
+    // Delete service orders (they have driver_id foreign keys)
     const { error: ordersError } = await supabase
       .from('service_orders')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all
+      .neq('id', '00000000-0000-0000-0000-000000000000');
     
-    if (ordersError) throw ordersError;
+    if (ordersError) {
+      console.error('Error deleting service orders:', ordersError);
+      throw ordersError;
+    }
     
     // Delete bookings
     const { error: bookingsError } = await supabase
       .from('bookings')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all
+      .neq('id', '00000000-0000-0000-0000-000000000000');
     
-    if (bookingsError) throw bookingsError;
+    if (bookingsError) {
+      console.error('Error deleting bookings:', bookingsError);
+      throw bookingsError;
+    }
     
-    // Clean driver locations
-    const { error: locationsError } = await supabase
-      .from('driver_locations')
-      .delete()
-      .neq('driver_id', '00000000-0000-0000-0000-000000000000'); // This will delete all
-    
-    if (locationsError) throw locationsError;
-    
-    // Delete drivers
+    // Delete drivers (must delete after orders that reference them)
     const { error: driversError } = await supabase
       .from('drivers')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all
+      .neq('id', '00000000-0000-0000-0000-000000000000');
     
-    if (driversError) throw driversError;
+    if (driversError) {
+      console.error('Error deleting drivers:', driversError);
+      throw driversError;
+    }
     
     // Delete vehicles
     const { error: vehiclesError } = await supabase
       .from('vehicles')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all
+      .neq('id', '00000000-0000-0000-0000-000000000000');
     
-    if (vehiclesError) throw vehiclesError;
+    if (vehiclesError) {
+      console.error('Error deleting vehicles:', vehiclesError);
+      throw vehiclesError;
+    }
     
-    // Delete companies
+    // Delete companies last (after drivers and vehicles that reference them)
     const { error: companiesError } = await supabase
       .from('companies')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all
+      .neq('id', '00000000-0000-0000-0000-000000000000');
     
-    if (companiesError) throw companiesError;
+    if (companiesError) {
+      console.error('Error deleting companies:', companiesError);
+      throw companiesError;
+    }
     
     // Note: We don't delete from auth.users to avoid removing actual admin users
     
@@ -258,10 +295,9 @@ export const createSampleBooking = async () => {
     const { data: userExists, error: userCheckError } = await supabase
       .from('profiles')
       .select('id')
-      .eq('id', testUserId)
-      .single();
+      .eq('id', testUserId);
       
-    if (userCheckError || !userExists) {
+    if (userCheckError || !userExists || userExists.length === 0) {
       // Create a test user profile if it doesn't exist
       const { error: createProfileError } = await supabase
         .from('profiles')
@@ -312,44 +348,56 @@ export const createSampleBooking = async () => {
  */
 export const setupTestEnvironment = async () => {
   try {
+    logInfo('Starting test environment setup...', 'test-environment');
     toast.info('Iniciando configuração do ambiente de teste...', { duration: 3000 });
     
     // Step 1: Clean the database
     const { success: cleanSuccess, error: cleanError } = await cleanDatabase();
     if (!cleanSuccess) {
+      logError('Database cleanup failed', 'test-environment', cleanError);
       throw cleanError;
     }
+    logInfo('Database cleaned successfully', 'test-environment');
     toast.success('Banco de dados limpo com sucesso', { duration: 2000 });
     
     // Step 2: Setup companies
     const { success: companiesSuccess, companies, error: companiesError } = await setupTestCompanies();
     if (!companiesSuccess || !companies) {
+      logError('Failed to create test companies', 'test-environment', companiesError);
       throw companiesError;
     }
+    logInfo(`${companies.length} test companies created`, 'test-environment');
     toast.success(`${companies.length} empresas de teste criadas`, { duration: 2000 });
     
     // Step 3: Setup drivers
     const { success: driversSuccess, drivers, error: driversError } = await setupTestDrivers(companies);
     if (!driversSuccess) {
+      logError('Failed to create test drivers', 'test-environment', driversError);
       throw driversError;
     }
+    logInfo(`${drivers.length} test drivers created`, 'test-environment');
     toast.success(`${drivers.length} motoristas de teste criados`, { duration: 2000 });
     
     // Step 4: Setup vehicles
     const { success: vehiclesSuccess, vehicles, error: vehiclesError } = await setupTestVehicles(companies);
     if (!vehiclesSuccess) {
+      logError('Failed to create test vehicles', 'test-environment', vehiclesError);
       throw vehiclesError;
     }
+    logInfo(`${vehicles.length} test vehicles created`, 'test-environment');
     toast.success(`${vehicles.length} veículos de teste criados`, { duration: 2000 });
     
     // Step 5: Create a sample booking
     const { success: bookingSuccess, booking, error: bookingError } = await createSampleBooking();
     if (!bookingSuccess) {
+      logWarning('Failed to create sample booking, but continuing with setup', 'test-environment', bookingError);
       console.warn('Failed to create sample booking, but continuing with setup', bookingError);
     } else {
+      logInfo('Test booking created', 'test-environment');
       toast.success('Reserva de teste criada', { duration: 2000 });
     }
     
+    logInfo('Test environment setup completed successfully', 'test-environment');
     toast.success('Ambiente de teste configurado com sucesso!', { 
       description: 'O sistema está pronto para testes de fluxo de trabalho.',
       duration: 5000
@@ -363,6 +411,7 @@ export const setupTestEnvironment = async () => {
       booking
     };
   } catch (error) {
+    logError('Test environment setup failed', 'test-environment', error);
     console.error('Error setting up test environment:', error);
     toast.error('Erro ao configurar ambiente de teste', {
       description: error instanceof Error ? error.message : 'Erro desconhecido'
