@@ -2,13 +2,18 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { cleanupAllTestData } from '@/services/db/cleanupTestData';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { cleanupAllTestData, forceCleanupAllData } from '@/services/db/cleanupTestData';
+import { Loader2, AlertTriangle, Trash2, ShieldAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { useAdminSql } from '@/hooks/useAdminSql';
 
 const CleanupTestData: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isForceLoading, setIsForceLoading] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message?: string } | null>(null);
+  const { isExecuting } = useAdminSql();
   
   const handleCleanup = async () => {
     try {
@@ -36,6 +41,32 @@ const CleanupTestData: React.FC = () => {
     }
   };
   
+  const handleForceCleanup = async () => {
+    try {
+      setIsForceLoading(true);
+      setResult(null);
+      
+      const { success, error } = await forceCleanupAllData();
+      
+      if (success) {
+        setResult({ success: true, message: "Limpeza forçada de dados executada com sucesso. Todos os dados foram removidos." });
+      } else {
+        setResult({ 
+          success: false, 
+          message: error instanceof Error ? error.message : "Erro desconhecido durante limpeza forçada."
+        });
+      }
+    } catch (error) {
+      console.error("Error during force cleanup:", error);
+      setResult({ 
+        success: false, 
+        message: error instanceof Error ? error.message : "Erro inesperado durante a limpeza forçada."
+      });
+    } finally {
+      setIsForceLoading(false);
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <Card>
@@ -47,40 +78,94 @@ const CleanupTestData: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Alert variant="warning" className="mb-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Aviso</AlertTitle>
-            <AlertDescription>
-              Esta operação removerá permanentemente os dados de teste. Isso não pode ser desfeito.
-            </AlertDescription>
-          </Alert>
+          <Tabs defaultValue="standard">
+            <TabsList className="mb-4">
+              <TabsTrigger value="standard">Limpeza Padrão</TabsTrigger>
+              <TabsTrigger value="force">Limpeza Forçada</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="standard">
+              <Alert variant="warning" className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Aviso</AlertTitle>
+                <AlertDescription>
+                  Esta operação removerá permanentemente os dados de teste. Isso não pode ser desfeito.
+                </AlertDescription>
+              </Alert>
+              
+              <p className="text-sm text-muted-foreground mb-4">
+                A limpeza padrão remove os dados respeitando restrições de chave estrangeira e pode 
+                falhar se houver registros interconectados.
+              </p>
+              
+              <Button
+                variant="destructive"
+                disabled={isLoading}
+                onClick={handleCleanup}
+                className="w-full"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Limpando dados...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Limpar Dados de Teste
+                  </>
+                )}
+              </Button>
+            </TabsContent>
+            
+            <TabsContent value="force">
+              <Alert variant="destructive" className="mb-4">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertTitle>Alerta de Segurança</AlertTitle>
+                <AlertDescription>
+                  <p>Esta é uma operação avançada que usa comandos SQL para forçar a remoção de todos os dados.</p>
+                  <p className="font-bold mt-1">Todos os dados serão removidos ignorando restrições de chave estrangeira!</p>
+                </AlertDescription>
+              </Alert>
+              
+              <p className="text-sm text-muted-foreground mb-4">
+                Use a limpeza forçada apenas quando a limpeza padrão falhar. Esta opção 
+                ignora as restrições de chave estrangeira e remove todos os dados relacionados.
+              </p>
+              
+              <Button
+                variant="destructive"
+                disabled={isForceLoading || isExecuting}
+                onClick={handleForceCleanup}
+                className="w-full"
+              >
+                {isForceLoading || isExecuting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Executando limpeza forçada...
+                  </>
+                ) : (
+                  <>
+                    <ShieldAlert className="mr-2 h-4 w-4" />
+                    Forçar Remoção de Todos os Dados
+                  </>
+                )}
+              </Button>
+            </TabsContent>
+          </Tabs>
           
           {result && (
-            <Alert variant={result.success ? "success" : "destructive"} className="mb-4">
-              <AlertTitle>{result.success ? "Sucesso" : "Erro"}</AlertTitle>
-              <AlertDescription>
-                {result.message}
-              </AlertDescription>
-            </Alert>
+            <>
+              <Separator className="my-4" />
+              <Alert variant={result.success ? "success" : "destructive"} className="mt-4">
+                <AlertTitle>{result.success ? "Sucesso" : "Erro"}</AlertTitle>
+                <AlertDescription>
+                  {result.message}
+                </AlertDescription>
+              </Alert>
+            </>
           )}
         </CardContent>
-        <CardFooter>
-          <Button
-            variant="destructive"
-            disabled={isLoading}
-            onClick={handleCleanup}
-            className="w-full"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Limpando dados...
-              </>
-            ) : (
-              "Limpar Todos os Dados de Teste"
-            )}
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );
