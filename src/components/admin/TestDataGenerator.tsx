@@ -29,8 +29,15 @@ const TestDataGenerator: React.FC = () => {
           );
         }
       } else {
-        setError("Erro ao gerar reserva e ordem: " + 
-          (result.error instanceof Error ? result.error.message : "Erro desconhecido"));
+        if (result.error?.message?.includes('violates foreign key constraint "profiles_id_fkey"')) {
+          setError(
+            "Erro ao criar perfil de teste: Violação de chave estrangeira. " + 
+            "Esta função requer que seja executado 'Configurar Ambiente de Teste' primeiro para configurar o ambiente corretamente."
+          );
+        } else {
+          setError("Erro ao gerar reserva e ordem: " + 
+            (result.error instanceof Error ? result.error.message : "Erro desconhecido"));
+        }
       }
     } catch (error) {
       console.error("Error generating booking and order:", error);
@@ -49,8 +56,15 @@ const TestDataGenerator: React.FC = () => {
       const result = await createManualServiceOrder();
       
       if (!result.success) {
-        setError("Erro ao criar ordem manual: " + 
-          (result.error instanceof Error ? result.error.message : "Erro desconhecido"));
+        if (result.error?.message?.includes('violates row-level security policy')) {
+          setError(
+            "Erro de permissão: Esta função requer que seja executado 'Configurar Ambiente de Teste' " +
+            "primeiro para configurar as permissões necessárias."
+          );
+        } else {
+          setError("Erro ao criar ordem manual: " + 
+            (result.error instanceof Error ? result.error.message : "Erro desconhecido"));
+        }
       }
     } catch (error) {
       console.error("Error creating manual order:", error);
@@ -95,6 +109,9 @@ const TestDataGenerator: React.FC = () => {
             <p className="text-xs text-amber-700 mb-2">
               Para utilizar estas funções corretamente, execute primeiro a opção "Configurar Ambiente de Teste" 
               na aba "Configuração" para inicializar as permissões necessárias.
+            </p>
+            <p className="text-xs text-amber-700">
+              A criação de reservas requer um ambiente corretamente configurado devido a restrições de banco de dados.
             </p>
           </div>
           

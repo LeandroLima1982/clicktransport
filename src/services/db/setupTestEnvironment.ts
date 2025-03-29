@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logInfo, logWarning, logError } from '@/services/monitoring/systemLogService';
@@ -202,37 +203,15 @@ export const setupTestVehicles = async (companies: any[]) => {
 };
 
 /**
- * Create a sample booking
+ * Create a sample booking - revised version that doesn't try to create a profile
  */
 export const createSampleBooking = async () => {
   try {
     console.log('Creating sample booking...');
     
-    // Ensure the test user exists
-    const testUserId = '00000000-0000-0000-0000-000000000000';
-    
-    // Check if the test user exists, if not create it
-    const { data: userExists, error: userCheckError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', testUserId);
-      
-    if (userCheckError || !userExists || userExists.length === 0) {
-      // Create a test user profile if it doesn't exist
-      const { error: createProfileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: testUserId,
-          full_name: 'Test User',
-          email: 'test@example.com',
-          role: 'client'
-        });
-        
-      if (createProfileError) {
-        console.error('Error creating test profile:', createProfileError);
-        throw new Error('Unable to create test user profile');
-      }
-    }
+    // Generate a random UUID for the test booking
+    // We've removed the profile creation part as it causes foreign key constraint issues
+    const testUserId = crypto.randomUUID();
     
     const bookingData = {
       reference_code: `BK-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -247,19 +226,42 @@ export const createSampleBooking = async () => {
       additional_notes: 'Cliente solicitou motorista que fale inglês'
     };
     
-    const { data: booking, error } = await supabase
-      .from('bookings')
-      .insert(bookingData)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    console.log('Sample booking created:', booking);
-    return { success: true, booking, error: null };
+    try {
+      const { data: booking, error } = await supabase
+        .from('bookings')
+        .insert(bookingData)
+        .select()
+        .single();
+      
+      if (error) {
+        console.log('Error creating test booking:', error);
+        // Return partial success since this isn't essential
+        return { 
+          success: false, 
+          booking: null, 
+          error: new Error('Não foi possível criar uma reserva de teste, mas as empresas, motoristas e veículos foram configurados.') 
+        };
+      }
+      
+      console.log('Sample booking created:', booking);
+      return { success: true, booking, error: null };
+    } catch (error) {
+      console.log('Exception creating test booking:', error);
+      // Return partial success since this isn't essential
+      return { 
+        success: false, 
+        booking: null, 
+        error: new Error('Não foi possível criar uma reserva de teste, mas as empresas, motoristas e veículos foram configurados.') 
+      };
+    }
   } catch (error) {
-    console.error('Error creating sample booking:', error);
-    return { success: false, booking: null, error };
+    console.error('Error in createSampleBooking:', error);
+    // Return partial success since this isn't essential
+    return { 
+      success: false, 
+      booking: null, 
+      error: new Error('Não foi possível criar uma reserva de teste, mas as empresas, motoristas e veículos foram configurados.') 
+    };
   }
 };
 
@@ -307,11 +309,14 @@ export const setupTestEnvironment = async () => {
     logInfo(`${vehicles.length} test vehicles created`, 'test-environment');
     toast.success(`${vehicles.length} veículos de teste criados`, { duration: 2000 });
     
-    // Step 5: Create a sample booking
+    // Step 5: Try to create a sample booking, but treat it as optional
     const { success: bookingSuccess, booking, error: bookingError } = await createSampleBooking();
     if (!bookingSuccess) {
       logWarning('Failed to create sample booking, but continuing with setup', 'test-environment', bookingError);
-      console.warn('Failed to create sample booking, but continuing with setup', bookingError);
+      toast.warning('Não foi possível criar reserva de teste, mas o ambiente foi configurado', { 
+        description: 'Você pode gerar reservas na aba "Gerar Dados"',
+        duration: 3000
+      });
     } else {
       logInfo('Test booking created', 'test-environment');
       toast.success('Reserva de teste criada', { duration: 2000 });
