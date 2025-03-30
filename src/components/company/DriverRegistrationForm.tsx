@@ -8,36 +8,50 @@ import { Loader2, User, Car, Eye, EyeOff } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 interface DriverRegistrationFormProps {
   companyId: string;
   onSuccess?: () => void;
 }
 
+const driverFormSchema = z.object({
+  name: z.string().min(3, "Nome precisa ter pelo menos 3 caracteres"),
+  email: z.string().email("Email inválido"),
+  phone: z.string().min(10, "Telefone inválido").max(15, "Telefone muito longo"),
+  licenseNumber: z.string().optional(),
+  password: z.string().min(6, "Senha precisa ter pelo menos 6 caracteres"),
+  confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"]
+});
+
+type DriverFormValues = z.infer<typeof driverFormSchema>;
+
 const DriverRegistrationForm: React.FC<DriverRegistrationFormProps> = ({ 
   companyId,
   onSuccess 
 }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    licenseNumber: '',
-    password: '',
-    confirmPassword: ''
-  });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { user } = useAuth();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const form = useForm<DriverFormValues>({
+    resolver: zodResolver(driverFormSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      licenseNumber: '',
+      password: '',
+      confirmPassword: ''
+    }
+  });
 
   const generatePassword = () => {
     // Generate a random password of 8 characters
@@ -47,47 +61,26 @@ const DriverRegistrationForm: React.FC<DriverRegistrationFormProps> = ({
       password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     
-    setFormData(prev => ({
-      ...prev,
-      password,
-      confirmPassword: password
-    }));
+    form.setValue("password", password);
+    form.setValue("confirmPassword", password);
     
     // Show the password after generating it
     setShowPassword(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate form
-    if (!formData.name || !formData.email || !formData.password) {
-      toast.error('Por favor, preencha todos os campos obrigatórios');
-      return;
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('As senhas não coincidem');
-      return;
-    }
-    
-    if (formData.password.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
-      return;
-    }
-    
+  const onSubmit = async (data: DriverFormValues) => {
     setLoading(true);
     
     try {
       // 1. Create the user account in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
+        email: data.email,
+        password: data.password,
         options: {
           data: {
-            email: formData.email,
+            email: data.email,
             role: 'driver',
-            full_name: formData.name
+            full_name: data.name
           }
         }
       });
@@ -102,31 +95,24 @@ const DriverRegistrationForm: React.FC<DriverRegistrationFormProps> = ({
       const { error: driverError } = await supabase
         .from('drivers')
         .insert({
-          name: formData.name,
-          phone: formData.phone,
-          license_number: formData.licenseNumber,
+          name: data.name,
+          phone: data.phone,
+          license_number: data.licenseNumber || null,
           company_id: companyId,
           user_id: authData.user.id,
           status: 'active',
-          email: formData.email,
+          email: data.email,
           is_password_changed: false
         });
       
       if (driverError) throw driverError;
       
       toast.success('Motorista cadastrado com sucesso!', {
-        description: `O motorista agora pode fazer login usando as credenciais fornecidas. Senha provisória: ${formData.password}`
+        description: `O motorista agora pode fazer login usando as credenciais fornecidas. Senha provisória: ${data.password}`
       });
       
       // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        licenseNumber: '',
-        password: '',
-        confirmPassword: ''
-      });
+      form.reset();
       
       // Callback on success
       if (onSuccess) {
@@ -152,134 +138,159 @@ const DriverRegistrationForm: React.FC<DriverRegistrationFormProps> = ({
         </CardTitle>
       </CardHeader>
       
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome Completo</Label>
-            <Input
-              id="name"
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
               name="name"
-              placeholder="Nome do motorista"
-              value={formData.name}
-              onChange={handleChange}
-              required
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome Completo</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Nome do motorista" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
+            
+            <FormField
+              control={form.control}
               name="email"
-              type="email"
-              placeholder="email@exemplo.com"
-              value={formData.email}
-              onChange={handleChange}
-              required
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input {...field} type="email" placeholder="email@exemplo.com" />
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-xs text-muted-foreground">
+                    Este será o login do motorista no sistema
+                  </p>
+                </FormItem>
+              )}
             />
-            <p className="text-xs text-muted-foreground">
-              Este será o login do motorista no sistema
-            </p>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="phone">Telefone</Label>
-            <Input
-              id="phone"
+            
+            <FormField
+              control={form.control}
               name="phone"
-              placeholder="(00) 00000-0000"
-              value={formData.phone}
-              onChange={handleChange}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="(00) 00000-0000" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="licenseNumber">Número da CNH</Label>
-            <Input
-              id="licenseNumber"
+            
+            <FormField
+              control={form.control}
               name="licenseNumber"
-              placeholder="Número da CNH"
-              value={formData.licenseNumber}
-              onChange={handleChange}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número da CNH</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Número da CNH" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="password">Senha Provisória</Label>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm"
-                onClick={generatePassword}
-              >
-                Gerar Senha
-              </Button>
-            </div>
-            <div className="relative">
-              <Input
-                id="password"
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <FormLabel htmlFor="password">Senha Provisória</FormLabel>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={generatePassword}
+                >
+                  Gerar Senha
+                </Button>
+              </div>
+              
+              <FormField
+                control={form.control}
                 name="password"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={handleChange}
-                required
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground">
+                      Mínimo de 6 caracteres. O motorista usará esta senha no primeiro acesso.
+                    </p>
+                  </FormItem>
+                )}
               />
-              <button 
-                type="button"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Mínimo de 6 caracteres. O motorista usará esta senha no primeiro acesso.
-            </p>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-            <div className="relative">
-              <Input
-                id="confirmPassword"
+              
+              <FormField
+                control={form.control}
                 name="confirmPassword"
-                type={showConfirmPassword ? "text" : "password"}
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirmar Senha</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          type={showConfirmPassword ? "text" : "password"}
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                          {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
             </div>
-          </div>
-        </CardContent>
-        
-        <CardFooter>
-          <Button 
-            type="submit" 
-            className="w-full"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Cadastrando...
-              </>
-            ) : (
-              <>
-                <User className="mr-2 h-4 w-4" />
-                Cadastrar Motorista
-              </>
-            )}
-          </Button>
-        </CardFooter>
-      </form>
+          </CardContent>
+          
+          <CardFooter>
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cadastrando...
+                </>
+              ) : (
+                <>
+                  <User className="mr-2 h-4 w-4" />
+                  Cadastrar Motorista
+                </>
+              )}
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 };

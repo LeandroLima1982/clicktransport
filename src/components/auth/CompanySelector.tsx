@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Building2, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Building2, Loader2, RefreshCw, AlertTriangle, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CompanySelectorProps {
   selectedCompanyId: string;
@@ -18,13 +19,20 @@ interface CompanySelectorProps {
   error?: string | null;
 }
 
+interface Company {
+  id: string;
+  name: string;
+  status: string;
+  created_at?: string;
+}
+
 const CompanySelector: React.FC<CompanySelectorProps> = ({
   selectedCompanyId,
   setSelectedCompanyId,
   disabled = false,
   error
 }) => {
-  const [companies, setCompanies] = useState<{id: string, name: string}[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [fetchingCompanies, setFetchingCompanies] = useState(false);
 
   useEffect(() => {
@@ -39,7 +47,7 @@ const CompanySelector: React.FC<CompanySelectorProps> = ({
       // Fetch all active companies from database
       const { data, error } = await supabase
         .from('companies')
-        .select('id, name')
+        .select('id, name, status, created_at')
         .eq('status', 'active')
         .order('name');
       
@@ -73,6 +81,16 @@ const CompanySelector: React.FC<CompanySelectorProps> = ({
     }
   };
 
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('pt-BR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(date);
+  };
+
   const hasError = !!error;
 
   return (
@@ -100,7 +118,24 @@ const CompanySelector: React.FC<CompanySelectorProps> = ({
           {companies.length > 0 ? (
             companies.map((company) => (
               <SelectItem key={company.id} value={company.id} className="py-2">
-                {company.name}
+                <div className="flex items-center justify-between w-full">
+                  <span>{company.name}</span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground ml-2" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="text-xs">
+                          <p>Status: {company.status === 'active' ? 'Ativa' : company.status}</p>
+                          {company.created_at && (
+                            <p>Desde: {formatDate(company.created_at)}</p>
+                          )}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </SelectItem>
             ))
           ) : (

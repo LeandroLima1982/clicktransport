@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -11,6 +12,7 @@ export const useAuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isBusinessUser, setIsBusinessUser] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   const { signIn, signUp, user, userRole } = useAuth();
 
@@ -71,6 +73,10 @@ export const useAuthPage = () => {
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     
     try {
+      if (!email || !password) {
+        throw new Error('Por favor, preencha todos os campos');
+      }
+      
       console.log(`Attempting login with accountType: ${accountType}`);
       const { error } = await signIn(email, password);
       
@@ -100,6 +106,10 @@ export const useAuthPage = () => {
     const companyName = isBusinessUser && accountType === 'company'
       ? (form.elements.namedItem('company-name') as HTMLInputElement).value 
       : '';
+      
+    const cnpj = isBusinessUser && accountType === 'company'
+      ? (form.elements.namedItem('cnpj') as HTMLInputElement)?.value || ''
+      : '';
     
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -117,14 +127,24 @@ export const useAuthPage = () => {
         firstName,
         lastName,
         phone,
-        companyName
+        companyName,
+        cnpj
       };
       
-      const { error } = await signUp(email, password, userData);
+      const { error, data } = await signUp(email, password, userData);
       
       if (error) throw error;
       
-      toast.success('Conta criada com sucesso! Verifique seu email para ativar sua conta.');
+      // Show different messages based on account type
+      if (finalAccountType === 'company') {
+        toast.success('Empresa cadastrada com sucesso!', {
+          description: 'Seu cadastro será analisado por nossa equipe. Você receberá um email quando for aprovado.'
+        });
+      } else {
+        toast.success('Conta criada com sucesso! Verifique seu email para ativar sua conta.');
+      }
+      
+      setRegistrationSuccess(true);
       setActiveTab('login');
     } catch (err: any) {
       console.error('Error registering:', err);
@@ -167,6 +187,9 @@ export const useAuthPage = () => {
     }
     
     if (isBusinessUser) {
+      if (accountType === 'company') {
+        return 'Preencha o formulário abaixo para criar sua conta de empresa. Seu cadastro será revisado antes da aprovação.';
+      }
       return 'Preencha o formulário abaixo para criar sua conta empresarial';
     }
     
@@ -189,6 +212,7 @@ export const useAuthPage = () => {
     loading,
     error,
     isBusinessUser,
+    registrationSuccess,
     handleLogin,
     handleRegister,
     toggleUserType,
