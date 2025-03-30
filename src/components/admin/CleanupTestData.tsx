@@ -47,32 +47,42 @@ const CleanupTestData: React.FC = () => {
       setIsForceLoading(true);
       setResult(null);
       
-      // SQL melhorado para forçar a remoção de todos os dados em ordem correta
-      // com desativação de triggers e restrições de chave estrangeira
+      // SQL melhorado com abordagem mais agressiva para remover todas as referências
       const sqlCommand = `
-        -- Primeiro, desabilitar temporariamente as verificações de restrição
+        -- Desabilitar temporariamente as verificações de restrição
         SET session_replication_role = 'replica';
         
-        -- Remover dados na ordem correta para respeitar relações
-        -- Primeiro remover dados de tabelas que dependem de outras
-        DELETE FROM driver_locations;
-        DELETE FROM driver_ratings;
-        DELETE FROM service_orders;
-        DELETE FROM financial_metrics;
-        DELETE FROM bookings;
+        -- Primeiro remover dados de todas as tabelas dependentes
+        TRUNCATE driver_locations CASCADE;
+        TRUNCATE driver_ratings CASCADE;
+        TRUNCATE financial_metrics CASCADE;
         
-        -- Agora limpar motoristas e veículos
-        DELETE FROM drivers WHERE id != '00000000-0000-0000-0000-000000000000';
-        DELETE FROM vehicles WHERE id != '00000000-0000-0000-0000-000000000000';
+        -- Limpar outras tabelas que podem ter chaves estrangeiras
+        TRUNCATE service_orders CASCADE;
+        TRUNCATE bookings CASCADE;
         
-        -- Por último, remover empresas
-        DELETE FROM companies WHERE id != '00000000-0000-0000-0000-000000000000';
+        -- Remover motoristas e manter apenas o registro do sistema
+        DELETE FROM drivers 
+        WHERE id != '00000000-0000-0000-0000-000000000000';
+        
+        -- Remover veículos e manter apenas o registro do sistema
+        DELETE FROM vehicles 
+        WHERE id != '00000000-0000-0000-0000-000000000000';
+        
+        -- Remover empresas e manter apenas o registro do sistema
+        DELETE FROM companies 
+        WHERE id != '00000000-0000-0000-0000-000000000000';
         
         -- Reabilitar as verificações de restrição
         SET session_replication_role = 'origin';
+        
+        -- Resetar a sequência de IDs para tabelas que usam serials (se houver)
+        -- ALTER SEQUENCE IF EXISTS driver_id_seq RESTART WITH 1;
+        -- ALTER SEQUENCE IF EXISTS vehicle_id_seq RESTART WITH 1;
+        -- ALTER SEQUENCE IF EXISTS company_id_seq RESTART WITH 1;
       `;
       
-      console.log('Executing improved force cleanup SQL command');
+      console.log('Executing comprehensive force cleanup SQL command');
       const { data, error } = await executeSQL(sqlCommand);
       
       if (error) {
