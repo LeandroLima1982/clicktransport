@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logWarning, logInfo, logError } from '@/services/monitoring/systemLogService';
-import { useAdminSql } from '@/hooks/useAdminSql';
+import { executeSQL } from '@/hooks/useAdminSql';
 
 /**
  * Cleans up all test data from the database
@@ -171,13 +171,6 @@ export const forceCleanupAllData = async () => {
   try {
     logInfo('Starting forced cleanup with TRUNCATE CASCADE', 'data-cleanup');
     console.log('Executing forced database reset with TRUNCATE CASCADE...');
-    
-    // Create an instance of executeSQL function
-    const { executeSQL } = await import('@/hooks/useAdminSql');
-    
-    if (!executeSQL) {
-      throw new Error('executeSQL function not available. Make sure you have admin rights.');
-    }
     
     // SQL command to forcibly reset the database regardless of constraints
     const sqlCommand = `
