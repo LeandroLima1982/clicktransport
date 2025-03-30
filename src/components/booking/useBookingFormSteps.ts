@@ -5,7 +5,7 @@ export const useBookingFormSteps = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState(0);
   
-  const totalSteps = 8;
+  const totalSteps = 3;
   
   // Function to move to next step
   const goToNextStep = () => {
@@ -23,29 +23,11 @@ export const useBookingFormSteps = () => {
     }
   };
 
-  // Function to jump to a specific step (for progress bar navigation)
-  const goToStep = (step: number) => {
-    if (step > 0 && step <= totalSteps) {
-      setDirection(step > currentStep ? 1 : -1);
-      setCurrentStep(step);
-    }
-  };
-
-  // Check if we're on the first or last step
-  const isFirstStep = currentStep === 1;
-  const isLastStep = currentStep === totalSteps;
-
   return {
     currentStep,
-    setCurrentStep,
     direction,
     totalSteps,
     goToNextStep,
-    goToPreviousStep,
-    goToStep,
-    isFirstStep,
-    isLastStep
+    goToPreviousStep
   };
 };
-
-export default useBookingFormSteps;

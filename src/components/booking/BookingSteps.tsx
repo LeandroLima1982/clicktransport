@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -16,7 +17,6 @@ import BookingComplete from './steps/BookingComplete';
 import PassengerInfoFields from './PassengerInfoFields';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import useBookingFormSteps from './useBookingFormSteps';
 
 const defaultVehicleOptions: Vehicle[] = [
   {
@@ -75,18 +75,7 @@ interface BookingStepsProps {
 }
 
 const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClose }) => {
-  const {
-    currentStep,
-    setCurrentStep,
-    direction,
-    totalSteps,
-    goToNextStep,
-    goToPreviousStep,
-    goToStep,
-    isFirstStep,
-    isLastStep
-  } = useBookingFormSteps();
-
+  const [currentStep, setCurrentStep] = useState(1);
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -431,11 +420,6 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
               setShowLoginForm(false);
               setShowRegisterForm(true);
             }}
-            goToPreviousStep={goToPreviousStep}
-            direction={direction}
-            currentStep={currentStep}
-            isFirstStep={isFirstStep}
-            isLastStep={isLastStep}
           />
         ) : showRegisterForm ? (
           <RegisterForm 
@@ -444,11 +428,6 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
               setShowRegisterForm(false);
               setShowLoginForm(true);
             }}
-            goToPreviousStep={goToPreviousStep}
-            direction={direction}
-            currentStep={currentStep}
-            isFirstStep={isFirstStep}
-            isLastStep={isLastStep}
           />
         ) : bookingComplete ? (
           <BookingComplete

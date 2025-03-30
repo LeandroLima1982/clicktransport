@@ -1,11 +1,13 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import StepTransition from './StepTransition';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import TripTypeTabs from './TripTypeTabs';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import DateSelector from './DateSelector';
 import TimeSelector from '../TimeSelector';
+import { ArrowRightCircle, Plane, ArrowLeftRight } from 'lucide-react';
+import StepTransition from './StepTransition';
+import PassengerSelector from './PassengerSelector';
 
 interface DateTimeSelectionStepProps {
   date: Date | undefined;
@@ -25,8 +27,6 @@ interface DateTimeSelectionStepProps {
   canProceedFromStep2: () => boolean;
   direction: number;
   currentStep: number;
-  isFirstStep: boolean;
-  isLastStep: boolean;
 }
 
 const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
@@ -46,77 +46,100 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
   goToPreviousStep,
   canProceedFromStep2,
   direction,
-  currentStep,
-  isFirstStep,
-  isLastStep
+  currentStep
 }) => {
+  const handleTripTypeToggle = (checked: boolean) => {
+    setTripType(checked ? "roundtrip" : "oneway");
+  };
 
   return (
     <StepTransition step={currentStep} direction={direction}>
-      <div className="space-y-4">
-        <div className="booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow text-center rounded-lg">
-          <h3 className="text-lg font-semibold text-white mb-1">Escolha as Datas</h3>
-          <p className="text-white/80 mb-4 text-sm">
-            Selecione as datas e horários para sua viagem
-          </p>
-          
-          <div className="mb-4">
-            <TripTypeTabs value={tripType} onChange={setTripType} />
+      <div className="space-y-3">
+        <div className="flex justify-between items-center mb-1">
+          <div className="text-xs font-medium text-white">Tipo de Viagem</div>
+          <div className="flex items-center space-x-2">
+            <span className="text-[10px] text-white/80 flex items-center">
+              <Plane className="w-3 h-3 mr-1" />
+              Ida
+            </span>
+            <Switch 
+              checked={tripType === "roundtrip"}
+              onCheckedChange={handleTripTypeToggle}
+              className="data-[state=checked]:bg-amber-400 data-[state=checked]:border-amber-300"
+            />
+            <span className="text-[10px] text-white/80 flex items-center">
+              <ArrowLeftRight className="w-3 h-3 mr-1" />
+              Ida/Volta
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="booking-input-container p-2 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow rounded-lg">
+            <Label className="block text-xs font-semibold booking-label mb-1">
+              Vai quando?
+            </Label>
+            <div className="flex flex-col space-y-2">
+              <DateSelector 
+                hideLabel 
+                date={date} 
+                onSelect={setDate} 
+                disabledDates={date => date < new Date()} 
+                isConnected={true} 
+                position="left" 
+              />
+              <TimeSelector value={time} onChange={setTime} connected position="right" />
+            </div>
           </div>
           
-          <div className="flex flex-col space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-white/90">Data de Ida</label>
-              <DateSelector 
-                date={date} 
-                onDateChange={setDate} 
-                className="bg-white/10 text-white border-white/20"
-              />
-              <TimeSelector 
-                value={time} 
-                onChange={setTime}
-                className="bg-white/10 border-white/20 text-white mt-2"
-              />
-            </div>
-            
-            {tripType === 'roundtrip' && (
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white/90">Data de Volta</label>
+          <div className="booking-input-container p-2 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow rounded-lg">
+            <Label className="block text-xs font-semibold booking-label mb-1">
+              {tripType === "roundtrip" ? "Volta quando?" : "Passageiros"}
+            </Label>
+            {tripType === "roundtrip" ? (
+              <div className="flex flex-col space-y-2">
                 <DateSelector 
+                  hideLabel 
                   date={returnDate} 
-                  onDateChange={setReturnDate}
-                  className="bg-white/10 text-white border-white/20"
-                  minDate={date}
+                  onSelect={setReturnDate} 
+                  disabledDates={currentDate => currentDate < (date || new Date())} 
+                  isConnected={true} 
+                  position="left" 
                 />
-                <TimeSelector 
-                  value={returnTime} 
-                  onChange={setReturnTime}
-                  className="bg-white/10 border-white/20 text-white mt-2"
-                />
+                <TimeSelector value={returnTime} onChange={setReturnTime} connected position="right" />
               </div>
+            ) : (
+              <PassengerSelector value={passengers} onChange={setPassengers} />
             )}
           </div>
         </div>
 
-        <div className="flex justify-between mt-4">
+        {tripType === "roundtrip" && (
+          <div className="booking-input-container p-2 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow rounded-lg">
+            <Label className="block text-xs font-semibold booking-label mb-1">
+              Passageiros
+            </Label>
+            <PassengerSelector value={passengers} onChange={setPassengers} />
+          </div>
+        )}
+
+        <div className="flex justify-between mt-2">
           <Button 
             onClick={goToPreviousStep}
             variant="outline" 
-            className="px-3 md:px-4 py-2 h-auto rounded-lg text-white border-amber-300/50 hover:bg-white/10 hover:text-amber-300 shadow-md hover:shadow-lg transition-all duration-300 flex items-center"
-            disabled={isFirstStep}
+            className="px-4 rounded-lg text-white border-amber-300/50 hover:bg-white/10 hover:text-amber-300 shadow-md hover:shadow-lg transition-all duration-300"
           >
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            <span className="hidden md:inline">Voltar</span>
+            Voltar
           </Button>
           <Button 
             onClick={goToNextStep} 
-            disabled={!canProceedFromStep2()}
-            className="px-3 md:px-4 py-2 h-auto rounded-lg text-[#002366] font-medium transition-all duration-300 
-                      shadow-xl hover:shadow-2xl relative overflow-hidden bg-gradient-to-r from-amber-400 to-amber-300 
-                      hover:from-amber-300 hover:to-amber-200 border border-amber-300 flex items-center"
+            disabled={!canProceedFromStep2()} 
+            className="px-6 rounded-lg text-[#002366] font-medium h-10 transition-all duration-300 
+                    shadow-md hover:shadow-lg relative overflow-hidden bg-gradient-to-r from-amber-400 to-amber-300 
+                    hover:from-amber-300 hover:to-amber-200 border border-amber-300 flex items-center animate-pulse"
           >
-            <span className="hidden md:inline">Próximo</span>
-            <ChevronRight className="ml-1 h-4 w-4" />
+            Próximo
+            <ArrowRightCircle className="ml-2 h-4 w-4" />
           </Button>
         </div>
       </div>

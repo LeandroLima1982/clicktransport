@@ -9,15 +9,13 @@ interface TimeSelectorProps {
   onChange: (value: string) => void;
   connected?: boolean;
   position?: 'left' | 'right';
-  className?: string; // Added className prop
 }
 
 const TimeSelector: React.FC<TimeSelectorProps> = ({ 
   value, 
   onChange, 
   connected = false,
-  position = 'left',
-  className = ''
+  position = 'left'
 }) => {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
@@ -66,7 +64,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
   };
 
   return (
-    <div className={`relative w-full ${className}`}>
+    <div className="relative w-full">
       <Select value={value} onValueChange={handleValueChange} open={open} onOpenChange={setOpen}>
         <SelectTrigger 
           className={`w-full py-5 md:py-6 border border-gray-200/30 shadow-sm bg-white/95 
