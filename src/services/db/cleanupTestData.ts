@@ -157,20 +157,20 @@ export const cleanupAllTestData = async () => {
     toast.error('Erro ao limpar dados de teste', { 
       description: error instanceof Error ? error.message : 'Erro desconhecido'
     });
+    await logError('Database cleanup failed', 'data-cleanup', error);
     return { success: false, error };
   }
 };
 
 /**
- * Cleans up all data including companies and related records using SQL
- * This function uses admin SQL execution to bypass RLS and foreign key constraints
+ * This function is now a placeholder, all functionality has been moved to the component's handleForceCleanup
+ * method, which uses the SQL execution directly with TRUNCATE CASCADE for maximum effectiveness
  */
 export const forceCleanupAllData = async () => {
   try {
-    console.log('Starting force cleanup with SQL command...');
-    logInfo('Running force cleanup with SQL', 'data-cleanup');
+    console.log('Force cleanup method called - functionality moved to component');
+    logInfo('Force cleanup method called', 'data-cleanup');
     
-    // Return an error message instructing to use the admin SQL execution in the component
     return { 
       success: false, 
       error: new Error('Esta função agora usa execução SQL direta para limpeza. Use o botão de "Limpeza Forçada".')

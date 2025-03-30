@@ -47,46 +47,46 @@ const CleanupTestData: React.FC = () => {
       setIsForceLoading(true);
       setResult(null);
       
-      // SQL melhorado com abordagem mais agressiva para remover todas as referências
+      // SQL comando radical para limpar tudo de uma vez usando TRUNCATE com CASCADE
       const sqlCommand = `
-        -- Desabilitar temporariamente as verificações de restrição
+        -- Desativar triggers temporariamente
         SET session_replication_role = 'replica';
         
-        -- Primeiro remover dados de todas as tabelas dependentes
+        -- Usar TRUNCATE CASCADE para remover todos dados relacionados de uma vez
+        -- Esta abordagem é muito mais eficiente para limpar toda a base de dados de teste
+        
+        -- Primeiro limpar tabelas dependentes
         TRUNCATE driver_locations CASCADE;
         TRUNCATE driver_ratings CASCADE;
         TRUNCATE financial_metrics CASCADE;
-        
-        -- Limpar outras tabelas que podem ter chaves estrangeiras
         TRUNCATE service_orders CASCADE;
         TRUNCATE bookings CASCADE;
         
-        -- Remover motoristas e manter apenas o registro do sistema
+        -- Agora truncar as tabelas principais, mantendo os registros do sistema
+        -- Limpar tabela de drivers
         DELETE FROM drivers 
-        WHERE id != '00000000-0000-0000-0000-000000000000';
+        WHERE id != '00000000-0000-0000-0000-000000000000'
+        AND id IS NOT NULL;
         
-        -- Remover veículos e manter apenas o registro do sistema
+        -- Limpar tabela de veículos
         DELETE FROM vehicles 
-        WHERE id != '00000000-0000-0000-0000-000000000000';
+        WHERE id != '00000000-0000-0000-0000-000000000000'
+        AND id IS NOT NULL;
         
-        -- Remover empresas e manter apenas o registro do sistema
+        -- Limpar tabela de empresas
         DELETE FROM companies 
-        WHERE id != '00000000-0000-0000-0000-000000000000';
+        WHERE id != '00000000-0000-0000-0000-000000000000'
+        AND id IS NOT NULL;
         
-        -- Reabilitar as verificações de restrição
+        -- Reativar triggers
         SET session_replication_role = 'origin';
-        
-        -- Resetar a sequência de IDs para tabelas que usam serials (se houver)
-        -- ALTER SEQUENCE IF EXISTS driver_id_seq RESTART WITH 1;
-        -- ALTER SEQUENCE IF EXISTS vehicle_id_seq RESTART WITH 1;
-        -- ALTER SEQUENCE IF EXISTS company_id_seq RESTART WITH 1;
       `;
       
-      console.log('Executing comprehensive force cleanup SQL command');
+      console.log('Executando limpeza forçada radical com TRUNCATE CASCADE');
       const { data, error } = await executeSQL(sqlCommand);
       
       if (error) {
-        console.error('SQL execution error:', error);
+        console.error('Erro na execução SQL:', error);
         toast.error('Erro ao executar limpeza forçada', { 
           description: error.message 
         });
@@ -95,7 +95,7 @@ const CleanupTestData: React.FC = () => {
           message: `Erro ao executar limpeza forçada: ${error.message}`
         });
       } else {
-        console.log('Force cleanup successful:', data);
+        console.log('Limpeza forçada bem-sucedida:', data);
         toast.success('Limpeza forçada concluída com sucesso');
         setResult({ 
           success: true, 
@@ -103,7 +103,7 @@ const CleanupTestData: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error("Error during force cleanup:", error);
+      console.error("Erro durante limpeza forçada:", error);
       setResult({ 
         success: false, 
         message: error instanceof Error ? error.message : "Erro inesperado durante a limpeza forçada."
@@ -169,14 +169,14 @@ const CleanupTestData: React.FC = () => {
                 <ShieldAlert className="h-4 w-4" />
                 <AlertTitle>Alerta de Segurança</AlertTitle>
                 <AlertDescription>
-                  <p>Esta é uma operação avançada que usa comandos SQL para forçar a remoção de todos os dados.</p>
-                  <p className="font-bold mt-1">Todos os dados serão removidos ignorando restrições de chave estrangeira!</p>
+                  <p>Esta é uma operação radical que usa TRUNCATE CASCADE para remover todos os dados ignorando completamente as restrições de chave estrangeira.</p>
+                  <p className="font-bold mt-1">Todos os dados serão removidos sem possibilidade de recuperação!</p>
                 </AlertDescription>
               </Alert>
               
               <p className="text-sm text-muted-foreground mb-4">
-                Use a limpeza forçada apenas quando a limpeza padrão falhar. Esta opção 
-                ignora as restrições de chave estrangeira e remove todos os dados relacionados.
+                Esta limpeza forçada usa TRUNCATE CASCADE, que é uma operação poderosa do banco de dados 
+                que ignora todas as restrições de chave estrangeira e remove todos os dados relacionados.
               </p>
               
               <Button
