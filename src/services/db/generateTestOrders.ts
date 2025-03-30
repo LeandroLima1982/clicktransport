@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { createServiceOrderFromBooking } from '../booking/serviceOrderService';
 import { logInfo, logError } from '../monitoring/systemLogService';
@@ -205,7 +204,14 @@ export const createManualServiceOrder = async (companyId?: string) => {
           [key: string]: any;
         };
         
-        const { data: rpcResult, error: rpcError } = await supabase.rpc<RPCResponse>(
+        // Use proper typing for the RPC function with both response and parameters types
+        const { data: rpcResult, error: rpcError } = await supabase.rpc<RPCResponse, {
+          company_id: string;
+          origin_location: string;
+          destination_location: string;
+          pickup_time: string;
+          order_notes: string | null;
+        }>(
           'admin_create_test_service_order',
           {
             company_id: companyId,
