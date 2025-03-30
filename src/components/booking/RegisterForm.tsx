@@ -3,10 +3,9 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/integrations/supabase/client';
+import { Loader2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface RegisterFormProps {
   onRegisterSuccess: () => void;
@@ -14,136 +13,192 @@ interface RegisterFormProps {
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLogin }) => {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  
+  const { signUp, signIn } = useAuth();
+  
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     
+    if (!email || !password || !firstName || !lastName) {
+      setError('Por favor, preencha todos os campos obrigatórios');
+      setIsLoading(false);
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem');
+      setIsLoading(false);
+      return;
+    }
+    
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: name,
-            role: 'client'
-          }
-        }
-      });
+      // Always register as client when from booking flow
+      const userData = {
+        accountType: 'client', // Force client role
+        firstName,
+        lastName,
+        phone
+      };
       
-      if (error) throw error;
+      console.log('Registering client account with data:', userData);
       
-      if (data?.session) {
-        toast.success('Cadastro realizado com sucesso!');
-        console.log('User registered and logged in automatically, proceeding with booking');
-        onRegisterSuccess(); // This should proceed with the booking now that we're logged in
+      const { error } = await signUp(email, password, userData);
+      
+      if (error) {
+        setError(error.message);
       } else {
-        // No session yet, but registration in progress
-        toast.info('Verifique seu email para confirmar o cadastro');
+        toast.success('Cadastro realizado com sucesso!');
+        const { error: loginError } = await signIn(email, password);
         
-        // Try to automatically log in the user to complete the booking flow
-        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        
-        if (!loginError && loginData.session) {
-          toast.success('Login automático realizado com sucesso');
-          console.log('Auto-login successful, proceeding with booking');
+        if (!loginError) {
           onRegisterSuccess();
         } else {
-          // If auto-login fails, show login form
-          console.log('Auto-login failed, showing login form', loginError);
+          toast.info('Por favor, faça login com suas credenciais');
           onShowLogin();
         }
       }
     } catch (error: any) {
-      console.error('Register error:', error);
-      setError(error.message || 'Erro ao fazer cadastro. Tente novamente.');
+      setError(error.message || 'Erro ao criar conta');
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   return (
-    <div className="space-y-4 py-2 pb-4">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Criar uma conta</h2>
-        <p className="text-sm text-muted-foreground">
-          Cadastre-se para concluir sua reserva
+    <div className="space-y-6">
+      <div className="text-center mb-6">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-400/20 text-amber-300 mb-4">
+          <UserPlus className="w-8 h-8" />
+        </div>
+        <h3 className="text-xl font-bold text-white">Crie sua conta de cliente</h3>
+        <p className="text-white/70 mt-2">
+          Registre-se como cliente para finalizar sua reserva
         </p>
       </div>
       
       {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <div className="bg-red-500/20 text-red-300 p-3 rounded-md text-sm border border-red-500/50">
+          {error}
+        </div>
       )}
       
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Nome completo</Label>
-          <Input
-            id="name"
-            placeholder="Seu nome completo"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
+      <form onSubmit={handleRegister} className="space-y-4 max-h-[55vh] overflow-y-auto pr-2">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="first-name" className="text-white">Nome</Label>
+            <Input
+              id="first-name"
+              placeholder="Seu nome"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              required
+              className="bg-white/10 text-white border-amber-300/30 focus-visible:ring-amber-400"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="last-name" className="text-white">Sobrenome</Label>
+            <Input
+              id="last-name"
+              placeholder="Seu sobrenome"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              required
+              className="bg-white/10 text-white border-amber-300/30 focus-visible:ring-amber-400"
+            />
+          </div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="register-email" className="text-white">Email</Label>
           <Input
-            id="email"
-            type="email" 
-            placeholder="seu-email@exemplo.com"
+            id="register-email"
+            type="email"
+            placeholder="seu@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="bg-white/10 text-white border-amber-300/30 focus-visible:ring-amber-400"
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="password">Senha</Label>
+          <Label htmlFor="phone" className="text-white">Telefone</Label>
           <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            minLength={6}
+            id="phone"
+            placeholder="Seu telefone"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             required
+            className="bg-white/10 text-white border-amber-300/30 focus-visible:ring-amber-400"
           />
-          <p className="text-xs text-muted-foreground">
-            Mínimo de 6 caracteres
-          </p>
         </div>
         
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <div className="space-y-2">
+          <Label htmlFor="register-password" className="text-white">Senha</Label>
+          <Input
+            id="register-password"
+            type="password"
+            placeholder="********"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="bg-white/10 text-white border-amber-300/30 focus-visible:ring-amber-400"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="confirm-password" className="text-white">Confirmar Senha</Label>
+          <Input
+            id="confirm-password"
+            type="password"
+            placeholder="********"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            className="bg-white/10 text-white border-amber-300/30 focus-visible:ring-amber-400"
+          />
+        </div>
+        
+        <Button 
+          type="submit" 
+          className="w-full bg-gradient-to-r from-amber-400 to-amber-300 
+                   hover:from-amber-500 hover:to-amber-400 text-[#002366] font-medium" 
+          disabled={isLoading}
+        >
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processando...
+              Criando conta...
             </>
-          ) : 'Cadastrar'}
+          ) : (
+            'Criar Conta de Cliente'
+          )}
         </Button>
+        
+        <div className="text-center text-sm text-white/70 mt-4">
+          <p>
+            Já tem uma conta?{' '}
+            <button
+              type="button"
+              onClick={onShowLogin}
+              className="text-amber-300 hover:text-amber-200 hover:underline"
+            >
+              Faça login
+            </button>
+          </p>
+        </div>
       </form>
-      
-      <div className="mt-4 text-center text-sm">
-        Já tem uma conta?{' '}
-        <button 
-          className="font-semibold text-primary hover:underline" 
-          onClick={onShowLogin}
-        >
-          Faça login
-        </button>
-      </div>
     </div>
   );
 };

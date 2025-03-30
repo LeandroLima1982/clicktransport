@@ -1,19 +1,19 @@
 
-import React, { useEffect, useState } from 'react';
-import { Calendar, MapPin, Users, Clock, AlertTriangle } from 'lucide-react';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Car, MapPin, Calendar, Clock, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Vehicle } from './VehicleSelection';
-import { useDestinationsService } from '@/hooks/useDestinationsService';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface TripDetailsProps {
-  selectedVehicle: Vehicle | undefined;
+  selectedVehicle: any;
   bookingData: {
     origin: string;
     destination: string;
     date: Date | undefined;
     returnDate: Date | undefined;
-    tripType: string;
+    tripType: 'oneway' | 'roundtrip';
     passengers: string;
     time?: string;
     returnTime?: string;
@@ -34,155 +34,135 @@ const TripDetails: React.FC<TripDetailsProps> = ({
   formatCurrency,
   isCalculatingRoute
 }) => {
-  const { cities, fetchCities } = useDestinationsService();
-  const [isCheckingCityDistance, setIsCheckingCityDistance] = useState(false);
-  const [usingSavedDistance, setUsingSavedDistance] = useState(false);
-
-  useEffect(() => {
-    // Make sure cities are loaded
-    if (cities.length === 0) {
-      fetchCities();
-    }
-  }, [fetchCities, cities.length]);
-
-  const formatDate = (date: Date | undefined) => {
-    if (!date) return '';
-    return format(date, 'dd/MM/yyyy', { locale: ptBR });
-  };
-
-  const formatTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins > 0 ? `${mins}min` : ''}`;
-  };
+  if (isCalculatingRoute) {
+    return (
+      <div className="space-y-6">
+        <h3 className="text-lg font-semibold text-white">Calculando detalhes da viagem...</h3>
+        <div className="flex justify-center">
+          <Skeleton className="h-40 w-full rounded-lg" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold mb-4">Detalhes da Viagem</h3>
+      <h3 className="text-lg font-semibold text-white">Detalhes da viagem</h3>
       
-      {isCalculatingRoute ? (
-        <div className="flex items-center justify-center p-8 text-gray-500">
-          <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Calculando rota...
-        </div>
-      ) : (
-        <>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="flex items-start mb-4">
-              <div className="min-w-[24px] mr-3">
-                <MapPin className="h-6 w-6 text-green-500" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="bg-[#002366]/70 border-amber-300/30 text-white shadow-md">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-lg text-amber-300">
+              <Car className="mr-2 h-5 w-5 text-amber-300" />
+              Veículo Selecionado
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {selectedVehicle && (
+              <div className="space-y-2">
+                <div className="font-semibold text-lg">{selectedVehicle.name}</div>
+                <div className="text-white/80">{selectedVehicle.description}</div>
+                <div className="flex items-center text-sm">
+                  <Users className="mr-2 h-4 w-4 text-amber-200" />
+                  <span>Até {selectedVehicle.capacity} passageiros</span>
+                </div>
               </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-[#002366]/70 border-amber-300/30 text-white shadow-md">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-lg text-amber-300">
+              <MapPin className="mr-2 h-5 w-5 text-amber-300" />
+              Trajeto
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
               <div>
-                <div className="text-sm text-gray-500">Origem</div>
+                <div className="text-sm text-amber-200/80">Origem:</div>
                 <div className="font-medium">{bookingData.origin}</div>
               </div>
-            </div>
-            
-            <div className="flex items-start">
-              <div className="min-w-[24px] mr-3">
-                <MapPin className="h-6 w-6 text-red-500" />
-              </div>
               <div>
-                <div className="text-sm text-gray-500">Destino</div>
+                <div className="text-sm text-amber-200/80">Destino:</div>
                 <div className="font-medium">{bookingData.destination}</div>
               </div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center mb-2">
-                <Calendar className="h-5 w-5 mr-2 text-gray-500" />
-                <span className="font-medium">Data</span>
+              <div>
+                <div className="text-sm text-amber-200/80">Distância estimada:</div>
+                <div className="font-medium">{estimatedDistance} km</div>
               </div>
-              <div>{formatDate(bookingData.date)}</div>
-              {bookingData.time && (
-                <div className="flex items-center mt-2">
-                  <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                  <span>{bookingData.time}</span>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-[#002366]/70 border-amber-300/30 text-white shadow-md">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-lg text-amber-300">
+              <Calendar className="mr-2 h-5 w-5 text-amber-300" />
+              Data e Horário
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div>
+                <div className="text-sm text-amber-200/80">Data de ida:</div>
+                <div className="font-medium">
+                  {bookingData.date ? format(bookingData.date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : 'Não especificado'}
+                </div>
+                {bookingData.time && (
+                  <div className="text-sm mt-1">Horário: {bookingData.time}</div>
+                )}
+              </div>
+              {bookingData.tripType === 'roundtrip' && (
+                <div>
+                  <div className="text-sm text-amber-200/80">Data de volta:</div>
+                  <div className="font-medium">
+                    {bookingData.returnDate ? format(bookingData.returnDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : 'Não especificado'}
+                  </div>
+                  {bookingData.returnTime && (
+                    <div className="text-sm mt-1">Horário: {bookingData.returnTime}</div>
+                  )}
                 </div>
               )}
-            </div>
-            
-            {bookingData.tripType === 'roundtrip' && (
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-center mb-2">
-                  <Calendar className="h-5 w-5 mr-2 text-gray-500" />
-                  <span className="font-medium">Data de Retorno</span>
-                </div>
-                <div>{formatDate(bookingData.returnDate)}</div>
-                {bookingData.returnTime && (
-                  <div className="flex items-center mt-2">
-                    <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                    <span>{bookingData.returnTime}</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center mb-2">
-                <Users className="h-5 w-5 mr-2 text-gray-500" />
-                <span className="font-medium">Passageiros</span>
-              </div>
-              <div>{bookingData.passengers}</div>
-            </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-                <span className="font-medium">Distância</span>
-              </div>
-              <div className="flex items-center">
-                <span>{estimatedDistance.toFixed(1)} km</span>
-                {usingSavedDistance && (
-                  <span className="ml-2 text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">
-                    Verificada
-                  </span>
-                )}
-              </div>
-            </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center mb-2">
-                <Clock className="h-5 w-5 mr-2 text-gray-500" />
-                <span className="font-medium">Tempo Estimado</span>
-              </div>
-              <div>{formatTime(estimatedTime)}</div>
-            </div>
-          </div>
-          
-          <div className="border-t border-b py-4 my-4">
-            <div className="flex justify-between items-center">
               <div>
-                <span className="font-medium">Veículo:</span>
-                <span className="ml-2">{selectedVehicle?.name}</span>
-              </div>
-              <div className="text-xl font-bold text-primary">
-                {formatCurrency(totalPrice)}
+                <div className="text-sm text-amber-200/80">Tipo de viagem:</div>
+                <div className="font-medium">
+                  {bookingData.tripType === 'oneway' ? 'Somente ida' : 'Ida e volta'}
+                </div>
               </div>
             </div>
-            {bookingData.tripType === 'roundtrip' && (
-              <div className="text-sm text-gray-500 mt-1">*Preço inclui ida e volta</div>
-            )}
-          </div>
-          
-          <div className="flex items-start bg-yellow-50 p-4 rounded-lg">
-            <AlertTriangle className="h-5 w-5 text-yellow-500 mr-2 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-medium text-yellow-700">Importante</p>
-              <p className="text-yellow-600">Os valores são estimados e podem sofrer alterações conforme condições da viagem. Eventuais custos adicionais serão informados previamente.</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-[#002366]/70 border-amber-300/30 text-white shadow-md">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-lg text-amber-300">
+              <Clock className="mr-2 h-5 w-5 text-amber-300" />
+              Tempo e Custo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div>
+                <div className="text-sm text-amber-200/80">Tempo estimado:</div>
+                <div className="font-medium">{Math.floor(estimatedTime / 60)}h {estimatedTime % 60}min</div>
+              </div>
+              <div>
+                <div className="text-sm text-amber-200/80">Passageiros:</div>
+                <div className="font-medium">{bookingData.passengers}</div>
+              </div>
+              <div>
+                <div className="text-sm text-amber-200/80">Valor estimado:</div>
+                <div className="font-bold text-lg text-amber-300">{formatCurrency(totalPrice)}</div>
+                <div className="text-xs text-white/60">
+                  {bookingData.tripType === 'roundtrip' ? '(Inclui ida e volta)' : ''}
+                </div>
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
