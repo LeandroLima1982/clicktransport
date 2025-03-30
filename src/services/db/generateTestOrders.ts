@@ -66,23 +66,15 @@ export const generateSampleBookingAndOrder = async () => {
       throw new Error('Nenhuma empresa ativa encontrada. Execute "Configurar Ambiente de Teste" primeiro.');
     }
     
-    // Get an existing profile ID instead of generating a random UUID
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id')
-      .limit(1);
-      
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
-      throw new Error('Não foi possível encontrar perfis de usuário. Execute "Configurar Ambiente de Teste" primeiro.');
+    // Ensure we have a valid profile to use
+    const { success: profileSuccess, profile, error: profileError } = await ensureTestProfile();
+    
+    if (!profileSuccess || !profile) {
+      throw profileError || new Error('Não foi possível criar ou encontrar um perfil de teste.');
     }
     
-    if (!profiles || profiles.length === 0) {
-      throw new Error('Nenhum perfil de usuário encontrado. Execute "Configurar Ambiente de Teste" primeiro ou crie um usuário manualmente.');
-    }
-    
-    // Use an existing profile ID
-    const existingUserId = profiles[0].id;
+    // Use the profile ID for the booking
+    const existingUserId = profile.id;
     console.log('Using existing user ID for test booking:', existingUserId);
     
     try {
@@ -156,58 +148,94 @@ export const generateSampleBookingAndOrder = async () => {
 
 /**
  * Creates a manual service order (not from a booking)
+ * Modified to handle RLS policy restrictions
  */
 export const createManualServiceOrder = async (companyId?: string) => {
   try {
+    console.log('Starting manual service order creation...');
+    
     // If no company ID is provided, fetch the first active company
     if (!companyId) {
       const { data: companies, error: companiesError } = await supabase
         .from('companies')
-        .select('id')
+        .select('id, name')
         .eq('status', 'active')
         .order('queue_position', { ascending: true })
         .limit(1);
       
-      if (companiesError) throw companiesError;
+      if (companiesError) {
+        console.error('Error fetching companies:', companiesError);
+        throw companiesError;
+      }
       
       if (!companies || companies.length === 0) {
         throw new Error('Nenhuma empresa ativa disponível. Configure o ambiente de teste primeiro.');
       }
       
       companyId = companies[0].id;
+      console.log(`Selected company for manual order: ${companies[0].name} (${companyId})`);
     }
     
-    // Create a manual service order directly (without financial metrics update)
+    // Create a manual service order directly
     try {
+      // Get current timestamp for pickup_date (add 3 days)
+      const pickupDate = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+      
       // Create order data
       const orderData = {
         company_id: companyId,
         origin: 'Centro do Rio de Janeiro',
         destination: 'Maracanã, Rio de Janeiro',
-        pickup_date: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(), // 3 days from now
+        pickup_date: pickupDate,
         status: 'pending' as const,
         notes: 'Ordem de serviço de teste criada manualmente',
       };
       
-      // Insert order directly
-      const { data: order, error: orderError } = await supabase
-        .from('service_orders')
-        .insert(orderData)
-        .select()
-        .single();
+      console.log('Preparing to insert service order with data:', orderData);
+      
+      // Use RPC call to bypass RLS policies for testing purposes
+      // This approach uses a server-side function with SECURITY DEFINER that has higher privileges
+      const { data: order, error: orderError } = await supabase.rpc(
+        'admin_create_test_service_order',
+        { 
+          company_id: companyId,
+          origin_location: orderData.origin,
+          destination_location: orderData.destination,
+          pickup_time: pickupDate,
+          order_notes: orderData.notes
+        }
+      );
       
       if (orderError) {
-        // If this fails due to RLS policy, we'll handle gracefully
-        if (orderError.message.includes('violates row-level security policy')) {
-          throw new Error('Violação de política de segurança: Configure o ambiente de teste primeiro para definir as permissões necessárias');
+        console.error('Error creating manual service order via RPC:', orderError);
+        
+        // Fallback to direct insert, which may fail due to RLS
+        console.log('Attempting direct insert as fallback...');
+        const { data: directOrder, error: directError } = await supabase
+          .from('service_orders')
+          .insert(orderData)
+          .select()
+          .single();
+        
+        if (directError) {
+          // If this fails due to RLS policy, we'll handle gracefully
+          if (directError.message.includes('violates row-level security policy')) {
+            throw new Error('Violação de política de segurança: Configure o ambiente de teste primeiro ou use uma conta de administrador.');
+          }
+          throw directError;
         }
-        throw orderError;
+        
+        toast.success('Ordem de serviço manual criada com sucesso', { duration: 3000 });
+        return { success: true, serviceOrder: directOrder, error: null };
       }
       
       toast.success('Ordem de serviço manual criada com sucesso', { duration: 3000 });
       return { success: true, serviceOrder: order, error: null };
     } catch (error) {
       console.error('Error creating manual service order:', error);
+      toast.error('Erro ao criar ordem de serviço manual', {
+        description: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
       return { success: false, serviceOrder: null, error };
     }
   } catch (error) {
@@ -219,8 +247,61 @@ export const createManualServiceOrder = async (companyId?: string) => {
   }
 };
 
+// Helper function to ensure a test profile exists (reused from setupTestEnvironment)
+export const ensureTestProfile = async () => {
+  try {
+    console.log('Checking for existing test profile...');
+    
+    // Check if there are any profiles already
+    const { data: existingProfiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .limit(1);
+      
+    if (profilesError) {
+      console.error('Error checking profiles:', profilesError);
+      throw profilesError;
+    }
+    
+    // If we already have a profile, we can use it
+    if (existingProfiles && existingProfiles.length > 0) {
+      console.log('Found existing profile to use for tests:', existingProfiles[0].id);
+      return { success: true, profile: existingProfiles[0], error: null };
+    }
+    
+    console.log('No existing profiles found, creating a test profile...');
+    
+    // Generate a test profile ID
+    const testProfileId = crypto.randomUUID();
+    
+    // Create a test profile
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .insert({
+        id: testProfileId,
+        email: 'test@example.com',
+        full_name: 'Test User',
+        role: 'user'
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error creating test profile:', error);
+      throw error;
+    }
+    
+    console.log('Created test profile:', profile.id);
+    return { success: true, profile, error: null };
+  } catch (error) {
+    console.error('Error ensuring test profile:', error);
+    return { success: false, profile: null, error };
+  }
+};
+
 export default {
   createTestServiceOrder,
   generateSampleBookingAndOrder,
-  createManualServiceOrder
+  createManualServiceOrder,
+  ensureTestProfile
 };
