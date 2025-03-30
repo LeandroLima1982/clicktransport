@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -131,7 +130,7 @@ export const useAuthPage = () => {
         cnpj
       };
       
-      const { error, data } = await signUp(email, password, userData);
+      const { error } = await signUp(email, password, userData);
       
       if (error) throw error;
       

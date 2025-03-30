@@ -32,12 +32,10 @@ const contactSchema = z.object({
   phone: z.string().min(10, 'Telefone inválido').max(15, 'Telefone muito longo'),
 });
 
+// Modified to not use refine which returns ZodEffects instead of ZodObject
 const passwordSchema = z.object({
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
-  confirmPassword: z.string(),
-}).refine(data => data.password === data.confirmPassword, {
-  message: "As senhas não coincidem",
-  path: ["confirmPassword"]
+  confirmPassword: z.string().min(6, 'Por favor confirme sua senha'),
 });
 
 // Client schema
@@ -65,7 +63,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const schema = isBusinessUser ? companySchema : clientSchema;
   
   const form = useForm<RegisterFormValues>({
-    resolver: zodResolver(schema as any),
+    resolver: zodResolver(schema),
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -74,10 +72,29 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       password: '',
       confirmPassword: '',
       ...(isBusinessUser ? { companyName: '', cnpj: '' } : {})
-    }
+    },
+    // Add custom validation for password confirmation
+    mode: 'onBlur'
   });
 
+  // Add custom validation for password confirmation
+  const validatePasswords = (data: RegisterFormValues) => {
+    if (data.password !== data.confirmPassword) {
+      form.setError('confirmPassword', {
+        type: 'manual',
+        message: 'As senhas não coincidem'
+      });
+      return false;
+    }
+    return true;
+  };
+
   const onSubmit = async (data: RegisterFormValues) => {
+    // First validate passwords match
+    if (!validatePasswords(data)) {
+      return;
+    }
+    
     const formData = new FormData();
     
     // Add all form values to FormData
