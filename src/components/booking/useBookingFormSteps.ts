@@ -5,7 +5,7 @@ export const useBookingFormSteps = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState(0);
   
-  const totalSteps = 7;
+  const totalSteps = 8;
   
   // Function to move to next step
   const goToNextStep = () => {

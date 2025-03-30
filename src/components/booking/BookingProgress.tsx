@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Check, MapPin, Calendar, Users, Car, CreditCard, CheckCircle } from 'lucide-react';
+import { Check, MapPin, Calendar, Users, Car, CreditCard, CheckCircle, UserCircle2 } from 'lucide-react';
 
 interface BookingProgressProps {
   currentStep: number;
@@ -17,10 +17,11 @@ const BookingProgress: React.FC<BookingProgressProps> = ({
     { icon: MapPin, label: 'Trajeto', step: 1 },
     { icon: Calendar, label: 'Data', step: 2 },
     { icon: Car, label: 'Veículo', step: 3 },
-    { icon: CreditCard, label: 'Pagamento', step: 4 },
-    { icon: Users, label: 'Pessoas', step: 5 },
-    { icon: CheckCircle, label: 'Confirmar', step: 6 },
-    { icon: Check, label: 'Concluído', step: 7 }
+    { icon: UserCircle2, label: 'Login', step: 4 },
+    { icon: CreditCard, label: 'Pagamento', step: 5 },
+    { icon: Users, label: 'Pessoas', step: 6 },
+    { icon: CheckCircle, label: 'Conferir', step: 7 },
+    { icon: Check, label: 'Concluído', step: 8 }
   ];
 
   // Current progress percentage
@@ -49,7 +50,7 @@ const BookingProgress: React.FC<BookingProgressProps> = ({
       </div>
       
       <div className="flex justify-between items-center relative">
-        {/* Progress bar - smoother and more visible */}
+        {/* Progress bar - place it behind the step indicators */}
         <div className="absolute h-2 bg-blue-900/30 inset-x-0 top-1/2 -translate-y-1/2 z-0 rounded-full overflow-hidden">
           <div 
             className="h-full bg-amber-400 transition-all duration-500 ease-out rounded-full"

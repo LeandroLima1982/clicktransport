@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useBookingForm } from '@/hooks/useBookingForm';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -12,6 +13,9 @@ import PaymentSelectionStep from './booking/PaymentSelectionStep';
 import PassengerSelectionStep from './booking/PassengerSelectionStep';
 import BookingConfirmationStep from './booking/BookingConfirmationStep';
 import BookingCompleteStep from './booking/BookingCompleteStep';
+import LoginForm from './booking/LoginForm';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const BookingForm: React.FC = () => {
@@ -62,6 +66,9 @@ const BookingForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingComplete, setBookingComplete] = useState(false);
   const [bookingReference, setBookingReference] = useState<string>('');
+  const [showLoginStep, setShowLoginStep] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   const { 
     currentStep, 
@@ -154,9 +161,9 @@ const BookingForm: React.FC = () => {
   
   const canProceedFromStep2 = (): boolean => {
     if (tripType === 'oneway') {
-      return !!(date && time && passengers);
+      return !!(date && time);
     } else {
-      return !!(date && time && returnDate && returnTime && passengers);
+      return !!(date && time && returnDate && returnTime);
     }
   };
   
@@ -165,10 +172,14 @@ const BookingForm: React.FC = () => {
   };
   
   const canProceedFromStep4 = (): boolean => {
-    return !!selectedPaymentMethod;
+    return !!user;
   };
   
   const canProceedFromStep5 = (): boolean => {
+    return !!selectedPaymentMethod;
+  };
+  
+  const canProceedFromStep6 = (): boolean => {
     const passengerCount = parseInt(passengers, 10);
     for (let i = 0; i < passengerCount; i++) {
       if (!passengerData[i]?.name || !passengerData[i]?.phone) {
@@ -178,7 +189,7 @@ const BookingForm: React.FC = () => {
     return true;
   };
   
-  const canProceedFromStep6 = (): boolean => {
+  const canProceedFromStep7 = (): boolean => {
     return true;
   };
   
@@ -193,12 +204,21 @@ const BookingForm: React.FC = () => {
       setBookingComplete(true);
       
       toast.success('Reserva confirmada com sucesso!');
+      
+      // Redirect to client bookings after completion
+      setTimeout(() => {
+        navigate('/bookings');
+      }, 2000);
     } catch (error) {
       console.error('Error submitting booking:', error);
       toast.error('Ocorreu um erro ao confirmar a reserva. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleLoginSuccess = () => {
+    goToNextStep();
   };
 
   const renderStep = () => {
@@ -268,12 +288,24 @@ const BookingForm: React.FC = () => {
         
       case 4:
         return (
+          <LoginForm 
+            onLoginSuccess={handleLoginSuccess}
+            goToPreviousStep={goToPreviousStep}
+            direction={direction}
+            currentStep={currentStep}
+            isFirstStep={isFirstStep}
+            isLastStep={isLastStep}
+          />
+        );
+        
+      case 5:
+        return (
           <PaymentSelectionStep
             selectedPaymentMethod={selectedPaymentMethod}
             setSelectedPaymentMethod={setSelectedPaymentMethod}
             goToNextStep={goToNextStep}
             goToPreviousStep={goToPreviousStep}
-            canProceedFromStep5={canProceedFromStep4}
+            canProceedFromStep5={canProceedFromStep5}
             direction={direction}
             currentStep={currentStep}
             selectedVehicle={selectedVehicle}
@@ -284,7 +316,7 @@ const BookingForm: React.FC = () => {
           />
         );
         
-      case 5:
+      case 6:
         return (
           <PassengerSelectionStep 
             passengers={passengers}
@@ -293,7 +325,7 @@ const BookingForm: React.FC = () => {
             setPassengerData={setPassengerData}
             goToPreviousStep={goToPreviousStep}
             goToNextStep={goToNextStep}
-            canProceedFromStep3={canProceedFromStep5}
+            canProceedFromStep3={canProceedFromStep6}
             direction={direction}
             currentStep={currentStep}
             isFirstStep={isFirstStep}
@@ -301,7 +333,7 @@ const BookingForm: React.FC = () => {
           />
         );
         
-      case 6:
+      case 7:
         return (
           <BookingConfirmationStep
             origin={getFullOriginAddress()}
@@ -318,7 +350,7 @@ const BookingForm: React.FC = () => {
             goToPreviousStep={goToPreviousStep}
             handleSubmitBooking={handleSubmitBooking}
             isSubmitting={isSubmitting}
-            canProceedFromStep6={canProceedFromStep6}
+            canProceedFromStep6={canProceedFromStep7}
             direction={direction}
             currentStep={currentStep}
             isFirstStep={isFirstStep}
@@ -326,7 +358,7 @@ const BookingForm: React.FC = () => {
           />
         );
         
-      case 7:
+      case 8:
         return (
           <BookingCompleteStep
             bookingReference={bookingReference}
@@ -350,7 +382,7 @@ const BookingForm: React.FC = () => {
       <div className="relative pt-3 md:pt-5 pb-4 md:pb-6 px-3 md:px-5 lg:px-6">
         <BookingProgress 
           currentStep={currentStep} 
-          totalSteps={7} 
+          totalSteps={8} 
           onStepClick={(step) => {
             if (step < currentStep) {
               goToStep(step);

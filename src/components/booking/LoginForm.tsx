@@ -6,18 +6,32 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import StepTransition from './StepTransition';
+import RegisterForm from './RegisterForm';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
-  onShowRegister: () => void;
+  goToPreviousStep: () => void;
+  direction: number;
+  currentStep: number;
+  isFirstStep: boolean;
+  isLastStep: boolean;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ 
+  onLoginSuccess, 
+  goToPreviousStep,
+  direction,
+  currentStep,
+  isFirstStep,
+  isLastStep
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRegister, setShowRegister] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,65 +61,93 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onShowRegister })
     }
   };
 
+  const handleRegisterSuccess = () => {
+    toast.success('Cadastro realizado com sucesso!');
+    onLoginSuccess();
+  };
+
   return (
-    <div className="space-y-4 py-2 pb-4">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Entrar na sua conta</h2>
-        <p className="text-sm text-muted-foreground">
-          Faça login para concluir sua reserva
-        </p>
-      </div>
-      
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+    <StepTransition step={currentStep} direction={direction}>
+      {showRegister ? (
+        <RegisterForm 
+          onRegisterSuccess={handleRegisterSuccess} 
+          onShowLogin={() => setShowRegister(false)}
+          goToPreviousStep={goToPreviousStep}
+        />
+      ) : (
+        <div className="space-y-4">
+          <div className="booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow text-center rounded-lg">
+            <h3 className="text-lg font-semibold text-white mb-1">Entre na sua conta</h3>
+            <p className="text-white/80 mb-4 text-sm">
+              Faça login para continuar com sua reserva
+            </p>
+            
+            {error && (
+              <Alert variant="destructive" className="my-3">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            <form onSubmit={handleSubmit} className="space-y-4 max-w-sm mx-auto">
+              <div className="space-y-2 text-left">
+                <Label htmlFor="email" className="text-white">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu-email@exemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="bg-white/10 border-white/20 text-white"
+                />
+              </div>
+              
+              <div className="space-y-2 text-left">
+                <Label htmlFor="password" className="text-white">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="bg-white/10 border-white/20 text-white"
+                />
+              </div>
+              
+              <Button type="submit" className="w-full bg-amber-400 hover:bg-amber-500 text-[#002366]" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Entrando...
+                  </>
+                ) : 'Entrar'}
+              </Button>
+            </form>
+            
+            <div className="mt-4 text-center text-sm text-white">
+              Não tem uma conta?{' '}
+              <button 
+                className="font-semibold text-amber-300 hover:underline" 
+                onClick={() => setShowRegister(true)}
+              >
+                Cadastre-se
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex justify-between mt-4">
+            <Button 
+              onClick={goToPreviousStep}
+              variant="outline" 
+              className="px-3 md:px-4 py-2 h-auto rounded-lg text-white border-amber-300/50 hover:bg-white/10 hover:text-amber-300 shadow-md hover:shadow-lg transition-all duration-300 flex items-center"
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              <span className="hidden md:inline">Voltar</span>
+            </Button>
+          </div>
+        </div>
       )}
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="seu-email@exemplo.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="password">Senha</Label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Entrando...
-            </>
-          ) : 'Entrar'}
-        </Button>
-      </form>
-      
-      <div className="mt-4 text-center text-sm">
-        Não tem uma conta?{' '}
-        <button 
-          className="font-semibold text-primary hover:underline" 
-          onClick={onShowRegister}
-        >
-          Cadastre-se
-        </button>
-      </div>
-    </div>
+    </StepTransition>
   );
 };
 
