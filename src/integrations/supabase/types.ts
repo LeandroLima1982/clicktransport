@@ -837,6 +837,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_test_service_order: {
+        Args: {
+          company_id: string
+          origin_location: string
+          destination_location: string
+          pickup_time: string
+          order_notes?: string
+        }
+        Returns: Json
+      }
       admin_delete_financial_metrics: {
         Args: Record<PropertyKey, never>
         Returns: Json

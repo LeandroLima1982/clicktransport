@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { createServiceOrderFromBooking } from '../booking/serviceOrderService';
 import { logInfo, logError } from '../monitoring/systemLogService';
@@ -193,49 +194,80 @@ export const createManualServiceOrder = async (companyId?: string) => {
       
       console.log('Preparing to insert service order with data:', orderData);
       
-      // Try to use direct SQL execution to bypass RLS
+      // Use the admin RPC function to bypass RLS policies
       try {
-        // Use SQL execution to bypass RLS policies
-        const sql = `
-          INSERT INTO service_orders (company_id, origin, destination, pickup_date, status, notes)
-          VALUES ('${companyId}', '${orderData.origin}', '${orderData.destination}', 
-          '${pickupDate}', '${orderData.status}', '${orderData.notes}')
-          RETURNING *;
-        `;
-        
-        console.log('Attempting SQL execution to bypass RLS...');
-        const { data: sqlResult, error: sqlError } = await executeSQL(sql);
-        
-        if (sqlError) {
-          console.error('Error executing SQL for manual service order:', sqlError);
-          throw new Error('Falha ao executar SQL para criar ordem de serviço: ' + 
-            (sqlError instanceof Error ? sqlError.message : 'Erro desconhecido'));
-        }
-        
-        console.log('SQL execution successful:', sqlResult);
-        toast.success('Ordem de serviço manual criada com sucesso', { duration: 3000 });
-        return { success: true, serviceOrder: sqlResult, error: null };
-      } catch (sqlExecError) {
-        console.error('Error with direct SQL execution:', sqlExecError);
-        
-        // Fallback to direct insert, which may fail due to RLS
-        console.log('Attempting direct insert as fallback...');
-        const { data: directOrder, error: directError } = await supabase
-          .from('service_orders')
-          .insert(orderData)
-          .select()
-          .single();
-        
-        if (directError) {
-          // If this fails due to RLS policy, we'll handle gracefully
-          if (directError.message.includes('violates row-level security policy')) {
-            throw new Error('Violação de política de segurança: Configure o ambiente de teste primeiro ou use uma conta de administrador.');
+        console.log('Calling admin_create_test_service_order RPC function...');
+        const { data: rpcResult, error: rpcError } = await supabase.rpc(
+          'admin_create_test_service_order',
+          {
+            company_id: companyId,
+            origin_location: orderData.origin,
+            destination_location: orderData.destination,
+            pickup_time: pickupDate,
+            order_notes: orderData.notes
           }
-          throw directError;
+        );
+        
+        if (rpcError) {
+          console.error('Error calling RPC function:', rpcError);
+          throw new Error('Falha ao criar ordem de serviço via função RPC: ' + 
+            (rpcError instanceof Error ? rpcError.message : 'Erro desconhecido'));
         }
         
+        if (rpcResult?.error) {
+          console.error('RPC function returned an error:', rpcResult.error);
+          throw new Error('Erro retornado pela função RPC: ' + rpcResult.error);
+        }
+        
+        console.log('RPC function call successful:', rpcResult);
         toast.success('Ordem de serviço manual criada com sucesso', { duration: 3000 });
-        return { success: true, serviceOrder: directOrder, error: null };
+        return { success: true, serviceOrder: rpcResult, error: null };
+      } catch (rpcError) {
+        console.error('Error with RPC function call:', rpcError);
+        
+        // Fallback to SQL execution if RPC fails
+        try {
+          console.log('Attempting direct SQL execution as fallback...');
+          const sql = `
+            INSERT INTO service_orders (company_id, origin, destination, pickup_date, status, notes)
+            VALUES ('${companyId}', '${orderData.origin}', '${orderData.destination}', 
+            '${pickupDate}', '${orderData.status}', '${orderData.notes}')
+            RETURNING *;
+          `;
+          
+          const { data: sqlResult, error: sqlError } = await executeSQL(sql);
+          
+          if (sqlError) {
+            console.error('Error executing SQL for manual service order:', sqlError);
+            throw new Error('Falha ao executar SQL para criar ordem de serviço: ' + 
+              (sqlError instanceof Error ? sqlError.message : 'Erro desconhecido'));
+          }
+          
+          console.log('SQL execution successful:', sqlResult);
+          toast.success('Ordem de serviço manual criada com sucesso', { duration: 3000 });
+          return { success: true, serviceOrder: sqlResult, error: null };
+        } catch (sqlExecError) {
+          console.error('Error with direct SQL execution:', sqlExecError);
+          
+          // Last resort: direct insert, which may fail due to RLS
+          console.log('Attempting direct insert as final fallback...');
+          const { data: directOrder, error: directError } = await supabase
+            .from('service_orders')
+            .insert(orderData)
+            .select()
+            .single();
+          
+          if (directError) {
+            // If this fails due to RLS policy, we'll handle gracefully
+            if (directError.message.includes('violates row-level security policy')) {
+              throw new Error('Violação de política de segurança: Configure o ambiente de teste primeiro ou use uma conta de administrador.');
+            }
+            throw directError;
+          }
+          
+          toast.success('Ordem de serviço manual criada com sucesso', { duration: 3000 });
+          return { success: true, serviceOrder: directOrder, error: null };
+        }
       }
     } catch (error) {
       console.error('Error creating manual service order:', error);
