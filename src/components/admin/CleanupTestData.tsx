@@ -47,26 +47,32 @@ const CleanupTestData: React.FC = () => {
       setIsForceLoading(true);
       setResult(null);
       
-      // Use direct SQL execution to force remove all data
+      // SQL melhorado para forçar a remoção de todos os dados em ordem correta
+      // com desativação de triggers e restrições de chave estrangeira
       const sqlCommand = `
-        -- Disable triggers temporarily to bypass foreign key constraints
+        -- Primeiro, desabilitar temporariamente as verificações de restrição
         SET session_replication_role = 'replica';
         
-        -- Delete from all tables in the reverse order of dependencies
+        -- Remover dados na ordem correta para respeitar relações
+        -- Primeiro remover dados de tabelas que dependem de outras
         DELETE FROM driver_locations;
         DELETE FROM driver_ratings;
         DELETE FROM service_orders;
-        DELETE FROM bookings;
-        DELETE FROM drivers;
-        DELETE FROM vehicles;
-        DELETE FROM companies WHERE id != '00000000-0000-0000-0000-000000000000';
         DELETE FROM financial_metrics;
+        DELETE FROM bookings;
         
-        -- Re-enable triggers
+        -- Agora limpar motoristas e veículos
+        DELETE FROM drivers WHERE id != '00000000-0000-0000-0000-000000000000';
+        DELETE FROM vehicles WHERE id != '00000000-0000-0000-0000-000000000000';
+        
+        -- Por último, remover empresas
+        DELETE FROM companies WHERE id != '00000000-0000-0000-0000-000000000000';
+        
+        -- Reabilitar as verificações de restrição
         SET session_replication_role = 'origin';
       `;
       
-      console.log('Executing force cleanup SQL command');
+      console.log('Executing improved force cleanup SQL command');
       const { data, error } = await executeSQL(sqlCommand);
       
       if (error) {
