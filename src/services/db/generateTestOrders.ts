@@ -43,12 +43,11 @@ export const createTestServiceOrder = async (booking?: Booking) => {
 
 /**
  * Generate a sample booking and service order for testing
- * This version uses direct database inserts bypassing the profiles foreign key issue
+ * This version uses an existing profile ID instead of a random UUID
  */
 export const generateSampleBookingAndOrder = async () => {
   try {
-    // Create booking with random data that doesn't require user creation
-    // We'll bypass the RLS policies by using an RPC call or direct inserts
+    // Create booking with random data
     const bookingReference = `BK-${Math.floor(10000 + Math.random() * 90000)}`;
     
     // Check if we have at least one company configured in the system
@@ -67,13 +66,27 @@ export const generateSampleBookingAndOrder = async () => {
       throw new Error('Nenhuma empresa ativa encontrada. Execute "Configurar Ambiente de Teste" primeiro.');
     }
     
-    // Create the booking
-    // We'll need to bypass the foreign key constraint by using a user ID that doesn't reference auth.users
-    // Instead, we'll create a test client in the profiles table first with a random UUID that isn't in auth.users
-    const testUserId = crypto.randomUUID();
+    // Get an existing profile ID instead of generating a random UUID
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1);
+      
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      throw new Error('Não foi possível encontrar perfis de usuário. Execute "Configurar Ambiente de Teste" primeiro.');
+    }
+    
+    if (!profiles || profiles.length === 0) {
+      throw new Error('Nenhum perfil de usuário encontrado. Execute "Configurar Ambiente de Teste" primeiro ou crie um usuário manualmente.');
+    }
+    
+    // Use an existing profile ID
+    const existingUserId = profiles[0].id;
+    console.log('Using existing user ID for test booking:', existingUserId);
     
     try {
-      // First, try to create the booking directly
+      // Create the booking with an existing user ID
       const bookingData = {
         reference_code: bookingReference,
         status: 'confirmed' as const,
@@ -83,7 +96,7 @@ export const generateSampleBookingAndOrder = async () => {
         booking_date: new Date().toISOString(),
         total_price: 120.00,
         passengers: 2,
-        user_id: testUserId,
+        user_id: existingUserId,
         additional_notes: 'Reserva de teste criada para demonstração'
       };
       
