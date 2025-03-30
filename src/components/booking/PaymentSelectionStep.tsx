@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import StepTransition from './StepTransition';
-import { CreditCard, Landmark, QrCode, Building } from 'lucide-react';
+import { CreditCard, Landmark, QrCode, Building, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface PaymentSelectionStepProps {
   selectedPaymentMethod: string | null;
@@ -15,6 +15,8 @@ interface PaymentSelectionStepProps {
   selectedVehicle: string | null;
   distanceInfo: { distance: number; duration: number } | null;
   tripType: "oneway" | "roundtrip";
+  isFirstStep: boolean;
+  isLastStep: boolean;
 }
 
 const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
@@ -27,13 +29,15 @@ const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
   currentStep,
   selectedVehicle,
   distanceInfo,
-  tripType
+  tripType,
+  isFirstStep,
+  isLastStep
 }) => {
   const paymentMethods = [
     { id: 'credit', name: 'Cartão de Crédito', icon: CreditCard },
     { id: 'pix', name: 'PIX', icon: QrCode },
-    { id: 'bank', name: 'Transferência Bancária', icon: Landmark },
-    { id: 'company', name: 'Faturar para Empresa', icon: Building },
+    { id: 'bank', name: 'Transferência', icon: Landmark },
+    { id: 'company', name: 'Faturar Empresa', icon: Building },
   ];
 
   // Vehicle data - simplified for this step
@@ -85,7 +89,7 @@ const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
           })}
         </div>
         
-        <div className="booking-input-container p-3 bg-blue-900/30 rounded-lg shadow-lg mt-2">
+        <div className="booking-input-container p-3 bg-blue-900/30 rounded-lg shadow-lg mt-3">
           <div className="flex justify-between items-center">
             <span className="text-white/80">Total:</span>
             <span className="text-xl font-bold text-amber-300">{formatCurrency(calculateTripPrice())}</span>
@@ -95,24 +99,26 @@ const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
           </div>
         </div>
 
-        <div className="flex justify-between mt-3">
+        <div className="flex justify-between mt-4">
           <Button 
             onClick={goToPreviousStep}
             variant="outline" 
-            className="px-4 rounded-lg text-white border-amber-300/50 hover:bg-white/10 hover:text-amber-300 shadow-md hover:shadow-lg transition-all duration-300"
+            className="px-3 md:px-4 py-2 h-auto rounded-lg text-white border-amber-300/50 hover:bg-white/10 hover:text-amber-300 shadow-md hover:shadow-lg transition-all duration-300 flex items-center"
+            disabled={isFirstStep}
           >
-            Voltar
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            <span className="hidden md:inline">Voltar</span>
           </Button>
           <Button 
             onClick={goToNextStep} 
             disabled={!canProceedFromStep5()}
-            className="rounded-lg text-[#002366] font-medium h-10 transition-all duration-300 
+            className="px-3 md:px-4 py-2 h-auto rounded-lg text-[#002366] font-medium transition-all duration-300 
                       shadow-xl hover:shadow-2xl relative overflow-hidden bg-gradient-to-r from-amber-400 to-amber-300 
-                      hover:from-amber-300 hover:to-amber-200 border border-amber-300 px-4"
+                      hover:from-amber-300 hover:to-amber-200 border border-amber-300 flex items-center"
           >
-            <span className="relative z-10 flex items-center justify-center">
-              Revisar Reserva
-            </span>
+            <span className="hidden md:inline">Revisar</span>
+            <span className="md:hidden">Revisar</span>
+            <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       </div>

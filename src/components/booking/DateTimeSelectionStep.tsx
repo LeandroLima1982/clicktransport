@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import DateSelector from './DateSelector';
 import TimeSelector from '../TimeSelector';
-import { ArrowRightCircle, Plane, ArrowLeftRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plane, ArrowLeftRight } from 'lucide-react';
 import StepTransition from './StepTransition';
 import PassengerSelector from './PassengerSelector';
 
@@ -27,6 +27,8 @@ interface DateTimeSelectionStepProps {
   canProceedFromStep2: () => boolean;
   direction: number;
   currentStep: number;
+  isFirstStep: boolean;
+  isLastStep: boolean;
 }
 
 const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
@@ -46,7 +48,9 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
   goToPreviousStep,
   canProceedFromStep2,
   direction,
-  currentStep
+  currentStep,
+  isFirstStep,
+  isLastStep
 }) => {
   const handleTripTypeToggle = (checked: boolean) => {
     setTripType(checked ? "roundtrip" : "oneway");
@@ -55,7 +59,7 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
   return (
     <StepTransition step={currentStep} direction={direction}>
       <div className="space-y-3">
-        <div className="flex justify-between items-center mb-1">
+        <div className="flex justify-between items-center mb-2">
           <div className="text-xs font-medium text-white">Tipo de Viagem</div>
           <div className="flex items-center space-x-2">
             <span className="text-[10px] text-white/80 flex items-center">
@@ -123,23 +127,25 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
           </div>
         )}
 
-        <div className="flex justify-between mt-3">
+        <div className="flex justify-between mt-4">
           <Button 
             onClick={goToPreviousStep}
             variant="outline" 
-            className="px-4 rounded-lg text-white border-amber-300/50 hover:bg-white/10 hover:text-amber-300 shadow-md hover:shadow-lg transition-all duration-300"
+            className="px-3 md:px-4 py-2 h-auto rounded-lg text-white border-amber-300/50 hover:bg-white/10 hover:text-amber-300 shadow-md hover:shadow-lg transition-all duration-300 flex items-center"
+            disabled={isFirstStep}
           >
-            Voltar
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            <span className="hidden md:inline">Voltar</span>
           </Button>
           <Button 
             onClick={goToNextStep} 
-            disabled={!canProceedFromStep2()} 
-            className="px-6 rounded-lg text-[#002366] font-medium h-10 transition-all duration-300 
-                    shadow-md hover:shadow-lg relative overflow-hidden bg-gradient-to-r from-amber-400 to-amber-300 
-                    hover:from-amber-300 hover:to-amber-200 border border-amber-300 flex items-center animate-pulse"
+            disabled={!canProceedFromStep2()}
+            className="px-3 md:px-4 py-2 h-auto rounded-lg text-[#002366] font-medium transition-all duration-300 
+                      shadow-xl hover:shadow-2xl relative overflow-hidden bg-gradient-to-r from-amber-400 to-amber-300 
+                      hover:from-amber-300 hover:to-amber-200 border border-amber-300 flex items-center"
           >
-            Próximo
-            <ArrowRightCircle className="ml-2 h-4 w-4" />
+            <span className="hidden md:inline">Próximo</span>
+            <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       </div>
