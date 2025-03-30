@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CreditCard, QrCode, Bank, Building } from 'lucide-react';
+import { CreditCard, QrCode, Landmark, Building } from 'lucide-react';
 
 interface PaymentMethod {
   id: string;
@@ -47,7 +47,7 @@ const PaymentSelection: React.FC<PaymentSelectionProps> = ({
       case 'qr-code':
         return <QrCode className="w-6 h-6" />;
       case 'bank':
-        return <Bank className="w-6 h-6" />;
+        return <Landmark className="w-6 h-6" />; // Changed from Bank to Landmark
       case 'building':
         return <Building className="w-6 h-6" />;
       default:
