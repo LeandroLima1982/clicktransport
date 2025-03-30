@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logWarning, logInfo, logError } from '@/services/monitoring/systemLogService';
+import { useAdminSql } from '@/hooks/useAdminSql';
 
 /**
  * Cleans up all test data from the database
@@ -163,23 +164,77 @@ export const cleanupAllTestData = async () => {
 };
 
 /**
- * This function is now a placeholder, all functionality has been moved to the component's handleForceCleanup
- * method, which uses the SQL execution directly with TRUNCATE CASCADE for maximum effectiveness
+ * Executes a hard reset of database using direct SQL with TRUNCATE CASCADE 
+ * to forcibly remove all data regardless of foreign key constraints
  */
 export const forceCleanupAllData = async () => {
   try {
-    console.log('Force cleanup method called - functionality moved to component');
-    logInfo('Force cleanup method called', 'data-cleanup');
+    logInfo('Starting forced cleanup with TRUNCATE CASCADE', 'data-cleanup');
+    console.log('Executing forced database reset with TRUNCATE CASCADE...');
     
-    return { 
-      success: false, 
-      error: new Error('Esta função agora usa execução SQL direta para limpeza. Use o botão de "Limpeza Forçada".')
-    };
+    // Create an instance of executeSQL function
+    const { executeSQL } = await import('@/hooks/useAdminSql');
+    
+    if (!executeSQL) {
+      throw new Error('executeSQL function not available. Make sure you have admin rights.');
+    }
+    
+    // SQL command to forcibly reset the database regardless of constraints
+    const sqlCommand = `
+      -- Desativar triggers temporariamente
+      SET session_replication_role = 'replica';
+      
+      -- Truncar tabelas de dados que não são essenciais ao sistema
+      TRUNCATE driver_locations CASCADE;
+      TRUNCATE driver_ratings CASCADE;
+      TRUNCATE financial_metrics CASCADE;
+      TRUNCATE service_orders CASCADE;
+      TRUNCATE bookings CASCADE;
+      TRUNCATE investor_company_shares CASCADE;
+      
+      -- Remover registros não-default das tabelas principais
+      DELETE FROM drivers WHERE id != '00000000-0000-0000-0000-000000000000' AND id IS NOT NULL;
+      DELETE FROM vehicles WHERE id != '00000000-0000-0000-0000-000000000000' AND id IS NOT NULL;
+      DELETE FROM companies WHERE id != '00000000-0000-0000-0000-000000000000' AND id IS NOT NULL;
+      DELETE FROM investors WHERE id IS NOT NULL;
+      
+      -- Reativar triggers
+      SET session_replication_role = 'origin';
+    `;
+    
+    try {
+      // Execute the SQL command directly
+      const { data, error } = await executeSQL(sqlCommand);
+      
+      if (error) {
+        console.error('SQL execution error:', error);
+        toast.error('Erro ao executar limpeza forçada', {
+          description: error.message || 'Erro na execução SQL'
+        });
+        
+        throw error;
+      }
+      
+      console.log('Forced cleanup completed successfully:', data);
+      toast.success('Limpeza completa executada com sucesso', {
+        description: 'Todos os dados foram removidos.'
+      });
+      
+      return { success: true, error: null };
+    } catch (sqlError) {
+      console.error('SQL execution failed:', sqlError);
+      toast.error('Falha na execução SQL', {
+        description: sqlError instanceof Error ? sqlError.message : 'Erro desconhecido'
+      });
+      
+      throw sqlError;
+    }
   } catch (error) {
     console.error('Error during force cleanup:', error);
     toast.error('Erro durante limpeza forçada', { 
       description: error instanceof Error ? error.message : 'Erro desconhecido'
     });
+    
     return { success: false, error };
   }
 };

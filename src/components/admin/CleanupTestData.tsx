@@ -47,59 +47,20 @@ const CleanupTestData: React.FC = () => {
       setIsForceLoading(true);
       setResult(null);
       
-      // SQL comando radical para limpar tudo de uma vez usando TRUNCATE com CASCADE
-      const sqlCommand = `
-        -- Desativar triggers temporariamente
-        SET session_replication_role = 'replica';
-        
-        -- Usar TRUNCATE CASCADE para remover todos dados relacionados de uma vez
-        -- Esta abordagem é muito mais eficiente para limpar toda a base de dados de teste
-        
-        -- Primeiro limpar tabelas dependentes
-        TRUNCATE driver_locations CASCADE;
-        TRUNCATE driver_ratings CASCADE;
-        TRUNCATE financial_metrics CASCADE;
-        TRUNCATE service_orders CASCADE;
-        TRUNCATE bookings CASCADE;
-        
-        -- Agora truncar as tabelas principais, mantendo os registros do sistema
-        -- Limpar tabela de drivers
-        DELETE FROM drivers 
-        WHERE id != '00000000-0000-0000-0000-000000000000'
-        AND id IS NOT NULL;
-        
-        -- Limpar tabela de veículos
-        DELETE FROM vehicles 
-        WHERE id != '00000000-0000-0000-0000-000000000000'
-        AND id IS NOT NULL;
-        
-        -- Limpar tabela de empresas
-        DELETE FROM companies 
-        WHERE id != '00000000-0000-0000-0000-000000000000'
-        AND id IS NOT NULL;
-        
-        -- Reativar triggers
-        SET session_replication_role = 'origin';
-      `;
+      // Execute the improved force cleanup function
+      const { success, error } = await forceCleanupAllData();
       
-      console.log('Executando limpeza forçada radical com TRUNCATE CASCADE');
-      const { data, error } = await executeSQL(sqlCommand);
-      
-      if (error) {
-        console.error('Erro na execução SQL:', error);
-        toast.error('Erro ao executar limpeza forçada', { 
-          description: error.message 
-        });
-        setResult({ 
-          success: false, 
-          message: `Erro ao executar limpeza forçada: ${error.message}`
+      if (success) {
+        setResult({
+          success: true,
+          message: "Limpeza forçada executada com sucesso. Todos os dados foram removidos."
         });
       } else {
-        console.log('Limpeza forçada bem-sucedida:', data);
-        toast.success('Limpeza forçada concluída com sucesso');
-        setResult({ 
-          success: true, 
-          message: "Limpeza forçada executada com sucesso. Todos os dados foram removidos."
+        setResult({
+          success: false,
+          message: error instanceof Error 
+            ? `Erro ao executar limpeza forçada: ${error.message}`
+            : "Erro desconhecido durante a limpeza forçada."
         });
       }
     } catch (error) {
@@ -175,17 +136,17 @@ const CleanupTestData: React.FC = () => {
               </Alert>
               
               <p className="text-sm text-muted-foreground mb-4">
-                Esta limpeza forçada usa TRUNCATE CASCADE, que é uma operação poderosa do banco de dados 
-                que ignora todas as restrições de chave estrangeira e remove todos os dados relacionados.
+                Esta limpeza forçada usa comandos SQL diretos para ignorar todas as restrições
+                de chave estrangeira e remover todos os dados relacionados de uma só vez.
               </p>
               
               <Button
                 variant="destructive"
-                disabled={isForceLoading || isExecuting}
+                disabled={isForceLoading}
                 onClick={handleForceCleanup}
                 className="w-full"
               >
-                {isForceLoading || isExecuting ? (
+                {isForceLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Executando limpeza forçada...
