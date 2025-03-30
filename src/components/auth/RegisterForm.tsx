@@ -32,7 +32,7 @@ const contactSchema = z.object({
   phone: z.string().min(10, 'Telefone inválido').max(15, 'Telefone muito longo'),
 });
 
-// Modified to not use refine which returns ZodEffects instead of ZodObject
+// Modified password schema without using refine which returns ZodEffects
 const passwordSchema = z.object({
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
   confirmPassword: z.string().min(6, 'Por favor confirme sua senha'),

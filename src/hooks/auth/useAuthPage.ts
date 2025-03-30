@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -130,9 +131,9 @@ export const useAuthPage = () => {
         cnpj
       };
       
-      const { error } = await signUp(email, password, userData);
+      const result = await signUp(email, password, userData);
       
-      if (error) throw error;
+      if (result.error) throw result.error;
       
       // Show different messages based on account type
       if (finalAccountType === 'company') {
