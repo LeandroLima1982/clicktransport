@@ -83,6 +83,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
           onRegisterSuccess={handleRegisterSuccess} 
           onShowLogin={() => setShowRegister(false)}
           goToPreviousStep={goToPreviousStep}
+          direction={direction}
+          currentStep={currentStep}
+          isFirstStep={isFirstStep}
+          isLastStep={isLastStep}
         />
       ) : (
         <div className="space-y-4">
