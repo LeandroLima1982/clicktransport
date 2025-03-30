@@ -412,7 +412,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
 
   return (
     <Dialog open={isOpen} onOpenChange={handleCloseAndReset}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-b from-[#002366] to-[#001a4d] text-white border-amber-300/30">
         {showLoginForm ? (
           <LoginForm 
             onLoginSuccess={handleLoginSuccess} 
@@ -441,10 +441,10 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
         ) : (
           <>
             <div className="flex flex-col">
-              <DialogTitle className="text-xl font-bold md:text-2xl">
+              <DialogTitle className="text-xl font-bold md:text-2xl text-white">
                 Finalize sua reserva
               </DialogTitle>
-              <div className="text-sm text-gray-500 mt-1">
+              <div className="text-sm text-amber-300/80 mt-1">
                 {bookingData.origin} → {bookingData.destination}
               </div>
               
@@ -453,11 +453,11 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
                   {['Veículo', 'Detalhes', 'Pagamento', 'Passageiros', 'Confirmação'].map((step, index) => (
                     <div 
                       key={index} 
-                      className={`flex flex-col items-center ${index + 1 <= currentStep ? 'text-primary' : 'text-gray-400'}`}
+                      className={`flex flex-col items-center ${index + 1 <= currentStep ? 'text-amber-300' : 'text-gray-400'}`}
                     >
                       <div className={`w-7 h-7 md:w-9 md:h-9 flex items-center justify-center rounded-full mb-1 text-xs md:text-sm ${
-                        index + 1 < currentStep ? 'bg-primary text-white' : 
-                        index + 1 === currentStep ? 'border-2 border-primary text-primary' : 
+                        index + 1 < currentStep ? 'bg-amber-400 text-[#002366]' : 
+                        index + 1 === currentStep ? 'border-2 border-amber-300 text-amber-300' : 
                         'border-2 border-gray-300 text-gray-400'
                       }`}>
                         {index + 1 < currentStep ? <CheckCircle className="w-4 h-4 md:w-5 md:h-5" /> : index + 1}
@@ -471,12 +471,12 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
                   {renderStepContent()}
                 </div>
                 
-                <div className="flex justify-between pt-3 border-t border-gray-200 mt-2">
+                <div className="flex justify-between pt-3 border-t border-amber-300/20 mt-2">
                   <Button
                     variant="outline"
                     onClick={handlePrevious}
                     disabled={currentStep === 1}
-                    className="flex items-center shadow-md hover:shadow-lg transition-all duration-300 rounded-lg"
+                    className="flex items-center shadow-md hover:shadow-lg transition-all duration-300 rounded-lg text-white border-amber-300/50 hover:bg-white/10 hover:text-amber-300"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Anterior

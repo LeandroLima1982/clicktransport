@@ -25,7 +25,7 @@ const PassengerSelectionStep: React.FC<PassengerSelectionStepProps> = ({
   return (
     <StepTransition step={currentStep} direction={direction}>
       <div className="space-y-3">
-        <div className="booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow text-center rounded-lg">
+        <div className="booking-input-container p-3 hover:bg-white/20 shadow-lg input-shadow text-center rounded-lg bg-gradient-to-r from-[#002366]/80 to-[#001a4d] border border-amber-300/20">
           <h3 className="text-lg font-semibold text-white mb-1">Confirmar Reserva</h3>
           <p className="text-white/80 mb-2 text-sm">
             Você está pronto para confirmar sua reserva com {passengers} {parseInt(passengers) === 1 ? 'passageiro' : 'passageiros'}.
