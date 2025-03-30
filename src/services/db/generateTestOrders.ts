@@ -214,12 +214,20 @@ export const createManualServiceOrder = async (companyId?: string) => {
             (rpcError instanceof Error ? rpcError.message : 'Erro desconhecido'));
         }
         
-        if (rpcResult?.error) {
-          console.error('RPC function returned an error:', rpcResult.error);
-          throw new Error('Erro retornado pela função RPC: ' + rpcResult.error);
+        // Handle response structure correctly with proper type checking
+        if (rpcResult && typeof rpcResult === 'object') {
+          // Check if rpcResult contains an error property
+          if ('error' in rpcResult && rpcResult.error) {
+            console.error('RPC function returned an error:', rpcResult.error);
+            throw new Error('Erro retornado pela função RPC: ' + String(rpcResult.error));
+          }
+          
+          console.log('RPC function call successful:', rpcResult);
+          toast.success('Ordem de serviço manual criada com sucesso', { duration: 3000 });
+          return { success: true, serviceOrder: rpcResult, error: null };
         }
         
-        console.log('RPC function call successful:', rpcResult);
+        console.log('RPC function call returned:', rpcResult);
         toast.success('Ordem de serviço manual criada com sucesso', { duration: 3000 });
         return { success: true, serviceOrder: rpcResult, error: null };
       } catch (rpcError) {
