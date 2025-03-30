@@ -225,10 +225,10 @@ const BookingForm: React.FC = () => {
 
   return (
     <div className="w-full bg-[#002366] rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-md border-b border-l border-r border-[#D4AF37] shadow-[0_15px_50px_rgba(0,0,0,0.5)] glass-morphism transition-all duration-300">
-      <div className="relative pt-6 md:pt-7 pb-6 md:pb-8 px-5 md:px-6 lg:px-8">
+      <div className="relative pt-4 md:pt-5 pb-5 md:pb-6 px-4 md:px-5 lg:px-6">
         <BookingProgress currentStep={currentStep} totalSteps={totalSteps} />
         
-        <div className="mt-6">
+        <div className="mt-3">
           {renderStep()}
         </div>
 

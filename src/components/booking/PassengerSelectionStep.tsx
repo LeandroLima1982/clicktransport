@@ -35,7 +35,7 @@ const PassengerSelectionStep: React.FC<PassengerSelectionStepProps> = ({
           </p>
         </div>
 
-        <div className="flex justify-between mt-2">
+        <div className="flex justify-between mt-3">
           <Button 
             onClick={goToPreviousStep}
             variant="outline" 
@@ -46,7 +46,7 @@ const PassengerSelectionStep: React.FC<PassengerSelectionStepProps> = ({
           <Button 
             onClick={handleBooking} 
             disabled={!canFinishBooking()} 
-            className="rounded-lg text-[#002366] text-lg font-medium h-11 transition-all duration-300 
+            className="rounded-lg text-[#002366] font-medium h-10 transition-all duration-300 
                       shadow-xl hover:shadow-2xl relative overflow-hidden bg-gradient-to-r from-amber-400 to-amber-300 
                       hover:from-amber-300 hover:to-amber-200 border border-amber-300 px-4 animate-pulse"
           >

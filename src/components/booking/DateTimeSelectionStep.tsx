@@ -123,7 +123,7 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
           </div>
         )}
 
-        <div className="flex justify-between mt-2">
+        <div className="flex justify-between mt-3">
           <Button 
             onClick={goToPreviousStep}
             variant="outline" 

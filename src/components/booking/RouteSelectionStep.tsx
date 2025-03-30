@@ -107,7 +107,7 @@ const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
           </div>
         </div>
 
-        <div className="flex justify-center mt-2">
+        <div className="flex justify-center mt-3">
           <Button 
             onClick={goToNextStep} 
             disabled={!canProceedFromStep1()} 
