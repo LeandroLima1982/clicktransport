@@ -197,7 +197,15 @@ export const createManualServiceOrder = async (companyId?: string) => {
       // Use the admin RPC function to bypass RLS policies
       try {
         console.log('Calling admin_create_test_service_order RPC function...');
-        const { data: rpcResult, error: rpcError } = await supabase.rpc(
+        
+        // Define the type for the expected response structure
+        type RPCResponse = {
+          error?: string | null;
+          detail?: string;
+          [key: string]: any;
+        };
+        
+        const { data: rpcResult, error: rpcError } = await supabase.rpc<RPCResponse>(
           'admin_create_test_service_order',
           {
             company_id: companyId,
