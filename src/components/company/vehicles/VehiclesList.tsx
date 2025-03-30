@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Table,
@@ -41,47 +42,49 @@ const VehiclesList: React.FC<VehiclesListProps> = ({
       case 'sedan':
       case 'hatch':
       case 'coupe':
-        return <Car className="h-6 w-6 text-gray-700" />;
+        return <Car className="h-7 w-7 text-gray-700" />;
       case 'suv':
       case 'van':
-        return <CarTaxiFront className="h-6 w-6 text-gray-700" />;
+        return <CarTaxiFront className="h-7 w-7 text-gray-700" />;
       case 'bus':
-        return <Bus className="h-6 w-6 text-gray-700" />;
+        return <Bus className="h-7 w-7 text-gray-700" />;
       case 'truck':
-        return <Truck className="h-6 w-6 text-gray-700" />;
+        return <Truck className="h-7 w-7 text-gray-700" />;
       case 'tractor':
-        return <Tractor className="h-6 w-6 text-gray-700" />;
+        return <Tractor className="h-7 w-7 text-gray-700" />;
       case 'motorcycle':
-        return <Bike className="h-6 w-6 text-gray-700" />;
+        return <Bike className="h-7 w-7 text-gray-700" />;
       default:
-        return <Car className="h-6 w-6 text-gray-700" />;
+        return <Car className="h-7 w-7 text-gray-700" />;
     }
   };
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-lg shadow-sm border border-gray-100">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-gray-50">
           <TableRow>
-            <TableHead className="w-12"></TableHead>
-            <TableHead>Modelo</TableHead>
-            <TableHead>Placa</TableHead>
-            <TableHead>Ano</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Ações</TableHead>
+            <TableHead className="w-16 text-center"></TableHead>
+            <TableHead className="font-semibold">Modelo</TableHead>
+            <TableHead className="font-semibold">Placa</TableHead>
+            <TableHead className="font-semibold">Ano</TableHead>
+            <TableHead className="font-semibold">Status</TableHead>
+            <TableHead className="font-semibold">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {vehicles.map((vehicle) => (
-            <TableRow key={vehicle.id}>
+            <TableRow key={vehicle.id} className="hover:bg-gray-50/50">
               <TableCell className="pl-4 flex justify-center">
-                {getVehicleIcon(vehicle.type)}
+                <div className="bg-gray-100 rounded-full p-2 flex items-center justify-center">
+                  {getVehicleIcon(vehicle.type)}
+                </div>
               </TableCell>
               <TableCell className="font-medium">{vehicle.model}</TableCell>
               <TableCell>{vehicle.license_plate}</TableCell>
               <TableCell>{vehicle.year || '-'}</TableCell>
               <TableCell>
-                <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadgeClass(vehicle.status)}`}>
+                <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getStatusBadgeClass(vehicle.status)}`}>
                   {translateStatus(vehicle.status)}
                 </span>
               </TableCell>
@@ -91,7 +94,7 @@ const VehiclesList: React.FC<VehiclesListProps> = ({
                     if (open) onEdit(vehicle);
                   }}>
                     <SheetTrigger asChild>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="rounded-lg">
                         <Edit className="h-4 w-4" />
                       </Button>
                     </SheetTrigger>
@@ -100,6 +103,7 @@ const VehiclesList: React.FC<VehiclesListProps> = ({
                   <Button 
                     variant="outline" 
                     size="sm"
+                    className="rounded-lg hover:bg-red-50"
                     onClick={() => onDelete(vehicle.id)}
                   >
                     <Trash className="h-4 w-4 text-red-500" />

@@ -97,11 +97,11 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   };
 
   return (
-    <div className={`space-y-1 ${className}`}>
+    <div className={`space-y-2 ${className}`}>
       {label && <Label htmlFor="vehicle-selector">{label}</Label>}
       <select
         id="vehicle-selector"
-        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
         value={selectedVehicleId || ''}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -114,16 +114,16 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
       </select>
       
       {selectedVehicleId && (
-        <div className="mt-3 text-sm text-gray-500 flex items-center justify-start p-2 bg-gray-50 rounded-md">
-          <div className="mr-3 flex justify-center items-center">
+        <div className="mt-3 text-sm text-gray-600 flex items-center justify-start p-4 bg-gray-50 rounded-lg shadow-sm">
+          <div className="mr-4 flex justify-center items-center bg-primary/10 p-3 rounded-full">
             {getVehicleIcon(vehicles.find(v => v.id === selectedVehicleId)?.type, 6)}
           </div>
           <div className="flex flex-col">
-            <span>
+            <span className="font-medium">
               {vehicles.find(v => v.id === selectedVehicleId)?.model} ({vehicles.find(v => v.id === selectedVehicleId)?.license_plate})
             </span>
             {vehicles.find(v => v.id === selectedVehicleId) && (
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-gray-500 mt-1">
                 Capacidade: {getVehicleCapacity(vehicles.find(v => v.id === selectedVehicleId)!)} passageiros
               </span>
             )}
