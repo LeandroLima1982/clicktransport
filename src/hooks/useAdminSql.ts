@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 export const useAdminSql = () => {
   const [isExecuting, setIsExecuting] = useState(false);
@@ -9,20 +10,27 @@ export const useAdminSql = () => {
   
   const executeSQL = async (query: string) => {
     if (userRole !== 'admin') {
+      toast.error('Apenas administradores podem executar comandos SQL');
       throw new Error('Only admins can execute SQL commands');
     }
     
     try {
       setIsExecuting(true);
       
-      // Use type assertion to bypass TypeScript checking
-      // We know the function exists but it's not in the generated types
-      const { data, error } = await (supabase.rpc as any)('exec_sql', {
+      // Usando a função exec_sql que acabamos de criar
+      const { data, error } = await supabase.rpc('exec_sql', {
         query
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('SQL execution error:', error);
+        toast.error('Erro ao executar SQL', { 
+          description: error.message 
+        });
+        throw error;
+      }
       
+      console.log('SQL execution result:', data);
       return { data, error: null };
     } catch (error: any) {
       console.error('SQL execution error:', error);

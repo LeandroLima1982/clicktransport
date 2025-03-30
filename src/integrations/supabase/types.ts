@@ -841,6 +841,12 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      exec_sql: {
+        Args: {
+          query: string
+        }
+        Returns: Json
+      }
       get_driver_rating: {
         Args: {
           driver_id: string
