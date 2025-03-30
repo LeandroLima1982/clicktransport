@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Check, MapPin, Calendar, Users, CreditCard } from 'lucide-react';
+import { Check, MapPin, Calendar, Users, Car, CreditCard, CheckCircle, CheckCheck } from 'lucide-react';
 
 interface BookingProgressProps {
   currentStep: number;
@@ -12,7 +12,10 @@ const BookingProgress: React.FC<BookingProgressProps> = ({ currentStep, totalSte
     { icon: MapPin, label: 'Trajeto' },
     { icon: Calendar, label: 'Data' },
     { icon: Users, label: 'Detalhes' },
-    { icon: CreditCard, label: 'Confirmação' }
+    { icon: Car, label: 'Veículo' },
+    { icon: CreditCard, label: 'Pagamento' },
+    { icon: CheckCircle, label: 'Confirmar' },
+    { icon: CheckCheck, label: 'Concluído' }
   ];
 
   return (
@@ -35,16 +38,16 @@ const BookingProgress: React.FC<BookingProgressProps> = ({ currentStep, totalSte
           return (
             <div key={index} className="flex flex-col items-center z-10">
               <div 
-                className={`w-11 h-11 rounded-full flex items-center justify-center 
+                className={`w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center 
                           transition-all duration-300 ${
                             isCompleted ? 'bg-amber-400 text-[#002366] shadow-lg' : 
                             isActive ? 'bg-white/20 border-2 border-amber-400 text-amber-400' : 
                             'bg-blue-900/30 border-2 border-blue-800/30 text-gray-300'
                           }`}
               >
-                {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                {isCompleted ? <Check className="w-4 h-4 md:w-5 md:h-5" /> : <Icon className="w-4 h-4 md:w-5 md:h-5" />}
               </div>
-              <span className={`mt-2 text-xs font-medium transition-colors duration-300 ${
+              <span className={`mt-1 text-[9px] md:text-xs font-medium transition-colors duration-300 ${
                 isCompleted || isActive ? 'text-white' : 'text-gray-300'
               }`}>
                 {step.label}
