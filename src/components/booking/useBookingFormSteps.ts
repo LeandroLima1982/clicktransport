@@ -47,3 +47,5 @@ export const useBookingFormSteps = () => {
     isLastStep
   };
 };
+
+export default useBookingFormSteps;

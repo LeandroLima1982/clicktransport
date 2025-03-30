@@ -24,6 +24,8 @@ interface BookingConfirmationStepProps {
   canProceedFromStep6: () => boolean;
   direction: number;
   currentStep: number;
+  isFirstStep: boolean;
+  isLastStep: boolean;
 }
 
 const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = ({
@@ -43,7 +45,9 @@ const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = ({
   isSubmitting,
   canProceedFromStep6,
   direction,
-  currentStep
+  currentStep,
+  isFirstStep,
+  isLastStep
 }) => {
   // Vehicle data - simplified for this step
   const vehicles = {

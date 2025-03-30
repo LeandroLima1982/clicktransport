@@ -23,6 +23,8 @@ interface VehicleSelectionStepProps {
   direction: number;
   currentStep: number;
   distanceInfo: { distance: number; duration: number } | null;
+  isFirstStep: boolean;
+  isLastStep: boolean;
 }
 
 const VehicleSelectionStep: React.FC<VehicleSelectionStepProps> = ({
@@ -33,7 +35,9 @@ const VehicleSelectionStep: React.FC<VehicleSelectionStepProps> = ({
   canProceedFromStep4,
   direction,
   currentStep,
-  distanceInfo
+  distanceInfo,
+  isFirstStep,
+  isLastStep
 }) => {
   const vehicles: Vehicle[] = [
     {
