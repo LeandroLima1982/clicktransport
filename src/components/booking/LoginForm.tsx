@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +16,7 @@ interface LoginFormProps {
   currentStep: number;
   isFirstStep: boolean;
   isLastStep: boolean;
-  onShowRegister?: () => void; // Added to match usage in BookingSteps.tsx
+  onShowRegister?: () => void;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ 
@@ -51,7 +50,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
       if (data?.session) {
         console.log('Login successful, session established');
         toast.success('Login realizado com sucesso!');
-        onLoginSuccess(); // Proceed with booking flow
+        onLoginSuccess();
       } else {
         throw new Error('Não foi possível estabelecer sessão após login');
       }

@@ -16,6 +16,7 @@ import BookingComplete from './steps/BookingComplete';
 import PassengerInfoFields from './PassengerInfoFields';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import useBookingFormSteps from './useBookingFormSteps';
 
 const defaultVehicleOptions: Vehicle[] = [
   {
@@ -74,7 +75,18 @@ interface BookingStepsProps {
 }
 
 const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClose }) => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const {
+    currentStep,
+    setCurrentStep,
+    direction,
+    totalSteps,
+    goToNextStep,
+    goToPreviousStep,
+    goToStep,
+    isFirstStep,
+    isLastStep
+  } = useBookingFormSteps();
+
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -433,6 +445,10 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
               setShowLoginForm(true);
             }}
             goToPreviousStep={goToPreviousStep}
+            direction={direction}
+            currentStep={currentStep}
+            isFirstStep={isFirstStep}
+            isLastStep={isLastStep}
           />
         ) : bookingComplete ? (
           <BookingComplete
