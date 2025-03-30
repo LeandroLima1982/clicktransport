@@ -7,9 +7,9 @@ import BookingProgress from './booking/BookingProgress';
 import { useBookingFormSteps } from './booking/useBookingFormSteps';
 import RouteSelectionStep from './booking/RouteSelectionStep';
 import DateTimeSelectionStep from './booking/DateTimeSelectionStep';
-import PassengerSelectionStep from './booking/PassengerSelectionStep';
 import VehicleSelectionStep from './booking/VehicleSelectionStep';
 import PaymentSelectionStep from './booking/PaymentSelectionStep';
+import PassengerSelectionStep from './booking/PassengerSelectionStep';
 import BookingConfirmationStep from './booking/BookingConfirmationStep';
 import BookingCompleteStep from './booking/BookingCompleteStep';
 import { toast } from 'sonner';
@@ -161,19 +161,24 @@ const BookingForm: React.FC = () => {
   };
   
   const canProceedFromStep3 = (): boolean => {
-    return true; // Passenger details can be filled later
-  };
-  
-  const canProceedFromStep4 = (): boolean => {
     return !!selectedVehicle;
   };
   
-  const canProceedFromStep5 = (): boolean => {
+  const canProceedFromStep4 = (): boolean => {
     return !!selectedPaymentMethod;
   };
   
+  const canProceedFromStep5 = (): boolean => {
+    const passengerCount = parseInt(passengers, 10);
+    for (let i = 0; i < passengerCount; i++) {
+      if (!passengerData[i]?.name || !passengerData[i]?.phone) {
+        return false;
+      }
+    }
+    return true;
+  };
+  
   const canProceedFromStep6 = (): boolean => {
-    // Validation for confirmation step
     return true;
   };
   
@@ -181,10 +186,8 @@ const BookingForm: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Generate booking reference
       const reference = 'TRF-' + Math.floor(100000 + Math.random() * 900000);
       setBookingReference(reference);
       setBookingComplete(true);
@@ -249,14 +252,15 @@ const BookingForm: React.FC = () => {
       
       case 3:
         return (
-          <PassengerSelectionStep 
-            passengers={passengers}
-            setPassengers={setPassengers}
-            goToPreviousStep={goToPreviousStep}
+          <VehicleSelectionStep
+            selectedVehicle={selectedVehicle}
+            setSelectedVehicle={setSelectedVehicle}
             goToNextStep={goToNextStep}
-            canProceedFromStep3={canProceedFromStep3}
+            goToPreviousStep={goToPreviousStep}
+            canProceedFromStep4={canProceedFromStep3}
             direction={direction}
             currentStep={currentStep}
+            distanceInfo={distanceInfo}
             isFirstStep={isFirstStep}
             isLastStep={isLastStep}
           />
@@ -264,15 +268,17 @@ const BookingForm: React.FC = () => {
         
       case 4:
         return (
-          <VehicleSelectionStep
-            selectedVehicle={selectedVehicle}
-            setSelectedVehicle={setSelectedVehicle}
+          <PaymentSelectionStep
+            selectedPaymentMethod={selectedPaymentMethod}
+            setSelectedPaymentMethod={setSelectedPaymentMethod}
             goToNextStep={goToNextStep}
             goToPreviousStep={goToPreviousStep}
-            canProceedFromStep4={canProceedFromStep4}
+            canProceedFromStep5={canProceedFromStep4}
             direction={direction}
             currentStep={currentStep}
+            selectedVehicle={selectedVehicle}
             distanceInfo={distanceInfo}
+            tripType={tripType}
             isFirstStep={isFirstStep}
             isLastStep={isLastStep}
           />
@@ -280,17 +286,16 @@ const BookingForm: React.FC = () => {
         
       case 5:
         return (
-          <PaymentSelectionStep
-            selectedPaymentMethod={selectedPaymentMethod}
-            setSelectedPaymentMethod={setSelectedPaymentMethod}
-            goToNextStep={goToNextStep}
+          <PassengerSelectionStep 
+            passengers={passengers}
+            setPassengers={setPassengers}
+            passengerData={passengerData}
+            setPassengerData={setPassengerData}
             goToPreviousStep={goToPreviousStep}
-            canProceedFromStep5={canProceedFromStep5}
+            goToNextStep={goToNextStep}
+            canProceedFromStep3={canProceedFromStep5}
             direction={direction}
             currentStep={currentStep}
-            selectedVehicle={selectedVehicle}
-            distanceInfo={distanceInfo}
-            tripType={tripType}
             isFirstStep={isFirstStep}
             isLastStep={isLastStep}
           />
@@ -347,7 +352,6 @@ const BookingForm: React.FC = () => {
           currentStep={currentStep} 
           totalSteps={7} 
           onStepClick={(step) => {
-            // Only allow going back to completed steps
             if (step < currentStep) {
               goToStep(step);
             }

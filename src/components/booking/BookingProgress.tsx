@@ -16,9 +16,9 @@ const BookingProgress: React.FC<BookingProgressProps> = ({
   const steps = [
     { icon: MapPin, label: 'Trajeto', step: 1 },
     { icon: Calendar, label: 'Data', step: 2 },
-    { icon: Users, label: 'Pessoas', step: 3 },
-    { icon: Car, label: 'Veículo', step: 4 },
-    { icon: CreditCard, label: 'Pagamento', step: 5 },
+    { icon: Car, label: 'Veículo', step: 3 },
+    { icon: CreditCard, label: 'Pagamento', step: 4 },
+    { icon: Users, label: 'Pessoas', step: 5 },
     { icon: CheckCircle, label: 'Confirmar', step: 6 },
     { icon: Check, label: 'Concluído', step: 7 }
   ];
