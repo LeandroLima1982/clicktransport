@@ -41,12 +41,12 @@ const DriverFilters: React.FC<DriverFiltersProps> = ({
     <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 bg-slate-50 p-4 rounded-lg">
       <div className="flex-1">
         <label className="text-sm font-medium block mb-1">Empresa</label>
-        <Select value={selectedCompany || ""} onValueChange={(value) => onCompanyChange(value || null)}>
+        <Select value={selectedCompany || "all"} onValueChange={(value) => onCompanyChange(value === "all" ? null : value)}>
           <SelectTrigger>
             <SelectValue placeholder="Todas as empresas" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas as empresas</SelectItem>
+            <SelectItem value="all">Todas as empresas</SelectItem>
             {companies.map(company => (
               <SelectItem key={company.id} value={company.id}>{company.name}</SelectItem>
             ))}
@@ -56,12 +56,12 @@ const DriverFilters: React.FC<DriverFiltersProps> = ({
 
       <div className="flex-1">
         <label className="text-sm font-medium block mb-1">Status</label>
-        <Select value={selectedStatus || ""} onValueChange={(value) => onStatusChange(value || null)}>
+        <Select value={selectedStatus || "all"} onValueChange={(value) => onStatusChange(value === "all" ? null : value)}>
           <SelectTrigger>
             <SelectValue placeholder="Todos os status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os status</SelectItem>
+            <SelectItem value="all">Todos os status</SelectItem>
             <SelectItem value="active">Ativo</SelectItem>
             <SelectItem value="inactive">Inativo</SelectItem>
             <SelectItem value="on_trip">Em viagem</SelectItem>

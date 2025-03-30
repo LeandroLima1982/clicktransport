@@ -60,7 +60,7 @@ const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
                   className="pl-8 pr-3 py-2 text-sm booking-input h-9 focus:border-[#F8D748] focus:ring-[#F8D748] placeholder:text-white/50" 
                 />
               </div>
-              <Select value={originCityId} onValueChange={setOriginCityId}>
+              <Select value={originCityId || "none"} onValueChange={setOriginCityId}>
                 <SelectTrigger className="h-9 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
                   <SelectValue placeholder="Selecione cidade" className="text-white/50" />
                 </SelectTrigger>
@@ -91,7 +91,7 @@ const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
                   className="pl-8 pr-3 py-2 text-sm booking-input h-9 focus:border-[#F8D748] focus:ring-[#F8D748] placeholder:text-white/50" 
                 />
               </div>
-              <Select value={destinationCityId} onValueChange={setDestinationCityId}>
+              <Select value={destinationCityId || "none"} onValueChange={setDestinationCityId}>
                 <SelectTrigger className="h-9 booking-input text-white border-[#D4AF37]/60 focus:border-[#F8D748] focus:ring-[#F8D748]">
                   <SelectValue placeholder="Selecione cidade" className="text-white/50" />
                 </SelectTrigger>
