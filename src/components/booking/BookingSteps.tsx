@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -420,6 +419,11 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
               setShowLoginForm(false);
               setShowRegisterForm(true);
             }}
+            goToPreviousStep={goToPreviousStep}
+            direction={direction}
+            currentStep={currentStep}
+            isFirstStep={isFirstStep}
+            isLastStep={isLastStep}
           />
         ) : showRegisterForm ? (
           <RegisterForm 
@@ -428,6 +432,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
               setShowRegisterForm(false);
               setShowLoginForm(true);
             }}
+            goToPreviousStep={goToPreviousStep}
           />
         ) : bookingComplete ? (
           <BookingComplete

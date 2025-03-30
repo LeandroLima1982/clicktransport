@@ -17,6 +17,7 @@ interface LoginFormProps {
   currentStep: number;
   isFirstStep: boolean;
   isLastStep: boolean;
+  onShowRegister?: () => void; // Added to match usage in BookingSteps.tsx
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ 
@@ -25,7 +26,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
   direction,
   currentStep,
   isFirstStep,
-  isLastStep
+  isLastStep,
+  onShowRegister
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,6 +66,14 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const handleRegisterSuccess = () => {
     toast.success('Cadastro realizado com sucesso!');
     onLoginSuccess();
+  };
+
+  const handleShowRegister = () => {
+    if (onShowRegister) {
+      onShowRegister();
+    } else {
+      setShowRegister(true);
+    }
   };
 
   return (
@@ -128,7 +138,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
               Não tem uma conta?{' '}
               <button 
                 className="font-semibold text-amber-300 hover:underline" 
-                onClick={() => setShowRegister(true)}
+                onClick={handleShowRegister}
               >
                 Cadastre-se
               </button>

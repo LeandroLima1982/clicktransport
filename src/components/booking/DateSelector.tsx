@@ -14,10 +14,13 @@ interface DateSelectorProps {
   label?: string;
   hideLabel?: boolean;
   date: Date | undefined;
-  onSelect: (date: Date | undefined) => void;
+  onDateChange?: (date: Date | undefined) => void;  // Changed from onSelect to onDateChange
+  onSelect?: (date: Date | undefined) => void;      // Keep onSelect for backward compatibility
   disabledDates?: (date: Date) => boolean;
   isConnected?: boolean;
   position?: 'left' | 'right';
+  className?: string;                               // Added className prop
+  minDate?: Date;                                   // Added minDate prop
 }
 
 const DateSelector: React.FC<DateSelectorProps> = ({
@@ -25,9 +28,12 @@ const DateSelector: React.FC<DateSelectorProps> = ({
   hideLabel = false,
   date,
   onSelect,
+  onDateChange,
   disabledDates,
   isConnected = false,
-  position = 'left'
+  position = 'left',
+  className = '',
+  minDate
 }) => {
   const isMobile = useIsMobile();
   const [open, setOpen] = React.useState(false);
@@ -35,7 +41,9 @@ const DateSelector: React.FC<DateSelectorProps> = ({
   
   // Handle date selection and auto-close
   const handleSelect = (newDate: Date | undefined) => {
-    onSelect(newDate);
+    // Support both callback styles
+    if (onSelect) onSelect(newDate);
+    if (onDateChange) onDateChange(newDate);
     setOpen(false);
   };
   
@@ -49,7 +57,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
   };
   
   return (
-    <div className={hideLabel ? "" : "space-y-2"}>
+    <div className={`${hideLabel ? "" : "space-y-2"} ${className}`}>
       {!hideLabel && label && (
         <Label className="text-gray-700 block text-sm font-medium">
           {label}
@@ -76,7 +84,11 @@ const DateSelector: React.FC<DateSelectorProps> = ({
             onSelect={handleSelect} 
             initialFocus 
             className={cn("p-3 pointer-events-auto")}
-            disabled={disabledDates}
+            disabled={(value) => {
+              if (disabledDates) return disabledDates(value);
+              if (minDate) return value < minDate;
+              return false;
+            }}
             locale={ptBR}
             classNames={{
               day_selected: "bg-amber-400 text-amber-900 hover:bg-amber-400 hover:text-amber-900 focus:bg-amber-400 focus:text-amber-900",
