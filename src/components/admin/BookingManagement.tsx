@@ -52,28 +52,14 @@ const BookingManagement: React.FC = () => {
   const fetchBookings = async () => {
     setIsLoading(true);
     try {
-      // Fetch bookings without company relation (fixed query)
       const { data, error } = await supabase
         .from('bookings')
-        .select('*')
+        .select('*, companies(name)')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      // Get companies for association
-      const { data: companies } = await supabase
-        .from('companies')
-        .select('id, name');
-      
-      // Create map of company IDs to names
-      const companyMap = new Map();
-      if (companies) {
-        companies.forEach(company => {
-          companyMap.set(company.id, company.name);
-        });
-      }
-      
-      // Manually format bookings with company names where available
+      // Format the bookings with proper typing and structure
       const formattedBookings = data?.map(booking => {
         // Ensure booking status is one of the allowed values
         const validStatus = ['pending', 'confirmed', 'completed', 'cancelled'].includes(booking.status) 
@@ -83,8 +69,8 @@ const BookingManagement: React.FC = () => {
         return {
           ...booking,
           status: validStatus,
-          company_id: booking.company_id || null,
-          company_name: booking.company_id ? companyMap.get(booking.company_id) : null
+          company_name: booking.company_name || booking.companies?.name || null,
+          company_id: booking.company_id || null
         } as Booking;
       }) || [];
       

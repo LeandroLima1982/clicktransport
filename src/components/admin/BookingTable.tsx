@@ -14,8 +14,7 @@ import {
   SheetContent, 
   SheetDescription, 
   SheetHeader, 
-  SheetTitle, 
-  SheetTrigger 
+  SheetTitle 
 } from "@/components/ui/sheet";
 import { 
   Select, 
@@ -78,7 +77,7 @@ const BookingTable: React.FC<BookingTableProps> = ({ bookings, isLoading, onRefr
     setSelectedBooking(booking);
     setShowBookingDetails(true);
     
-    // If booking is associated with a company, fetch available companies
+    // If booking is not associated with a company, fetch available companies
     if (!booking.company_id) {
       await fetchCompanies();
     }
@@ -150,19 +149,20 @@ const BookingTable: React.FC<BookingTableProps> = ({ bookings, isLoading, onRefr
     try {
       setIsUpdating(true);
       
+      // Find selected company name
+      const companyName = companies.find(c => c.id === selectedCompany)?.name || 'Empresa';
+      
       // Update booking with company assignment
       const { error } = await supabase
         .from('bookings')
         .update({ 
           company_id: selectedCompany,
+          company_name: companyName,
           status: 'confirmed' 
         })
         .eq('id', selectedBooking.id);
       
       if (error) throw error;
-      
-      // Find company name
-      const companyName = companies.find(c => c.id === selectedCompany)?.name || 'Empresa';
       
       toast.success(`Reserva atribuída a ${companyName}`);
       onRefreshData();

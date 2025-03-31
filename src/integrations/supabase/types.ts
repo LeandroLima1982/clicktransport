@@ -13,10 +13,20 @@ export type Database = {
         Row: {
           additional_notes: string | null
           booking_date: string
+          client_email: string | null
+          client_name: string | null
+          client_phone: string | null
+          company_id: string | null
+          company_name: string | null
+          company_phone: string | null
           created_at: string
           destination: string
+          driver_id: string | null
+          driver_name: string | null
+          driver_phone: string | null
           id: string
           origin: string
+          passenger_data: Json | null
           passengers: number | null
           reference_code: string
           return_date: string | null
@@ -29,10 +39,20 @@ export type Database = {
         Insert: {
           additional_notes?: string | null
           booking_date: string
+          client_email?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          company_id?: string | null
+          company_name?: string | null
+          company_phone?: string | null
           created_at?: string
           destination: string
+          driver_id?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
           id?: string
           origin: string
+          passenger_data?: Json | null
           passengers?: number | null
           reference_code: string
           return_date?: string | null
@@ -45,10 +65,20 @@ export type Database = {
         Update: {
           additional_notes?: string | null
           booking_date?: string
+          client_email?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          company_id?: string | null
+          company_name?: string | null
+          company_phone?: string | null
           created_at?: string
           destination?: string
+          driver_id?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
           id?: string
           origin?: string
+          passenger_data?: Json | null
           passengers?: number | null
           reference_code?: string
           return_date?: string | null
@@ -58,7 +88,22 @@ export type Database = {
           user_id?: string
           vehicle_type?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bookings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cities: {
         Row: {

@@ -15,7 +15,7 @@ export const useBookings = () => {
     try {
       const { data, error } = await supabase
         .from('bookings')
-        .select('*')
+        .select('*, companies(name)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       
@@ -27,7 +27,13 @@ export const useBookings = () => {
         throw error;
       }
       
-      return data as Booking[];
+      // Format the bookings to include company name
+      const formattedBookings = data.map(booking => ({
+        ...booking,
+        company_name: booking.company_name || booking.companies?.name || null
+      })) as Booking[];
+      
+      return formattedBookings;
     } catch (error) {
       console.error('Exception fetching bookings:', error);
       toast.error('Erro ao carregar reservas');
