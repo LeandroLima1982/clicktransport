@@ -17,6 +17,7 @@ interface Company {
   id: string;
   name: string;
   cnpj: string | null;
+  formatted_cnpj: string | null;  // Add the formatted_cnpj property
   status: string;
   created_at: string;
   user_id: string | null;

@@ -1,109 +1,55 @@
 
 import { supabase } from '../integrations/supabase/client';
 
-// Utility function to identify and fix duplicate company records
+// Define the interface with the formatted_cnpj field
+interface Company {
+  id: string;
+  name: string;
+  cnpj: string | null;
+  formatted_cnpj: string | null;
+  status: string;
+  created_at: string;
+  user_id: string | null;
+}
+
+/**
+ * Identify duplicate company records in the database
+ */
 export const identifyDuplicateCompanies = async () => {
   try {
-    // Find user_ids that have more than one company
     const { data, error } = await supabase
-      .from('companies')
-      .select('user_id')
-      .not('user_id', 'is', null);
+      .rpc('get_duplicate_companies');
     
-    if (error) throw error;
-    if (!data || !Array.isArray(data)) {
-      return { 
-        duplicates: [], 
-        count: 0, 
-        error: "Invalid data format returned from database" 
-      };
-    }
-    
-    // Process the data to find duplicates
-    const userCounts: Record<string, number> = {};
-    data.forEach(item => {
-      if (item.user_id) {
-        userCounts[item.user_id] = (userCounts[item.user_id] || 0) + 1;
-      }
-    });
-    
-    // Filter to only include user_ids with more than one company
-    const duplicates = Object.entries(userCounts)
-      .filter(([_, count]) => count > 1)
-      .map(([user_id, count]) => ({ user_id, count }));
+    if (error) return { duplicates: [], count: 0, error: error.message };
     
     return { 
-      duplicates: duplicates,
-      count: duplicates.length,
-      error: null
+      duplicates: data || [], 
+      count: data?.length || 0,
+      error: null 
     };
   } catch (error: any) {
     console.error('Error identifying duplicate companies:', error);
-    return { 
-      duplicates: [], 
-      count: 0, 
-      error: error.message 
-    };
+    return { duplicates: [], count: 0, error: error.message };
   }
 };
 
-// Utility function to fix duplicate companies - this should be run by an admin
+/**
+ * Fix duplicate company records by keeping only the oldest record for each user
+ */
 export const fixDuplicateCompanies = async () => {
   try {
-    // We're not using the RPC function directly since it's causing TypeScript errors
-    // Instead, we'll implement the logic in JavaScript
-    const { duplicates, error } = await identifyDuplicateCompanies();
+    const { data, error } = await supabase
+      .rpc('fix_duplicate_companies');
     
-    if (error) throw new Error(error);
-    
-    const fixResults = [];
-    
-    // Use Array.isArray to ensure duplicates is actually an array
-    const duplicateArray = Array.isArray(duplicates) ? duplicates : [];
-    
-    for (const duplicate of duplicateArray) {
-      const userId = duplicate.user_id;
-      
-      // Get all companies for this user
-      const { data: companies } = await supabase
-        .from('companies')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at');
-      
-      if (companies && companies.length > 1) {
-        // Keep the first company (oldest) and mark others for removal
-        const [keepCompany, ...removeCompanies] = companies;
-        
-        // Remove the duplicate companies
-        for (const company of removeCompanies) {
-          const { error: deleteError } = await supabase
-            .from('companies')
-            .delete()
-            .eq('id', company.id);
-          
-          fixResults.push({
-            userId,
-            keptCompanyId: keepCompany.id,
-            removedCompanyId: company.id,
-            success: !deleteError,
-            error: deleteError ? deleteError.message : null
-          });
-        }
-      }
-    }
+    if (error) return { fixed: [], count: 0, error: error.message };
     
     return { 
-      fixed: fixResults,
-      count: fixResults.length,
-      error: null
+      fixed: data || [], 
+      count: data?.length || 0,
+      error: null 
     };
   } catch (error: any) {
     console.error('Error fixing duplicate companies:', error);
-    return { 
-      fixed: [],
-      count: 0,
-      error: error.message 
-    };
+    return { fixed: [], count: 0, error: error.message };
   }
 };
