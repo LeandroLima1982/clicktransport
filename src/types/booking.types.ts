@@ -34,3 +34,6 @@ export type BookingFormData = {
   passengers: string;
   passengerData: PassengerInfo[];
 };
+
+// Import the main Booking type from booking.ts to maintain consistency
+export { Booking } from './booking';
