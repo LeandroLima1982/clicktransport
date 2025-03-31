@@ -1,7 +1,7 @@
-
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../../integrations/supabase/client';
 import { toast } from 'sonner';
+import { createCompany } from './companyService';
 
 interface UserData {
   accountType?: string;
@@ -109,27 +109,27 @@ export const signUp = async (email: string, password: string, userData?: UserDat
     
     console.log('Sign up result:', result);
     
-    // Check if email confirmation is required (this will be true for Supabase projects with email confirmation enabled)
+    // Check if email confirmation is required
     const requiresEmailConfirmation = result.data?.user?.identities?.[0]?.identity_data?.email_verified === false;
     
     // Create company record if user is signing up as company
-    // NOTE: We now add manual_creation=true flag to prevent duplication with database trigger
     if (userRole === 'company' && result.data.user) {
       try {
-        const { error: companyError } = await supabase
-          .from('companies')
-          .insert({
-            user_id: result.data.user.id,
-            name: userData.companyName || '',
-            cnpj: userData.cnpj || null,
-            status: 'pending', // Start as pending for admin approval
-            manual_creation: true // Add flag to identify manually created companies
-          });
+        // Use the createCompany service function instead of direct insert
+        const companyData = {
+          user_id: result.data.user.id,
+          name: userData?.companyName || '',
+          cnpj: userData?.cnpj || null,
+          status: 'pending', // Start as pending for admin approval
+          manual_creation: true // Add flag to identify manually created companies
+        };
+        
+        const { error: companyError } = await createCompany(companyData);
           
         if (companyError) {
           console.error('Error creating company record:', companyError);
           toast.error('Erro ao criar registro da empresa', {
-            description: companyError.message
+            description: companyError
           });
           // Even if company record creation fails, the user was created, so we still return success
           // but include the error message for debugging

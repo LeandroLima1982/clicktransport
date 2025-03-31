@@ -19,13 +19,14 @@ BEGIN
     SELECT 1 FROM public.companies WHERE user_id = NEW.id
   ) THEN
     -- Create a default company record with a proper queue position
-    INSERT INTO public.companies (name, user_id, status, queue_position)
+    INSERT INTO public.companies (name, user_id, status, queue_position, manual_creation)
     VALUES (
       COALESCE(NEW.full_name, 'Empresa ' || NEW.email), 
       NEW.id, 
-      'active',
+      'pending',
       -- Get max queue position and add 1, or start at 1 if no companies exist
-      COALESCE((SELECT MAX(queue_position) + 1 FROM public.companies WHERE status = 'active'), 1)
+      COALESCE((SELECT MAX(queue_position) + 1 FROM public.companies WHERE status = 'active'), 1),
+      FALSE
     );
   END IF;
   RETURN NEW;

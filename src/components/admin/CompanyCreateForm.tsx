@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { createCompany } from '@/hooks/auth/services/companyService';
 
 interface CompanyCreateFormProps {
   isOpen: boolean;
@@ -53,7 +54,6 @@ const CompanyCreateForm: React.FC<CompanyCreateFormProps> = ({
   };
 
   const handleCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Format CNPJ: XX.XXX.XXX/XXXX-XX
     let value = e.target.value.replace(/\D/g, '');
     if (value.length > 14) value = value.slice(0, 14);
     
@@ -95,9 +95,7 @@ const CompanyCreateForm: React.FC<CompanyCreateFormProps> = ({
     try {
       let userId = null;
       
-      // If user email is provided, check if user exists or create new user
       if (userEmail.trim()) {
-        // First check if user exists
         const { data: existingUsers, error: searchError } = await supabase
           .from('profiles')
           .select('id')
@@ -108,43 +106,39 @@ const CompanyCreateForm: React.FC<CompanyCreateFormProps> = ({
         
         if (existingUsers) {
           userId = existingUsers.id;
-        } else {
-          // If user doesn't exist, create a new user account
-          const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-            email: userEmail.trim(),
-            password: Math.random().toString(36).slice(-8), // Generate random password
-            email_confirm: true,
-            user_metadata: { role: 'company' }
-          });
           
-          if (createError) throw createError;
+          const { data: existingCompany, error: companyCheckError } = await supabase
+            .from('companies')
+            .select('id')
+            .eq('user_id', userId)
+            .maybeSingle();
+            
+          if (companyCheckError) throw companyCheckError;
           
-          if (newUser?.user) {
-            userId = newUser.user.id;
-            
-            // Update the user's role
-            const { error: roleError } = await supabase
-              .from('profiles')
-              .update({ role: 'company' })
-              .eq('id', userId);
-            
-            if (roleError) throw roleError;
+          if (existingCompany) {
+            setError(`Este usuário já tem uma empresa associada (ID: ${existingCompany.id})`);
+            setIsSubmitting(false);
+            return;
           }
+        } else {
+          userId = null;
+          toast.warning('Usuário não encontrado. A empresa será criada sem associação a um usuário.', {
+            description: 'Você pode associar um usuário posteriormente.'
+          });
         }
       }
       
-      // Create company record with manual_creation flag
-      const { error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          name: companyData.name.trim(),
-          cnpj: companyData.cnpj || null,
-          status: companyData.status,
-          user_id: userId,
-          manual_creation: true // Add flag to identify manually created companies
-        });
+      const companyDataWithUserId = {
+        name: companyData.name.trim(),
+        cnpj: companyData.cnpj || null,
+        status: companyData.status,
+        user_id: userId,
+        manual_creation: true
+      };
       
-      if (companyError) throw companyError;
+      const { data: newCompany, error: companyError } = await createCompany(companyDataWithUserId);
+      
+      if (companyError) throw new Error(companyError);
       
       toast.success('Empresa criada com sucesso', {
         description: userId ? 'Empresa associada ao usuário' : 'Empresa criada sem usuário associado'
