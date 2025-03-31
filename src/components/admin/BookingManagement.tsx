@@ -52,45 +52,56 @@ const BookingManagement: React.FC = () => {
   const fetchBookings = async () => {
     setIsLoading(true);
     try {
-      // Modify the query to also get service order info
-      const { data, error } = await supabase
+      // Query for bookings data first without trying to join service_orders
+      const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
           *,
-          companies(name),
-          service_orders(id, status)
+          companies(name)
         `)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      
-      // Format the bookings with proper typing and structure
-      const formattedBookings = data?.map(booking => {
-        // Ensure booking status is one of the allowed values
-        const validStatus = ['pending', 'confirmed', 'completed', 'cancelled'].includes(booking.status) 
-          ? booking.status as "pending" | "confirmed" | "completed" | "cancelled"
-          : "pending";
+      if (bookingsError) throw bookingsError;
+
+      // If we have bookings data, we'll format it
+      if (bookingsData) {
+        // Now fetch service orders separately to avoid join issues
+        const formattedBookings: Booking[] = await Promise.all(
+          bookingsData.map(async (booking) => {
+            // Ensure booking status is one of the allowed values
+            const validStatus = ['pending', 'confirmed', 'completed', 'cancelled'].includes(booking.status) 
+              ? booking.status as "pending" | "confirmed" | "completed" | "cancelled"
+              : "pending";
+            
+            // Try to get service orders related to this booking
+            const { data: serviceOrdersData, error: serviceOrdersError } = await supabase
+              .from('service_orders')
+              .select('id, status')
+              .eq('company_id', booking.company_id)
+              .order('created_at', { ascending: false });
+            
+            // Determine if the booking has service orders
+            const hasServiceOrder = !serviceOrdersError && 
+              Array.isArray(serviceOrdersData) && 
+              serviceOrdersData.length > 0;
+            
+            // Create the booking object with correct type safety
+            return {
+              ...booking,
+              status: validStatus,
+              company_name: booking.company_name || booking.companies?.name || null,
+              company_id: booking.company_id || null,
+              // Set service_orders as an empty array if there was an error or no data
+              service_orders: hasServiceOrder ? serviceOrdersData : [],
+              // Add has_service_order flag based on our check
+              has_service_order: hasServiceOrder
+            } as Booking;
+          })
+        );
         
-        // Check if service_orders is an array before using it
-        const hasServiceOrder = Array.isArray(booking.service_orders) && booking.service_orders.length > 0;
-        
-        // Create the booking object with correct type safety
-        const formattedBooking: Booking = {
-          ...booking,
-          status: validStatus,
-          company_name: booking.company_name || booking.companies?.name || null,
-          company_id: booking.company_id || null,
-          // Convert service_orders to appropriate format
-          service_orders: Array.isArray(booking.service_orders) ? booking.service_orders : [],
-          // Add has_service_order flag to track if service order exists
-          has_service_order: hasServiceOrder
-        };
-        
-        return formattedBooking;
-      }) || [];
-      
-      setBookings(formattedBookings);
-      setFilteredBookings(formattedBookings);
+        setBookings(formattedBookings);
+        setFilteredBookings(formattedBookings);
+      }
     } catch (error) {
       console.error('Error fetching bookings:', error);
       toast.error('Falha ao carregar reservas');
