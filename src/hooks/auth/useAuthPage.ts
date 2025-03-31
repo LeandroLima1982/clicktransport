@@ -151,9 +151,9 @@ export const useAuthPage = () => {
       
       if (result.error) throw result.error;
       
-      // Check if email confirmation is required
-      // Only access requiresEmailConfirmation when there's no error
-      if (result.requiresEmailConfirmation) {
+      // FIX: Check if result contains requiresEmailConfirmation property
+      // and it's set to true before accessing it
+      if (result && 'requiresEmailConfirmation' in result && result.requiresEmailConfirmation === true) {
         setAwaitingEmailConfirmation(true);
         toast.success('Verifique seu email', {
           description: 'Um link de confirmação foi enviado para seu email. Por favor, confirme para ativar sua conta.'
