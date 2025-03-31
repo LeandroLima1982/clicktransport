@@ -1,40 +1,20 @@
 
-import React from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import React, { useState } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { MoreHorizontal, Check, X, Calendar, Clock, MapPin, Phone, Mail, User, Building } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Bookmark, Eye, Info } from 'lucide-react';
-import { Booking } from '@/types/booking';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
+import { ptBR } from 'date-fns/locale';
+import { Booking } from '@/types/booking';
 
 interface BookingTableProps {
   bookings: Booking[];
@@ -42,327 +22,450 @@ interface BookingTableProps {
   onRefreshData: () => void;
 }
 
-const BookingTable: React.FC<BookingTableProps> = ({ 
-  bookings, 
-  isLoading,
-  onRefreshData
-}) => {
-  const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
-  const [isUpdating, setIsUpdating] = React.useState(false);
-  const [companies, setCompanies] = React.useState<any[]>([]);
-  const [isLoadingCompanies, setIsLoadingCompanies] = React.useState(false);
+const BookingTable: React.FC<BookingTableProps> = ({ bookings, isLoading, onRefreshData }) => {
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [newStatus, setNewStatus] = useState<string>("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [companies, setCompanies] = useState<{id: string, name: string}[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
+  const [isAssigning, setIsAssigning] = useState(false);
 
-  // Fetch companies for dropdown selection
-  const fetchCompanies = async () => {
-    setIsLoadingCompanies(true);
-    try {
-      const { data, error } = await supabase
-        .from('companies')
-        .select('id, name')
-        .eq('status', 'active');
-      
-      if (error) throw error;
-      setCompanies(data || []);
-    } catch (error) {
-      console.error('Error fetching companies:', error);
-      toast.error('Falha ao carregar empresas');
-    } finally {
-      setIsLoadingCompanies(false);
-    }
-  };
-
-  const handleViewDetails = (booking: Booking) => {
-    setSelectedBooking(booking);
-    fetchCompanies();
-  };
-
-  const handleStatusChange = async (status: "pending" | "confirmed" | "completed" | "cancelled") => {
-    if (!selectedBooking) return;
-    
-    setIsUpdating(true);
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status })
-        .eq('id', selectedBooking.id);
-      
-      if (error) throw error;
-      
-      toast.success(`Status atualizado para ${status}`);
-      setSelectedBooking({...selectedBooking, status});
-      onRefreshData();
-    } catch (error) {
-      console.error('Error updating booking status:', error);
-      toast.error('Falha ao atualizar status');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleAssignCompany = async (companyId: string) => {
-    if (!selectedBooking) return;
-    
-    setIsUpdating(true);
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ company_id: companyId })
-        .eq('id', selectedBooking.id);
-      
-      if (error) throw error;
-      
-      // Find company name
-      const company = companies.find(c => c.id === companyId);
-      
-      toast.success(`Reserva atribuída à empresa ${company?.name || companyId}`);
-      setSelectedBooking({...selectedBooking, company_id: companyId, company_name: company?.name});
-      onRefreshData();
-    } catch (error) {
-      console.error('Error assigning company:', error);
-      toast.error('Falha ao atribuir empresa');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const getStatusBadge = (status: "pending" | "confirmed" | "completed" | "cancelled") => {
-    switch(status) {
+  const getStatusBadge = (status: string) => {
+    switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pendente</Badge>;
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pendente</Badge>;
       case 'confirmed':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Confirmada</Badge>;
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">Confirmada</Badge>;
       case 'completed':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Concluída</Badge>;
+        return <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">Concluída</Badge>;
       case 'cancelled':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Cancelada</Badge>;
+        return <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-100">Cancelada</Badge>;
       default:
         return <Badge variant="outline">Desconhecido</Badge>;
     }
   };
-
+  
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
     try {
-      return format(new Date(dateString), 'dd/MM/yyyy HH:mm', {locale: ptBR});
-    } catch (e) {
-      console.error('Error formatting date:', e);
-      return dateString;
+      if (!dateString) return "N/A";
+      return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
+    } catch (error) {
+      return "Data inválida";
     }
   };
-
+  
+  const formatDateTime = (dateString: string) => {
+    try {
+      if (!dateString) return "N/A";
+      return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: ptBR });
+    } catch (error) {
+      return "Data inválida";
+    }
+  };
+  
+  const handleViewBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsDialogOpen(true);
+  };
+  
+  const handleUpdateStatus = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setNewStatus(booking.status);
+    setIsUpdateDialogOpen(true);
+  };
+  
+  const handleAssignCompany = async (booking: Booking) => {
+    setSelectedBooking(booking);
+    setSelectedCompanyId(booking.company_id || "");
+    
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name')
+        .order('name');
+      
+      if (error) throw error;
+      setCompanies(data || []);
+      setIsAssignDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+      toast.error('Erro ao carregar lista de empresas');
+    }
+  };
+  
+  const confirmStatusUpdate = async () => {
+    if (!selectedBooking) return;
+    
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: newStatus })
+        .eq('id', selectedBooking.id);
+      
+      if (error) throw error;
+      
+      toast.success('Status da reserva atualizado com sucesso');
+      setIsUpdateDialogOpen(false);
+      onRefreshData();
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+      toast.error('Erro ao atualizar status da reserva');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+  
+  const confirmAssignCompany = async () => {
+    if (!selectedBooking) return;
+    
+    setIsAssigning(true);
+    try {
+      const updateObject: {company_id?: string | null} = {};
+      
+      // If empty string, set to null (remove assignment)
+      if (selectedCompanyId === "") {
+        updateObject.company_id = null;
+      } else {
+        updateObject.company_id = selectedCompanyId;
+      }
+      
+      const { error } = await supabase
+        .from('bookings')
+        .update(updateObject)
+        .eq('id', selectedBooking.id);
+      
+      if (error) throw error;
+      
+      toast.success('Empresa atribuída com sucesso');
+      setIsAssignDialogOpen(false);
+      onRefreshData();
+    } catch (error) {
+      console.error('Error assigning company:', error);
+      toast.error('Erro ao atribuir empresa à reserva');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+  
+  const handleDeleteBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsConfirmDeleteOpen(true);
+  };
+  
+  const confirmDelete = async () => {
+    if (!selectedBooking) return;
+    
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', selectedBooking.id);
+      
+      if (error) throw error;
+      
+      toast.success('Reserva excluída com sucesso');
+      setIsConfirmDeleteOpen(false);
+      onRefreshData();
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      toast.error('Erro ao excluir reserva');
+    }
+  };
+  
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex items-center space-x-4">
-            <Skeleton className="h-12 w-full" />
-          </div>
-        ))}
-      </div>
+      <Card className="p-4">
+        <Skeleton className="h-8 w-full mb-4" />
+        <Skeleton className="h-8 w-full mb-2" />
+        <Skeleton className="h-8 w-full mb-2" />
+        <Skeleton className="h-8 w-full mb-2" />
+        <Skeleton className="h-8 w-full mb-2" />
+        <Skeleton className="h-8 w-full" />
+      </Card>
     );
   }
-
+  
   if (bookings.length === 0) {
     return (
-      <div className="text-center py-10">
-        <Info className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+      <Card className="p-8 text-center">
         <h3 className="text-lg font-medium">Nenhuma reserva encontrada</h3>
-        <p className="text-muted-foreground">
-          Não há reservas disponíveis para exibição no momento.
-        </p>
-      </div>
+        <p className="text-muted-foreground mt-2">Não há reservas para exibir no momento.</p>
+      </Card>
     );
   }
-
+  
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Código</TableHead>
-            <TableHead>Origem</TableHead>
-            <TableHead>Destino</TableHead>
-            <TableHead>Data</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Empresa</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {bookings.map((booking) => (
-            <TableRow key={booking.id}>
-              <TableCell className="font-medium">{booking.reference_code}</TableCell>
-              <TableCell>{booking.origin}</TableCell>
-              <TableCell>{booking.destination}</TableCell>
-              <TableCell>{formatDate(booking.booking_date)}</TableCell>
-              <TableCell>{getStatusBadge(booking.status)}</TableCell>
-              <TableCell>{booking.company_name || 'Não atribuída'}</TableCell>
-              <TableCell className="text-right">
-                <Drawer>
-                  <DrawerTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => handleViewDetails(booking)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </DrawerTrigger>
-                  <DrawerContent>
-                    {selectedBooking && (
-                      <>
-                        <DrawerHeader>
-                          <DrawerTitle className="flex items-center">
-                            <Bookmark className="mr-2 h-5 w-5" />
-                            Detalhes da Reserva - {selectedBooking.reference_code}
-                          </DrawerTitle>
-                          <DrawerDescription>
-                            Criada em {formatDate(selectedBooking.created_at)}
-                          </DrawerDescription>
-                        </DrawerHeader>
-                        <div className="px-4 py-2">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <Card>
-                              <CardContent className="pt-6">
-                                <CardTitle className="text-sm font-medium mb-2">Informações da Viagem</CardTitle>
-                                <CardDescription>
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Origem:</span>
-                                      <span className="font-medium">{selectedBooking.origin}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Destino:</span>
-                                      <span className="font-medium">{selectedBooking.destination}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Data:</span>
-                                      <span className="font-medium">{formatDate(selectedBooking.booking_date)}</span>
-                                    </div>
-                                    {selectedBooking.return_date && (
-                                      <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Retorno:</span>
-                                        <span className="font-medium">{formatDate(selectedBooking.return_date)}</span>
-                                      </div>
-                                    )}
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Passageiros:</span>
-                                      <span className="font-medium">{selectedBooking.passengers || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Tipo de Veículo:</span>
-                                      <span className="font-medium">{selectedBooking.vehicle_type || 'N/A'}</span>
-                                    </div>
-                                  </div>
-                                </CardDescription>
-                              </CardContent>
-                            </Card>
-                            
-                            <Card>
-                              <CardContent className="pt-6">
-                                <CardTitle className="text-sm font-medium mb-2">Informações do Cliente</CardTitle>
-                                <CardDescription>
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Nome:</span>
-                                      <span className="font-medium">{selectedBooking.client_name || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Email:</span>
-                                      <span className="font-medium">{selectedBooking.client_email || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Telefone:</span>
-                                      <span className="font-medium">{selectedBooking.client_phone || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Status:</span>
-                                      <span>{getStatusBadge(selectedBooking.status)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Empresa:</span>
-                                      <span className="font-medium">{selectedBooking.company_name || 'Não atribuída'}</span>
-                                    </div>
-                                  </div>
-                                </CardDescription>
-                              </CardContent>
-                            </Card>
-                          </div>
-                          
-                          {/* Additional notes */}
-                          {selectedBooking.additional_notes && (
-                            <Card className="mb-4">
-                              <CardContent className="pt-6">
-                                <CardTitle className="text-sm font-medium mb-2">Notas Adicionais</CardTitle>
-                                <CardDescription>
-                                  <p className="whitespace-pre-wrap">{selectedBooking.additional_notes}</p>
-                                </CardDescription>
-                              </CardContent>
-                            </Card>
-                          )}
-                          
-                          {/* Administrative controls */}
-                          <Card>
-                            <CardContent className="pt-6">
-                              <CardTitle className="text-sm font-medium mb-4">Administração da Reserva</CardTitle>
-                              
-                              <div className="space-y-4">
-                                <div>
-                                  <label className="text-sm font-medium block mb-2">Atualizar Status</label>
-                                  <Select 
-                                    defaultValue={selectedBooking.status}
-                                    disabled={isUpdating}
-                                    onValueChange={(value) => handleStatusChange(value as "pending" | "confirmed" | "completed" | "cancelled")}
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Selecionar status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="pending">Pendente</SelectItem>
-                                      <SelectItem value="confirmed">Confirmada</SelectItem>
-                                      <SelectItem value="completed">Concluída</SelectItem>
-                                      <SelectItem value="cancelled">Cancelada</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                
-                                <div>
-                                  <label className="text-sm font-medium block mb-2">Atribuir Empresa</label>
-                                  <Select
-                                    defaultValue={selectedBooking.company_id}
-                                    disabled={isUpdating || isLoadingCompanies}
-                                    onValueChange={(value) => handleAssignCompany(value)}
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Selecionar empresa" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {companies.map((company) => (
-                                        <SelectItem key={company.id} value={company.id}>
-                                          {company.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-                        <DrawerFooter>
-                          <DrawerClose asChild>
-                            <Button variant="outline">Fechar</Button>
-                          </DrawerClose>
-                        </DrawerFooter>
-                      </>
-                    )}
-                  </DrawerContent>
-                </Drawer>
-              </TableCell>
+      <div className="rounded-md border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">Código</TableHead>
+              <TableHead>De</TableHead>
+              <TableHead>Para</TableHead>
+              <TableHead>Data</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {bookings.map((booking) => (
+              <TableRow key={booking.id}>
+                <TableCell className="font-medium">{booking.reference_code}</TableCell>
+                <TableCell>{booking.origin}</TableCell>
+                <TableCell>{booking.destination}</TableCell>
+                <TableCell>{formatDate(booking.travel_date)}</TableCell>
+                <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                <TableCell className="text-right">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56" align="end" forceMount>
+                      <div className="grid gap-1">
+                        <Button 
+                          variant="ghost" 
+                          className="justify-start" 
+                          onClick={() => handleViewBooking(booking)}
+                        >
+                          Ver detalhes
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          className="justify-start" 
+                          onClick={() => handleUpdateStatus(booking)}
+                        >
+                          Atualizar status
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          className="justify-start" 
+                          onClick={() => handleAssignCompany(booking)}
+                        >
+                          Atribuir empresa
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          className="justify-start text-red-600" 
+                          onClick={() => handleDeleteBooking(booking)}
+                        >
+                          Excluir
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      
+      {/* Booking Details Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Reserva</DialogTitle>
+          </DialogHeader>
+          {selectedBooking && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Código de referência</p>
+                  <p>{selectedBooking.reference_code}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                  <div className="mt-1">{getStatusBadge(selectedBooking.status)}</div>
+                </div>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-muted-foreground flex items-center">
+                  <Calendar className="h-4 w-4 mr-1" />
+                  Data da viagem
+                </p>
+                <p>{formatDateTime(selectedBooking.travel_date)}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-muted-foreground flex items-center">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  Origem e Destino
+                </p>
+                <p>De: {selectedBooking.origin}</p>
+                <p>Para: {selectedBooking.destination}</p>
+              </div>
+              
+              {selectedBooking.return_date && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground flex items-center">
+                    <Clock className="h-4 w-4 mr-1" />
+                    Data de retorno
+                  </p>
+                  <p>{formatDateTime(selectedBooking.return_date)}</p>
+                </div>
+              )}
+              
+              <div>
+                <p className="text-sm font-medium text-muted-foreground flex items-center">
+                  <User className="h-4 w-4 mr-1" />
+                  Cliente
+                </p>
+                <p>{selectedBooking.client_name || "Nome não disponível"}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-muted-foreground flex items-center">
+                  <Mail className="h-4 w-4 mr-1" />
+                  E-mail do cliente
+                </p>
+                <p>{selectedBooking.client_email || "Email não disponível"}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-muted-foreground flex items-center">
+                  <Phone className="h-4 w-4 mr-1" />
+                  Telefone
+                </p>
+                <p>{selectedBooking.client_phone || "Telefone não disponível"}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-muted-foreground flex items-center">
+                  <Building className="h-4 w-4 mr-1" />
+                  Empresa atribuída
+                </p>
+                <p>{selectedBooking.company_name || "Nenhuma empresa atribuída"}</p>
+              </div>
+              
+              {selectedBooking.additional_notes && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Observações adicionais</p>
+                  <p>{selectedBooking.additional_notes}</p>
+                </div>
+              )}
+              
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Valor total</p>
+                <p>R$ {selectedBooking.total_price.toFixed(2)}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Update Status Dialog */}
+      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Atualizar Status da Reserva</DialogTitle>
+          </DialogHeader>
+          {selectedBooking && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium mb-2">Reserva: {selectedBooking.reference_code}</p>
+                <p className="text-sm mb-4">De {selectedBooking.origin} para {selectedBooking.destination}</p>
+              </div>
+              
+              <Select 
+                value={newStatus} 
+                onValueChange={setNewStatus}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o novo status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="confirmed">Confirmada</SelectItem>
+                  <SelectItem value="completed">Concluída</SelectItem>
+                  <SelectItem value="cancelled">Cancelada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUpdateDialogOpen(false)}>Cancelar</Button>
+            <Button 
+              disabled={isUpdating || !newStatus} 
+              onClick={confirmStatusUpdate}
+            >
+              {isUpdating ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Assign Company Dialog */}
+      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Atribuir Empresa à Reserva</DialogTitle>
+          </DialogHeader>
+          {selectedBooking && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium mb-2">Reserva: {selectedBooking.reference_code}</p>
+                <p className="text-sm mb-4">De {selectedBooking.origin} para {selectedBooking.destination}</p>
+              </div>
+              
+              <Select 
+                value={selectedCompanyId} 
+                onValueChange={setSelectedCompanyId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">-- Nenhuma empresa --</SelectItem>
+                  {companies.map(company => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>Cancelar</Button>
+            <Button 
+              disabled={isAssigning} 
+              onClick={confirmAssignCompany}
+            >
+              {isAssigning ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Confirm Delete Dialog */}
+      <AlertDialog open={isConfirmDeleteOpen} onOpenChange={setIsConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta reserva? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

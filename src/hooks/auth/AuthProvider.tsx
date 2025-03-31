@@ -1,3 +1,4 @@
+
 import React, { createContext, useEffect, useState, useCallback } from 'react';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '../../integrations/supabase/client';
@@ -19,6 +20,7 @@ export const AuthContext = createContext<AuthContextType>({
   userRole: null,
 });
 
+// Make sure AuthProvider is defined as a regular React functional component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);

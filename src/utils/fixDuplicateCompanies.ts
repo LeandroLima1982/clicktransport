@@ -28,7 +28,7 @@ interface FixedCompany {
  */
 export const identifyDuplicateCompanies = async () => {
   try {
-    // Use the exec_sql function to run custom SQL
+    // Use exec_sql RPC function to run custom SQL
     const { data, error } = await supabase.rpc('exec_sql', {
       query: "SELECT user_id, COUNT(*) FROM companies GROUP BY user_id HAVING COUNT(*) > 1"
     });
@@ -54,7 +54,7 @@ export const identifyDuplicateCompanies = async () => {
  */
 export const fixDuplicateCompanies = async () => {
   try {
-    // Use the exec_sql function to run custom SQL that fixes duplicates
+    // Use exec_sql RPC function to run custom SQL that fixes duplicates
     const { data, error } = await supabase.rpc('exec_sql', {
       query: `
         WITH duplicates AS (

@@ -56,31 +56,41 @@ const BookingManagement: React.FC = () => {
   const fetchBookings = async () => {
     setIsLoading(true);
     try {
-      // Busca reservas e associa com empresas quando disponível
+      // Fetch bookings without company relation (fixed query)
       const { data, error } = await supabase
         .from('bookings')
-        .select(`
-          *,
-          company:company_id (
-            id,
-            name
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      // Formatar dados para incluir o nome da empresa
+      // Get companies for association
+      const { data: companies } = await supabase
+        .from('companies')
+        .select('id, name');
+      
+      // Create map of company IDs to names
+      const companyMap = new Map();
+      if (companies) {
+        companies.forEach(company => {
+          companyMap.set(company.id, company.name);
+        });
+      }
+      
+      // Manually format bookings with company names where available
       const formattedBookings = data?.map(booking => {
         // Ensure booking status is one of the allowed values
         const validStatus = ['pending', 'confirmed', 'completed', 'cancelled'].includes(booking.status) 
           ? booking.status as "pending" | "confirmed" | "completed" | "cancelled"
           : "pending";
         
+        // Get company name from our map if company_id exists
+        const companyName = booking.company_id ? companyMap.get(booking.company_id) : null;
+        
         return {
           ...booking,
           status: validStatus,
-          company_name: booking.company ? booking.company.name : null
+          company_name: companyName
         };
       }) || [];
       

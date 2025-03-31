@@ -11,7 +11,8 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarTrigger 
+  SidebarTrigger,
+  SidebarFooter
 } from "@/components/ui/sidebar";
 import { 
   BarChart3, 
@@ -257,7 +258,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
         </SidebarGroup>
       </SidebarContent>
       
-      <div className="mt-auto px-2 py-4">
+      <SidebarFooter className="mt-auto px-2 py-4">
         <Button 
           variant="ghost" 
           className="w-full justify-start text-muted-foreground hover:text-foreground"
@@ -266,7 +267,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
           <LogOut className="mr-2 h-4 w-4" />
           Sair
         </Button>
-      </div>
+      </SidebarFooter>
     </Sidebar>
   );
 };
