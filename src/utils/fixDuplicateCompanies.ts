@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 
 // Utility function to identify and fix duplicate company records
@@ -6,13 +7,37 @@ export const identifyDuplicateCompanies = async () => {
     // Find user_ids that have more than one company
     // Using raw SQL query instead of group_by which isn't available in the type definition
     const { data, error } = await supabase
-      .rpc('get_duplicate_companies');
+      .from('companies')
+      .select('user_id, count:id')
+      .not('user_id', 'is', null)
+      .select('user_id')
+      .select('count:id', { count: 'exact', head: false })
+      .filter('user_id', 'not.is', null)
+      .then(result => {
+        // Process the data to find duplicates
+        if (result.error) throw result.error;
+        
+        // Group by user_id and count occurrences
+        const userCounts: Record<string, number> = {};
+        result.data?.forEach(item => {
+          if (item.user_id) {
+            userCounts[item.user_id] = (userCounts[item.user_id] || 0) + 1;
+          }
+        });
+        
+        // Filter to only include user_ids with more than one company
+        const duplicates = Object.entries(userCounts)
+          .filter(([_, count]) => count > 1)
+          .map(([user_id, count]) => ({ user_id, count }));
+        
+        return { data: duplicates, error: null };
+      });
     
     if (error) throw error;
     
     return { 
       duplicates: data || [],
-      count: data?.length || 0,
+      count: data ? data.length : 0,
       error: null
     };
   } catch (error: any) {
@@ -36,7 +61,7 @@ export const fixDuplicateCompanies = async () => {
     
     const fixResults = [];
     
-    for (const duplicate of duplicates || []) {
+    for (const duplicate of duplicates) {
       const userId = duplicate.user_id;
       
       // Get all companies for this user
