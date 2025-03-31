@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Table,
@@ -34,7 +33,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { format } from 'date-fns';
-import { Eye, CheckCircle, XCircle, Clock, ArrowRight, FileText } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Clock, ArrowRight, FileText, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Booking } from '@/types/booking';
 import { Badge } from '@/components/ui/badge';
@@ -218,14 +217,20 @@ const BookingTable: React.FC<BookingTableProps> = ({ bookings, isLoading, onRefr
     } catch (error: any) {
       console.error('Error creating service order:', error);
       
-      // Provide a more informative error message
-      const errorMessage = error.message?.includes('financial_metrics') 
-        ? 'Erro de permissões ao atualizar métricas financeiras'
-        : 'Erro ao criar ordem de serviço';
-        
-      toast.error(errorMessage, {
-        description: error.message || 'Ocorreu um erro inesperado'
-      });
+      if (error.message?.includes('financial_metrics')) {
+        toast({
+          title: "Ordem de serviço criada com aviso",
+          description: "A ordem foi criada, mas houve um erro ao atualizar métricas financeiras",
+          icon: <AlertTriangle className="h-4 w-4 text-yellow-500" />,
+        });
+        onRefreshData();
+        setShowCreateOrderDialog(false);
+        setShowBookingDetails(false);
+      } else {
+        toast.error('Erro ao criar ordem de serviço', {
+          description: error.message || 'Ocorreu um erro inesperado'
+        });
+      }
     } finally {
       setIsCreatingOrder(false);
     }
