@@ -126,10 +126,14 @@ const CompanyFormDialog: React.FC<CompanyFormDialogProps> = ({
         if (error) throw error;
         toast.success('Empresa atualizada com sucesso');
       } else {
-        // Create new company - fixed the array format for insertion
+        // Create new company - fixed the object format for insertion
         const { error } = await supabase
           .from('companies')
-          .insert(formattedData);
+          .insert({
+            name: formattedData.name, // Ensure name is required and included
+            cnpj: formattedData.cnpj,
+            status: formattedData.status
+          });
           
         if (error) throw error;
         toast.success('Empresa criada com sucesso');
