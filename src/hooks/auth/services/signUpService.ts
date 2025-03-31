@@ -128,6 +128,14 @@ export const signUp = async (email: string, password: string, userData?: UserDat
           toast.error('Erro ao criar registro da empresa', {
             description: companyError.message
           });
+          // Even if company record creation fails, the user was created, so we still return success
+          // but include the error message for debugging
+          return {
+            error: null,
+            data: result.data,
+            requiresEmailConfirmation,
+            companyError // Add this for debugging
+          };
         } else {
           if (requiresEmailConfirmation) {
             toast.success('Cadastro iniciado com sucesso!', {
@@ -139,9 +147,16 @@ export const signUp = async (email: string, password: string, userData?: UserDat
             });
           }
         }
-      } catch (companyInsertError) {
+      } catch (companyInsertError: any) {
         console.error('Exception creating company record:', companyInsertError);
         toast.error('Erro inesperado ao criar registro da empresa');
+        // Return partial success as the user was created even if company record failed
+        return {
+          error: null,
+          data: result.data,
+          requiresEmailConfirmation,
+          companyError: companyInsertError // Add this for debugging
+        };
       }
     } else if (requiresEmailConfirmation) {
       // For non-company users with email confirmation required
@@ -159,7 +174,7 @@ export const signUp = async (email: string, password: string, userData?: UserDat
       data: result.data,
       requiresEmailConfirmation 
     };
-  } catch (err) {
+  } catch (err: any) {
     console.error('Error creating account:', err);
     toast.error('Erro inesperado ao criar conta');
     return { 

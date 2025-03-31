@@ -111,29 +111,28 @@ export const useAuthPage = () => {
     setError(null);
     setAwaitingEmailConfirmation(false);
     
-    const form = e.target as HTMLFormElement;
-    const email = (form.elements.namedItem('reg-email') as HTMLInputElement).value;
-    const password = (form.elements.namedItem('reg-password') as HTMLInputElement).value;
-    const confirmPassword = (form.elements.namedItem('confirm-password') as HTMLInputElement).value;
-    const firstName = (form.elements.namedItem('first-name') as HTMLInputElement).value;
-    const lastName = (form.elements.namedItem('last-name') as HTMLInputElement).value;
-    const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
-    
-    const companyName = isBusinessUser && accountType === 'company'
-      ? (form.elements.namedItem('company-name') as HTMLInputElement).value 
-      : '';
-      
-    const cnpj = isBusinessUser && accountType === 'company'
-      ? (form.elements.namedItem('cnpj') as HTMLInputElement)?.value || ''
-      : '';
-    
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-    
     try {
+      const form = e.target as HTMLFormElement;
+      const email = (form.elements.namedItem('reg-email') as HTMLInputElement).value;
+      const password = (form.elements.namedItem('reg-password') as HTMLInputElement).value;
+      const confirmPassword = (form.elements.namedItem('confirm-password') as HTMLInputElement).value;
+      const firstName = (form.elements.namedItem('first-name') as HTMLInputElement).value;
+      const lastName = (form.elements.namedItem('last-name') as HTMLInputElement).value;
+      const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
+      
+      const companyName = isBusinessUser && accountType === 'company'
+        ? (form.elements.namedItem('company-name') as HTMLInputElement).value 
+        : '';
+        
+      const cnpj = isBusinessUser && accountType === 'company'
+        ? (form.elements.namedItem('cnpj') as HTMLInputElement)?.value || ''
+        : '';
+      
+      if (password !== confirmPassword) {
+        setError('As senhas não coincidem');
+        return;
+      }
+      
       const finalAccountType = isBusinessUser ? accountType : 'client';
       
       console.log('Registering user with account type:', finalAccountType);
@@ -149,10 +148,12 @@ export const useAuthPage = () => {
       
       const result = await signUp(email, password, userData);
       
-      if (result.error) throw result.error;
+      // If there's an error in the signup process, handle it
+      if (result.error) {
+        throw result.error;
+      }
       
-      // FIX: Check if result contains requiresEmailConfirmation property
-      // and it's set to true before accessing it
+      // Safe access to requiresEmailConfirmation property
       if (result && 'requiresEmailConfirmation' in result && result.requiresEmailConfirmation === true) {
         setAwaitingEmailConfirmation(true);
         toast.success('Verifique seu email', {
