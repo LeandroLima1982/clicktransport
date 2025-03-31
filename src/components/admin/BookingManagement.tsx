@@ -80,13 +80,11 @@ const BookingManagement: React.FC = () => {
           ? booking.status as "pending" | "confirmed" | "completed" | "cancelled"
           : "pending";
         
-        // Get company name from our map if company_id exists
-        const companyName = booking.company_id ? companyMap.get(booking.company_id) : null;
-        
         return {
           ...booking,
           status: validStatus,
-          company_name: companyName
+          company_id: booking.company_id || null,
+          company_name: booking.company_id ? companyMap.get(booking.company_id) : null
         } as Booking;
       }) || [];
       

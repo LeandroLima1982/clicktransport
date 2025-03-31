@@ -129,7 +129,7 @@ const CompanyFormDialog: React.FC<CompanyFormDialogProps> = ({
         // Create new company
         const { error } = await supabase
           .from('companies')
-          .insert(formattedData);
+          .insert([formattedData]);
           
         if (error) throw error;
         toast.success('Empresa criada com sucesso');
