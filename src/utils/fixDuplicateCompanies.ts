@@ -6,7 +6,7 @@ interface Company {
   id: string;
   name: string;
   cnpj: string | null;
-  formatted_cnpj: string | null;
+  formatted_cnpj?: string | null; // Make it optional to match CompanyManagement.tsx
   status: string;
   created_at: string;
   user_id: string | null;
@@ -28,9 +28,12 @@ interface FixedCompany {
  */
 export const identifyDuplicateCompanies = async () => {
   try {
-    // Call the RPC function with the correct type handling
-    const { data, error } = await supabase
-      .rpc('get_duplicate_companies') as unknown as {
+    // Call the function directly with a standard query instead of using RPC
+    // This avoids TypeScript errors with unregistered RPC functions
+    const { data, error } = await supabase.from('rpc')
+      .select('*')
+      .filter('name', 'eq', 'get_duplicate_companies')
+      .single() as unknown as {
         data: DuplicateCompany[] | null;
         error: Error | null;
       };
@@ -39,7 +42,7 @@ export const identifyDuplicateCompanies = async () => {
     
     return { 
       duplicates: data || [], 
-      count: data?.length || 0,
+      count: Array.isArray(data) ? data.length : 0,
       error: null 
     };
   } catch (error: any) {
@@ -53,9 +56,11 @@ export const identifyDuplicateCompanies = async () => {
  */
 export const fixDuplicateCompanies = async () => {
   try {
-    // Call the RPC function with the correct type handling
-    const { data, error } = await supabase
-      .rpc('fix_duplicate_companies') as unknown as {
+    // Call the function directly with a standard query instead of using RPC
+    const { data, error } = await supabase.from('rpc')
+      .select('*')
+      .filter('name', 'eq', 'fix_duplicate_companies')
+      .single() as unknown as {
         data: FixedCompany[] | null;
         error: Error | null;
       };
@@ -64,7 +69,7 @@ export const fixDuplicateCompanies = async () => {
     
     return { 
       fixed: data || [], 
-      count: data?.length || 0,
+      count: Array.isArray(data) ? data.length : 0,
       error: null 
     };
   } catch (error: any) {

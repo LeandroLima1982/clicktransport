@@ -16,7 +16,7 @@ interface Company {
   id: string;
   name: string;
   cnpj: string | null;
-  formatted_cnpj: string | null;
+  formatted_cnpj?: string | null;
   status: string;
   created_at: string;
   user_id: string | null;
@@ -89,7 +89,11 @@ const CompanyManagement: React.FC = () => {
       
       if (error) throw error;
       
-      const companiesData: Company[] = data || [];
+      const companiesData: Company[] = (data || []).map(company => ({
+        ...company,
+        formatted_cnpj: company.formatted_cnpj || company.cnpj
+      }));
+      
       setCompanies(companiesData);
       setFilteredCompanies(companiesData);
       

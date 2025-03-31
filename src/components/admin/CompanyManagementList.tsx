@@ -36,7 +36,7 @@ interface Company {
   id: string;
   name: string;
   cnpj: string | null;
-  formatted_cnpj: string | null;
+  formatted_cnpj?: string | null; // Make it optional to match other files
   status: string;
   created_at: string;
   user_id: string | null;
