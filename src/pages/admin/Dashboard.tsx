@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,7 @@ import VehicleCategoriesSettings from '@/components/admin/VehicleCategoriesSetti
 import DriverManagement from '@/components/admin/drivers/DriverManagement';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AuthError } from '@supabase/supabase-js';
+import BookingManagement from '@/components/admin/BookingManagement';
 
 const AdminDashboard: React.FC = () => {
   const { user, userRole, signOut: authSignOut, isAuthenticating } = useAuth();
@@ -44,6 +44,7 @@ const AdminDashboard: React.FC = () => {
     companies: 0,
     drivers: 0,
     orders: 0,
+    bookings: 0,
     loading: true
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -103,10 +104,17 @@ const AdminDashboard: React.FC = () => {
       
       if (ordersError) throw ordersError;
       
+      const { count: bookingsCount, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true });
+      
+      if (bookingsError) throw bookingsError;
+      
       setDashboardStats({
         companies: companiesCount || 0,
         drivers: driversCount || 0,
         orders: ordersCount || 0,
+        bookings: bookingsCount || 0,
         loading: false
       });
       
@@ -235,40 +243,28 @@ const AdminDashboard: React.FC = () => {
               </Card>
 
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle>Ações Rápidas</CardTitle>
-                  <CardDescription>Ferramentas de suporte ao sistema</CardDescription>
+                <CardHeader>
+                  <CardTitle>Reservas</CardTitle>
+                  <CardDescription>Gerenciar reservas de clientes</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={fetchDashboardStats}
-                      disabled={isRefreshing}
-                    >
-                      {isRefreshing ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                      )}
-                      Atualizar Dados
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => setActiveTab("vehicle-categories")}
-                    >
-                      Categorias de Veículos
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => setActiveTab("notifications")}
-                    >
-                      Notificações
-                    </Button>
-                  </div>
+                  {dashboardStats.loading ? (
+                    <div className="flex items-center">
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <p>Carregando...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold">{dashboardStats.bookings}</p>
+                      <p className="text-sm text-muted-foreground">Total de reservas</p>
+                      <Button 
+                        className="mt-4 w-full"
+                        onClick={() => setActiveTab("bookings")}
+                      >
+                        Ver Reservas
+                      </Button>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -280,6 +276,8 @@ const AdminDashboard: React.FC = () => {
         return <CompanyManagement />;
       case 'orders':
         return <ServiceOrderMonitoring />;
+      case 'bookings':
+        return <BookingManagement />;
       case 'drivers':
         return <DriverManagement />;
       case 'destinations':

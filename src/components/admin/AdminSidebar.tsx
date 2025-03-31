@@ -1,193 +1,231 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { adminTabs } from './AdminTabItems';
-import { useAuth } from '@/hooks/useAuth';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { Settings, LogOut, Database, TestTube, HelpCircle } from 'lucide-react';
-import { toast } from 'sonner';
-import { AuthError } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { Button } from "@/components/ui/button";
+import { Sidebar, SidebarSection, SidebarTrigger } from "@/components/ui/sidebar";
+import { 
+  BarChart3, 
+  Building, 
+  FileText, 
+  Settings, 
+  BookOpen, 
+  Palette, 
+  Truck, 
+  MapPin, 
+  Bell, 
+  Users, 
+  Map, 
+  PenSquare, 
+  LogOut,
+  ArrowRight,
+  Car
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface AdminSidebarProps {
-  signOut: () => Promise<{ error: AuthError | Error | null }>;
+  signOut: () => Promise<{ error: Error | null }>;
 }
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
   const location = useLocation();
-  const { userRole } = useAuth();
-  const [logoUrl, setLogoUrl] = useState<string>('/lovable-uploads/8a9d78f7-0536-4e85-9c4b-0debc4c61fcf.png');
+  const queryParams = new URLSearchParams(location.search);
+  const activeTab = queryParams.get('tab') || 'overview';
   
-  useEffect(() => {
-    const fetchLogoSetting = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('site_images')
-          .select('image_url')
-          .eq('section_id', 'logo')
-          .single();
-        
-        if (error) {
-          console.error('Error fetching logo from settings:', error);
-          return;
-        }
-        
-        if (data && data.image_url) {
-          setLogoUrl(data.image_url);
-        }
-      } catch (error) {
-        console.error('Error loading logo from settings:', error);
-      }
-    };
-
-    fetchLogoSetting();
-  }, []);
+  const isActive = (tab: string) => activeTab === tab;
   
-  const isActive = (path: string) => {
-    // For root admin path
-    if (path === '/admin') {
-      const queryParams = new URLSearchParams(location.search);
-      const currentTab = queryParams.get('tab');
-      return location.pathname === '/admin' && (!currentTab || currentTab === 'overview');
-    }
-    
-    // For tab routes
-    if (path.includes('?tab=')) {
-      const queryParams = new URLSearchParams(location.search);
-      const currentTab = queryParams.get('tab');
-      const tabInPath = path.split('?tab=')[1];
-      return location.pathname === '/admin' && currentTab === tabInPath;
-    }
-    
-    // For other routes without query params
-    return location.pathname === path || 
-      (path !== '/admin' && location.pathname.startsWith(path));
-  };
-
-  const handleSignOut = async () => {
-    try {
-      const { error } = await signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-        toast.error('Erro ao sair');
-        return;
-      }
-      toast.success('Logout realizado com sucesso');
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      toast.error('Erro ao sair');
-    }
-  };
-
-  const filteredTabs = adminTabs.filter(tab => 
-    !tab.roles || tab.roles.includes(userRole || '')
-  );
-
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4">
-        <div className="flex items-center">
-          <img 
-            src={logoUrl} 
-            alt="LaTransfer Logo" 
-            className="h-10 w-auto mr-2" 
-          />
-          <div className="font-semibold text-lg">Admin Panel</div>
-        </div>
-      </SidebarHeader>
+    <Sidebar className="border-r bg-background">
+      <div className="flex h-10 items-center px-4 lg:h-12 lg:px-6 text-lg font-semibold">
+        Administração
+        <SidebarTrigger className="ml-auto" />
+      </div>
       
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Principal</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredTabs.map((tab) => (
-                <SidebarMenuItem key={tab.id}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={isActive(tab.href)}
-                    tooltip={tab.label}
-                  >
-                    <Link to={tab.href} onClick={(e) => {
-                      // For normal links, allow normal navigation
-                      // This prevents issues with the tab state getting out of sync
-                    }}>
-                      {tab.icon}
-                      <span>{tab.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Configuração do Banco" isActive={location.pathname === '/admin/database-setup'}>
-                  <Link to="/admin/database-setup">
-                    <Database className="h-5 w-5" />
-                    <span>Banco de Dados</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Ambiente de Testes" isActive={location.pathname === '/admin/test-workflow'}>
-                  <Link to="/admin/test-workflow">
-                    <TestTube className="h-5 w-5" />
-                    <span>Testes</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Documentação" isActive={isActive('/admin?tab=docs')}>
-                  <Link to="/admin?tab=docs">
-                    <HelpCircle className="h-5 w-5" />
-                    <span>Documentação</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+      <div className="px-2 py-2">
+        <Button 
+          variant="ghost" 
+          className={cn(
+            "w-full justify-start mb-1",
+            !activeTab || activeTab === "overview" ? "bg-muted" : ""
+          )}
+          asChild
+        >
+          <Link to="/admin">
+            <BarChart3 className="mr-2 h-4 w-4" />
+            Visão Geral
+          </Link>
+        </Button>
+      </div>
       
-      <SidebarFooter>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Configurações" isActive={isActive('/admin?tab=settings')}>
-                  <Link to="/admin?tab=settings">
-                    <Settings className="h-5 w-5" />
-                    <span>Configurações</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleSignOut} tooltip="Sair">
-                  <LogOut className="h-5 w-5" />
-                  <span>Sair</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarFooter>
+      <SidebarSection title="Gerenciamento">
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("companies") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=companies">
+            <Building className="mr-2 h-4 w-4" />
+            Empresas
+          </Link>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("drivers") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=drivers">
+            <Users className="mr-2 h-4 w-4" />
+            Motoristas
+          </Link>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("orders") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=orders">
+            <FileText className="mr-2 h-4 w-4" />
+            Ordens de Serviço
+          </Link>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("bookings") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=bookings">
+            <ArrowRight className="mr-2 h-4 w-4" />
+            Reservas
+          </Link>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("vehicles") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=vehicles">
+            <Car className="mr-2 h-4 w-4" />
+            Veículos
+          </Link>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("users") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=users">
+            <Users className="mr-2 h-4 w-4" />
+            Usuários
+          </Link>
+        </Button>
+      </SidebarSection>
+      
+      <SidebarSection title="Configurações">
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("destinations") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=destinations">
+            <MapPin className="mr-2 h-4 w-4" />
+            Destinos
+          </Link>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("rates") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=rates">
+            <PenSquare className="mr-2 h-4 w-4" />
+            Tarifas
+          </Link>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("vehicle-categories") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=vehicle-categories">
+            <Truck className="mr-2 h-4 w-4" />
+            Categorias de Veículos
+          </Link>
+        </Button>
+      </SidebarSection>
+      
+      <SidebarSection title="Sistema">
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("appearance") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=appearance">
+            <Palette className="mr-2 h-4 w-4" />
+            Aparência
+          </Link>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("notifications") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=notifications">
+            <Bell className="mr-2 h-4 w-4" />
+            Notificações
+          </Link>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("content") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=content">
+            <PenSquare className="mr-2 h-4 w-4" />
+            Conteúdo
+          </Link>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("docs") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=docs">
+            <BookOpen className="mr-2 h-4 w-4" />
+            Documentação
+          </Link>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className={cn("w-full justify-start mb-1", isActive("settings") ? "bg-muted" : "")}
+          asChild
+        >
+          <Link to="/admin?tab=settings">
+            <Settings className="mr-2 h-4 w-4" />
+            Configurações
+          </Link>
+        </Button>
+      </SidebarSection>
+      
+      <div className="mt-auto px-2 py-4">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start text-muted-foreground hover:text-foreground"
+          onClick={signOut}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sair
+        </Button>
+      </div>
     </Sidebar>
   );
 };

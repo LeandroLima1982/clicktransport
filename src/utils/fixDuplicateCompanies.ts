@@ -28,21 +28,19 @@ interface FixedCompany {
  */
 export const identifyDuplicateCompanies = async () => {
   try {
-    // Call the function directly with a standard query instead of using RPC
-    // This avoids TypeScript errors with unregistered RPC functions
-    const { data, error } = await supabase.from('rpc')
-      .select('*')
-      .filter('name', 'eq', 'get_duplicate_companies')
-      .single() as unknown as {
-        data: DuplicateCompany[] | null;
-        error: Error | null;
-      };
+    // Use the exec_sql function to run custom SQL
+    const { data, error } = await supabase.rpc('exec_sql', {
+      query: "SELECT user_id, COUNT(*) FROM companies GROUP BY user_id HAVING COUNT(*) > 1"
+    });
     
     if (error) return { duplicates: [], count: 0, error: error.message };
     
+    // Parse and format the results
+    const duplicates = Array.isArray(data) ? data : [];
+    
     return { 
-      duplicates: data || [], 
-      count: Array.isArray(data) ? data.length : 0,
+      duplicates, 
+      count: duplicates.length,
       error: null 
     };
   } catch (error: any) {
@@ -56,20 +54,37 @@ export const identifyDuplicateCompanies = async () => {
  */
 export const fixDuplicateCompanies = async () => {
   try {
-    // Call the function directly with a standard query instead of using RPC
-    const { data, error } = await supabase.from('rpc')
-      .select('*')
-      .filter('name', 'eq', 'fix_duplicate_companies')
-      .single() as unknown as {
-        data: FixedCompany[] | null;
-        error: Error | null;
-      };
+    // Use the exec_sql function to run custom SQL that fixes duplicates
+    const { data, error } = await supabase.rpc('exec_sql', {
+      query: `
+        WITH duplicates AS (
+          SELECT user_id
+          FROM companies
+          WHERE user_id IS NOT NULL
+          GROUP BY user_id
+          HAVING COUNT(*) > 1
+        ),
+        to_keep AS (
+          SELECT DISTINCT ON (c.user_id) c.id
+          FROM companies c
+          JOIN duplicates d ON c.user_id = d.user_id
+          ORDER BY c.user_id, c.created_at ASC
+        )
+        DELETE FROM companies c
+        WHERE c.user_id IN (SELECT user_id FROM duplicates)
+        AND c.id NOT IN (SELECT id FROM to_keep)
+        RETURNING c.user_id as fixed_user_id, 1 as removed_count
+      `
+    });
     
     if (error) return { fixed: [], count: 0, error: error.message };
     
+    // Parse and format the results
+    const fixed = Array.isArray(data) ? data : [];
+    
     return { 
-      fixed: data || [], 
-      count: Array.isArray(data) ? data.length : 0,
+      fixed, 
+      count: fixed.length,
       error: null 
     };
   } catch (error: any) {
