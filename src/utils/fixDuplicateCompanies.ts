@@ -3,18 +3,15 @@ import { supabase } from '../integrations/supabase/client';
 // Utility function to identify and fix duplicate company records
 export const identifyDuplicateCompanies = async () => {
   try {
-    // Find companies with the same user_id
+    // Find user_ids that have more than one company
+    // Using raw SQL query instead of group_by which isn't available in the type definition
     const { data, error } = await supabase
-      .from('companies')
-      .select('user_id, count(*)')
-      .not('user_id', 'is', null)
-      .group_by('user_id')
-      .having('count(*) > 1');
+      .rpc('get_duplicate_companies');
     
     if (error) throw error;
     
     return { 
-      duplicates: data,
+      duplicates: data || [],
       count: data?.length || 0,
       error: null
     };
