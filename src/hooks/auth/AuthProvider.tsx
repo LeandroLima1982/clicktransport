@@ -18,9 +18,9 @@ export const AuthContext = createContext<AuthContextType>({
   signOut: async () => ({ error: null }),
   resetPassword: async () => ({ error: null }),
   userRole: null,
+  companyContext: null
 });
 
-// Make sure AuthProvider is defined as a regular React functional component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -183,7 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Context value to be provided
-  const contextValue = {
+  const contextValue: AuthContextType = {
     session,
     user,
     isLoading,

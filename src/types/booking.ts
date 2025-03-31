@@ -19,4 +19,15 @@ export type Booking = {
   client_name?: string | null;
   client_email?: string | null;
   client_phone?: string | null;
+  
+  // Additional fields that may be used in client components
+  passenger_data?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
+  driver_id?: string;
+  driver_name?: string;
+  driver_phone?: string;
+  company_phone?: string;
 };

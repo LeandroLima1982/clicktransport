@@ -9,9 +9,7 @@ import { toast } from 'sonner';
 import BookingTable from '@/components/admin/BookingTable';
 import { Booking } from '@/types/booking';
 
-type BookingWithCompany = Booking & {
-  company_name?: string | null;
-};
+type BookingWithCompany = Booking;
 
 const BookingManagement: React.FC = () => {
   const [bookings, setBookings] = useState<BookingWithCompany[]>([]);
