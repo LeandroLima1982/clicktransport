@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Table,
@@ -9,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, MapPin, MoreHorizontal } from 'lucide-react';
+import { Eye, MapPin, MoreHorizontal, AlertTriangle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,7 +94,9 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
       'pending': 'Pendente',
       'in_progress': 'Em Progresso',
       'completed': 'Concluído',
-      'cancelled': 'Cancelado'
+      'cancelled': 'Cancelado',
+      'assigned': 'Atribuído',
+      'created': 'Criado'
     };
     
     return statusNames[status] || status;
@@ -113,6 +116,10 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
         return <Badge className="bg-green-100 text-green-800">Concluído</Badge>;
       case 'cancelled':
         return <Badge className="bg-red-100 text-red-800">Cancelado</Badge>;
+      case 'assigned':
+        return <Badge className="bg-indigo-100 text-indigo-800">Atribuído</Badge>;
+      case 'created':
+        return <Badge className="bg-purple-100 text-purple-800">Criado</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -133,7 +140,11 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
   if (orders.length === 0) {
     return (
       <div className="flex justify-center items-center flex-col h-60">
+        <AlertTriangle className="h-12 w-12 text-yellow-500 mb-4" />
         <p className="text-muted-foreground">Nenhuma ordem de serviço encontrada</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Tente criar uma ordem de serviço a partir de uma reserva
+        </p>
       </div>
     );
   }

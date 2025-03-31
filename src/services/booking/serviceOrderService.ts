@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ServiceOrder } from '@/components/company/orders/types';
@@ -34,6 +35,8 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       status: 'pending' as const,
       notes: `Reserva: ${booking.reference_code}\n${booking.additional_notes || ''}`,
     };
+    
+    console.log('Creating service order with data:', orderData);
     
     // First try a direct insert with returning data
     let { data: order, error: orderError } = await supabase
@@ -84,6 +87,8 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       // If it's another type of error, throw it
       throw orderError;
     }
+    
+    console.log('Service order created successfully:', order);
     
     // Make sure order.status is one of the allowed values
     const typedOrder: ServiceOrder = {

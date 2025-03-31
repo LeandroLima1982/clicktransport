@@ -50,6 +50,8 @@ const ServiceOrderMonitoring: React.FC = () => {
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
+      console.log('Fetching service orders...');
+      
       // Fetch service orders with related company names
       const { data, error } = await supabase
         .from('service_orders')
@@ -59,13 +61,20 @@ const ServiceOrderMonitoring: React.FC = () => {
         `)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching orders:', error);
+        throw error;
+      }
+      
+      console.log('Retrieved orders:', data);
       
       // Format the data to include company_name
       const formattedOrders = data?.map(order => ({
         ...order,
         company_name: order.companies?.name || null
       })) || [];
+      
+      console.log('Formatted orders:', formattedOrders);
       
       setOrders(formattedOrders);
       setFilteredOrders(formattedOrders);

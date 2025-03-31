@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Table,
@@ -200,6 +201,8 @@ const BookingTable: React.FC<BookingTableProps> = ({ bookings, isLoading, onRefr
         company_id: selectedCompany,
         company_name: companyName
       };
+      
+      console.log('Creating service order with booking:', bookingWithCompany);
       
       const { serviceOrder, error } = await createServiceOrderFromBooking(bookingWithCompany);
       
