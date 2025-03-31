@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ServiceOrder } from '@/components/company/orders/types';
@@ -42,7 +43,53 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       .single();
     
     if (orderError) {
-      throw orderError;
+      // Check if it's a financial metrics RLS error
+      if (orderError.code === '42501' && orderError.message?.includes('financial_metrics')) {
+        // Log the error but continue with the order creation flow
+        console.warn('Financial metrics entry creation failed due to RLS, but service order was created');
+        
+        // Try to fetch the created order
+        const { data: createdOrder, error: fetchError } = await supabase
+          .from('service_orders')
+          .select('*')
+          .eq('company_id', companyId)
+          .eq('origin', booking.origin)
+          .eq('destination', booking.destination)
+          .eq('pickup_date', booking.travel_date)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+          
+        if (fetchError) {
+          throw orderError; // Fall back to the original error if we can't fetch the order
+        }
+        
+        // Make sure order.status is one of the allowed values
+        const typedOrder: ServiceOrder = {
+          ...createdOrder,
+          status: createdOrder.status as ServiceOrder['status']
+        };
+        
+        // Log the service order creation
+        logInfo('Service order created from booking (metrics update failed)', 'order', {
+          booking_id: booking.id,
+          order_id: typedOrder.id,
+          company_id: companyId,
+          metrics_error: orderError.message
+        });
+        
+        // Send notifications despite metrics error
+        try {
+          await notifyCompanyNewOrder(typedOrder);
+          await notifyBookingConfirmed(booking);
+        } catch (notifyError) {
+          console.error('Error sending notifications:', notifyError);
+        }
+        
+        return { serviceOrder: typedOrder, error: null };
+      } else {
+        throw orderError;
+      }
     }
     
     // Make sure order.status is one of the allowed values

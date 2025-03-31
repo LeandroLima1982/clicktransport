@@ -25,7 +25,7 @@ export type Booking = {
   client_phone?: string | null;
   
   // Driver-related fields
-  passenger_data?: any; // Changed from string | any[] to just any to accommodate JSON types
+  passenger_data?: any; // Using any type to accommodate JSON types
   driver_id?: string;
   driver_name?: string;
   driver_phone?: string;
@@ -33,5 +33,5 @@ export type Booking = {
   
   // Service order related
   has_service_order?: boolean;
-  service_orders?: any[]; // This needs to handle both array and error cases
+  service_orders?: any[] | { error: true } & String; // Handle both array and error cases
 };

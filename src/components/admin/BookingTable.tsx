@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Table,
@@ -203,7 +204,9 @@ const BookingTable: React.FC<BookingTableProps> = ({ bookings, isLoading, onRefr
       
       const { serviceOrder, error } = await createServiceOrderFromBooking(bookingWithCompany);
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       toast.success('Ordem de serviço criada com sucesso', {
         description: 'A ordem foi atribuída à empresa selecionada'
@@ -212,9 +215,17 @@ const BookingTable: React.FC<BookingTableProps> = ({ bookings, isLoading, onRefr
       onRefreshData();
       setShowCreateOrderDialog(false);
       setShowBookingDetails(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating service order:', error);
-      toast.error('Erro ao criar ordem de serviço');
+      
+      // Provide a more informative error message
+      const errorMessage = error.message?.includes('financial_metrics') 
+        ? 'Erro de permissões ao atualizar métricas financeiras'
+        : 'Erro ao criar ordem de serviço';
+        
+      toast.error(errorMessage, {
+        description: error.message || 'Ocorreu um erro inesperado'
+      });
     } finally {
       setIsCreatingOrder(false);
     }
