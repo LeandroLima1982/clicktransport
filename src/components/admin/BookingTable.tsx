@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { format } from 'date-fns';
 import { Eye, CheckCircle, XCircle, Clock, ArrowRight, FileText } from 'lucide-react';
@@ -299,123 +300,125 @@ const BookingTable: React.FC<BookingTableProps> = ({ bookings, isLoading, onRefr
           </SheetHeader>
           
           {selectedBooking && (
-            <div className="py-4">
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4 py-2 border-b">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Status</p>
-                    <Badge variant="outline" className={`${statusConfig[selectedBooking.status]?.color} mt-1 flex w-fit items-center gap-1 border`}>
-                      {statusConfig[selectedBooking.status]?.icon}
-                      {selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1)}
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Preço</p>
-                    <p className="font-medium">R$ {selectedBooking.total_price.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Passageiros</p>
-                    <p className="font-medium">{selectedBooking.passengers || '1'}</p>
-                  </div>
-                </div>
-                
-                <div className="py-2 border-b">
-                  <p className="text-sm font-medium text-gray-500">Cliente</p>
-                  <p className="font-medium">{selectedBooking.client_name || 'Nome não informado'}</p>
-                  <p className="text-sm text-gray-500">{selectedBooking.client_email || 'Email não informado'}</p>
-                  <p className="text-sm text-gray-500">{selectedBooking.client_phone || 'Telefone não informado'}</p>
-                </div>
-                
-                <div className="py-2 border-b">
-                  <p className="text-sm font-medium text-gray-500">Rota</p>
-                  <div className="mt-1">
-                    <div className="flex items-start">
-                      <div className="mt-1 h-2 w-2 rounded-full bg-green-500"></div>
-                      <div className="ml-2">
-                        <p className="font-medium">Origem</p>
-                        <p className="text-gray-700">{selectedBooking.origin}</p>
-                      </div>
-                    </div>
-                    <div className="ml-1 h-6 w-[1px] bg-gray-300"></div>
-                    <div className="flex items-start">
-                      <div className="mt-1 h-2 w-2 rounded-full bg-red-500"></div>
-                      <div className="ml-2">
-                        <p className="font-medium">Destino</p>
-                        <p className="text-gray-700">{selectedBooking.destination}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="py-2 border-b">
-                  <p className="text-sm font-medium text-gray-500">Datas</p>
-                  <div className="grid grid-cols-2 gap-4 mt-1">
+            <ScrollArea className="h-[calc(100vh-180px)] pr-4">
+              <div className="py-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4 py-2 border-b">
                     <div>
-                      <p className="text-sm text-gray-500">Ida</p>
-                      <p className="font-medium">{formatDate(selectedBooking.travel_date)}</p>
+                      <p className="text-sm font-medium text-gray-500">Status</p>
+                      <Badge variant="outline" className={`${statusConfig[selectedBooking.status]?.color} mt-1 flex w-fit items-center gap-1 border`}>
+                        {statusConfig[selectedBooking.status]?.icon}
+                        {selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1)}
+                      </Badge>
                     </div>
-                    {selectedBooking.return_date && (
-                      <div>
-                        <p className="text-sm text-gray-500">Volta</p>
-                        <p className="font-medium">{formatDate(selectedBooking.return_date)}</p>
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Preço</p>
+                      <p className="font-medium">R$ {selectedBooking.total_price.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Passageiros</p>
+                      <p className="font-medium">{selectedBooking.passengers || '1'}</p>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="py-2 border-b">
-                  <p className="text-sm font-medium text-gray-500">Veículo</p>
-                  <p className="font-medium">{selectedBooking.vehicle_type || 'Não especificado'}</p>
-                </div>
-                
-                {selectedBooking.additional_notes && (
+                  
                   <div className="py-2 border-b">
-                    <p className="text-sm font-medium text-gray-500">Observações</p>
-                    <p className="text-gray-700">{selectedBooking.additional_notes}</p>
+                    <p className="text-sm font-medium text-gray-500">Cliente</p>
+                    <p className="font-medium">{selectedBooking.client_name || 'Nome não informado'}</p>
+                    <p className="text-sm text-gray-500">{selectedBooking.client_email || 'Email não informado'}</p>
+                    <p className="text-sm text-gray-500">{selectedBooking.client_phone || 'Telefone não informado'}</p>
                   </div>
-                )}
-                
-                <div className="py-2">
-                  <p className="text-sm font-medium text-gray-500">Empresa</p>
-                  <p className="font-medium">{selectedBooking.company_name || 'Não atribuída'}</p>
-                </div>
-                
-                <div className="flex flex-col space-y-2 pt-4">
-                  <p className="text-sm font-medium">Gerenciar reserva</p>
-                  <div className="flex flex-col space-y-2">
-                    <Select onValueChange={(value) => handleStatusChange(value)} disabled={isUpdating}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Alterar status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pendente</SelectItem>
-                        <SelectItem value="confirmed">Confirmada</SelectItem>
-                        <SelectItem value="completed">Concluída</SelectItem>
-                        <SelectItem value="cancelled">Cancelada</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <div className="flex space-x-2">
-                      {!selectedBooking.company_id && (
-                        <Button variant="outline" onClick={handleShowAssignDialog} disabled={isUpdating} className="flex-1">
-                          Atribuir Empresa
-                        </Button>
+                  
+                  <div className="py-2 border-b">
+                    <p className="text-sm font-medium text-gray-500">Rota</p>
+                    <div className="mt-1">
+                      <div className="flex items-start">
+                        <div className="mt-1 h-2 w-2 rounded-full bg-green-500"></div>
+                        <div className="ml-2">
+                          <p className="font-medium">Origem</p>
+                          <p className="text-gray-700">{selectedBooking.origin}</p>
+                        </div>
+                      </div>
+                      <div className="ml-1 h-6 w-[1px] bg-gray-300"></div>
+                      <div className="flex items-start">
+                        <div className="mt-1 h-2 w-2 rounded-full bg-red-500"></div>
+                        <div className="ml-2">
+                          <p className="font-medium">Destino</p>
+                          <p className="text-gray-700">{selectedBooking.destination}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="py-2 border-b">
+                    <p className="text-sm font-medium text-gray-500">Datas</p>
+                    <div className="grid grid-cols-2 gap-4 mt-1">
+                      <div>
+                        <p className="text-sm text-gray-500">Ida</p>
+                        <p className="font-medium">{formatDate(selectedBooking.travel_date)}</p>
+                      </div>
+                      {selectedBooking.return_date && (
+                        <div>
+                          <p className="text-sm text-gray-500">Volta</p>
+                          <p className="font-medium">{formatDate(selectedBooking.return_date)}</p>
+                        </div>
                       )}
+                    </div>
+                  </div>
+                  
+                  <div className="py-2 border-b">
+                    <p className="text-sm font-medium text-gray-500">Veículo</p>
+                    <p className="font-medium">{selectedBooking.vehicle_type || 'Não especificado'}</p>
+                  </div>
+                  
+                  {selectedBooking.additional_notes && (
+                    <div className="py-2 border-b">
+                      <p className="text-sm font-medium text-gray-500">Observações</p>
+                      <p className="text-gray-700">{selectedBooking.additional_notes}</p>
+                    </div>
+                  )}
+                  
+                  <div className="py-2">
+                    <p className="text-sm font-medium text-gray-500">Empresa</p>
+                    <p className="font-medium">{selectedBooking.company_name || 'Não atribuída'}</p>
+                  </div>
+                  
+                  <div className="flex flex-col space-y-2 pt-4">
+                    <p className="text-sm font-medium">Gerenciar reserva</p>
+                    <div className="flex flex-col space-y-2">
+                      <Select onValueChange={(value) => handleStatusChange(value)} disabled={isUpdating}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Alterar status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pendente</SelectItem>
+                          <SelectItem value="confirmed">Confirmada</SelectItem>
+                          <SelectItem value="completed">Concluída</SelectItem>
+                          <SelectItem value="cancelled">Cancelada</SelectItem>
+                        </SelectContent>
+                      </Select>
                       
-                      <Button 
-                        variant="default" 
-                        onClick={handleShowCreateOrderDialog} 
-                        disabled={isUpdating}
-                        className="flex-1"
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        Criar Ordem de Serviço
-                      </Button>
+                      <div className="flex space-x-2">
+                        {!selectedBooking.company_id && (
+                          <Button variant="outline" onClick={handleShowAssignDialog} disabled={isUpdating} className="flex-1">
+                            Atribuir Empresa
+                          </Button>
+                        )}
+                        
+                        <Button 
+                          variant="default" 
+                          onClick={handleShowCreateOrderDialog} 
+                          disabled={isUpdating}
+                          className="flex-1"
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          Criar Ordem de Serviço
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </ScrollArea>
           )}
         </SheetContent>
       </Sheet>
