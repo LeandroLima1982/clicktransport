@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ServiceOrder } from '@/components/company/orders/types';
@@ -19,23 +18,12 @@ import {
  */
 export const createServiceOrderFromBooking = async (booking: Booking) => {
   try {
-    // Find company with lowest queue position
-    const { data: companies, error: companiesError } = await supabase
-      .from('companies')
-      .select('*')
-      .eq('status', 'active')
-      .order('queue_position', { ascending: true })
-      .limit(1);
+    // Use the provided company ID directly instead of finding one
+    const companyId = booking.company_id;
     
-    if (companiesError) {
-      throw companiesError;
+    if (!companyId) {
+      throw new Error('No company ID provided for service order');
     }
-    
-    if (!companies || companies.length === 0) {
-      throw new Error('No active companies available');
-    }
-    
-    const companyId = companies[0].id;
     
     // Create service order
     const orderData = {

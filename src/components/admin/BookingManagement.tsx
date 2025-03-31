@@ -52,9 +52,14 @@ const BookingManagement: React.FC = () => {
   const fetchBookings = async () => {
     setIsLoading(true);
     try {
+      // Modify the query to also get service order info
       const { data, error } = await supabase
         .from('bookings')
-        .select('*, companies(name)')
+        .select(`
+          *,
+          companies(name),
+          service_orders(id, status)
+        `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -70,7 +75,9 @@ const BookingManagement: React.FC = () => {
           ...booking,
           status: validStatus,
           company_name: booking.company_name || booking.companies?.name || null,
-          company_id: booking.company_id || null
+          company_id: booking.company_id || null,
+          // Add has_service_order flag to track if service order exists
+          has_service_order: booking.service_orders && booking.service_orders.length > 0
         } as Booking;
       }) || [];
       

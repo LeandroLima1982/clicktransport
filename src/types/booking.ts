@@ -30,4 +30,8 @@ export type Booking = {
   driver_name?: string;
   driver_phone?: string;
   company_phone?: string;
+  
+  // Service order related
+  has_service_order?: boolean;
+  service_orders?: any[];
 };
