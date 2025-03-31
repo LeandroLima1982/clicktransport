@@ -71,14 +71,22 @@ const BookingManagement: React.FC = () => {
           ? booking.status as "pending" | "confirmed" | "completed" | "cancelled"
           : "pending";
         
-        return {
+        // Check if service_orders is an array before using it
+        const hasServiceOrder = Array.isArray(booking.service_orders) && booking.service_orders.length > 0;
+        
+        // Create the booking object with correct type safety
+        const formattedBooking: Booking = {
           ...booking,
           status: validStatus,
           company_name: booking.company_name || booking.companies?.name || null,
           company_id: booking.company_id || null,
+          // Convert service_orders to appropriate format
+          service_orders: Array.isArray(booking.service_orders) ? booking.service_orders : [],
           // Add has_service_order flag to track if service order exists
-          has_service_order: booking.service_orders && booking.service_orders.length > 0
-        } as Booking;
+          has_service_order: hasServiceOrder
+        };
+        
+        return formattedBooking;
       }) || [];
       
       setBookings(formattedBookings);
