@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthContainer, LoginForm, RegisterForm } from '@/components/auth';
 import { useAuthPage } from '../hooks/auth/useAuthPage';
-import { Car, Briefcase, Shield, User } from 'lucide-react';
+import { Car, Briefcase, Shield, User, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
@@ -19,11 +19,14 @@ const Auth = () => {
     toggleUserType,
     getTitle,
     getDescription,
-    getRoleIcon
+    getRoleIcon,
+    awaitingEmailConfirmation
   } = useAuthPage();
 
   // Map role icon name to component
   const getRoleIconComponent = () => {
+    if (awaitingEmailConfirmation) return <Mail className="h-8 w-8 text-primary mb-2" />;
+    
     const iconType = getRoleIcon();
     if (iconType === 'client') return <User className="h-8 w-8 text-primary mb-2" />;
     if (iconType === 'driver') return <Car className="h-8 w-8 text-primary mb-2" />;

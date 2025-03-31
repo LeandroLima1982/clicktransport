@@ -13,14 +13,17 @@ export const useAuthPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isBusinessUser, setIsBusinessUser] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [awaitingEmailConfirmation, setAwaitingEmailConfirmation] = useState(false);
 
   const { signIn, signUp, user, userRole } = useAuth();
 
   useEffect(() => {
+    // If user is already logged in, redirect to dashboard
     if (user) {
       redirectToDashboard();
     }
     
+    // Check URL params for initial tab and account type
     const searchParams = new URLSearchParams(location.search);
     if (searchParams.get('register') === 'true') {
       setActiveTab('register');
@@ -80,7 +83,19 @@ export const useAuthPage = () => {
       console.log(`Attempting login with accountType: ${accountType}`);
       const { error } = await signIn(email, password);
       
-      if (error) throw error;
+      if (error) {
+        // Special handling for common authentication errors
+        if (error.message.includes('Email not confirmed')) {
+          toast.warning('Email não confirmado', {
+            description: 'Por favor, verifique seu email para confirmar sua conta antes de fazer login.'
+          });
+          setError('Por favor, confirme seu email antes de fazer login.');
+        } else if (error.message.includes('Invalid login credentials')) {
+          setError('Credenciais inválidas. Verifique seu email e senha.');
+        } else {
+          throw error;
+        }
+      }
       
     } catch (err: any) {
       console.error('Error signing in:', err);
@@ -94,6 +109,7 @@ export const useAuthPage = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setAwaitingEmailConfirmation(false);
     
     const form = e.target as HTMLFormElement;
     const email = (form.elements.namedItem('reg-email') as HTMLInputElement).value;
@@ -135,20 +151,25 @@ export const useAuthPage = () => {
       
       if (result.error) throw result.error;
       
-      // Show different messages based on account type
-      if (finalAccountType === 'company') {
-        toast.success('Empresa cadastrada com sucesso!', {
-          description: 'Seu cadastro será analisado por nossa equipe. Você receberá um email quando for aprovado.'
+      // If email confirmation is required, show appropriate message
+      if (result.requiresEmailConfirmation) {
+        setAwaitingEmailConfirmation(true);
+        toast.success('Verifique seu email', {
+          description: 'Um link de confirmação foi enviado para seu email. Por favor, confirme para ativar sua conta.'
         });
-      } else {
-        toast.success('Conta criada com sucesso! Verifique seu email para ativar sua conta.');
       }
       
       setRegistrationSuccess(true);
       setActiveTab('login');
     } catch (err: any) {
       console.error('Error registering:', err);
-      setError(err.message || 'Error creating account. Please try again.');
+      
+      // Specific error handling for common registration issues
+      if (err.message && err.message.includes('already registered')) {
+        setError('Este email já está registrado. Por favor, tente fazer login ou use outro email.');
+      } else {
+        setError(err.message || 'Error creating account. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -186,6 +207,10 @@ export const useAuthPage = () => {
       return 'Digite suas credenciais para acessar sua conta';
     }
     
+    if (awaitingEmailConfirmation) {
+      return 'Por favor, verifique seu email para confirmar seu cadastro antes de fazer login.';
+    }
+    
     if (isBusinessUser) {
       if (accountType === 'company') {
         return 'Preencha o formulário abaixo para criar sua conta de empresa. Seu cadastro será revisado antes da aprovação.';
@@ -213,6 +238,7 @@ export const useAuthPage = () => {
     error,
     isBusinessUser,
     registrationSuccess,
+    awaitingEmailConfirmation,
     handleLogin,
     handleRegister,
     toggleUserType,

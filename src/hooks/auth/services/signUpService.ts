@@ -86,6 +86,7 @@ export const signUp = async (email: string, password: string, userData?: UserDat
     });
     
     if (result.error) {
+      console.error('Sign up error:', result.error);
       toast.error('Erro ao criar conta', {
         description: result.error.message
       });
@@ -94,32 +95,57 @@ export const signUp = async (email: string, password: string, userData?: UserDat
     
     console.log('Sign up result:', result);
     
+    // Check if email confirmation is required (this will be true for Supabase projects with email confirmation enabled)
+    const requiresEmailConfirmation = result.data?.user?.identities?.[0]?.identity_data?.email_verified === false;
+    
     // Create company record if user is signing up as company
     if (userRole === 'company' && result.data.user) {
-      const { error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          user_id: result.data.user.id,
-          name: userData.companyName || '',
-          cnpj: userData.cnpj || null,
-          status: 'pending', // Start as pending for admin approval
-        });
-        
-      if (companyError) {
-        console.error('Error creating company record:', companyError);
-        toast.error('Erro ao criar registro da empresa', {
-          description: companyError.message
-        });
-      } else {
-        toast.success('Empresa registrada com sucesso', {
-          description: 'Seu cadastro será analisado pela administração. Você receberá um e-mail quando for aprovado.'
-        });
+      try {
+        const { error: companyError } = await supabase
+          .from('companies')
+          .insert({
+            user_id: result.data.user.id,
+            name: userData.companyName || '',
+            cnpj: userData.cnpj || null,
+            status: 'pending', // Start as pending for admin approval
+          });
+          
+        if (companyError) {
+          console.error('Error creating company record:', companyError);
+          toast.error('Erro ao criar registro da empresa', {
+            description: companyError.message
+          });
+        } else {
+          if (requiresEmailConfirmation) {
+            toast.success('Cadastro iniciado com sucesso!', {
+              description: 'Verifique seu email para confirmar o cadastro. Após confirmar, seu cadastro será analisado pela administração.'
+            });
+          } else {
+            toast.success('Empresa registrada com sucesso', {
+              description: 'Seu cadastro será analisado pela administração. Você receberá um e-mail quando for aprovado.'
+            });
+          }
+        }
+      } catch (companyInsertError) {
+        console.error('Exception creating company record:', companyInsertError);
+        toast.error('Erro inesperado ao criar registro da empresa');
       }
+    } else if (requiresEmailConfirmation) {
+      // For non-company users with email confirmation required
+      toast.success('Cadastro iniciado com sucesso!', {
+        description: 'Verifique seu email para confirmar o cadastro.'
+      });
+    } else {
+      // For non-company users without email confirmation
+      toast.success('Conta criada com sucesso!');
     }
     
-    // Driver creation is now handled only through the company panel
-    
-    return { error: null, data: result.data };
+    // Return success with user data
+    return { 
+      error: null, 
+      data: result.data,
+      requiresEmailConfirmation 
+    };
   } catch (err) {
     console.error('Error creating account:', err);
     toast.error('Erro inesperado ao criar conta');
