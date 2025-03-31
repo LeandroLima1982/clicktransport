@@ -7,6 +7,7 @@ import { Search, FileText, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ServiceOrderTable, { ServiceOrder } from './ServiceOrderTable';
+import { useServiceOrderSubscription } from '@/hooks/useServiceOrderSubscription';
 
 const ServiceOrderMonitoring: React.FC = () => {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
@@ -14,6 +15,39 @@ const ServiceOrderMonitoring: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [totalOrders, setTotalOrders] = useState(0);
+
+  // Set up real-time subscription for service orders
+  const handleOrderNotification = (payload: any) => {
+    console.log('Service order notification:', payload);
+    fetchOrders();
+    fetchTotalCount();
+    
+    if (payload.eventType === 'INSERT') {
+      toast.success('Nova ordem de serviço criada!', {
+        description: `Origem: ${payload.new.origin}, Destino: ${payload.new.destination}`
+      });
+    }
+  };
+  
+  // Initialize service order subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('service_orders_admin')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'service_orders'
+        },
+        handleOrderNotification
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   useEffect(() => {
     fetchOrders();
@@ -36,11 +70,13 @@ const ServiceOrderMonitoring: React.FC = () => {
 
   const fetchTotalCount = async () => {
     try {
+      console.log('Fetching total service orders count...');
       const { count, error } = await supabase
         .from('service_orders')
         .select('*', { count: 'exact', head: true });
       
       if (error) throw error;
+      console.log('Total service orders:', count);
       setTotalOrders(count || 0);
     } catch (error) {
       console.error('Error fetching total orders count:', error);

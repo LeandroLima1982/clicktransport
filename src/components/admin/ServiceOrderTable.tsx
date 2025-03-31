@@ -59,12 +59,14 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
   const handleViewDetails = (order: ServiceOrder) => {
     setSelectedOrder(order);
     // In the future, this could open a modal with detailed information
-    toast.info(`Detalhes da ordem: ${order.id}`);
+    toast.info(`Detalhes da ordem: ${order.id.substring(0, 8)}`);
   };
 
   const handleStatusChange = async (order: ServiceOrder, newStatus: string) => {
     setUpdatingStatus(true);
     try {
+      console.log(`Updating order ${order.id} status from ${order.status} to ${newStatus}`);
+      
       const { error } = await supabase
         .from('service_orders')
         .update({ status: newStatus })
