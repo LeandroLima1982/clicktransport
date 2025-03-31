@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -134,14 +133,15 @@ const CompanyCreateForm: React.FC<CompanyCreateFormProps> = ({
         }
       }
       
-      // Create company record
+      // Create company record with manual_creation flag
       const { error: companyError } = await supabase
         .from('companies')
         .insert({
           name: companyData.name.trim(),
           cnpj: companyData.cnpj || null,
           status: companyData.status,
-          user_id: userId
+          user_id: userId,
+          manual_creation: true // Add flag to identify manually created companies
         });
       
       if (companyError) throw companyError;

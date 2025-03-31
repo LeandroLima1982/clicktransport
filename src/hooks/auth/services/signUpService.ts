@@ -17,7 +17,7 @@ interface SignUpResult {
   error: AuthError | null;
   data?: any;
   requiresEmailConfirmation?: boolean;
-  companyError?: any; // Added this property to fix the TypeScript error
+  companyError?: any; // Added property to fix TypeScript error
 }
 
 // Sign up with email and password
@@ -113,6 +113,7 @@ export const signUp = async (email: string, password: string, userData?: UserDat
     const requiresEmailConfirmation = result.data?.user?.identities?.[0]?.identity_data?.email_verified === false;
     
     // Create company record if user is signing up as company
+    // NOTE: We now add manual_creation=true flag to prevent duplication with database trigger
     if (userRole === 'company' && result.data.user) {
       try {
         const { error: companyError } = await supabase
@@ -122,6 +123,7 @@ export const signUp = async (email: string, password: string, userData?: UserDat
             name: userData.companyName || '',
             cnpj: userData.cnpj || null,
             status: 'pending', // Start as pending for admin approval
+            manual_creation: true // Add flag to identify manually created companies
           });
           
         if (companyError) {
@@ -135,7 +137,7 @@ export const signUp = async (email: string, password: string, userData?: UserDat
             error: null,
             data: result.data,
             requiresEmailConfirmation,
-            companyError // Now this is a valid property in the SignUpResult interface
+            companyError 
           };
         } else {
           if (requiresEmailConfirmation) {
@@ -156,7 +158,7 @@ export const signUp = async (email: string, password: string, userData?: UserDat
           error: null,
           data: result.data,
           requiresEmailConfirmation,
-          companyError: companyInsertError // Now this is a valid property in the SignUpResult interface
+          companyError: companyInsertError
         };
       }
     } else if (requiresEmailConfirmation) {
