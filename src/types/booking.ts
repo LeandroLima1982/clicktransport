@@ -14,6 +14,8 @@ export type Booking = {
   additional_notes: string;
   created_at: string;
   user_id: string;
+  
+  // Adding missing properties needed by BookingManagement.tsx
   company_id?: string | null;
   company_name?: string | null;
   client_name?: string | null;
