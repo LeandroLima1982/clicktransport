@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -218,8 +218,7 @@ const BookingTable: React.FC<BookingTableProps> = ({ bookings, isLoading, onRefr
       console.error('Error creating service order:', error);
       
       if (error.message?.includes('financial_metrics')) {
-        toast({
-          title: "Ordem de serviço criada com aviso",
+        toast.warning("Ordem de serviço criada com aviso", {
           description: "A ordem foi criada, mas houve um erro ao atualizar métricas financeiras",
           icon: <AlertTriangle className="h-4 w-4 text-yellow-500" />,
         });
