@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { AuthContainer, LoginForm, RegisterForm } from '@/components/auth';
 import { useAuthPage } from '../hooks/auth/useAuthPage';
 import { Car, Briefcase, Shield, User, Mail } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
   const {
