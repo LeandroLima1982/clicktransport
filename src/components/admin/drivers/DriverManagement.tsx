@@ -20,7 +20,7 @@ interface DriverWithCompany extends Driver {
 }
 
 const DriverManagement = () => {
-  const [selectedDriver, setSelectedDriver] = useState<DriverWithCompany | null>(null);
+  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [filterCompany, setFilterCompany] = useState<string | null>(null);
@@ -49,7 +49,7 @@ const DriverManagement = () => {
         throw error;
       }
       
-      return data as DriverWithCompany[];
+      return data as Driver[];
     }
   });
 
@@ -73,7 +73,7 @@ const DriverManagement = () => {
     }
   });
 
-  const handleViewDetails = (driver: DriverWithCompany) => {
+  const handleViewDetails = (driver: Driver) => {
     setSelectedDriver(driver);
     setIsDetailOpen(true);
   };

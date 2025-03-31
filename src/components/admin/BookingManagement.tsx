@@ -9,11 +9,9 @@ import { toast } from 'sonner';
 import BookingTable from '@/components/admin/BookingTable';
 import { Booking } from '@/types/booking';
 
-type BookingWithCompany = Booking;
-
 const BookingManagement: React.FC = () => {
-  const [bookings, setBookings] = useState<BookingWithCompany[]>([]);
-  const [filteredBookings, setFilteredBookings] = useState<BookingWithCompany[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [totalBookings, setTotalBookings] = useState(0);
@@ -89,7 +87,7 @@ const BookingManagement: React.FC = () => {
           ...booking,
           status: validStatus,
           company_name: companyName
-        };
+        } as Booking;
       }) || [];
       
       setBookings(formattedBookings);
