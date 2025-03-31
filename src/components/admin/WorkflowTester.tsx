@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { generateSampleBookingAndOrder } from '@/services/db/generateTestOrders';
 import { assignDriverToOrder, updateOrderStatus } from '@/services/booking/serviceOrderService';
+import { executeSQL } from '@/hooks/useAdminSql';
 
 interface WorkflowStep {
   id: string;
@@ -40,7 +40,6 @@ const WorkflowTester: React.FC = () => {
   const [companyQueueAfter, setCompanyQueueAfter] = useState<any[]>([]);
   const [autoRun, setAutoRun] = useState(false);
   
-  // Function to update a step status
   const updateStepStatus = (
     stepId: string, 
     status: WorkflowStep['status'], 
@@ -62,7 +61,6 @@ const WorkflowTester: React.FC = () => {
     );
   };
   
-  // Function to reset the workflow
   const resetWorkflow = () => {
     setWorkflowSteps(defaultWorkflowSteps);
     setCurrentBookingId(null);
@@ -72,7 +70,6 @@ const WorkflowTester: React.FC = () => {
     setCompanyQueueAfter([]);
   };
   
-  // Function to fetch the company queue positions
   const fetchCompanyQueue = async () => {
     try {
       const { data, error } = await supabase
@@ -89,19 +86,20 @@ const WorkflowTester: React.FC = () => {
     }
   };
   
-  // Step 1: Create a booking and order
   const createBookingAndOrder = async () => {
     updateStepStatus('booking', 'running', 'Criando reserva...');
     
     try {
-      // Fetch company queue before
       const queueBefore = await fetchCompanyQueue();
       setCompanyQueueBefore(queueBefore);
       
+      console.log('Starting to generate sample booking and order...');
       const result = await generateSampleBookingAndOrder();
+      console.log('Result from generateSampleBookingAndOrder:', result);
       
       if (!result.success) {
-        throw new Error(result.error || 'Erro ao criar reserva e ordem de serviço');
+        throw new Error(result.error instanceof Error ? result.error.message : 
+                       (result.error || 'Erro ao criar reserva e ordem de serviço'));
       }
       
       setCurrentBookingId(result.booking?.id || null);
@@ -119,9 +117,33 @@ const WorkflowTester: React.FC = () => {
         }
       );
       
-      // Auto-verify company assignment
       if (result.serviceOrder) {
-        verifyCompanyAssignment(result.serviceOrder.id);
+        console.log('Service order created, verifying company assignment...');
+        setTimeout(() => verifyCompanyAssignment(result.serviceOrder.id), 1000);
+      } else if (result.booking) {
+        console.log('No service order in result, attempting to find by booking data...');
+        try {
+          const { data: orders, error } = await supabase
+            .from('service_orders')
+            .select('*')
+            .eq('notes', `%${result.booking.reference_code}%`)
+            .limit(1);
+            
+          if (error) throw error;
+          
+          if (orders && orders.length > 0) {
+            console.log('Found matching service order:', orders[0]);
+            setCurrentOrderId(orders[0].id);
+            setTimeout(() => verifyCompanyAssignment(orders[0].id), 1000);
+          } else {
+            console.log('No matching service order found by reference code');
+            updateStepStatus('company_assignment', 'failed', 'Não foi possível encontrar a ordem de serviço relacionada à reserva');
+          }
+        } catch (searchError) {
+          console.error('Error searching for service order:', searchError);
+        }
+      } else {
+        updateStepStatus('company_assignment', 'failed', 'Não foi possível criar uma ordem de serviço para esta reserva');
       }
     } catch (error) {
       console.error('Error creating booking and order:', error);
@@ -129,8 +151,8 @@ const WorkflowTester: React.FC = () => {
     }
   };
   
-  // Step 2: Verify company assignment
   const verifyCompanyAssignment = async (orderId: string) => {
+    console.log('Verifying company assignment for order:', orderId);
     updateStepStatus('company_assignment', 'running', 'Verificando atribuição à empresa...');
     
     try {
@@ -143,6 +165,7 @@ const WorkflowTester: React.FC = () => {
       if (error) throw error;
       
       if (data && data.company_id) {
+        console.log('Company assigned successfully:', data);
         updateStepStatus(
           'company_assignment', 
           'success', 
@@ -153,11 +176,9 @@ const WorkflowTester: React.FC = () => {
           }
         );
         
-        // Fetch company queue after assignment
         const queueAfter = await fetchCompanyQueue();
         setCompanyQueueAfter(queueAfter);
         
-        // Find available drivers for this company
         const { data: drivers, error: driversError } = await supabase
           .from('drivers')
           .select('id, name')
@@ -168,11 +189,18 @@ const WorkflowTester: React.FC = () => {
         if (driversError) throw driversError;
         
         if (drivers && drivers.length > 0) {
+          console.log('Found available driver:', drivers[0]);
           setDriverId(drivers[0].id);
+          
+          if (autoRun) {
+            setTimeout(() => assignDriver(), 1500);
+          }
         } else {
+          console.log('No available drivers found');
           updateStepStatus('driver_assignment', 'failed', 'Nenhum motorista disponível para esta empresa');
         }
       } else {
+        console.log('No company assigned to order');
         updateStepStatus('company_assignment', 'failed', 'Ordem não atribuída a nenhuma empresa');
       }
     } catch (error) {
@@ -181,19 +209,20 @@ const WorkflowTester: React.FC = () => {
     }
   };
   
-  // Step 3: Assign driver to order
   const assignDriver = async () => {
     if (!currentOrderId || !driverId) {
       updateStepStatus('driver_assignment', 'failed', 'ID do pedido ou do motorista não disponível');
       return;
     }
     
+    console.log('Assigning driver to order:', {currentOrderId, driverId});
     updateStepStatus('driver_assignment', 'running', 'Atribuindo motorista...');
     
     try {
       const result = await assignDriverToOrder(currentOrderId, driverId);
       
       if (result.success) {
+        console.log('Driver assigned successfully:', result);
         updateStepStatus(
           'driver_assignment', 
           'success', 
@@ -203,8 +232,13 @@ const WorkflowTester: React.FC = () => {
             orderId: currentOrderId
           }
         );
+        
+        if (autoRun) {
+          setTimeout(() => startTrip(), 1500);
+        }
       } else {
-        throw new Error(result.error || 'Erro ao atribuir motorista');
+        throw new Error(result.error instanceof Error ? result.error.message : 
+                       (result.error || 'Erro ao atribuir motorista'));
       }
     } catch (error) {
       console.error('Error assigning driver:', error);
@@ -212,19 +246,20 @@ const WorkflowTester: React.FC = () => {
     }
   };
   
-  // Step 4: Start trip
   const startTrip = async () => {
     if (!currentOrderId) {
       updateStepStatus('start_trip', 'failed', 'ID do pedido não disponível');
       return;
     }
     
+    console.log('Starting trip for order:', currentOrderId);
     updateStepStatus('start_trip', 'running', 'Iniciando viagem...');
     
     try {
       const result = await updateOrderStatus(currentOrderId, 'in_progress', driverId || undefined);
       
       if (result.success) {
+        console.log('Trip started successfully:', result);
         updateStepStatus(
           'start_trip', 
           'success', 
@@ -234,8 +269,13 @@ const WorkflowTester: React.FC = () => {
             status: 'in_progress'
           }
         );
+        
+        if (autoRun) {
+          setTimeout(() => completeTrip(), 1500);
+        }
       } else {
-        throw new Error(result.error || 'Erro ao iniciar viagem');
+        throw new Error(result.error instanceof Error ? result.error.message : 
+                      (result.error || 'Erro ao iniciar viagem'));
       }
     } catch (error) {
       console.error('Error starting trip:', error);
@@ -243,19 +283,20 @@ const WorkflowTester: React.FC = () => {
     }
   };
   
-  // Step 5: Complete trip
   const completeTrip = async () => {
     if (!currentOrderId) {
       updateStepStatus('complete_trip', 'failed', 'ID do pedido não disponível');
       return;
     }
     
+    console.log('Completing trip for order:', currentOrderId);
     updateStepStatus('complete_trip', 'running', 'Concluindo viagem...');
     
     try {
       const result = await updateOrderStatus(currentOrderId, 'completed', driverId || undefined);
       
       if (result.success) {
+        console.log('Trip completed successfully:', result);
         updateStepStatus(
           'complete_trip', 
           'success', 
@@ -266,10 +307,10 @@ const WorkflowTester: React.FC = () => {
           }
         );
         
-        // Automatically verify queue
-        verifyQueueUpdate();
+        setTimeout(() => verifyQueueUpdate(), 1000);
       } else {
-        throw new Error(result.error || 'Erro ao concluir viagem');
+        throw new Error(result.error instanceof Error ? result.error.message : 
+                      (result.error || 'Erro ao concluir viagem'));
       }
     } catch (error) {
       console.error('Error completing trip:', error);
@@ -277,17 +318,15 @@ const WorkflowTester: React.FC = () => {
     }
   };
   
-  // Step 6: Verify queue update
   const verifyQueueUpdate = async () => {
+    console.log('Verifying queue update');
     updateStepStatus('verify_queue', 'running', 'Verificando atualização da fila...');
     
     try {
       const queueAfter = await fetchCompanyQueue();
       setCompanyQueueAfter(queueAfter);
       
-      // Check if queue positions were updated correctly
       if (companyQueueBefore.length > 0 && queueAfter.length > 0) {
-        // Find the company that was assigned the order
         const assignedCompany = workflowSteps.find(step => step.id === 'company_assignment')?.data?.companyId;
         
         if (assignedCompany) {
@@ -295,6 +334,11 @@ const WorkflowTester: React.FC = () => {
           const companyAfter = queueAfter.find(c => c.id === assignedCompany);
           
           if (companyBefore && companyAfter) {
+            console.log('Queue comparison:', {
+              companyBefore,
+              companyAfter
+            });
+            
             if (companyAfter.queue_position > companyBefore.queue_position) {
               updateStepStatus(
                 'verify_queue', 
@@ -333,19 +377,13 @@ const WorkflowTester: React.FC = () => {
     }
   };
   
-  // Run full workflow
   const runFullWorkflow = async () => {
     setIsRunning(true);
     resetWorkflow();
     
     try {
-      // Step 1: Create booking and order
+      console.log('Starting full workflow test...');
       await createBookingAndOrder();
-      
-      // Wait for booking and order to be processed
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Next steps will be triggered automatically based on the results of each step
       
     } catch (error) {
       console.error('Error running full workflow:', error);
@@ -357,34 +395,34 @@ const WorkflowTester: React.FC = () => {
     }
   };
   
-  // Auto-run next step when previous is successful
   useEffect(() => {
     if (!autoRun) return;
     
     const runNextStep = async () => {
-      // Find the current completed step
       const lastSuccessStep = [...workflowSteps].reverse().find(step => step.status === 'success');
       
       if (!lastSuccessStep) return;
       
-      // Check which step to run next
       if (lastSuccessStep.id === 'booking' && workflowSteps.find(s => s.id === 'company_assignment')?.status === 'pending') {
         if (currentOrderId) {
+          console.log('Auto-running company assignment verification');
           await verifyCompanyAssignment(currentOrderId);
         }
       } else if (lastSuccessStep.id === 'company_assignment' && workflowSteps.find(s => s.id === 'driver_assignment')?.status === 'pending') {
+        console.log('Auto-running driver assignment');
         await assignDriver();
       } else if (lastSuccessStep.id === 'driver_assignment' && workflowSteps.find(s => s.id === 'start_trip')?.status === 'pending') {
+        console.log('Auto-running trip start');
         await startTrip();
       } else if (lastSuccessStep.id === 'start_trip' && workflowSteps.find(s => s.id === 'complete_trip')?.status === 'pending') {
+        console.log('Auto-running trip completion');
         await completeTrip();
       }
     };
     
-    // Wait a moment before running the next step
     const timer = setTimeout(runNextStep, 1500);
     return () => clearTimeout(timer);
-  }, [workflowSteps, autoRun, currentOrderId]);
+  }, [workflowSteps, autoRun, currentOrderId, driverId]);
   
   const getStepStatusIcon = (status: WorkflowStep['status']) => {
     switch (status) {
@@ -444,7 +482,6 @@ const WorkflowTester: React.FC = () => {
           </div>
           
           <div className="space-y-8">
-            {/* Progress Timeline */}
             <div className="relative">
               <div className="absolute left-3 top-0 h-full w-0.5 bg-gray-200"></div>
               <div className="space-y-6">
@@ -522,7 +559,6 @@ const WorkflowTester: React.FC = () => {
               </div>
             </div>
             
-            {/* Company Queue Comparison */}
             {(companyQueueBefore.length > 0 || companyQueueAfter.length > 0) && (
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <h3 className="text-lg font-medium mb-3">Análise da Fila de Empresas</h3>

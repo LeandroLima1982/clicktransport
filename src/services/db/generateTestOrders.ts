@@ -48,6 +48,7 @@ export const createTestServiceOrder = async (booking?: Booking) => {
  */
 export const generateSampleBookingAndOrder = async () => {
   try {
+    console.log('Starting sample booking and order generation...');
     // Create booking with random data
     const bookingReference = `BK-${Math.floor(10000 + Math.random() * 90000)}`;
     
@@ -93,6 +94,8 @@ export const generateSampleBookingAndOrder = async () => {
         additional_notes: 'Reserva de teste criada para demonstração'
       };
       
+      console.log('Creating booking with data:', bookingData);
+      
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert(bookingData)
@@ -107,9 +110,11 @@ export const generateSampleBookingAndOrder = async () => {
       }
       
       toast.success('Reserva de teste criada', { duration: 2000 });
+      console.log('Test booking created successfully:', booking);
       
       // Try to create service order
       try {
+        console.log('Attempting to create service order from booking...');
         const { serviceOrder, error: orderError } = await createServiceOrderFromBooking(booking as Booking);
         
         if (orderError) {
@@ -120,6 +125,7 @@ export const generateSampleBookingAndOrder = async () => {
           return { success: true, booking, serviceOrder: null, error: orderError };
         }
         
+        console.log('Service order created successfully:', serviceOrder);
         toast.success('Ordem de serviço de teste criada', { 
           description: 'A ordem foi atribuída automaticamente à empresa conforme a fila',
           duration: 3000 
@@ -197,13 +203,6 @@ export const createManualServiceOrder = async (companyId?: string) => {
       // Use the admin RPC function to bypass RLS policies
       try {
         console.log('Calling admin_create_test_service_order RPC function...');
-        
-        // Define the expected response structure
-        type RPCResponse = {
-          error?: string | null;
-          detail?: string;
-          [key: string]: any;
-        };
         
         // Define the parameters type for the RPC function
         type RPCParams = {
