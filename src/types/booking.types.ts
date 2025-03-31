@@ -36,4 +36,4 @@ export type BookingFormData = {
 };
 
 // Import the main Booking type from booking.ts to maintain consistency
-export { Booking } from './booking';
+export type { Booking } from './booking';
