@@ -105,31 +105,16 @@ export const useAuthPage = () => {
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Updated to accept form data directly instead of using event.target
+  const handleRegister = async (formData: any) => {
     setLoading(true);
     setError(null);
     setAwaitingEmailConfirmation(false);
     
     try {
-      const form = e.target as HTMLFormElement;
-      const email = (form.elements.namedItem('reg-email') as HTMLInputElement).value;
-      const password = (form.elements.namedItem('reg-password') as HTMLInputElement).value;
-      const confirmPassword = (form.elements.namedItem('confirm-password') as HTMLInputElement).value;
-      const firstName = (form.elements.namedItem('first-name') as HTMLInputElement).value;
-      const lastName = (form.elements.namedItem('last-name') as HTMLInputElement).value;
-      const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
-      
-      const companyName = isBusinessUser && accountType === 'company'
-        ? (form.elements.namedItem('company-name') as HTMLInputElement).value 
-        : '';
-        
-      const cnpj = isBusinessUser && accountType === 'company'
-        ? (form.elements.namedItem('cnpj') as HTMLInputElement)?.value || ''
-        : '';
-      
-      if (password !== confirmPassword) {
+      if (formData.password !== formData.confirmPassword) {
         setError('As senhas não coincidem');
+        setLoading(false);
         return;
       }
       
@@ -139,14 +124,14 @@ export const useAuthPage = () => {
       
       const userData = {
         accountType: finalAccountType,
-        firstName,
-        lastName,
-        phone,
-        companyName,
-        cnpj
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        companyName: isBusinessUser && accountType === 'company' ? formData.companyName : '',
+        cnpj: isBusinessUser && accountType === 'company' ? formData.cnpj : ''
       };
       
-      const result = await signUp(email, password, userData);
+      const result = await signUp(formData.email, formData.password, userData);
       
       // If there's an error in the signup process, handle it
       if (result.error) {

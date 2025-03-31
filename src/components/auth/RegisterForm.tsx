@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 interface RegisterFormProps {
-  handleRegister: (e: React.FormEvent) => Promise<void>;
+  handleRegister: (data: RegisterFormValues) => Promise<void>;
   loading: boolean;
   isBusinessUser: boolean;
   toggleUserType: () => void;
@@ -95,33 +95,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       return;
     }
     
-    const formData = new FormData();
-    
-    // Add all form values to FormData
-    Object.entries(data).forEach(([key, value]) => {
-      formData.append(key, value as string);
-    });
-    
-    // Add account type
-    formData.append('accountType', accountType);
-    
-    // Create a synthetic event with the formData
-    const event = {
-      preventDefault: () => {},
-      target: { elements: { 
-        'reg-email': { value: data.email },
-        'reg-password': { value: data.password },
-        'confirm-password': { value: data.confirmPassword },
-        'first-name': { value: data.firstName },
-        'last-name': { value: data.lastName },
-        'phone': { value: data.phone },
-        ...('companyName' in data ? { 'company-name': { value: data.companyName } } : {}),
-        ...('cnpj' in data ? { 'cnpj': { value: data.cnpj } } : {})
-      }}
-    } as unknown as React.FormEvent;
-    
-    // Call the original handler
-    await handleRegister(event);
+    // Execute the provided handleRegister function with form data
+    await handleRegister(data);
   };
 
   // Handle CNPJ formatting
