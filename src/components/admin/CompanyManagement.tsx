@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,10 +16,12 @@ interface Company {
   id: string;
   name: string;
   cnpj: string | null;
-  formatted_cnpj: string | null;  // Add the formatted_cnpj property
+  formatted_cnpj: string | null;
   status: string;
   created_at: string;
   user_id: string | null;
+  queue_position?: number | null;
+  last_order_assigned?: string | null;
 }
 
 interface CompanyStats {
@@ -64,7 +65,6 @@ const CompanyManagement: React.FC = () => {
   const applyFilters = () => {
     let filtered = [...companies];
     
-    // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(company =>
         company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -72,7 +72,6 @@ const CompanyManagement: React.FC = () => {
       );
     }
     
-    // Apply status filter
     if (statusFilter) {
       filtered = filtered.filter(company => company.status === statusFilter);
     }
@@ -90,11 +89,10 @@ const CompanyManagement: React.FC = () => {
       
       if (error) throw error;
       
-      const companiesData = data || [];
+      const companiesData: Company[] = data || [];
       setCompanies(companiesData);
       setFilteredCompanies(companiesData);
       
-      // Calculate statistics
       const statsData: CompanyStats = {
         totalCompanies: companiesData.length,
         byStatus: {
@@ -144,7 +142,6 @@ const CompanyManagement: React.FC = () => {
 
   const handleExportCompanies = async () => {
     try {
-      // Convert companies to CSV
       const headers = ['Nome', 'CNPJ', 'Status', 'Data de Cadastro'];
       const csvRows = [
         headers.join(','),
@@ -161,7 +158,6 @@ const CompanyManagement: React.FC = () => {
       
       const csvContent = csvRows.join('\n');
       
-      // Create blob and download
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');

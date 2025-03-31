@@ -12,13 +12,28 @@ interface Company {
   user_id: string | null;
 }
 
+// Define return types for our RPC functions
+interface DuplicateCompany {
+  user_id: string;
+  count: number;
+}
+
+interface FixedCompany {
+  fixed_user_id: string;
+  removed_count: number;
+}
+
 /**
  * Identify duplicate company records in the database
  */
 export const identifyDuplicateCompanies = async () => {
   try {
+    // Call the RPC function with the correct type handling
     const { data, error } = await supabase
-      .rpc('get_duplicate_companies');
+      .rpc('get_duplicate_companies') as unknown as {
+        data: DuplicateCompany[] | null;
+        error: Error | null;
+      };
     
     if (error) return { duplicates: [], count: 0, error: error.message };
     
@@ -38,8 +53,12 @@ export const identifyDuplicateCompanies = async () => {
  */
 export const fixDuplicateCompanies = async () => {
   try {
+    // Call the RPC function with the correct type handling
     const { data, error } = await supabase
-      .rpc('fix_duplicate_companies');
+      .rpc('fix_duplicate_companies') as unknown as {
+        data: FixedCompany[] | null;
+        error: Error | null;
+      };
     
     if (error) return { fixed: [], count: 0, error: error.message };
     
