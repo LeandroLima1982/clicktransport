@@ -28,6 +28,9 @@ export interface Driver {
   company_id: string | null;
   is_password_changed: boolean | null;
   vehicle_id: string | null;
+  assignment_score?: number | null;
+  user_id?: string | null;
+  created_at?: string | null;
   companies?: {
     name: string;
     id: string;
