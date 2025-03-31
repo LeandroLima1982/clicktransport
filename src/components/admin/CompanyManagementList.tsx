@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Table,
@@ -35,6 +36,7 @@ interface Company {
   id: string;
   name: string;
   cnpj: string | null;
+  formatted_cnpj: string | null;
   status: string;
   created_at: string;
   user_id: string | null;
