@@ -152,7 +152,7 @@ export const useAuthPage = () => {
       if (result.error) throw result.error;
       
       // Check if email confirmation is required
-      // Fixed: Only access requiresEmailConfirmation when it exists
+      // Only access requiresEmailConfirmation when there's no error
       if (result.requiresEmailConfirmation) {
         setAwaitingEmailConfirmation(true);
         toast.success('Verifique seu email', {

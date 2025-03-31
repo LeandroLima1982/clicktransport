@@ -13,8 +13,14 @@ interface UserData {
   [key: string]: any;
 }
 
+interface SignUpResult {
+  error: AuthError | null;
+  data?: any;
+  requiresEmailConfirmation?: boolean;
+}
+
 // Sign up with email and password
-export const signUp = async (email: string, password: string, userData?: UserData) => {
+export const signUp = async (email: string, password: string, userData?: UserData): Promise<SignUpResult> => {
   try {
     console.log('Signing up user:', email);
     // Always default to client role if not specified - this prevents accidental registration as driver
@@ -29,7 +35,8 @@ export const signUp = async (email: string, password: string, userData?: UserDat
         error: {
           message: 'Driver registration is not allowed here',
           name: 'registration_not_allowed'
-        } as AuthError 
+        } as AuthError,
+        requiresEmailConfirmation: false
       };
     }
     
@@ -41,7 +48,8 @@ export const signUp = async (email: string, password: string, userData?: UserDat
           error: {
             message: 'Company name is required',
             name: 'validation_error'
-          } as AuthError
+          } as AuthError,
+          requiresEmailConfirmation: false
         };
       }
     }
@@ -53,7 +61,8 @@ export const signUp = async (email: string, password: string, userData?: UserDat
         error: {
           message: 'Password must be at least 6 characters',
           name: 'validation_error'
-        } as AuthError
+        } as AuthError,
+        requiresEmailConfirmation: false
       };
     }
     
@@ -64,7 +73,8 @@ export const signUp = async (email: string, password: string, userData?: UserDat
         error: {
           message: 'First name and last name are required',
           name: 'validation_error'
-        } as AuthError
+        } as AuthError,
+        requiresEmailConfirmation: false
       };
     }
     
@@ -90,7 +100,10 @@ export const signUp = async (email: string, password: string, userData?: UserDat
       toast.error('Erro ao criar conta', {
         description: result.error.message
       });
-      return { error: result.error };
+      return { 
+        error: result.error,
+        requiresEmailConfirmation: false
+      };
     }
     
     console.log('Sign up result:', result);
@@ -149,6 +162,9 @@ export const signUp = async (email: string, password: string, userData?: UserDat
   } catch (err) {
     console.error('Error creating account:', err);
     toast.error('Erro inesperado ao criar conta');
-    return { error: err as AuthError };
+    return { 
+      error: err as AuthError,
+      requiresEmailConfirmation: false
+    };
   }
 };
