@@ -42,3 +42,29 @@ AS $$
   FROM deleted
   GROUP BY user_id
 $$;
+
+-- Function to format a CNPJ string
+CREATE OR REPLACE FUNCTION public.format_cnpj_string(cnpj_raw text)
+RETURNS text
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+DECLARE
+  digits text;
+BEGIN
+  -- Remove non-digit characters
+  digits := REGEXP_REPLACE(cnpj_raw, '[^0-9]', '', 'g');
+  
+  -- If the CNPJ has 14 digits, format it
+  IF LENGTH(digits) = 14 THEN
+    RETURN REGEXP_REPLACE(
+      digits,
+      '([0-9]{2})([0-9]{3})([0-9]{3})([0-9]{4})([0-9]{2})',
+      '\1.\2.\3/\4-\5'
+    );
+  END IF;
+  
+  -- Otherwise return the original value
+  RETURN cnpj_raw;
+END;
+$$;

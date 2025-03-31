@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { formatCNPJ } from '@/hooks/auth/services/companyService';
 
 interface RegisterFormProps {
   handleRegister: (data: RegisterFormValues) => Promise<void>;
@@ -95,28 +96,24 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       return;
     }
     
+    // If it's a business user with CNPJ, ensure it's properly formatted
+    if (isBusinessUser && 'cnpj' in data && data.cnpj) {
+      // Format CNPJ for display but store the raw digits
+      const rawCnpj = data.cnpj.replace(/\D/g, '');
+      data = {
+        ...data,
+        cnpj: rawCnpj
+      };
+    }
+    
     // Execute the provided handleRegister function with form data
     await handleRegister(data);
   };
 
   // Handle CNPJ formatting
-  const formatCNPJ = (value: string) => {
-    // Remove non-digits
-    let digits = value.replace(/\D/g, '');
-    if (digits.length > 14) digits = digits.slice(0, 14);
-    
-    // Format: XX.XXX.XXX/XXXX-XX
-    if (digits.length > 12) {
-      return digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
-    } else if (digits.length > 8) {
-      return digits.replace(/^(\d{2})(\d{3})(\d{3})(\d+)$/, '$1.$2.$3/$4');
-    } else if (digits.length > 5) {
-      return digits.replace(/^(\d{2})(\d{3})(\d+)$/, '$1.$2.$3');
-    } else if (digits.length > 2) {
-      return digits.replace(/^(\d{2})(\d+)$/, '$1.$2');
-    }
-    
-    return digits;
+  const handleCNPJChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (value: string) => void) => {
+    const formatted = formatCNPJ(e.target.value);
+    onChange(formatted);
   };
 
   return (
@@ -189,10 +186,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         <Input 
                           {...field} 
                           placeholder="XX.XXX.XXX/XXXX-XX" 
-                          value={formatCNPJ(field.value || '')}
-                          onChange={(e) => {
-                            field.onChange(formatCNPJ(e.target.value));
-                          }}
+                          onChange={(e) => handleCNPJChange(e, field.onChange)}
                         />
                       </FormControl>
                       <FormMessage />

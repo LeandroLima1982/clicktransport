@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -15,7 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { createCompany } from '@/hooks/auth/services/companyService';
+import { createCompany, formatCNPJ } from '@/hooks/auth/services/companyService';
 
 interface CompanyCreateFormProps {
   isOpen: boolean;
@@ -54,20 +55,8 @@ const CompanyCreateForm: React.FC<CompanyCreateFormProps> = ({
   };
 
   const handleCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 14) value = value.slice(0, 14);
-    
-    if (value.length > 12) {
-      value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
-    } else if (value.length > 8) {
-      value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d+)$/, '$1.$2.$3/$4');
-    } else if (value.length > 5) {
-      value = value.replace(/^(\d{2})(\d{3})(\d+)$/, '$1.$2.$3');
-    } else if (value.length > 2) {
-      value = value.replace(/^(\d{2})(\d+)$/, '$1.$2');
-    }
-    
-    setCompanyData(prev => ({ ...prev, cnpj: value }));
+    const formatted = formatCNPJ(e.target.value);
+    setCompanyData(prev => ({ ...prev, cnpj: formatted }));
   };
 
   const validateForm = () => {

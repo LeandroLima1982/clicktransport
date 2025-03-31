@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 
 // Utility function to identify and fix duplicate company records
@@ -10,6 +11,13 @@ export const identifyDuplicateCompanies = async () => {
       .not('user_id', 'is', null);
     
     if (error) throw error;
+    if (!data || !Array.isArray(data)) {
+      return { 
+        duplicates: [], 
+        count: 0, 
+        error: "Invalid data format returned from database" 
+      };
+    }
     
     // Process the data to find duplicates
     const userCounts: Record<string, number> = {};
@@ -42,8 +50,8 @@ export const identifyDuplicateCompanies = async () => {
 // Utility function to fix duplicate companies - this should be run by an admin
 export const fixDuplicateCompanies = async () => {
   try {
-    // This would normally be implemented as an SQL function for security
-    // For demonstration, we're showing the logic here
+    // We're not using the RPC function directly since it's causing TypeScript errors
+    // Instead, we'll implement the logic in JavaScript
     const { duplicates, error } = await identifyDuplicateCompanies();
     
     if (error) throw new Error(error);

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Table,
@@ -195,7 +194,7 @@ const CompanyManagementList: React.FC<CompanyManagementListProps> = ({
             {companies.map(company => (
               <TableRow key={company.id}>
                 <TableCell className="font-medium">{company.name}</TableCell>
-                <TableCell>{company.cnpj || '-'}</TableCell>
+                <TableCell>{company.formatted_cnpj || company.cnpj || '-'}</TableCell>
                 <TableCell>{getStatusBadge(company.status)}</TableCell>
                 <TableCell>{formatDate(company.created_at)}</TableCell>
                 <TableCell>
