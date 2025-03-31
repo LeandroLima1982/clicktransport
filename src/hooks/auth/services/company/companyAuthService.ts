@@ -5,6 +5,17 @@ import { supabase } from '../../../../integrations/supabase/client';
 // Verify if a user is a company admin
 export const verifyCompanyAdmin = async (userId: string, companyId?: string) => {
   try {
+    if (!userId) {
+      console.error('User ID is required to verify company admin');
+      return { 
+        isCompanyAdmin: false, 
+        error: {
+          message: 'Usuário não identificado',
+          name: 'missing_user_id',
+        } as AuthError 
+      };
+    }
+    
     // If no companyId is provided, check if the user is associated with any company
     if (!companyId) {
       const { data: companyData, error: companyError } = await supabase
