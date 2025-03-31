@@ -15,14 +15,16 @@ export type Booking = {
   created_at: string;
   user_id: string;
   
-  // Adding missing properties needed by BookingManagement.tsx
+  // Company-related fields
   company_id?: string | null;
   company_name?: string | null;
+  
+  // Client-related fields
   client_name?: string | null;
   client_email?: string | null;
   client_phone?: string | null;
   
-  // Additional fields used in client components
+  // Driver-related fields
   passenger_data?: string | any[];
   driver_id?: string;
   driver_name?: string;
