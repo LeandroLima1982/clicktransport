@@ -9,9 +9,13 @@ import { toast } from 'sonner';
 import BookingTable from '@/components/admin/BookingTable';
 import { Booking } from '@/types/booking';
 
+type BookingWithCompany = Booking & {
+  company_name?: string | null;
+};
+
 const BookingManagement: React.FC = () => {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<BookingWithCompany[]>([]);
+  const [filteredBookings, setFilteredBookings] = useState<BookingWithCompany[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [totalBookings, setTotalBookings] = useState(0);
@@ -67,10 +71,18 @@ const BookingManagement: React.FC = () => {
       if (error) throw error;
       
       // Formatar dados para incluir o nome da empresa
-      const formattedBookings = data?.map(booking => ({
-        ...booking,
-        company_name: booking.company?.name || null
-      })) || [];
+      const formattedBookings = data?.map(booking => {
+        // Ensure booking status is one of the allowed values
+        const validStatus = ['pending', 'confirmed', 'completed', 'cancelled'].includes(booking.status) 
+          ? booking.status as "pending" | "confirmed" | "completed" | "cancelled"
+          : "pending";
+        
+        return {
+          ...booking,
+          status: validStatus,
+          company_name: booking.company ? booking.company.name : null
+        };
+      }) || [];
       
       setBookings(formattedBookings);
       setFilteredBookings(formattedBookings);

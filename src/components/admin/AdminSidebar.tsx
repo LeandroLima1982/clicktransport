@@ -2,7 +2,17 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Sidebar, SidebarSection, SidebarTrigger } from "@/components/ui/sidebar";
+import { 
+  Sidebar, 
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarTrigger 
+} from "@/components/ui/sidebar";
 import { 
   BarChart3, 
   Building, 
@@ -56,165 +66,196 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ signOut }) => {
         </Button>
       </div>
       
-      <SidebarSection title="Gerenciamento">
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("companies") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=companies">
-            <Building className="mr-2 h-4 w-4" />
-            Empresas
-          </Link>
-        </Button>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Gerenciamento</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("companies") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=companies">
+                    <Building className="mr-2 h-4 w-4" />
+                    <span>Empresas</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("drivers") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=drivers">
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Motoristas</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("orders") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=orders">
+                    <FileText className="mr-2 h-4 w-4" />
+                    <span>Ordens de Serviço</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("bookings") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=bookings">
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                    <span>Reservas</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("vehicles") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=vehicles">
+                    <Car className="mr-2 h-4 w-4" />
+                    <span>Veículos</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("users") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=users">
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Usuários</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
         
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("drivers") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=drivers">
-            <Users className="mr-2 h-4 w-4" />
-            Motoristas
-          </Link>
-        </Button>
+        <SidebarGroup>
+          <SidebarGroupLabel>Configurações</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("destinations") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=destinations">
+                    <MapPin className="mr-2 h-4 w-4" />
+                    <span>Destinos</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("rates") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=rates">
+                    <PenSquare className="mr-2 h-4 w-4" />
+                    <span>Tarifas</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("vehicle-categories") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=vehicle-categories">
+                    <Truck className="mr-2 h-4 w-4" />
+                    <span>Categorias de Veículos</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
         
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("orders") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=orders">
-            <FileText className="mr-2 h-4 w-4" />
-            Ordens de Serviço
-          </Link>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("bookings") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=bookings">
-            <ArrowRight className="mr-2 h-4 w-4" />
-            Reservas
-          </Link>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("vehicles") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=vehicles">
-            <Car className="mr-2 h-4 w-4" />
-            Veículos
-          </Link>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("users") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=users">
-            <Users className="mr-2 h-4 w-4" />
-            Usuários
-          </Link>
-        </Button>
-      </SidebarSection>
-      
-      <SidebarSection title="Configurações">
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("destinations") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=destinations">
-            <MapPin className="mr-2 h-4 w-4" />
-            Destinos
-          </Link>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("rates") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=rates">
-            <PenSquare className="mr-2 h-4 w-4" />
-            Tarifas
-          </Link>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("vehicle-categories") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=vehicle-categories">
-            <Truck className="mr-2 h-4 w-4" />
-            Categorias de Veículos
-          </Link>
-        </Button>
-      </SidebarSection>
-      
-      <SidebarSection title="Sistema">
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("appearance") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=appearance">
-            <Palette className="mr-2 h-4 w-4" />
-            Aparência
-          </Link>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("notifications") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=notifications">
-            <Bell className="mr-2 h-4 w-4" />
-            Notificações
-          </Link>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("content") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=content">
-            <PenSquare className="mr-2 h-4 w-4" />
-            Conteúdo
-          </Link>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("docs") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=docs">
-            <BookOpen className="mr-2 h-4 w-4" />
-            Documentação
-          </Link>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          className={cn("w-full justify-start mb-1", isActive("settings") ? "bg-muted" : "")}
-          asChild
-        >
-          <Link to="/admin?tab=settings">
-            <Settings className="mr-2 h-4 w-4" />
-            Configurações
-          </Link>
-        </Button>
-      </SidebarSection>
+        <SidebarGroup>
+          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("appearance") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=appearance">
+                    <Palette className="mr-2 h-4 w-4" />
+                    <span>Aparência</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("notifications") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=notifications">
+                    <Bell className="mr-2 h-4 w-4" />
+                    <span>Notificações</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("content") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=content">
+                    <PenSquare className="mr-2 h-4 w-4" />
+                    <span>Conteúdo</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("docs") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=docs">
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    <span>Documentação</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  className={cn(isActive("settings") ? "bg-muted" : "")} 
+                  asChild
+                >
+                  <Link to="/admin?tab=settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Configurações</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
       
       <div className="mt-auto px-2 py-4">
         <Button 

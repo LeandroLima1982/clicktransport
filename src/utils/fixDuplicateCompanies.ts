@@ -6,7 +6,7 @@ interface Company {
   id: string;
   name: string;
   cnpj: string | null;
-  formatted_cnpj?: string | null; // Make it optional to match CompanyManagement.tsx
+  formatted_cnpj?: string | null; // Optional field
   status: string;
   created_at: string;
   user_id: string | null;
