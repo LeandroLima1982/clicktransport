@@ -17,6 +17,7 @@ interface SignUpResult {
   error: AuthError | null;
   data?: any;
   requiresEmailConfirmation?: boolean;
+  companyError?: any; // Added this property to fix the TypeScript error
 }
 
 // Sign up with email and password
@@ -134,7 +135,7 @@ export const signUp = async (email: string, password: string, userData?: UserDat
             error: null,
             data: result.data,
             requiresEmailConfirmation,
-            companyError // Add this for debugging
+            companyError // Now this is a valid property in the SignUpResult interface
           };
         } else {
           if (requiresEmailConfirmation) {
@@ -155,7 +156,7 @@ export const signUp = async (email: string, password: string, userData?: UserDat
           error: null,
           data: result.data,
           requiresEmailConfirmation,
-          companyError: companyInsertError // Add this for debugging
+          companyError: companyInsertError // Now this is a valid property in the SignUpResult interface
         };
       }
     } else if (requiresEmailConfirmation) {
