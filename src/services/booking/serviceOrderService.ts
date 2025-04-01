@@ -107,18 +107,21 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // Define service order data with explicit type annotation using literal types
-    // to avoid circular references and deep instantiation issues
-    const serviceOrderData: {
+    // FIX: Remove circular type references by using a simple type definition
+    // Instead of referencing ServiceOrder type which might cause deep instantiation
+    type ServiceOrderData = {
       booking_id: string;
       company_id: string;
       origin: string;
       destination: string;
       pickup_date: string;
-      status: 'pending'; // Using literal type instead of union to prevent deep instantiation
+      status: string; // Using string instead of union type to avoid deep instantiation
       notes: string | null;
       passenger_data: any | null;
-    } = {
+    };
+
+    // Create service order data with the simpler type
+    const serviceOrderData: ServiceOrderData = {
       booking_id: booking.id,
       company_id: booking.company_id || '',
       origin: booking.origin,
