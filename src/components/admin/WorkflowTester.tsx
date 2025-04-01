@@ -256,7 +256,7 @@ const WorkflowTester: React.FC = () => {
     updateStepStatus('start_trip', 'running', 'Iniciando viagem...');
     
     try {
-      const result = await updateOrderStatus(currentOrderId, 'in_progress', driverId || undefined);
+      const result = await updateOrderStatus(currentOrderId, 'in_progress');
       
       if (result.success) {
         console.log('Trip started successfully:', result);
@@ -293,7 +293,7 @@ const WorkflowTester: React.FC = () => {
     updateStepStatus('complete_trip', 'running', 'Concluindo viagem...');
     
     try {
-      const result = await updateOrderStatus(currentOrderId, 'completed', driverId || undefined);
+      const result = await updateOrderStatus(currentOrderId, 'completed');
       
       if (result.success) {
         console.log('Trip completed successfully:', result);

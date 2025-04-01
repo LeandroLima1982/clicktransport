@@ -37,12 +37,13 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
     const typedBookingData = {
       ...bookingData,
       status,
-      booking_date: bookingData.booking_date, // Ensure required field
-      origin: bookingData.origin, // Ensure required field
-      destination: bookingData.destination, // Ensure required field
-      reference_code: bookingData.reference_code, // Ensure required field
-      total_price: bookingData.total_price, // Ensure required field
-      user_id: bookingData.user_id // Ensure required field
+      booking_date: bookingData.booking_date,
+      origin: bookingData.origin,
+      destination: bookingData.destination,
+      reference_code: bookingData.reference_code,
+      total_price: bookingData.total_price,
+      user_id: bookingData.user_id,
+      travel_date: bookingData.travel_date || bookingData.booking_date // Ensure travel_date is provided
     };
     
     // Insert booking data

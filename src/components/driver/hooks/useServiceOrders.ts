@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceOrder as ServiceOrderType } from '@/types/serviceOrder';
 import { toast } from 'sonner';
 import { playNotificationSound } from '@/services/notifications/notificationService';
-import { updateOrderStatus } from '@/services/booking/bookingService';
+import { updateOrderStatus } from '@/services/booking/serviceOrderService';
 
 export interface ServiceOrder {
   id: string;
@@ -166,7 +165,7 @@ export const useServiceOrders = (driverId: string | null) => {
     }
   };
 
-  const handleUpdateStatus = async (orderId: string, newStatus: 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled') => {
+  const handleUpdateStatus = async (orderId: string, newStatus: ServiceOrderType['status']) => {
     try {
       const response = await updateOrderStatus(orderId, newStatus);
       
