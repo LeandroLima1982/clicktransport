@@ -107,14 +107,14 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // Create the service order data explicitly typed
-    const serviceOrderData = {
+    // Create the service order data with explicit typing
+    const serviceOrderData: Omit<ServiceOrder, 'id' | 'created_at'> = {
       booking_id: booking.id,
       company_id: booking.company_id || '',
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date || booking.booking_date,
-      status: 'pending' as ServiceOrder['status'],
+      status: 'pending',
       notes: booking.additional_notes || null,
       passenger_data: booking.passenger_data || null
     };

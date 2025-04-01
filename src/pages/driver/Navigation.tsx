@@ -26,7 +26,12 @@ interface Order {
   company_id: string;
   company_name?: string | null;
   notes: string | null;
-  passenger_data?: any;
+  passenger_data?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    [key: string]: any;
+  } | null;
 }
 
 const DriverNavigation: React.FC = () => {
