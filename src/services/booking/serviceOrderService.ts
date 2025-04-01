@@ -107,14 +107,14 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // Create service order data
-    const serviceOrderData = {
+    // Create service order data - explicitly define the type to avoid circular reference
+    const serviceOrderData: Partial<ServiceOrder> = {
       booking_id: booking.id,
-      company_id: booking.company_id || null,
+      company_id: booking.company_id || '',
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date || booking.booking_date,
-      status: 'pending' as ServiceOrder['status'],
+      status: 'pending',
       notes: booking.additional_notes || null,
       passenger_data: booking.passenger_data || null
     };
@@ -148,7 +148,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
 export const updateOrderStatus = async (orderId: string, status: ServiceOrder['status']) => {
   try {
     // For completed orders, add a delivery date
-    const updates: any = { status };
+    const updates: { status: ServiceOrder['status']; delivery_date?: string } = { status };
     
     if (status === 'completed') {
       updates.delivery_date = new Date().toISOString();

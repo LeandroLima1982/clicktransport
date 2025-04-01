@@ -34,7 +34,7 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
       : 'confirmed' as Booking['status'];
     
     // Create properly typed booking object with required fields
-    const typedBookingData = {
+    const typedBookingData: Partial<Booking> = {
       ...bookingData,
       status,
       booking_date: bookingData.booking_date,

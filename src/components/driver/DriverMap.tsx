@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -16,6 +17,7 @@ interface DriverMapProps {
   currentLocation?: [number, number];
   heading?: number;
   onEtaUpdate?: (etaSeconds: number) => void;
+  driverLocation?: GeolocationPosition;
 }
 
 const DriverMap: React.FC<DriverMapProps> = ({ 
@@ -26,7 +28,8 @@ const DriverMap: React.FC<DriverMapProps> = ({
   currentOrder,
   currentLocation: externalLocation,
   heading: externalHeading,
-  onEtaUpdate
+  onEtaUpdate,
+  driverLocation
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -59,9 +62,17 @@ const DriverMap: React.FC<DriverMapProps> = ({
     mapboxgl.accessToken = MAPBOX_TOKEN;
     
     // Use external location if provided, otherwise use driver location or default
-    const initialLocation = externalLocation 
-      ? { latitude: externalLocation[1], longitude: externalLocation[0] }
-      : (location?.coords || { latitude: -23.5505, longitude: -46.6333 }); // São Paulo default
+    let initialLocation;
+    
+    if (externalLocation) {
+      initialLocation = { longitude: externalLocation[0], latitude: externalLocation[1] };
+    } else if (driverLocation) {
+      initialLocation = { longitude: driverLocation.coords.longitude, latitude: driverLocation.coords.latitude };
+    } else if (location?.coords) {
+      initialLocation = { longitude: location.coords.longitude, latitude: location.coords.latitude };
+    } else {
+      initialLocation = { longitude: -46.6333, latitude: -23.5505 }; // São Paulo default
+    }
     
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -140,9 +151,46 @@ const DriverMap: React.FC<DriverMapProps> = ({
     }
   }, [externalLocation, externalHeading, mapLoaded]);
 
-  // Use regular location updates if no external location is provided
+  // If driverLocation is provided directly (GeolocationPosition format)
   useEffect(() => {
-    if (!map.current || !location || !mapLoaded || externalLocation) return;
+    if (!map.current || !mapLoaded || !driverLocation || externalLocation) return;
+    
+    const { latitude, longitude } = driverLocation.coords;
+    
+    // Update marker position
+    if (driverMarker.current) {
+      driverMarker.current.setLngLat([longitude, latitude]);
+    } else {
+      // Create marker if it doesn't exist
+      const el = document.createElement('div');
+      el.id = "driver-marker";
+      el.className = 'driver-marker';
+      el.style.width = '24px';
+      el.style.height = '24px';
+      el.style.backgroundImage = 'url(/vehicle-icon.svg)';
+      el.style.backgroundSize = 'cover';
+      el.style.borderRadius = '50%';
+      
+      driverMarker.current = new mapboxgl.Marker(el)
+        .setLngLat([longitude, latitude])
+        .addTo(map.current);
+    }
+    
+    // Pan map to driver location
+    map.current.panTo([longitude, latitude], { duration: 500 });
+    
+    // Update marker rotation if heading is available
+    if (driverLocation.coords.heading !== null && driverLocation.coords.heading !== undefined) {
+      const markerEl = document.getElementById('driver-marker');
+      if (markerEl) {
+        markerEl.style.transform = `rotate(${driverLocation.coords.heading}deg)`;
+      }
+    }
+  }, [driverLocation, mapLoaded, externalLocation]);
+
+  // Use regular location updates if no external location or driver location is provided
+  useEffect(() => {
+    if (!map.current || !location || !mapLoaded || externalLocation || driverLocation) return;
     
     const { latitude, longitude } = location.coords;
     
@@ -175,7 +223,7 @@ const DriverMap: React.FC<DriverMapProps> = ({
         markerEl.style.transform = `rotate(${location.coords.heading}deg)`;
       }
     }
-  }, [location, mapLoaded, externalLocation]);
+  }, [location, mapLoaded, externalLocation, driverLocation]);
 
   // Handle location tracking error
   useEffect(() => {
@@ -288,7 +336,7 @@ const DriverMap: React.FC<DriverMapProps> = ({
         className="w-full h-[400px] rounded-lg border border-border"
       />
       
-      {!externalLocation && (
+      {!externalLocation && !driverLocation && (
         <div className="flex gap-2 items-center">
           {!isTracking ? (
             <Button 

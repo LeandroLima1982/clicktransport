@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +16,7 @@ import { updateOrderStatus } from '@/services/booking/serviceOrderService';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
+import { ServiceOrder } from '@/types/serviceOrder';
 
 interface Order {
   id: string;
@@ -25,7 +27,7 @@ interface Order {
   company_id: string;
   company_name?: string | null;
   notes: string | null;
-  passenger_data: any;
+  passenger_data?: any;
 }
 
 const DriverNavigation: React.FC = () => {
@@ -34,7 +36,7 @@ const DriverNavigation: React.FC = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { updateLocation, location, isUpdating } = useDriverLocation();
+  const { location, isTracking, lastUpdateTime, startTracking, stopTracking, updateNow } = useDriverLocation('');
   const { user } = useAuth();
   const [driverId, setDriverId] = useState<string | null>(null);
 
@@ -99,7 +101,7 @@ const DriverNavigation: React.FC = () => {
           company_id: data.company_id,
           company_name: data.companies?.name || null,
           notes: data.notes || null,
-          passenger_data: data.passenger_data
+          passenger_data: data.passenger_data || null
         });
       } else {
         setError('Ordem não encontrada');
@@ -114,7 +116,7 @@ const DriverNavigation: React.FC = () => {
     }
   };
 
-  const handleUpdateStatus = async (newStatus: string) => {
+  const handleUpdateStatus = async (newStatus: ServiceOrder['status']) => {
     if (!orderId) {
       toast.error('ID da ordem não encontrado');
       return;
@@ -227,7 +229,7 @@ const DriverNavigation: React.FC = () => {
                           : order.status === 'assigned'
                             ? 'default'
                             : order.status === 'in_progress'
-                              ? 'warning'
+                              ? 'secondary'
                               : order.status === 'completed'
                                 ? 'success'
                                 : 'destructive'
@@ -268,14 +270,14 @@ const DriverNavigation: React.FC = () => {
                       <div className="mb-4">
                         <p className="text-sm font-medium">Sua Localização</p>
                         <p className="text-gray-600">
-                          Latitude: {location.latitude}, Longitude: {location.longitude}
+                          Latitude: {location.coords.latitude}, Longitude: {location.coords.longitude}
                         </p>
                       </div>
-                      <DriverMap origin={order.origin} destination={order.destination} driverLocation={location} />
+                      <DriverMap origin={order.origin} destination={order.destination} currentLocation={[location.coords.longitude, location.coords.latitude]} />
                     </>
                   ) : (
                     <div className="flex items-center justify-center">
-                      {isUpdating ? (
+                      {isTracking ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Buscando sua localização...

@@ -9,6 +9,7 @@ interface LocationState {
   isTracking: boolean;
   lastUpdateTime: Date | null;
   uploading: boolean;
+  isUpdating?: boolean;
   startTracking: () => void;
   stopTracking: () => void;
   updateNow: () => void;
@@ -20,6 +21,7 @@ export const useDriverLocation = (driverId: string | null): LocationState => {
   const [isTracking, setIsTracking] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   
   // Use refs to hold the watch ID and tracking state for use in cleanup
@@ -67,6 +69,7 @@ export const useDriverLocation = (driverId: string | null): LocationState => {
   const handleSuccess = useCallback((position: GeolocationPosition) => {
     setLocation(position);
     setError(null);
+    setIsUpdating(false);
     
     // Save location if we're actively tracking
     if (trackingRef.current) {
@@ -77,6 +80,7 @@ export const useDriverLocation = (driverId: string | null): LocationState => {
   // Error handler for geolocation
   const handleError = useCallback((error: GeolocationPositionError) => {
     setError(error);
+    setIsUpdating(false);
     console.error('Geolocation error:', error);
     
     if (error.code === error.PERMISSION_DENIED) {
@@ -125,6 +129,7 @@ export const useDriverLocation = (driverId: string | null): LocationState => {
     watchIdRef.current = watchId;
     
     // Also get position immediately
+    setIsUpdating(true);
     navigator.geolocation.getCurrentPosition(
       handleSuccess,
       handleError,
@@ -156,14 +161,19 @@ export const useDriverLocation = (driverId: string | null): LocationState => {
   const updateNow = useCallback(() => {
     if (!navigator.geolocation) return;
     
+    setIsUpdating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLocation(position);
+        setIsUpdating(false);
         if (driverId) {
           saveLocation(position);
         }
       },
-      handleError,
+      (err) => {
+        handleError(err);
+        setIsUpdating(false);
+      },
       { enableHighAccuracy: true }
     );
   }, [driverId, handleError, saveLocation]);
@@ -183,6 +193,7 @@ export const useDriverLocation = (driverId: string | null): LocationState => {
     isTracking,
     lastUpdateTime,
     uploading,
+    isUpdating,
     startTracking,
     stopTracking,
     updateNow
