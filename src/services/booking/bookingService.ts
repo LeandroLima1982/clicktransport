@@ -29,8 +29,8 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
     
     // Ensure status is a valid enum value
     const validStatus: Booking['status'][] = ['pending', 'confirmed', 'completed', 'cancelled'];
-    const status = bookingData.status && validStatus.includes(bookingData.status) 
-      ? bookingData.status
+    const status = bookingData.status && validStatus.includes(bookingData.status as Booking['status']) 
+      ? (bookingData.status as Booking['status'])
       : 'confirmed' as Booking['status'];
     
     // Create properly typed booking object with required fields
@@ -67,7 +67,7 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
     
     // Send notification (if applicable)
     try {
-      await notifyBookingCreated(booking);
+      await notifyBookingCreated(booking as Booking);
     } catch (notifyError) {
       console.error('Error sending booking notification:', notifyError);
     }

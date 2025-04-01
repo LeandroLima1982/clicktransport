@@ -107,8 +107,8 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // Create the service order data with explicit typing to avoid infinite type instantiation
-    const serviceOrderData: Partial<ServiceOrder> = {
+    // Create service order data object - no need for Partial<ServiceOrder> here
+    const serviceOrderData = {
       booking_id: booking.id,
       company_id: booking.company_id || '',
       origin: booking.origin,
