@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { submitRating } from '@/services/rating/ratingService';
 import { StarRating } from '@/components/ui/star-rating';
 import { Textarea } from '@/components/ui/textarea';
-import { updateServiceOrderStatus } from '@/services/booking/bookingService';
+import { updateOrderStatus } from '@/services/booking/bookingService';
 import DriverMap from '@/components/driver/DriverMap';
 import { ServiceOrder } from '@/types/serviceOrder';
 
@@ -121,7 +121,7 @@ const Navigation: React.FC = () => {
     if (!currentOrder) return;
     
     try {
-      const { error } = await updateServiceOrderStatus(currentOrder.id, 'in_progress');
+      const { error } = await updateOrderStatus(currentOrder.id, 'in_progress');
       
       if (error) throw error;
       
@@ -150,7 +150,7 @@ const Navigation: React.FC = () => {
     if (!currentOrder) return;
     
     try {
-      const { error } = await updateServiceOrderStatus(currentOrder.id, 'completed');
+      const { error } = await updateOrderStatus(currentOrder.id, 'completed');
       
       if (error) throw error;
       

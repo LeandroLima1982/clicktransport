@@ -9,9 +9,9 @@ import {
   getUserBookings, 
   getBookingById, 
   cancelBooking, 
-  createServiceOrderFromBooking as createServiceOrderFromBookingImpl,
-  updateOrderStatus as updateOrderStatusImpl,
-  assignDriverToOrder as assignDriverToOrderImpl
+  createServiceOrderFromBooking,
+  updateOrderStatus,
+  assignDriverToOrder
 } from './serviceOrderService';
 
 /**
@@ -83,7 +83,7 @@ export {
   getUserBookings, 
   getBookingById, 
   cancelBooking, 
-  createServiceOrderFromBookingImpl as createServiceOrderFromBooking,
-  updateOrderStatusImpl as updateOrderStatus,
-  assignDriverToOrderImpl as assignDriverToOrder
+  createServiceOrderFromBooking,
+  updateOrderStatus,
+  assignDriverToOrder
 };

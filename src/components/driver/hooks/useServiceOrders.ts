@@ -1,9 +1,9 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { ServiceOrder } from '@/types/serviceOrder';
 import { toast } from 'sonner';
 import { playNotificationSound } from '@/services/notifications/notificationService';
-import { updateServiceOrderStatus } from '@/services/booking/bookingService';
+import { updateOrderStatus } from '@/services/booking/bookingService';
 
 export interface ServiceOrder {
   id: string;
@@ -31,9 +31,6 @@ export const useServiceOrders = (driverId: string | null) => {
 
     setIsLoading(true);
     try {
-      // Fetch all orders that:
-      // 1. Are assigned to this driver, OR
-      // 2. Are unassigned (pending) and available for claiming
       const { data, error: ordersError } = await supabase
         .from('service_orders')
         .select(`
@@ -45,11 +42,10 @@ export const useServiceOrders = (driverId: string | null) => {
 
       if (ordersError) throw ordersError;
 
-      // Format orders to include company name
       const formattedOrders = data?.map(order => ({
         ...order,
         company_name: order.companies?.name || null,
-        status: order.status as ServiceOrder['status'] // Ensure correct typing
+        status: order.status as ServiceOrder['status']
       })) as ServiceOrder[];
 
       setOrders(formattedOrders || []);
@@ -62,11 +58,9 @@ export const useServiceOrders = (driverId: string | null) => {
     }
   }, [driverId]);
 
-  // Subscribe to real-time updates
   useEffect(() => {
     if (!driverId) return;
 
-    // Create a real-time subscription to service orders changes
     const channel = supabase
       .channel('driver_service_orders')
       .on(
@@ -80,7 +74,6 @@ export const useServiceOrders = (driverId: string | null) => {
         (payload) => {
           console.log('Service order change detected:', payload);
           
-          // Notify driver about new assignments
           if (payload.eventType === 'UPDATE' && 
               payload.old.driver_id !== payload.new.driver_id && 
               payload.new.driver_id === driverId) {
@@ -91,13 +84,11 @@ export const useServiceOrders = (driverId: string | null) => {
             });
           }
 
-          // Refresh orders list
           fetchOrders();
         }
       )
       .subscribe();
 
-    // Also subscribe to pending orders (for orders that might become available)
     const pendingChannel = supabase
       .channel('pending_service_orders')
       .on(
@@ -109,7 +100,6 @@ export const useServiceOrders = (driverId: string | null) => {
           filter: `status=eq.pending,driver_id=is.null`
         },
         () => {
-          // Refresh orders list when new pending orders appear
           fetchOrders();
         }
       )
@@ -121,12 +111,10 @@ export const useServiceOrders = (driverId: string | null) => {
     };
   }, [driverId, fetchOrders]);
 
-  // Initial fetch
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
 
-  // Function to handle accepting an order
   const handleAcceptOrder = async (orderId: string) => {
     if (!driverId) {
       setError('Você precisa estar logado como motorista');
@@ -146,7 +134,6 @@ export const useServiceOrders = (driverId: string | null) => {
 
       if (updateError) throw updateError;
       
-      // Update driver status to on_trip
       const { error: driverUpdateError } = await supabase
         .from('drivers')
         .update({ status: 'on_trip' })
@@ -166,11 +153,8 @@ export const useServiceOrders = (driverId: string | null) => {
     }
   };
 
-  // Function to handle rejecting an order
   const handleRejectOrder = async (orderId: string) => {
     try {
-      // In this implementation, rejection just means the driver will not see the order anymore
-      // We're not actually changing the order status, just filtering it out locally
       setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
       toast.info('Corrida ignorada');
       return Promise.resolve();
@@ -181,17 +165,14 @@ export const useServiceOrders = (driverId: string | null) => {
     }
   };
 
-  // Function to update order status
   const handleUpdateStatus = async (orderId: string, newStatus: 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled') => {
     try {
-      // Fix: Changed from response.updated to response.success
-      const response = await updateServiceOrderStatus(orderId, newStatus);
+      const response = await updateOrderStatus(orderId, newStatus);
       
       if (!response.success) {
         throw new Error(response.error ? response.error.toString() : 'Failed to update status');
       }
       
-      // Show appropriate toast based on the new status
       const statusMessages: Record<string, string> = {
         'in_progress': 'Corrida iniciada com sucesso!',
         'completed': 'Corrida finalizada com sucesso!',
