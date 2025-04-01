@@ -31,7 +31,7 @@ export const getBookingById = async (bookingId: string) => {
   try {
     const { data, error } = await supabase
       .from('bookings')
-      .select('*, service_orders:service_orders(id, status, driver_id, origin, destination, pickup_date, delivery_date, driver:drivers(id, name, phone))')
+      .select('*, service_orders:service_orders(id, status, driver_id, origin, destination, pickup_date, delivery_date, driver:drivers(id, name, phone), passenger_data)')
       .eq('id', bookingId)
       .single();
     
@@ -107,14 +107,14 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // Create service order data - explicitly define the type to avoid circular reference
-    const serviceOrderData: Partial<ServiceOrder> = {
+    // Create the required service order data
+    const serviceOrderData = {
       booking_id: booking.id,
       company_id: booking.company_id || '',
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date || booking.booking_date,
-      status: 'pending',
+      status: 'pending' as const,
       notes: booking.additional_notes || null,
       passenger_data: booking.passenger_data || null
     };

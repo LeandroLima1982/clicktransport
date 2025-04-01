@@ -195,58 +195,58 @@ const DriverNavigation: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm font-medium">Origem</p>
-                      <p className="text-gray-600">{order.origin}</p>
+                      <p className="text-gray-600">{order?.origin}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium">Destino</p>
-                      <p className="text-gray-600">{order.destination}</p>
+                      <p className="text-gray-600">{order?.destination}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm font-medium">Data de Coleta</p>
-                      <p className="text-gray-600">{new Date(order.pickup_date).toLocaleDateString()}</p>
+                      <p className="text-gray-600">{order?.pickup_date ? new Date(order.pickup_date).toLocaleDateString() : 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium">Empresa</p>
-                      <p className="text-gray-600">{order.company_name || 'N/A'}</p>
+                      <p className="text-gray-600">{order?.company_name || 'N/A'}</p>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Notas</p>
-                    <p className="text-gray-600">{order.notes || 'Nenhuma nota adicional'}</p>
+                    <p className="text-gray-600">{order?.notes || 'Nenhuma nota adicional'}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Passageiro</p>
-                    <p className="text-gray-600">{order.passenger_data?.name || 'N/A'}</p>
+                    <p className="text-gray-600">{order?.passenger_data?.name || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Status</p>
                     <Badge
                       variant={
-                        order.status === 'pending' || order.status === 'created'
+                        order?.status === 'pending' || order?.status === 'created'
                           ? 'secondary'
-                          : order.status === 'assigned'
+                          : order?.status === 'assigned'
                             ? 'default'
-                            : order.status === 'in_progress'
+                            : order?.status === 'in_progress'
                               ? 'secondary'
-                              : order.status === 'completed'
+                              : order?.status === 'completed'
                                 ? 'success'
                                 : 'destructive'
                       }
                     >
-                      {order.status}
+                      {order?.status}
                     </Badge>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-end">
-                  {order.status === 'assigned' && (
+                  {order?.status === 'assigned' && (
                     <Button onClick={() => handleUpdateStatus('in_progress')}>
                       <Clock className="mr-2 h-4 w-4" />
                       Iniciar Viagem
                     </Button>
                   )}
-                  {order.status === 'in_progress' && (
+                  {order?.status === 'in_progress' && (
                     <Button onClick={() => handleUpdateStatus('completed')}>
                       <Check className="mr-2 h-4 w-4" />
                       Concluir Viagem
@@ -273,7 +273,11 @@ const DriverNavigation: React.FC = () => {
                           Latitude: {location.coords.latitude}, Longitude: {location.coords.longitude}
                         </p>
                       </div>
-                      <DriverMap origin={order.origin} destination={order.destination} currentLocation={[location.coords.longitude, location.coords.latitude]} />
+                      <DriverMap 
+                        origin={order?.origin || ''} 
+                        destination={order?.destination || ''} 
+                        currentLocation={[location.coords.longitude, location.coords.latitude]} 
+                      />
                     </>
                   ) : (
                     <div className="flex items-center justify-center">
