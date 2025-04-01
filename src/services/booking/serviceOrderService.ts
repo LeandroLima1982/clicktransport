@@ -40,7 +40,7 @@ export const createServiceOrderFromBooking = async (booking: any) => {
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date,
-      status: 'created', 
+      status: 'created' as ServiceOrder['status'], 
       notes: `Reserva: ${booking.reference_code}\n${booking.additional_notes || ''}`,
       passenger_data: booking.passenger_data || null,
       total_price: booking.total_price || null,
@@ -90,6 +90,152 @@ export const createServiceOrderFromBooking = async (booking: any) => {
       error: error instanceof Error ? error.message : 'Unknown error'
     });
     return { serviceOrder: null, error };
+  }
+};
+
+/**
+ * Assign a driver to a service order
+ */
+export const assignDriverToOrder = async (orderId: string, driverId: string) => {
+  try {
+    console.log(`Assigning driver ${driverId} to order ${orderId}`);
+    
+    // Verify the order exists and is in a valid state
+    const { data: order, error: orderError } = await supabase
+      .from('service_orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+    
+    if (orderError) throw orderError;
+    
+    if (!order) {
+      return { success: false, error: 'Order not found' };
+    }
+    
+    if (order.status !== 'created' && order.status !== 'pending') {
+      return { success: false, error: `Cannot assign driver to order in ${order.status} status` };
+    }
+    
+    // Verify the driver exists
+    const { data: driver, error: driverError } = await supabase
+      .from('drivers')
+      .select('id, name')
+      .eq('id', driverId)
+      .single();
+    
+    if (driverError) throw driverError;
+    
+    if (!driver) {
+      return { success: false, error: 'Driver not found' };
+    }
+    
+    // Assign the driver to the order and update status
+    const { data: updatedOrder, error: updateError } = await supabase
+      .from('service_orders')
+      .update({ 
+        driver_id: driverId,
+        status: 'assigned' as ServiceOrder['status']
+      })
+      .eq('id', orderId)
+      .select('*, companies:company_id(name)')
+      .single();
+    
+    if (updateError) throw updateError;
+    
+    logInfo('Driver assigned to order', 'order', {
+      order_id: orderId,
+      driver_id: driverId,
+      driver_name: driver.name
+    });
+    
+    return { success: true, order: updatedOrder };
+  } catch (error) {
+    console.error('Error assigning driver to order:', error);
+    logError('Failed to assign driver to order', 'order', {
+      order_id: orderId,
+      driver_id: driverId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return { success: false, error };
+  }
+};
+
+/**
+ * Update the status of a service order
+ */
+export const updateOrderStatus = async (orderId: string, newStatus: ServiceOrder['status'], driverId?: string) => {
+  try {
+    console.log(`Updating service order ${orderId} status to ${newStatus}`);
+    
+    // Validate the status transition
+    const { data: currentOrder, error: fetchError } = await supabase
+      .from('service_orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+    
+    if (fetchError) {
+      throw fetchError;
+    }
+    
+    // Validate status transitions
+    const validTransitions: Record<string, string[]> = {
+      'pending': ['assigned', 'cancelled', 'created'],
+      'created': ['assigned', 'pending', 'cancelled'],
+      'assigned': ['in_progress', 'cancelled'],
+      'in_progress': ['completed', 'cancelled'],
+      'completed': [],
+      'cancelled': []
+    };
+    
+    const currentStatus = currentOrder.status;
+    
+    if (!validTransitions[currentStatus]?.includes(newStatus)) {
+      return { 
+        success: false, 
+        error: `Invalid status transition from ${currentStatus} to ${newStatus}` 
+      };
+    }
+    
+    // If driver ID is provided, verify it matches
+    if (driverId && currentOrder.driver_id !== driverId) {
+      return {
+        success: false,
+        error: 'Driver ID does not match the assigned driver'
+      };
+    }
+    
+    // Update the order status
+    const { data, error } = await supabase
+      .from('service_orders')
+      .update({ status: newStatus })
+      .eq('id', orderId)
+      .select('*, companies:company_id(name)')
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    console.log(`Service order status updated to ${newStatus}:`, data);
+    
+    // Log the status update
+    logInfo('Service order status updated', 'order', {
+      order_id: orderId,
+      previous_status: currentStatus,
+      new_status: newStatus
+    });
+    
+    return { success: true, order: data };
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    logError('Failed to update order status', 'order', {
+      order_id: orderId,
+      new_status: newStatus,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return { success: false, error };
   }
 };
 
@@ -144,7 +290,7 @@ export const cancelBooking = async (bookingId: string) => {
   try {
     const { data, error } = await supabase
       .from('bookings')
-      .update({ status: 'cancelled' })
+      .update({ status: 'cancelled' as Booking['status'] })
       .eq('id', bookingId)
       .select()
       .single();

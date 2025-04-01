@@ -1,5 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { updateOrderStatus, assignDriverToOrder } from '@/services/booking/serviceOrderService';
 
 /**
  * Generate a sample booking and service order for testing
@@ -182,5 +184,5 @@ export const createManualServiceOrder = async () => {
   }
 };
 
-// Make sure we're exporting all the required functions
-export { updateServiceOrderStatus } from '@/services/booking/bookingService';
+// Export the functions from serviceOrderService
+export { updateOrderStatus, assignDriverToOrder };
