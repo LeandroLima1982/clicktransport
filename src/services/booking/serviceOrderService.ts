@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types/booking';
 import { ServiceOrder } from '@/types/serviceOrder';
@@ -103,13 +104,25 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    const serviceOrderData = {
+    // Define a simple type for the service order data to avoid circular references
+    type ServiceOrderInput = {
+      booking_id: string;
+      company_id: string;
+      origin: string;
+      destination: string;
+      pickup_date: string;
+      status: 'pending';
+      notes: string | null;
+      passenger_data: any | null;
+    };
+    
+    const serviceOrderData: ServiceOrderInput = {
       booking_id: booking.id,
       company_id: booking.company_id || '',
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date || booking.booking_date,
-      status: 'pending' as const,
+      status: 'pending',
       notes: booking.additional_notes || null,
       passenger_data: booking.passenger_data || null
     };
