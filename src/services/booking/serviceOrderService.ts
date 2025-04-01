@@ -107,7 +107,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // Create the required service order data
+    // Create the service order data with explicit typing
     const serviceOrderData = {
       booking_id: booking.id,
       company_id: booking.company_id || '',
