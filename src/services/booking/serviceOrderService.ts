@@ -122,7 +122,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     // Insert the service order
     const { data, error } = await supabase
       .from('service_orders')
-      .insert(serviceOrderData)
+      .insert([serviceOrderData])
       .select()
       .single();
       

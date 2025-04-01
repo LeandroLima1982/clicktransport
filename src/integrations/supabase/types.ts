@@ -618,6 +618,7 @@ export type Database = {
           id: string
           notes: string | null
           origin: string
+          passenger_data: Json | null
           pickup_date: string
           status: string
           vehicle_id: string | null
@@ -631,6 +632,7 @@ export type Database = {
           id?: string
           notes?: string | null
           origin: string
+          passenger_data?: Json | null
           pickup_date: string
           status?: string
           vehicle_id?: string | null
@@ -644,6 +646,7 @@ export type Database = {
           id?: string
           notes?: string | null
           origin?: string
+          passenger_data?: Json | null
           pickup_date?: string
           status?: string
           vehicle_id?: string | null
