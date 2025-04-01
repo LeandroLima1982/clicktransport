@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types/booking';
 import { ServiceOrder } from '@/types/serviceOrder';
@@ -37,7 +36,6 @@ export const getBookingById = async (bookingId: string) => {
     
     if (error) throw error;
     
-    // Add a flag to indicate if the booking has a service order
     const bookingWithServiceOrderFlag = {
       ...data,
       has_service_order: data.service_orders && data.service_orders.length > 0
@@ -64,7 +62,6 @@ export const cancelBooking = async (bookingId: string) => {
     
     if (error) throw error;
     
-    // Also cancel associated service orders
     try {
       const { data: serviceOrders } = await supabase
         .from('service_orders')
@@ -94,7 +91,6 @@ export const cancelBooking = async (bookingId: string) => {
  */
 export const createServiceOrderFromBooking = async (booking: Booking) => {
   try {
-    // Check if a service order already exists for this booking
     const { data: existingOrders } = await supabase
       .from('service_orders')
       .select('id')
@@ -107,21 +103,18 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // FIX: Remove circular type references by using a simple type definition
-    // Instead of referencing ServiceOrder type which might cause deep instantiation
-    type ServiceOrderData = {
+    interface SimpleServiceOrderData {
       booking_id: string;
       company_id: string;
       origin: string;
       destination: string;
       pickup_date: string;
-      status: string; // Using string instead of union type to avoid deep instantiation
+      status: string; // Use string instead of union type
       notes: string | null;
       passenger_data: any | null;
-    };
+    }
 
-    // Create service order data with the simpler type
-    const serviceOrderData: ServiceOrderData = {
+    const serviceOrderData: SimpleServiceOrderData = {
       booking_id: booking.id,
       company_id: booking.company_id || '',
       origin: booking.origin,
@@ -132,7 +125,6 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       passenger_data: booking.passenger_data || null
     };
     
-    // Insert the service order
     const { data, error } = await supabase
       .from('service_orders')
       .insert([serviceOrderData])
@@ -141,7 +133,6 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       
     if (error) throw error;
     
-    // Log the service order creation
     logInfo('Service order created from booking', 'service_order', {
       service_order_id: data.id,
       booking_id: booking.id,
@@ -160,7 +151,6 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
  */
 export const updateOrderStatus = async (orderId: string, status: ServiceOrder['status']) => {
   try {
-    // For completed orders, add a delivery date
     const updates: { status: ServiceOrder['status']; delivery_date?: string } = { status };
     
     if (status === 'completed') {
@@ -176,7 +166,6 @@ export const updateOrderStatus = async (orderId: string, status: ServiceOrder['s
       
     if (error) throw error;
     
-    // Log the status update
     logInfo(`Service order status updated to ${status}`, 'service_order', {
       service_order_id: orderId,
       new_status: status
@@ -206,7 +195,6 @@ export const assignDriverToOrder = async (orderId: string, driverId: string) => 
       
     if (error) throw error;
     
-    // Log the driver assignment
     logInfo(`Driver assigned to service order`, 'service_order', {
       service_order_id: orderId,
       driver_id: driverId
