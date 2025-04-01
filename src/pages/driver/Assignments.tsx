@@ -5,7 +5,7 @@ import TransitionEffect from '@/components/TransitionEffect';
 import DriverSidebar from '@/components/driver/DriverSidebar';
 import DriverHeader from '@/components/driver/DriverHeader';
 import AssignedOrderList from '@/components/driver/AssignedOrderList';
-import { useServiceOrders } from '@/components/driver/hooks/useServiceOrders';
+import { useServiceOrders, ServiceOrder } from '@/components/driver/hooks/useServiceOrders';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';

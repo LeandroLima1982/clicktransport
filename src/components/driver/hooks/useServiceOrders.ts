@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ServiceOrder } from '@/types/serviceOrder';
+import { ServiceOrder as ServiceOrderType } from '@/types/serviceOrder';
 import { toast } from 'sonner';
 import { playNotificationSound } from '@/services/notifications/notificationService';
 import { updateOrderStatus } from '@/services/booking/bookingService';
