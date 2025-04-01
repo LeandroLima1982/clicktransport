@@ -107,14 +107,14 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // Create service order data object - no need for Partial<ServiceOrder> here
+    // Create service order data object with explicit fixed types
     const serviceOrderData = {
       booking_id: booking.id,
       company_id: booking.company_id || '',
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date || booking.booking_date,
-      status: 'pending',
+      status: 'pending' as ServiceOrder['status'],
       notes: booking.additional_notes || null,
       passenger_data: booking.passenger_data || null
     };
