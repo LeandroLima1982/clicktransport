@@ -105,7 +105,7 @@ const DriverNavigation: React.FC = () => {
           company_id: data.company_id,
           company_name: data.companies?.name || null,
           notes: data.notes || null,
-          passenger_data: data.passenger_data || null
+          passenger_data: data.passenger_data as Order['passenger_data'] || null
         });
       } else {
         setError('Ordem não encontrada');
