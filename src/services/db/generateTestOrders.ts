@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -185,4 +184,3 @@ export const createManualServiceOrder = async () => {
 
 // Make sure we're exporting all the required functions
 export { updateServiceOrderStatus } from '@/services/booking/bookingService';
-

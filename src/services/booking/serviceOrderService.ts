@@ -1,29 +1,37 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ServiceOrder } from '@/components/company/orders/types';
-import { Booking } from '@/types/booking';
 import { logError, logInfo } from '../monitoring/systemLogService';
-import { 
-  notifyBookingConfirmed, 
-  notifyCompanyNewOrder,
-  notifyDriverNewAssignment,
-  notifyDriverAssigned,
-  notifyTripStarted,
-  notifyTripCompleted,
-  notifyCompanyOrderStatusChange
-} from '../notifications/workflowNotificationService';
+import { Booking } from '@/types/booking';
+import { ServiceOrder } from '@/types/serviceOrder';
 
 /**
- * Create a new service order from a booking
+ * Create a service order from a booking
  */
-export const createServiceOrderFromBooking = async (booking: Booking) => {
+export const createServiceOrderFromBooking = async (booking: any) => {
   try {
-    // Use the provided company ID directly instead of finding one
-    const companyId = booking.company_id;
+    console.log('Creating service order from booking (service):', booking);
+    
+    // Find an available company if not specified
+    let companyId = booking.company_id;
     
     if (!companyId) {
-      throw new Error('No company ID provided for service order');
+      console.log('No company ID in booking, finding available company...');
+      const { data: companies, error: companiesError } = await supabase
+        .from('companies')
+        .select('id, name, queue_position')
+        .eq('status', 'active')
+        .order('queue_position', { ascending: true })
+        .limit(1);
+      
+      if (companiesError) throw companiesError;
+      
+      if (companies && companies.length > 0) {
+        companyId = companies[0].id;
+        console.log('Selected company based on queue:', companies[0]);
+      } else {
+        throw new Error('No active companies available for service order assignment');
+      }
     }
     
     // Create service order
@@ -32,412 +40,127 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date,
-      status: 'pending' as const,
+      status: 'created', 
       notes: `Reserva: ${booking.reference_code}\n${booking.additional_notes || ''}`,
+      passenger_data: booking.passenger_data || null,
+      total_price: booking.total_price || null,
+      trip_type: booking.trip_type || 'oneway'
     };
     
     console.log('Creating service order with data:', orderData);
     
-    // First try a direct insert with returning data
-    let { data: order, error: orderError } = await supabase
+    // Insert the order
+    const { data: serviceOrder, error: orderError } = await supabase
       .from('service_orders')
-      .insert(orderData)
-      .select()
+      .insert([orderData])
+      .select('*, companies(name)')
       .single();
     
-    // If there's a financial metrics error, try an alternative approach
-    if (orderError && orderError.code === '42501' && orderError.message?.includes('financial_metrics')) {
-      console.warn('Financial metrics entry creation failed due to RLS, attempting alternative approach');
-      
-      // Insert without returning data to avoid the RLS cascade error
-      const { error: insertError } = await supabase
-        .from('service_orders')
-        .insert(orderData);
-      
-      if (insertError) {
-        throw insertError; // If this fails, it's a more serious issue
-      }
-      
-      // Fetch the created order separately
-      const { data: createdOrder, error: fetchError } = await supabase
-        .from('service_orders')
-        .select('*')
-        .eq('company_id', companyId)
-        .eq('origin', booking.origin)
-        .eq('destination', booking.destination)
-        .eq('pickup_date', booking.travel_date)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-        
-      if (fetchError) {
-        throw new Error('Failed to fetch the created service order');
-      }
-      
-      order = createdOrder;
-      
-      // Log the issue but continue
-      logInfo('Service order created from booking (metrics update failed)', 'order', {
-        booking_id: booking.id,
-        order_id: order.id,
-        company_id: companyId,
-        metrics_error: orderError.message
-      });
-    } else if (orderError) {
-      // If it's another type of error, throw it
+    if (orderError) {
+      console.error('Failed to create service order:', orderError);
       throw orderError;
     }
     
-    console.log('Service order created successfully:', order);
+    console.log('Service order created successfully:', serviceOrder);
     
-    // Make sure order.status is one of the allowed values
-    const typedOrder: ServiceOrder = {
-      ...order,
-      status: order.status as ServiceOrder['status']
-    };
+    // Update the booking with the service order ID
+    const { error: updateError } = await supabase
+      .from('bookings')
+      .update({ 
+        company_id: companyId,
+        company_name: serviceOrder.companies?.name || 'Empresa designada',
+        has_service_order: true
+      })
+      .eq('id', booking.id);
     
-    // Log the service order creation
-    logInfo('Service order created from booking', 'order', {
+    if (updateError) {
+      console.error('Error updating booking with company info:', updateError);
+    }
+    
+    logInfo('Service order created from booking', 'booking', {
       booking_id: booking.id,
-      order_id: typedOrder.id,
-      company_id: companyId
+      service_order_id: serviceOrder.id
     });
     
-    // Send notification to company
-    try {
-      await notifyCompanyNewOrder(typedOrder);
-    } catch (notifyError) {
-      console.error('Error sending company notification:', notifyError);
-    }
-    
-    // Send notification to customer
-    try {
-      await notifyBookingConfirmed(booking);
-    } catch (notifyError) {
-      console.error('Error sending booking confirmation notification:', notifyError);
-    }
-    
-    return { serviceOrder: typedOrder, error: null };
+    return { serviceOrder, error: null };
   } catch (error) {
     console.error('Error creating service order from booking:', error);
-    logError('Failed to create service order from booking', 'order', {
-      booking_id: booking.id,
-      error: error
+    logError('Failed to create service order from booking', 'booking', {
+      booking_id: booking?.id,
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
     return { serviceOrder: null, error };
   }
 };
 
 /**
- * Assign a driver to a service order
+ * Get all bookings for a user
  */
-export const assignDriverToOrder = async (orderId: string, driverId: string) => {
+export const getUserBookings = async (userId: string) => {
   try {
-    // First get current order to check status
-    const { data: currentOrder, error: fetchError } = await supabase
-      .from('service_orders')
+    const { data, error } = await supabase
+      .from('bookings')
       .select('*')
-      .eq('id', orderId)
-      .single();
-    
-    if (fetchError) {
-      throw fetchError;
-    }
-    
-    // Validate that order is in 'pending' status
-    if (currentOrder.status !== 'pending') {
-      return { 
-        success: false, 
-        error: `Cannot assign driver to order with status ${currentOrder.status}` 
-      };
-    }
-    
-    // Update the order with driver id and change status
-    const { data, error } = await supabase
-      .from('service_orders')
-      .update({ 
-        driver_id: driverId,
-        status: 'assigned' as const
-      })
-      .eq('id', orderId)
-      .select('*, companies:company_id(name), drivers:driver_id(name)')
-      .single();
-    
-    if (error) {
-      throw error;
-    }
-    
-    // Cast to the correct type
-    const typedOrder: ServiceOrder = {
-      ...data,
-      status: data.status as ServiceOrder['status']
-    };
-    
-    // Log the assignment
-    logInfo('Driver assigned to service order', 'order', {
-      order_id: orderId,
-      driver_id: driverId
-    });
-    
-    // Get driver name
-    const driverName = data.drivers?.name || 'Motorista designado';
-    
-    // Send notification to driver
-    try {
-      await notifyDriverNewAssignment(typedOrder);
-    } catch (notifyError) {
-      console.error('Error sending driver notification:', notifyError);
-    }
-    
-    // Send notification to customer (if we had this info) about driver assignment
-    try {
-      await notifyDriverAssigned(typedOrder, driverName);
-    } catch (notifyError) {
-      console.error('Error sending driver assigned notification:', notifyError);
-    }
-    
-    return { success: true, order: typedOrder };
-  } catch (error) {
-    console.error('Error assigning driver to order:', error);
-    logError('Failed to assign driver to order', 'order', {
-      order_id: orderId,
-      driver_id: driverId,
-      error: error
-    });
-    return { success: false, error };
-  }
-};
-
-/**
- * Update the status of a service order
- */
-export const updateOrderStatus = async (orderId: string, newStatus: string, driverId?: string) => {
-  try {
-    // Validate the status transition
-    const { data: currentOrder, error: fetchError } = await supabase
-      .from('service_orders')
-      .select('*')
-      .eq('id', orderId)
-      .single();
-    
-    if (fetchError) {
-      throw fetchError;
-    }
-    
-    // Validate status transitions
-    const validTransitions: Record<string, string[]> = {
-      'pending': ['assigned', 'cancelled'],
-      'assigned': ['in_progress', 'cancelled'],
-      'in_progress': ['completed', 'cancelled'],
-      'completed': [],
-      'cancelled': []
-    };
-    
-    const currentStatus = currentOrder.status;
-    
-    if (!validTransitions[currentStatus]?.includes(newStatus)) {
-      return { 
-        success: false, 
-        error: `Invalid status transition from ${currentStatus} to ${newStatus}` 
-      };
-    }
-    
-    // If driver ID is provided, verify it matches
-    if (driverId && currentOrder.driver_id !== driverId) {
-      return {
-        success: false,
-        error: 'Driver ID does not match the assigned driver'
-      };
-    }
-    
-    // Check if newStatus is one of the allowed values
-    const typedStatus = newStatus as ServiceOrder['status'];
-    
-    // Update the order status
-    const { data, error } = await supabase
-      .from('service_orders')
-      .update({ status: typedStatus })
-      .eq('id', orderId)
-      .select('*, companies:company_id(name)')
-      .single();
-    
-    if (error) {
-      throw error;
-    }
-    
-    // Cast to the correct type
-    const typedOrder: ServiceOrder = {
-      ...data,
-      status: data.status as ServiceOrder['status']
-    };
-    
-    // Log the status update
-    logInfo('Service order status updated', 'order', {
-      order_id: orderId,
-      previous_status: currentStatus,
-      new_status: typedStatus
-    });
-    
-    // Send appropriate notifications based on status
-    try {
-      // Notify company about status change
-      await notifyCompanyOrderStatusChange(typedOrder, currentStatus);
-      
-      // Additional notifications based on specific status changes
-      if (typedStatus === 'in_progress') {
-        await notifyTripStarted(typedOrder);
-      } else if (typedStatus === 'completed') {
-        await notifyTripCompleted(typedOrder);
-      }
-    } catch (notifyError) {
-      console.error('Error sending status change notification:', notifyError);
-    }
-    
-    return { success: true, order: typedOrder };
-  } catch (error) {
-    console.error('Error updating order status:', error);
-    logError('Failed to update order status', 'order', {
-      order_id: orderId,
-      new_status: newStatus,
-      error: error
-    });
-    return { success: false, error };
-  }
-};
-
-/**
- * Get all service orders for a company
- */
-export const getCompanyOrders = async (companyId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('service_orders')
-      .select(`
-        *,
-        drivers (
-          id,
-          name,
-          phone
-        )
-      `)
-      .eq('company_id', companyId)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
     
     if (error) {
       throw error;
     }
     
-    // Ensure all orders have the correct status type
-    const typedOrders = data?.map(order => ({
-      ...order,
-      status: order.status as ServiceOrder['status']
-    })) || [];
-    
-    return { orders: typedOrders, error: null };
+    return { bookings: data || [], error: null };
   } catch (error) {
-    console.error('Error fetching company orders:', error);
-    return { orders: [], error };
+    console.error('Error fetching user bookings:', error);
+    return { bookings: [], error };
   }
 };
 
 /**
- * Get all service orders for a driver
+ * Get booking details by ID
  */
-export const getDriverOrders = async (driverId: string, includeCompleted: boolean = false) => {
-  try {
-    let query = supabase
-      .from('service_orders')
-      .select(`
-        *,
-        companies (
-          id,
-          name
-        )
-      `)
-      .eq('driver_id', driverId)
-      .order('created_at', { ascending: false });
-    
-    if (!includeCompleted) {
-      query = query.in('status', ['assigned', 'in_progress']);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) {
-      throw error;
-    }
-    
-    // Ensure all orders have the correct status type
-    const typedOrders = data?.map(order => ({
-      ...order,
-      status: order.status as ServiceOrder['status']
-    })) || [];
-    
-    return { orders: typedOrders, error: null };
-  } catch (error) {
-    console.error('Error fetching driver orders:', error);
-    return { orders: [], error };
-  }
-};
-
-/**
- * Get all pending service orders (available for assignment)
- */
-export const getPendingOrders = async () => {
+export const getBookingById = async (bookingId: string) => {
   try {
     const { data, error } = await supabase
-      .from('service_orders')
-      .select(`
-        *,
-        companies (
-          id,
-          name
-        )
-      `)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: true });
+      .from('bookings')
+      .select('*')
+      .eq('id', bookingId)
+      .single();
     
     if (error) {
       throw error;
     }
     
-    // Ensure all orders have the correct status type
-    const typedOrders = data?.map(order => ({
-      ...order,
-      status: order.status as ServiceOrder['status']
-    })) || [];
-    
-    return { orders: typedOrders, error: null };
+    return { booking: data, error: null };
   } catch (error) {
-    console.error('Error fetching pending orders:', error);
-    return { orders: [], error };
+    console.error('Error fetching booking details:', error);
+    return { booking: null, error };
   }
 };
 
 /**
- * Driver accepts an order
+ * Cancel a booking
  */
-export const acceptOrder = async (orderId: string, driverId: string) => {
-  return assignDriverToOrder(orderId, driverId);
-};
-
-/**
- * Driver rejects an order
- */
-export const rejectOrder = async (orderId: string, driverId: string, reason?: string) => {
+export const cancelBooking = async (bookingId: string) => {
   try {
-    // Log the rejection
-    logInfo('Driver rejected service order', 'driver', {
-      order_id: orderId,
-      driver_id: driverId,
-      reason: reason || 'No reason provided'
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('id', bookingId)
+      .select()
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Log the cancellation
+    logInfo('Booking cancelled', 'booking', {
+      booking_id: bookingId
     });
     
-    // In a real system, we might want to track rejections or assign to another driver
-    // For now, we'll just return success without changing the order
-    return { success: true };
+    return { booking: data, error: null };
   } catch (error) {
-    console.error('Error rejecting order:', error);
-    return { success: false, error };
+    console.error('Error cancelling booking:', error);
+    return { booking: null, error };
   }
 };

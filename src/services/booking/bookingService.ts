@@ -13,10 +13,28 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
   try {
     console.log('Creating booking with data:', bookingData);
     
-    // Insert booking data - Fix: Pass a single object, not an array
+    // Make sure required fields are present
+    if (!bookingData.booking_date || !bookingData.origin || !bookingData.destination || 
+        !bookingData.reference_code || !bookingData.total_price || !bookingData.user_id) {
+      throw new Error('Missing required booking fields');
+    }
+    
+    // Ensure status is a valid enum value
+    const validStatus = ['pending', 'confirmed', 'completed', 'cancelled'] as const;
+    const status = bookingData.status && validStatus.includes(bookingData.status as any) 
+      ? bookingData.status 
+      : 'confirmed';
+    
+    // Create a properly typed booking object
+    const typedBookingData = {
+      ...bookingData,
+      status: status as Booking['status']
+    };
+    
+    // Insert booking data
     const { data: booking, error } = await supabase
       .from('bookings')
-      .insert(bookingData)
+      .insert(typedBookingData)
       .select()
       .single();
     
@@ -217,74 +235,7 @@ export const updateServiceOrderStatus = async (orderId: string, newStatus: Servi
   }
 };
 
-/**
- * Get all bookings for a user
- */
-export const getUserBookings = async (userId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      throw error;
-    }
-    
-    return { bookings: data || [], error: null };
-  } catch (error) {
-    console.error('Error fetching user bookings:', error);
-    return { bookings: [], error };
-  }
-};
-
-/**
- * Get booking details by ID
- */
-export const getBookingById = async (bookingId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('id', bookingId)
-      .single();
-    
-    if (error) {
-      throw error;
-    }
-    
-    return { booking: data, error: null };
-  } catch (error) {
-    console.error('Error fetching booking details:', error);
-    return { booking: null, error };
-  }
-};
-
-/**
- * Cancel a booking
- */
-export const cancelBooking = async (bookingId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('bookings')
-      .update({ status: 'cancelled' })
-      .eq('id', bookingId)
-      .select()
-      .single();
-    
-    if (error) {
-      throw error;
-    }
-    
-    // Log the cancellation
-    logInfo('Booking cancelled', 'booking', {
-      booking_id: bookingId
-    });
-    
-    return { booking: data, error: null };
-  } catch (error) {
-    console.error('Error cancelling booking:', error);
-    return { booking: null, error };
-  }
-};
+// Export all the other functions as they are
+export { getUserBookings } from './serviceOrderService';
+export { getBookingById } from './serviceOrderService';
+export { cancelBooking } from './serviceOrderService';
