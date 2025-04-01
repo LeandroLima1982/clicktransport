@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -88,7 +89,8 @@ const DriverNavigation: React.FC = () => {
         .from('service_orders')
         .select(`
           *,
-          companies:company_id(name)
+          companies:company_id(name),
+          passenger_data
         `)
         .eq('id', orderId)
         .single();
