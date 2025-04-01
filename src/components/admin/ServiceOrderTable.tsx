@@ -145,7 +145,7 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
         <AlertTriangle className="h-12 w-12 text-yellow-500 mb-4" />
         <p className="text-muted-foreground">Nenhuma ordem de serviço encontrada</p>
         <p className="text-sm text-muted-foreground mt-2">
-          Tente criar uma ordem de serviço a partir de uma reserva
+          Verifique se as reservas estão sendo convertidas em ordens de serviço corretamente
         </p>
       </div>
     );
@@ -204,6 +204,14 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
                         disabled={updatingStatus}
                       >
                         <Badge className="bg-yellow-100 text-yellow-800 mr-2">Pendente</Badge>
+                      </DropdownMenuItem>
+                    )}
+                    {order.status !== 'assigned' && (
+                      <DropdownMenuItem 
+                        onClick={() => handleStatusChange(order, 'assigned')}
+                        disabled={updatingStatus || !order.driver_id}
+                      >
+                        <Badge className="bg-indigo-100 text-indigo-800 mr-2">Atribuído</Badge>
                       </DropdownMenuItem>
                     )}
                     {order.status !== 'in_progress' && (

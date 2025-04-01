@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,8 @@ const ServiceOrderMonitoring: React.FC = () => {
   const [totalOrders, setTotalOrders] = useState(0);
 
   // Set up real-time subscription for service orders
-  const handleOrderNotification = (payload: any) => {
-    console.log('Service order notification:', payload);
+  const handleOrderNotification = useCallback((payload: any) => {
+    console.log('Service order notification received:', payload);
     fetchOrders();
     fetchTotalCount();
     
@@ -27,12 +27,18 @@ const ServiceOrderMonitoring: React.FC = () => {
         description: `Origem: ${payload.new.origin}, Destino: ${payload.new.destination}`
       });
     }
-  };
+  }, []);
   
   // Initialize service order subscription
+  useServiceOrderSubscription(handleOrderNotification);
+
   useEffect(() => {
+    fetchOrders();
+    fetchTotalCount();
+    
+    // Inscreva-se diretamente em alterações da tabela service_orders
     const channel = supabase
-      .channel('service_orders_admin')
+      .channel('service_orders_admin_direct')
       .on(
         'postgres_changes',
         {
@@ -40,18 +46,17 @@ const ServiceOrderMonitoring: React.FC = () => {
           schema: 'public',
           table: 'service_orders'
         },
-        handleOrderNotification
+        (payload) => {
+          console.log('Direct service order change detected:', payload);
+          fetchOrders();
+          fetchTotalCount();
+        }
       )
       .subscribe();
       
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
-
-  useEffect(() => {
-    fetchOrders();
-    fetchTotalCount();
   }, []);
 
   useEffect(() => {
@@ -93,7 +98,8 @@ const ServiceOrderMonitoring: React.FC = () => {
         .from('service_orders')
         .select(`
           *,
-          companies:company_id(name)
+          companies(name),
+          drivers(name)
         `)
         .order('created_at', { ascending: false });
       
@@ -104,10 +110,11 @@ const ServiceOrderMonitoring: React.FC = () => {
       
       console.log('Retrieved orders:', data);
       
-      // Format the data to include company_name
+      // Format the data to include company_name and driver_name
       const formattedOrders = data?.map(order => ({
         ...order,
-        company_name: order.companies?.name || null
+        company_name: order.companies?.name || null,
+        driver_name: order.drivers?.name || null
       })) || [];
       
       console.log('Formatted orders:', formattedOrders);

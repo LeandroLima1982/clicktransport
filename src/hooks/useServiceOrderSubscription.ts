@@ -5,12 +5,10 @@ import { playNotificationSound, showAssignmentNotification } from '@/services/no
 import { ServiceOrder } from '@/types/serviceOrder';
 
 export const useServiceOrderSubscription = (
-  driverId: string | null,
-  onNotification: (payload?: any) => void
+  callback: (payload?: any) => void
 ) => {
   useEffect(() => {
-    if (!driverId) return;
-
+    // Inscreve-se em todas as alterações da tabela service_orders
     const channel = supabase
       .channel('service_orders_changes')
       .on(
@@ -18,36 +16,15 @@ export const useServiceOrderSubscription = (
         {
           event: '*',
           schema: 'public',
-          table: 'service_orders',
-          filter: `driver_id=eq.${driverId}`
+          table: 'service_orders'
         },
         (payload: any) => {
           console.log('Service order change detected:', payload);
-
-          // Case 1: New order inserted with this driver assigned
-          if (payload.eventType === 'INSERT' && 
-              (payload.new.status === 'assigned' || payload.new.driver_id === driverId)) {
-            playNotificationSound();
-            showAssignmentNotification(payload.new as ServiceOrder);
-            onNotification(payload);
-          }
+          callback(payload);
           
-          // Case 2: Existing order updated to assign this driver
-          if (payload.eventType === 'UPDATE' && 
-              payload.old.driver_id !== payload.new.driver_id && 
-              payload.new.driver_id === driverId) {
+          // Notificar apenas para novos registros
+          if (payload.eventType === 'INSERT') {
             playNotificationSound();
-            showAssignmentNotification(payload.new as ServiceOrder);
-            onNotification(payload);
-          }
-          
-          // Case 3: Order status changed to assigned
-          if (payload.eventType === 'UPDATE' && 
-              payload.old.status !== 'assigned' && 
-              payload.new.status === 'assigned') {
-            playNotificationSound();
-            showAssignmentNotification(payload.new as ServiceOrder);
-            onNotification(payload);
           }
         }
       )
@@ -56,5 +33,6 @@ export const useServiceOrderSubscription = (
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [driverId, onNotification]);
+  }, [callback]);
 };
+

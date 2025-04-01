@@ -40,7 +40,6 @@ const BookingTable: React.FC<BookingTableProps> = ({
 
   const handleViewDetails = (booking: Booking) => {
     setSelectedBooking(booking);
-    // In the future, this could open a modal with detailed information
     toast.info(`Detalhes da reserva: ${booking.reference_code}`);
   };
 
@@ -73,11 +72,11 @@ const BookingTable: React.FC<BookingTableProps> = ({
       }
       
       console.log('Creating service order from booking:', booking.id);
+      console.log('Booking company_id:', booking.company_id);
+      console.log('Booking company_name:', booking.company_name);
       
-      // Find company name for this booking
       const companyName = booking.company_name || null;
       
-      // Create a booking with the company_name property populated
       const bookingWithCompany = {
         ...booking,
         company_name: companyName
