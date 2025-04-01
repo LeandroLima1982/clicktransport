@@ -28,8 +28,8 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
     }
     
     // Ensure status is a valid enum value
-    const validStatus = ['pending', 'confirmed', 'completed', 'cancelled'] as const;
-    const status = bookingData.status && validStatus.includes(bookingData.status as any) 
+    const validStatus: Booking['status'][] = ['pending', 'confirmed', 'completed', 'cancelled'];
+    const status = bookingData.status && validStatus.includes(bookingData.status) 
       ? bookingData.status 
       : 'confirmed' as Booking['status'];
     
