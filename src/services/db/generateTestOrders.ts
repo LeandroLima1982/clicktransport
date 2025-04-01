@@ -46,7 +46,8 @@ export const generateSampleBookingAndOrder = async () => {
       client_name: 'Cliente Teste',
       client_email: 'teste@exemplo.com',
       client_phone: '(11) 99999-9999',
-      additional_notes: 'Reserva de teste gerada automaticamente'
+      additional_notes: 'Reserva de teste gerada automaticamente',
+      user_id: '00000000-0000-0000-0000-000000000000' // Dummy user ID for testing
     };
     
     console.log('Creating test booking with data:', bookingData);
@@ -54,7 +55,7 @@ export const generateSampleBookingAndOrder = async () => {
     // Insert booking
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
-      .insert([bookingData])
+      .insert(bookingData)
       .select()
       .single();
     
@@ -106,6 +107,78 @@ export const generateSampleBookingAndOrder = async () => {
   } catch (error) {
     console.error('Error generating sample data:', error);
     toast.error('Erro ao gerar dados de teste');
+    return { success: false, error };
+  }
+};
+
+/**
+ * Create a manual service order for testing
+ */
+export const createManualServiceOrder = async () => {
+  try {
+    console.log('Starting to create manual service order');
+    
+    // First, check if we have active companies
+    const { data: companies, error: companyError } = await supabase
+      .from('companies')
+      .select('id, name')
+      .eq('status', 'active')
+      .limit(1);
+    
+    if (companyError) throw companyError;
+    
+    if (!companies || companies.length === 0) {
+      toast.error('Nenhuma empresa ativa encontrada para criar ordem manual');
+      return { success: false, error: 'No active companies found' };
+    }
+    
+    const companyId = companies[0].id;
+    
+    // Create a future pickup date (tomorrow)
+    const pickupDate = new Date();
+    pickupDate.setDate(pickupDate.getDate() + 1);
+    pickupDate.setHours(10, 0, 0, 0); // 10:00 AM
+    
+    // Create service order data
+    const orderData = {
+      company_id: companyId,
+      origin: 'Rua Augusta, 1500, São Paulo, SP',
+      destination: 'Shopping Ibirapuera, Av. Ibirapuera, 3103, São Paulo, SP',
+      pickup_date: pickupDate.toISOString(),
+      status: 'created',
+      notes: 'Ordem de serviço manual criada para teste',
+      passenger_data: {
+        name: 'Passageiro Manual Teste',
+        email: 'passageiro.manual@teste.com',
+        phone: '(11) 98888-7777'
+      },
+      total_price: 120.50
+    };
+    
+    console.log('Creating manual service order with data:', orderData);
+    
+    // Insert service order
+    const { data: serviceOrder, error: orderError } = await supabase
+      .from('service_orders')
+      .insert([orderData])
+      .select()
+      .single();
+    
+    if (orderError) {
+      console.error('Error creating manual service order:', orderError);
+      toast.error('Erro ao criar ordem manual');
+      return { success: false, error: orderError };
+    }
+    
+    console.log('Manual service order created successfully:', serviceOrder);
+    toast.success('Ordem de serviço manual criada com sucesso!', {
+      description: `Ordem criada para a empresa ${companies[0].name}`
+    });
+    
+    return { success: true, serviceOrder };
+  } catch (error) {
+    console.error('Error creating manual service order:', error);
+    toast.error('Erro ao criar ordem manual');
     return { success: false, error };
   }
 };

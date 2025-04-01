@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { playNotificationSound, showAssignmentNotification } from '@/services/notifications/notificationService';
+import { playNotificationSound } from '@/services/notifications/notificationService';
 import { ServiceOrder } from '@/types/serviceOrder';
 
 export const useServiceOrderSubscription = (
@@ -39,7 +39,7 @@ export const useServiceOrderSubscription = (
               payload.old.status !== payload.new.status) {
             console.log('Service order status changed, notifying');
             // Only play sound for specific status changes if needed
-            if (['assigned', 'in_progress', 'completed'].includes(payload.new.status)) {
+            if (['assigned', 'in_progress', 'completed', 'created'].includes(payload.new.status)) {
               playNotificationSound();
             }
           }

@@ -3,11 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logError, logInfo } from '../monitoring/systemLogService';
 import { notifyBookingCreated } from '../notifications/workflowNotificationService';
+import { Booking } from '@/types/booking';
+import { ServiceOrder } from '@/types/serviceOrder';
 
 /**
  * Create a new booking
  */
-export const createBooking = async (bookingData: any) => {
+export const createBooking = async (bookingData: Partial<Booking>) => {
   try {
     console.log('Creating booking with data:', bookingData);
     
@@ -134,6 +136,84 @@ export const createServiceOrderFromBooking = async (booking: any) => {
       error: error instanceof Error ? error.message : 'Unknown error'
     });
     return { serviceOrder: null, error };
+  }
+};
+
+/**
+ * Update the status of a service order
+ */
+export const updateServiceOrderStatus = async (orderId: string, newStatus: ServiceOrder['status'], driverId?: string) => {
+  try {
+    console.log(`Updating service order ${orderId} status to ${newStatus}`);
+    
+    // Validate the status transition
+    const { data: currentOrder, error: fetchError } = await supabase
+      .from('service_orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+    
+    if (fetchError) {
+      throw fetchError;
+    }
+    
+    // Validate status transitions
+    const validTransitions: Record<string, string[]> = {
+      'pending': ['assigned', 'cancelled', 'created'],
+      'created': ['assigned', 'pending', 'cancelled'],
+      'assigned': ['in_progress', 'cancelled'],
+      'in_progress': ['completed', 'cancelled'],
+      'completed': [],
+      'cancelled': []
+    };
+    
+    const currentStatus = currentOrder.status;
+    
+    if (!validTransitions[currentStatus]?.includes(newStatus)) {
+      return { 
+        success: false, 
+        error: `Invalid status transition from ${currentStatus} to ${newStatus}` 
+      };
+    }
+    
+    // If driver ID is provided, verify it matches
+    if (driverId && currentOrder.driver_id !== driverId) {
+      return {
+        success: false,
+        error: 'Driver ID does not match the assigned driver'
+      };
+    }
+    
+    // Update the order status
+    const { data, error } = await supabase
+      .from('service_orders')
+      .update({ status: newStatus })
+      .eq('id', orderId)
+      .select('*, companies:company_id(name)')
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    console.log(`Service order status updated to ${newStatus}:`, data);
+    
+    // Log the status update
+    logInfo('Service order status updated', 'order', {
+      order_id: orderId,
+      previous_status: currentStatus,
+      new_status: newStatus
+    });
+    
+    return { success: true, order: data };
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    logError('Failed to update order status', 'order', {
+      order_id: orderId,
+      new_status: newStatus,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return { success: false, error };
   }
 };
 
