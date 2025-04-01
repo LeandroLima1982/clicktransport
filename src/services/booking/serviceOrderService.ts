@@ -107,8 +107,8 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // Create the service order data with explicit typing
-    const serviceOrderData: Partial<ServiceOrder> = {
+    // Create the service order data explicitly typed
+    const serviceOrderData = {
       booking_id: booking.id,
       company_id: booking.company_id || '',
       origin: booking.origin,
@@ -122,7 +122,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     // Insert the service order
     const { data, error } = await supabase
       .from('service_orders')
-      .insert([serviceOrderData])
+      .insert(serviceOrderData)
       .select()
       .single();
       
