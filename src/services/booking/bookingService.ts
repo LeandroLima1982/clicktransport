@@ -1,252 +1,210 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Booking } from '@/types/booking';
-import { ServiceOrder } from '@/types/serviceOrder';
-import { createServiceOrderFromBooking } from './serviceOrderService';
-import { 
-  logInfo, 
-  logWarning, 
-  logError 
-} from '../monitoring/systemLogService';
-import {
-  notifyBookingCreated,
-  notifyBookingConfirmed,
-  notifyDriverAssigned
-} from '../notifications/workflowNotificationService';
+import { toast } from 'sonner';
+import { logError, logInfo } from '../monitoring/systemLogService';
+import { notifyBookingCreated } from '../notifications/workflowNotificationService';
 
 /**
- * Creates a new booking with validation for required fields
+ * Create a new booking
  */
-export const createBooking = async (bookingData: Partial<Booking>) => {
+export const createBooking = async (bookingData: any) => {
   try {
-    // Validate required fields
-    if (!bookingData.user_id) {
-      return { booking: null, error: new Error('User ID is required') };
-    }
+    console.log('Creating booking with data:', bookingData);
     
-    if (!bookingData.origin || !bookingData.destination) {
-      return { booking: null, error: new Error('Origin and destination are required') };
-    }
-    
-    // Create a valid booking object with defaults for required fields
-    const validBookingData = {
-      user_id: bookingData.user_id,
-      origin: bookingData.origin,
-      destination: bookingData.destination,
-      booking_date: bookingData.booking_date || new Date().toISOString(),
-      travel_date: bookingData.travel_date || new Date().toISOString(),
-      reference_code: bookingData.reference_code || `BK-${Date.now()}`,
-      total_price: bookingData.total_price || 0,
-      status: bookingData.status || 'pending',
-      return_date: bookingData.return_date,
-      passengers: bookingData.passengers,
-      vehicle_type: bookingData.vehicle_type,
-      additional_notes: bookingData.additional_notes
-    };
-    
-    const { data, error } = await supabase
+    // Insert booking data
+    const { data: booking, error } = await supabase
       .from('bookings')
-      .insert(validBookingData)
-      .select('*')
+      .insert([bookingData])
+      .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
     
-    // Log successful booking creation
-    await logInfo('Nova reserva criada', 'order', {
-      booking_id: data.id,
-      reference_code: data.reference_code,
-      user_id: data.user_id
+    console.log('Booking created successfully:', booking);
+    
+    // Log the booking creation
+    logInfo('Booking created', 'booking', {
+      booking_id: booking.id,
+      reference: booking.reference_code
     });
     
-    // Send notification to the user
-    notifyBookingCreated(data as Booking);
+    // Send notification (if applicable)
+    try {
+      await notifyBookingCreated(booking);
+    } catch (notifyError) {
+      console.error('Error sending booking notification:', notifyError);
+    }
     
-    return { booking: data as Booking, error: null };
+    return { booking, error: null };
   } catch (error) {
     console.error('Error creating booking:', error);
-    await logError('Erro ao criar reserva', 'order', { 
-      error,
-      attempted_booking: bookingData
-    });
     return { booking: null, error };
   }
 };
 
 /**
- * Assigns a service order to a driver
+ * Create a service order from a booking
  */
-export const assignServiceOrderToDriver = async (orderId: string, driverId: string) => {
+export const createServiceOrderFromBooking = async (booking: any) => {
   try {
-    // First, check if the driver exists and is available
-    const { data: driver, error: driverError } = await supabase
-      .from('drivers')
-      .select('id, status')
-      .eq('id', driverId)
-      .single();
+    console.log('Creating service order from booking:', booking);
     
-    if (driverError) throw driverError;
+    // Find an available company if not specified
+    let companyId = booking.company_id;
     
-    if (!driver) {
-      return { updated: null, error: new Error('Driver not found') };
+    if (!companyId) {
+      console.log('No company ID in booking, finding available company...');
+      const { data: companies, error: companiesError } = await supabase
+        .from('companies')
+        .select('id, name, queue_position')
+        .eq('status', 'active')
+        .order('queue_position', { ascending: true })
+        .limit(1);
+      
+      if (companiesError) throw companiesError;
+      
+      if (companies && companies.length > 0) {
+        companyId = companies[0].id;
+        console.log('Selected company based on queue:', companies[0]);
+      } else {
+        throw new Error('No active companies available for service order assignment');
+      }
     }
     
-    if (driver.status !== 'active') {
-      return { updated: null, error: new Error('Driver is not available') };
-    }
+    // Create service order
+    const orderData = {
+      company_id: companyId,
+      origin: booking.origin,
+      destination: booking.destination,
+      pickup_date: booking.travel_date,
+      status: 'created',  // Changed from 'pending' to 'created' for clarity in workflow
+      notes: `Reserva: ${booking.reference_code}\n${booking.additional_notes || ''}`,
+      // Add passenger data if available
+      passenger_data: booking.passenger_data || null,
+      // Add price information if available
+      total_price: booking.total_price || null,
+      // Add trip type if available
+      trip_type: booking.trip_type || 'oneway'
+    };
     
-    // Update the service order with the driver_id and change status to 'assigned'
-    const { data, error } = await supabase
+    console.log('Creating service order with data:', orderData);
+    
+    // Insert the order
+    const { data: serviceOrder, error: orderError } = await supabase
       .from('service_orders')
-      .update({ 
-        driver_id: driverId,
-        status: 'assigned',
-        assigned_at: new Date().toISOString()
-      })
-      .eq('id', orderId)
-      .select()
+      .insert([orderData])
+      .select('*, companies(name)')
       .single();
     
-    if (error) throw error;
-    
-    // Update driver status to indicate they're assigned to an order
-    const { error: updateDriverError } = await supabase
-      .from('drivers')
-      .update({ status: 'assigned' })
-      .eq('id', driverId);
-    
-    if (updateDriverError) {
-      // Log warning but don't fail the operation
-      await logWarning('Falha ao atualizar status do motorista', 'driver', {
-        driver_id: driverId,
-        order_id: orderId,
-        error: updateDriverError
-      });
+    if (orderError) {
+      console.error('Failed to create service order:', orderError);
+      throw orderError;
     }
     
-    // Log the assignment
-    await logInfo('Motorista atribuído à ordem de serviço', 'order', {
-      order_id: orderId,
-      driver_id: driverId
+    console.log('Service order created successfully:', serviceOrder);
+    
+    // Update the booking with the company_id and service_order_id for reference
+    const { error: updateError } = await supabase
+      .from('bookings')
+      .update({ 
+        company_id: companyId,
+        company_name: serviceOrder.companies?.name || 'Empresa designada' 
+      })
+      .eq('id', booking.id);
+    
+    if (updateError) {
+      console.error('Error updating booking with company info:', updateError);
+      // Non-critical error, log but continue
+    }
+    
+    // Log the service order creation
+    logInfo('Service order created from booking', 'booking', {
+      booking_id: booking.id,
+      service_order_id: serviceOrder.id,
+      company_id: companyId
     });
     
-    return { updated: data as ServiceOrder, error: null };
+    return { serviceOrder, error: null };
   } catch (error) {
-    console.error('Error assigning driver to service order:', error);
-    await logError('Erro ao atribuir motorista à ordem de serviço', 'order', {
-      order_id: orderId,
-      driver_id: driverId,
-      error
+    console.error('Error creating service order from booking:', error);
+    logError('Failed to create service order from booking', 'booking', {
+      booking_id: booking.id,
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
-    return { updated: null, error };
+    return { serviceOrder: null, error };
   }
 };
 
 /**
- * Updates a service order status with validation
+ * Get all bookings for a user
  */
-export const updateServiceOrderStatus = async (
-  orderId: string, 
-  newStatus: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled'
-) => {
+export const getUserBookings = async (userId: string) => {
   try {
-    // First get the current status
-    const { data: currentOrder, error: fetchError } = await supabase
-      .from('service_orders')
-      .select('status, driver_id')
-      .eq('id', orderId)
-      .single();
-    
-    if (fetchError) throw fetchError;
-    
-    const currentStatus = currentOrder.status;
-    
-    // Validate status transition
-    const validTransitions: Record<string, string[]> = {
-      'pending': ['assigned', 'cancelled'],
-      'assigned': ['in_progress', 'cancelled'],
-      'in_progress': ['completed', 'cancelled'],
-      'completed': [], // Terminal state
-      'cancelled': []  // Terminal state
-    };
-    
-    if (!validTransitions[currentStatus].includes(newStatus)) {
-      const errorMsg = `Invalid status transition from ${currentStatus} to ${newStatus}`;
-      await logWarning(errorMsg, 'order', { 
-        order_id: orderId, 
-        current_status: currentStatus,
-        attempted_status: newStatus
-      });
-      
-      return { 
-        updated: null, 
-        error: new Error(errorMsg)
-      };
-    }
-    
-    // Update the order status
     const { data, error } = await supabase
-      .from('service_orders')
-      .update({ status: newStatus })
-      .eq('id', orderId)
-      .select()
-      .single();
+      .from('bookings')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
     
-    if (error) throw error;
-    
-    // Log the status update
-    await logInfo(`Status da ordem atualizado: ${currentStatus} → ${newStatus}`, 'order', {
-      order_id: orderId,
-      driver_id: data.driver_id,
-      previous_status: currentStatus,
-      new_status: newStatus
-    });
-    
-    // Handle driver status updates based on order status changes
-    if (data.driver_id) {
-      if (newStatus === 'completed' || newStatus === 'cancelled') {
-        // Reset driver to 'active' when order is completed or cancelled
-        const { error: driverError } = await supabase
-          .from('drivers')
-          .update({ status: 'active' })
-          .eq('id', data.driver_id);
-          
-        if (driverError) {
-          console.error('Warning: Failed to update driver status:', driverError);
-          await logWarning('Falha ao atualizar status do motorista', 'driver', {
-            driver_id: data.driver_id,
-            order_id: orderId,
-            error: driverError
-          });
-        }
-      } else if (newStatus === 'in_progress') {
-        // Update driver to 'on_trip' when order is started
-        const { error: driverError } = await supabase
-          .from('drivers')
-          .update({ status: 'on_trip' })
-          .eq('id', data.driver_id);
-          
-        if (driverError) {
-          console.error('Warning: Failed to update driver status:', driverError);
-          await logWarning('Falha ao atualizar status do motorista', 'driver', {
-            driver_id: data.driver_id,
-            order_id: orderId,
-            error: driverError
-          });
-        }
-      }
+    if (error) {
+      throw error;
     }
     
-    return { updated: data as ServiceOrder, error: null };
+    return { bookings: data || [], error: null };
   } catch (error) {
-    console.error('Error updating service order status:', error);
-    await logError('Erro ao atualizar status da ordem de serviço', 'order', {
-      order_id: orderId,
-      attempted_status: newStatus,
-      error
-    });
-    return { updated: null, error };
+    console.error('Error fetching user bookings:', error);
+    return { bookings: [], error };
   }
 };
 
-export { createServiceOrderFromBooking };
+/**
+ * Get booking details by ID
+ */
+export const getBookingById = async (bookingId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('id', bookingId)
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    return { booking: data, error: null };
+  } catch (error) {
+    console.error('Error fetching booking details:', error);
+    return { booking: null, error };
+  }
+};
+
+/**
+ * Cancel a booking
+ */
+export const cancelBooking = async (bookingId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('id', bookingId)
+      .select()
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Log the cancellation
+    logInfo('Booking cancelled', 'booking', {
+      booking_id: bookingId
+    });
+    
+    return { booking: data, error: null };
+  } catch (error) {
+    console.error('Error cancelling booking:', error);
+    return { booking: null, error };
+  }
+};

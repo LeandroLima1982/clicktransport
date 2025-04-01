@@ -8,9 +8,14 @@ export const useServiceOrderSubscription = (
   callback: (payload?: any) => void
 ) => {
   useEffect(() => {
-    // Inscreve-se em todas as alterações da tabela service_orders
+    console.log('Setting up service order subscription');
+    
+    // Generate a unique channel name based on timestamp to avoid conflicts
+    const channelName = `service_orders_changes_${Date.now()}`;
+    
+    // Subscribe to all changes of the service_orders table
     const channel = supabase
-      .channel('service_orders_changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -19,20 +24,38 @@ export const useServiceOrderSubscription = (
           table: 'service_orders'
         },
         (payload: any) => {
-          console.log('Service order change detected:', payload);
+          console.log('Service order change detected in subscription:', payload);
+          
+          // Call the callback with the payload
           callback(payload);
           
-          // Notificar apenas para novos registros
+          // Play notification sound for important events
           if (payload.eventType === 'INSERT') {
+            console.log('New service order created, playing notification sound');
             playNotificationSound();
+          }
+          
+          if (payload.eventType === 'UPDATE' && 
+              payload.old.status !== payload.new.status) {
+            console.log('Service order status changed, notifying');
+            // Only play sound for specific status changes if needed
+            if (['assigned', 'in_progress', 'completed'].includes(payload.new.status)) {
+              playNotificationSound();
+            }
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Service order subscription status (${channelName}):`, status);
+        
+        if (status !== 'SUBSCRIBED') {
+          console.error('Failed to subscribe to service order changes:', status);
+        }
+      });
 
     return () => {
+      console.log('Removing service order subscription');
       supabase.removeChannel(channel);
     };
   }, [callback]);
 };
-

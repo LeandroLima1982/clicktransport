@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, MapPin, MoreHorizontal, AlertTriangle } from 'lucide-react';
+import { Eye, MapPin, MoreHorizontal, AlertTriangle, Calendar } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -105,7 +105,17 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    try {
+      return new Date(dateString).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (e) {
+      return dateString || 'Data inválida';
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -128,6 +138,7 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
   };
   
   const truncateText = (text: string, length = 20) => {
+    if (!text) return '';
     return text.length > length ? text.substring(0, length) + '...' : text;
   };
 
@@ -156,17 +167,18 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>Status</TableHead>
             <TableHead>Empresa</TableHead>
             <TableHead>Origem</TableHead>
             <TableHead>Destino</TableHead>
             <TableHead>Data Coleta</TableHead>
-            <TableHead>Status</TableHead>
             <TableHead>Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {orders.map(order => (
             <TableRow key={order.id}>
+              <TableCell>{getStatusBadge(order.status)}</TableCell>
               <TableCell className="font-medium">{order.company_name || '-'}</TableCell>
               <TableCell>
                 <div className="flex items-center">
@@ -180,8 +192,12 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
                   {truncateText(order.destination)}
                 </div>
               </TableCell>
-              <TableCell>{formatDate(order.pickup_date)}</TableCell>
-              <TableCell>{getStatusBadge(order.status)}</TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-1 text-gray-500" />
+                  {formatDate(order.pickup_date)}
+                </div>
+              </TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -204,6 +220,14 @@ const ServiceOrderTable: React.FC<ServiceOrderTableProps> = ({
                         disabled={updatingStatus}
                       >
                         <Badge className="bg-yellow-100 text-yellow-800 mr-2">Pendente</Badge>
+                      </DropdownMenuItem>
+                    )}
+                    {order.status !== 'created' && (
+                      <DropdownMenuItem 
+                        onClick={() => handleStatusChange(order, 'created')}
+                        disabled={updatingStatus}
+                      >
+                        <Badge className="bg-purple-100 text-purple-800 mr-2">Criado</Badge>
                       </DropdownMenuItem>
                     )}
                     {order.status !== 'assigned' && (
