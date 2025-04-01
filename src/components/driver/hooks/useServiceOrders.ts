@@ -10,7 +10,7 @@ export interface ServiceOrder {
   origin: string;
   destination: string;
   pickup_date: string;
-  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
   driver_id: string | null;
   company_id: string;
   company_name?: string | null;
@@ -182,14 +182,17 @@ export const useServiceOrders = (driverId: string | null) => {
   };
 
   // Function to update order status
-  const handleUpdateStatus = async (orderId: string, newStatus: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled') => {
+  const handleUpdateStatus = async (orderId: string, newStatus: 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled') => {
     try {
-      const { updated, error } = await updateServiceOrderStatus(orderId, newStatus);
+      // Fix: Changed from response.updated to response.success
+      const response = await updateServiceOrderStatus(orderId, newStatus);
       
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.error ? response.error.toString() : 'Failed to update status');
+      }
       
       // Show appropriate toast based on the new status
-      const statusMessages = {
+      const statusMessages: Record<string, string> = {
         'in_progress': 'Corrida iniciada com sucesso!',
         'completed': 'Corrida finalizada com sucesso!',
         'cancelled': 'Corrida foi cancelada'

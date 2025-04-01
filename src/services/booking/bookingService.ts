@@ -13,10 +13,10 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
   try {
     console.log('Creating booking with data:', bookingData);
     
-    // Insert booking data
+    // Insert booking data - Fix: Pass a single object, not an array
     const { data: booking, error } = await supabase
       .from('bookings')
-      .insert([bookingData])
+      .insert(bookingData)
       .select()
       .single();
     

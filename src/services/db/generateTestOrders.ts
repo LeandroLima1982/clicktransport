@@ -182,3 +182,7 @@ export const createManualServiceOrder = async () => {
     return { success: false, error };
   }
 };
+
+// Make sure we're exporting all the required functions
+export { updateServiceOrderStatus } from '@/services/booking/bookingService';
+
