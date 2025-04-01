@@ -107,15 +107,23 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // Explicitly define the service order data with specific types to avoid deep instantiation
-    // Using a type annotation with concrete string literals for the status
-    const serviceOrderData = {
+    // Define service order data with explicit type annotation to avoid deep instantiation
+    const serviceOrderData: {
+      booking_id: string;
+      company_id: string;
+      origin: string;
+      destination: string;
+      pickup_date: string;
+      status: 'pending';
+      notes: string | null;
+      passenger_data: any | null;
+    } = {
       booking_id: booking.id,
       company_id: booking.company_id || '',
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date || booking.booking_date,
-      status: 'pending' as 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled',
+      status: 'pending',
       notes: booking.additional_notes || null,
       passenger_data: booking.passenger_data || null
     };
