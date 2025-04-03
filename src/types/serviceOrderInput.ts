@@ -1,7 +1,11 @@
 
 /**
+ * Literal type for service order status to avoid deep type instantiation issues
+ */
+export type ServiceOrderStatus = 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+
+/**
  * Type for creating a new service order
- * Using specific literal types to avoid deep type instantiation issues
  */
 export type ServiceOrderInput = {
   booking_id: string;
@@ -9,7 +13,7 @@ export type ServiceOrderInput = {
   origin: string;
   destination: string;
   pickup_date: string;
-  status: 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+  status: ServiceOrderStatus;
   notes: string | null;
   passenger_data: any | null;
   vehicle_id?: string | null;
@@ -20,6 +24,6 @@ export type ServiceOrderInput = {
  * Type for updating a service order status
  */
 export type ServiceOrderStatusUpdate = {
-  status: 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+  status: ServiceOrderStatus;
   delivery_date?: string;
 };

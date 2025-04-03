@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types/booking';
 import { ServiceOrder } from '@/types/serviceOrder';
-import { ServiceOrderInput, ServiceOrderStatusUpdate } from '@/types/serviceOrderInput';
+import { ServiceOrderInput, ServiceOrderStatus, ServiceOrderStatusUpdate } from '@/types/serviceOrderInput';
 import { logError, logInfo } from '../monitoring/systemLogService';
 
 /**
@@ -105,14 +105,14 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // Create a service order input with explicit literal type for status
+    // Create a service order input with explicitly typed status
     const serviceOrderData: ServiceOrderInput = {
       booking_id: booking.id,
       company_id: booking.company_id || '',
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date || booking.booking_date,
-      status: 'pending' as const, // Use const assertion to ensure literal type
+      status: 'pending', // Using the ServiceOrderStatus type
       notes: booking.additional_notes || null,
       passenger_data: booking.passenger_data || null
     };
@@ -141,9 +141,9 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
 /**
  * Update the status of a service order
  */
-export const updateOrderStatus = async (orderId: string, status: 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled') => {
+export const updateOrderStatus = async (orderId: string, status: ServiceOrderStatus) => {
   try {
-    // Use a type literal directly here to avoid circular references
+    // Use the explicitly typed ServiceOrderStatusUpdate
     const updates: ServiceOrderStatusUpdate = { 
       status: status
     };

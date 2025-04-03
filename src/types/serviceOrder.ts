@@ -1,4 +1,6 @@
 
+import { ServiceOrderStatus } from './serviceOrderInput';
+
 export type ServiceOrder = {
   id: string;
   company_id: string;
@@ -9,7 +11,7 @@ export type ServiceOrder = {
   destination: string;
   pickup_date: string;
   delivery_date?: string | null;
-  status: "pending" | "created" | "assigned" | "in_progress" | "completed" | "cancelled";
+  status: ServiceOrderStatus;
   notes?: string | null;
   created_at: string;
   passenger_data?: {
