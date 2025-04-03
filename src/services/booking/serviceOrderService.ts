@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types/booking';
 import { ServiceOrder } from '@/types/serviceOrder';
@@ -145,7 +144,7 @@ export const updateOrderStatus = async (orderId: string, status: ServiceOrderSta
   try {
     // Use the explicitly typed ServiceOrderStatusUpdate
     const updates: ServiceOrderStatusUpdate = { 
-      status: status
+      status
     };
     
     if (status === 'completed') {
