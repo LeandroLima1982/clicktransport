@@ -26,6 +26,22 @@ export const generateSampleBookingAndOrder = async () => {
     
     const companyId = companies[0].id;
     
+    // Find an existing profile to use for the booking
+    const { data: profiles, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1);
+      
+    if (profileError) throw profileError;
+    
+    if (!profiles || profiles.length === 0) {
+      toast.error('Nenhum perfil de usuário encontrado para associar à reserva');
+      return { success: false, error: 'No user profiles found' };
+    }
+    
+    const userId = profiles[0].id;
+    console.log('Using existing user profile ID for test booking:', userId);
+    
     // Create a test booking
     const bookingRef = 'TEST-' + Math.floor(100000 + Math.random() * 900000);
     const now = new Date();
@@ -48,7 +64,7 @@ export const generateSampleBookingAndOrder = async () => {
       client_email: 'teste@exemplo.com',
       client_phone: '(11) 99999-9999',
       additional_notes: 'Reserva de teste gerada automaticamente',
-      user_id: '00000000-0000-0000-0000-000000000000' // Dummy user ID for testing
+      user_id: userId // Use an existing user ID instead of a dummy ID
     };
     
     console.log('Creating test booking with data:', bookingData);
@@ -70,6 +86,7 @@ export const generateSampleBookingAndOrder = async () => {
     
     // Create service order
     const orderData = {
+      booking_id: booking.id, // Add booking ID reference
       company_id: companyId,
       origin: bookingData.origin,
       destination: bookingData.destination,
@@ -80,8 +97,7 @@ export const generateSampleBookingAndOrder = async () => {
         name: bookingData.client_name,
         email: bookingData.client_email,
         phone: bookingData.client_phone
-      },
-      total_price: bookingData.total_price
+      }
     };
     
     console.log('Creating test service order with data:', orderData);
@@ -103,6 +119,12 @@ export const generateSampleBookingAndOrder = async () => {
     toast.success('Dados de teste criados com sucesso!', {
       description: `Reserva e ordem de serviço criadas para teste`
     });
+    
+    // Update the booking to mark that a service order has been created
+    await supabase
+      .from('bookings')
+      .update({ has_service_order: true })
+      .eq('id', booking.id);
     
     return { success: true, booking, serviceOrder };
   } catch (error) {
@@ -152,8 +174,7 @@ export const createManualServiceOrder = async () => {
         name: 'Passageiro Manual Teste',
         email: 'passageiro.manual@teste.com',
         phone: '(11) 98888-7777'
-      },
-      total_price: 120.50
+      }
     };
     
     console.log('Creating manual service order with data:', orderData);

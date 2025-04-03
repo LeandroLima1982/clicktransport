@@ -29,14 +29,21 @@ const TestDataGenerator: React.FC = () => {
           );
         }
       } else {
-        if (result.error?.message?.includes('violates foreign key constraint "profiles_id_fkey"')) {
-          setError(
-            "Erro ao criar perfil de teste: Violação de chave estrangeira. " + 
-            "Esta função requer que seja executado 'Configurar Ambiente de Teste' primeiro para configurar o ambiente corretamente."
-          );
+        if (result.error instanceof Error) {
+          setError(result.error.message);
+        } else if (typeof result.error === 'object' && result.error) {
+          // Handle Supabase error object
+          const supabaseError = result.error as any;
+          if (supabaseError.code === '23503' && supabaseError.details?.includes('user_id')) {
+            setError(
+              "Erro ao criar reserva: Usuário de teste não encontrado. " + 
+              "Execute 'Configurar Ambiente de Teste' primeiro na aba 'Configuração' para configurar o ambiente corretamente."
+            );
+          } else {
+            setError(`Erro ao gerar reserva: ${supabaseError.message || JSON.stringify(supabaseError)}`);
+          }
         } else {
-          setError("Erro ao gerar reserva e ordem: " + 
-            (result.error instanceof Error ? result.error.message : "Erro desconhecido"));
+          setError("Erro ao gerar reserva e ordem: " + (result.error ? String(result.error) : "Erro desconhecido"));
         }
       }
     } catch (error) {
@@ -56,14 +63,22 @@ const TestDataGenerator: React.FC = () => {
       const result = await createManualServiceOrder();
       
       if (!result.success) {
-        if (result.error?.message?.includes('violates row-level security policy')) {
-          setError(
-            "Erro de permissão: Esta função requer que seja executado 'Configurar Ambiente de Teste' " +
-            "primeiro para configurar as permissões necessárias."
-          );
+        if (result.error instanceof Error) {
+          setError(result.error.message);
+        } else if (typeof result.error === 'object' && result.error) {
+          // Handle Supabase error object
+          const supabaseError = result.error as any;
+          if (supabaseError.code === 'PGRST204') {
+            setError(
+              "Erro na estrutura da tabela: Algumas colunas podem estar faltando. " +
+              "Este é provavelmente um problema de configuração do banco de dados. " +
+              "Execute 'Configurar Ambiente de Teste' primeiro para configurar as tabelas corretamente."
+            );
+          } else {
+            setError(`Erro ao criar ordem manual: ${supabaseError.message || JSON.stringify(supabaseError)}`);
+          }
         } else {
-          setError("Erro ao criar ordem manual: " + 
-            (result.error instanceof Error ? result.error.message : "Erro desconhecido"));
+          setError("Erro ao criar ordem manual: " + (result.error ? String(result.error) : "Erro desconhecido"));
         }
       }
     } catch (error) {
