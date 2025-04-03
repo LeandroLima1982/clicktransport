@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types/booking';
 import { ServiceOrder } from '@/types/serviceOrder';
+import { ServiceOrderInput, ServiceOrderStatusUpdate } from '@/types/serviceOrderInput';
 import { logError, logInfo } from '../monitoring/systemLogService';
 
 /**
@@ -104,14 +105,14 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // Using a plain object with string literal type for status to avoid deep type instantiation
-    const serviceOrderData = {
+    // Create a properly typed service order input object
+    const serviceOrderData: ServiceOrderInput = {
       booking_id: booking.id,
       company_id: booking.company_id || '',
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date || booking.booking_date,
-      status: 'pending' as 'pending', // Using string literal type to avoid deep instantiation
+      status: 'pending',
       notes: booking.additional_notes || null,
       passenger_data: booking.passenger_data || null
     };
@@ -142,7 +143,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
  */
 export const updateOrderStatus = async (orderId: string, status: ServiceOrder['status']) => {
   try {
-    const updates: { status: ServiceOrder['status']; delivery_date?: string } = { status };
+    const updates: ServiceOrderStatusUpdate = { status };
     
     if (status === 'completed') {
       updates.delivery_date = new Date().toISOString();
