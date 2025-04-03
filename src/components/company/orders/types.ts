@@ -1,11 +1,13 @@
 
+import { ServiceOrderStatus } from '@/types/serviceOrderInput';
+
 export interface ServiceOrder {
   id: string;
   origin: string;
   destination: string;
   pickup_date: string;
   delivery_date: string | null;
-  status: 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+  status: ServiceOrderStatus;
   notes: string | null;
   driver_id: string | null;
   vehicle_id: string | null;
