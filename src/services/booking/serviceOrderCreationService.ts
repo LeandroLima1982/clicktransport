@@ -12,10 +12,14 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     console.log('Creating service order for booking:', booking.id, 'with company:', booking.company_id);
     
     // Check if service order already exists for this booking
-    const { data: existingOrders } = await supabase
+    const { data: existingOrders, error: checkError } = await supabase
       .from('service_orders')
       .select('id')
-      .eq('id', booking.id); // Use booking ID directly since booking_id column doesn't exist
+      .eq('id', booking.id);
+      
+    if (checkError) {
+      console.error('Error checking for existing service orders:', checkError);
+    }
       
     if (existingOrders && existingOrders.length > 0) {
       console.log('Service order already exists for booking:', booking.id);
@@ -48,8 +52,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     
     console.log('Creating service order with data:', serviceOrderData);
     
-    // Modified approach: Instead of using booking_id as a column, we'll use the id directly
-    // This is because the database schema doesn't have a booking_id column
+    // Create the service order
     const { data, error } = await supabase
       .from('service_orders')
       .insert([{
@@ -112,49 +115,68 @@ export const createManualServiceOrder = async (booking: Booking) => {
     console.log('Manually creating service order for booking:', booking.id);
     
     // First, ensure the booking has a company assigned
-    if (!booking.company_id) {
+    let assignedCompanyId = booking.company_id;
+    let assignedCompanyName = booking.company_name;
+    
+    if (!assignedCompanyId) {
       // Get the first available company
-      const { data: companies } = await supabase
+      console.log('No company assigned, finding an active company...');
+      const { data: companies, error: companiesError } = await supabase
         .from('companies')
         .select('id, name')
         .eq('status', 'active')
         .order('queue_position', { ascending: true })
         .limit(1);
       
+      if (companiesError) {
+        console.error('Error fetching companies:', companiesError);
+        throw new Error(`Failed to find active company: ${companiesError.message}`);
+      }
+      
       if (!companies || companies.length === 0) {
         throw new Error('No active companies available to assign this booking');
       }
+      
+      console.log('Found company to assign:', companies[0]);
+      assignedCompanyId = companies[0].id;
+      assignedCompanyName = companies[0].name;
       
       // Update the booking with the selected company
       const { error: updateError } = await supabase
         .from('bookings')
         .update({ 
-          company_id: companies[0].id,
-          company_name: companies[0].name 
+          company_id: assignedCompanyId,
+          company_name: assignedCompanyName
         })
         .eq('id', booking.id);
       
       if (updateError) {
+        console.error('Error updating booking with company:', updateError);
         throw new Error(`Failed to assign company to booking: ${updateError.message}`);
       }
       
-      // Update booking object with company info
-      booking.company_id = companies[0].id;
-      booking.company_name = companies[0].name;
+      // Update booking object with company info for future reference
+      booking.company_id = assignedCompanyId;
+      booking.company_name = assignedCompanyName;
       
       // Update company queue position
-      await supabase
-        .from('companies')
-        .update({ 
-          queue_position: supabase.sql`increment_queue_position(${companies[0].id})`,
-          last_order_assigned: new Date().toISOString()
-        })
-        .eq('id', companies[0].id);
+      try {
+        await supabase
+          .from('companies')
+          .update({ 
+            queue_position: supabase.sql`increment_queue_position(${assignedCompanyId})`,
+            last_order_assigned: new Date().toISOString()
+          })
+          .eq('id', assignedCompanyId);
+      } catch (queueError) {
+        console.error('Error updating company queue position:', queueError);
+        // Non-critical error, continue with service order creation
+      }
     }
     
-    // Now create the service order
+    // Now create the service order with explicit fields
     const serviceOrderData = {
-      company_id: booking.company_id,
+      company_id: assignedCompanyId,
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date || booking.booking_date,
@@ -162,6 +184,8 @@ export const createManualServiceOrder = async (booking: Booking) => {
       notes: booking.additional_notes || `Manually created by admin for booking ${booking.reference_code}`,
       passenger_data: booking.passenger_data || null
     };
+    
+    console.log('Creating service order with data:', serviceOrderData);
     
     const { data, error } = await supabase
       .from('service_orders')
@@ -174,16 +198,24 @@ export const createManualServiceOrder = async (booking: Booking) => {
       throw error;
     }
     
+    if (!data) {
+      throw new Error("Service order creation didn't return any data");
+    }
+    
     // Update the booking to mark that a service order has been created
     await supabase
       .from('bookings')
-      .update({ has_service_order: true })
+      .update({ 
+        has_service_order: true,
+        company_id: assignedCompanyId,
+        company_name: assignedCompanyName
+      })
       .eq('id', booking.id);
     
     logInfo('Manual service order created by admin', 'service_order', {
       service_order_id: data.id,
       booking_id: booking.id,
-      company_id: booking.company_id,
+      company_id: assignedCompanyId,
       reference: booking.reference_code
     });
     

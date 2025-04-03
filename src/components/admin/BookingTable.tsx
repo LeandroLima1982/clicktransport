@@ -22,7 +22,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types/booking';
-import { createServiceOrderFromBooking, createManualServiceOrder } from '@/services/booking/serviceOrderCreationService';
+import { createManualServiceOrder } from '@/services/booking/serviceOrderCreationService';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface BookingTableProps {
@@ -72,31 +72,43 @@ const BookingTable: React.FC<BookingTableProps> = ({
     setErrors(prev => ({ ...prev, [booking.id]: '' }));
     
     try {
-      // Check if booking already has company_id
-      if (!booking.company_id) {
-        console.log('Booking has no company assigned, will assign one automatically in the process');
-      }
+      console.log('Creating service order from booking:', booking);
       
-      console.log('Creating service order from booking:', booking.id);
-      
+      // Create the service order
       const { serviceOrder, error } = await createManualServiceOrder(booking);
       
       if (error) {
         console.error('Error creating service order:', error);
-        setErrors(prev => ({ ...prev, [booking.id]: String(error) }));
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        setErrors(prev => ({ ...prev, [booking.id]: errorMessage }));
         toast.error("Erro ao criar ordem de serviço", {
-          description: String(error)
+          description: errorMessage
         });
         return;
       }
       
+      if (!serviceOrder) {
+        throw new Error("Nenhuma ordem de serviço foi retornada");
+      }
+      
       console.log('Service order created successfully:', serviceOrder);
+      
+      // Update booking to mark it has a service order
+      await supabase
+        .from('bookings')
+        .update({ 
+          has_service_order: true,
+          company_id: serviceOrder.company_id,
+          company_name: booking.company_name || "Empresa atribuída"
+        })
+        .eq('id', booking.id);
       
       toast.success("Ordem de serviço criada com sucesso!");
       onRefreshData();
     } catch (error) {
       console.error('Exception creating service order:', error);
-      setErrors(prev => ({ ...prev, [booking.id]: String(error) }));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setErrors(prev => ({ ...prev, [booking.id]: errorMessage }));
       toast.error("Erro ao criar ordem de serviço");
     } finally {
       setCreatingOrder(prev => ({ ...prev, [booking.id]: false }));

@@ -4,8 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { createBooking } from '@/services/booking/bookingService';
 import { createServiceOrderFromBooking } from '@/services/booking/serviceOrderCreationService';
+import { assignCompanyFromQueue } from '@/services/booking/queueManagementService';
 import { notifyBookingCreated } from '@/services/notifications/workflowNotificationService';
 import { VehicleRate, getVehicleRates } from '@/utils/routeUtils';
+import { logInfo, logError } from '@/services/monitoring/systemLogService';
 
 export const useServiceRequests = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,6 +64,31 @@ export const useServiceRequests = () => {
       // Calcular o preço estimado com base nas taxas atualizadas
       const estimatedPrice = calculateEstimatedPrice(requestData);
       
+      // Get the next company in the queue 
+      let companyId = null;
+      let companyName = null;
+      
+      try {
+        console.log('Getting company from queue...');
+        // Try to get a company directly from the queue, before creating booking
+        const { data: nextCompany, error: companyError } = await supabase
+          .from('companies')
+          .select('id, name')
+          .eq('status', 'active')
+          .order('queue_position', { ascending: true })
+          .limit(1);
+        
+        if (!companyError && nextCompany && nextCompany.length > 0) {
+          companyId = nextCompany[0].id;
+          companyName = nextCompany[0].name;
+          console.log(`Got company from queue: ${companyName} (${companyId})`);
+        } else {
+          console.warn('No company found in queue or error occurred:', companyError);
+        }
+      } catch (err) {
+        console.error('Error getting company from queue:', err);
+      }
+      
       // Prepare booking data
       const bookingData = {
         reference_code: reference,
@@ -76,7 +103,16 @@ export const useServiceRequests = () => {
         vehicle_type: getVehicleTypeFromPassengers(requestData.passengers),
         status: 'pending' as 'confirmed' | 'pending' | 'completed' | 'cancelled',
         additional_notes: `${requestData.additionalInfo || ''} 
-                          ${requestData.requestTime ? 'Horário: ' + requestData.requestTime : ''}`
+                          ${requestData.requestTime ? 'Horário: ' + requestData.requestTime : ''}`,
+        company_id: companyId,
+        company_name: companyName,
+        // Add passenger data
+        passenger_data: {
+          name: requestData.name,
+          email: requestData.email,
+          phone: requestData.phone,
+          passengersCount: parseInt(requestData.passengers) || 1
+        }
       };
       
       console.log('Creating booking with data:', bookingData);
@@ -91,17 +127,68 @@ export const useServiceRequests = () => {
       }
       
       if (booking) {
-        // Create a service order from the booking
-        const { serviceOrder, error: serviceOrderError } = await createServiceOrderFromBooking(booking);
+        let serviceOrder = null;
+        let serviceOrderError = null;
+        
+        // If no company was assigned, try to assign one now
+        if (!booking.company_id) {
+          console.log('Booking created without company, assigning one now...');
+          try {
+            const { companyId: assignedCompanyId, error: assignError } = await assignCompanyFromQueue(booking.id);
+            
+            if (assignError) {
+              console.error('Error assigning company from queue:', assignError);
+            }
+            
+            // Refresh booking data with the assigned company
+            if (assignedCompanyId) {
+              const { data: updatedBooking } = await supabase
+                .from('bookings')
+                .select('*')
+                .eq('id', booking.id)
+                .single();
+                
+              if (updatedBooking) {
+                Object.assign(booking, updatedBooking);
+              }
+            }
+          } catch (err) {
+            console.error('Exception assigning company to booking:', err);
+          }
+        }
+        
+        // Now try to create a service order with the possibly updated booking
+        if (booking.company_id) {
+          console.log('Creating service order for booking with company_id:', booking.company_id);
+          const result = await createServiceOrderFromBooking(booking);
+          serviceOrder = result.serviceOrder;
+          serviceOrderError = result.error;
+        } else {
+          console.warn('Cannot create service order - booking has no company_id after assignment attempts');
+          serviceOrderError = new Error('No company available to assign to booking');
+        }
         
         if (serviceOrderError) {
           console.error('Error creating service order:', serviceOrderError);
           toast.warning('Reserva confirmada, mas houve um erro ao criar a ordem de serviço', {
             description: 'Nossa equipe será notificada para resolver o problema.'
           });
-        } else {
+          
+          logError('Failed to create service order for booking', 'service_order', {
+            booking_id: booking.id,
+            error: String(serviceOrderError)
+          });
+        } else if (serviceOrder) {
           console.log('Service order created successfully:', serviceOrder);
+          logInfo('Service order created successfully', 'service_order', { 
+            booking_id: booking.id,
+            service_order_id: serviceOrder.id
+          });
         }
+        
+        toast.success('Sua solicitação foi enviada com sucesso!', {
+          description: `Código de referência: ${reference}`
+        });
         
         return true;
       }

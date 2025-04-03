@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ const BookingManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [totalBookings, setTotalBookings] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBookings();
@@ -51,6 +53,8 @@ const BookingManagement: React.FC = () => {
 
   const fetchBookings = async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
       // Query for bookings data first without trying to join service_orders
       const { data: bookingsData, error: bookingsError } = await supabase
@@ -104,6 +108,7 @@ const BookingManagement: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching bookings:', error);
+      setError('Falha ao carregar reservas. Por favor tente novamente.');
       toast.error('Falha ao carregar reservas');
     } finally {
       setIsLoading(false);
@@ -148,6 +153,14 @@ const BookingManagement: React.FC = () => {
             />
           </div>
         </div>
+        
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Erro</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         
         <BookingTable 
           bookings={filteredBookings} 
