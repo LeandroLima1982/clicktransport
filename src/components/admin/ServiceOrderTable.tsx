@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, MapPin, MoreHorizontal, AlertTriangle, Calendar } from 'lucide-react';
+import { Eye, MapPin, MoreHorizontal, AlertTriangle, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,

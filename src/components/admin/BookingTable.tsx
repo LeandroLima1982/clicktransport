@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Table,
@@ -9,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, MapPin, MoreHorizontal, AlertTriangle, FileText } from 'lucide-react';
+import { Eye, MapPin, MoreHorizontal, AlertTriangle, FileText, AlertCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +22,8 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types/booking';
-import { createServiceOrderFromBooking } from '@/services/booking/serviceOrderService';
+import { createServiceOrderFromBooking, createManualServiceOrder } from '@/services/booking/serviceOrderCreationService';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface BookingTableProps {
   bookings: Booking[];
@@ -36,7 +38,8 @@ const BookingTable: React.FC<BookingTableProps> = ({
 }) => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [creatingOrder, setCreatingOrder] = useState(false);
+  const [creatingOrder, setCreatingOrder] = useState<Record<string, boolean>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleViewDetails = (booking: Booking) => {
     setSelectedBooking(booking);
@@ -64,30 +67,23 @@ const BookingTable: React.FC<BookingTableProps> = ({
   };
 
   const handleCreateServiceOrder = async (booking: Booking) => {
-    setCreatingOrder(true);
+    // Set loading state for specific booking
+    setCreatingOrder(prev => ({ ...prev, [booking.id]: true }));
+    setErrors(prev => ({ ...prev, [booking.id]: '' }));
+    
     try {
+      // Check if booking already has company_id
       if (!booking.company_id) {
-        toast.warning("Não é possível criar ordem sem empresa atribuída");
-        return;
+        console.log('Booking has no company assigned, will assign one automatically in the process');
       }
       
       console.log('Creating service order from booking:', booking.id);
-      console.log('Booking company_id:', booking.company_id);
-      console.log('Booking company_name:', booking.company_name);
       
-      const companyName = booking.company_name || null;
-      
-      const bookingWithCompany = {
-        ...booking,
-        company_name: companyName
-      };
-      
-      console.log('Creating service order with booking data:', bookingWithCompany);
-      
-      const { serviceOrder, error } = await createServiceOrderFromBooking(bookingWithCompany);
+      const { serviceOrder, error } = await createManualServiceOrder(booking);
       
       if (error) {
         console.error('Error creating service order:', error);
+        setErrors(prev => ({ ...prev, [booking.id]: String(error) }));
         toast.error("Erro ao criar ordem de serviço", {
           description: String(error)
         });
@@ -100,9 +96,10 @@ const BookingTable: React.FC<BookingTableProps> = ({
       onRefreshData();
     } catch (error) {
       console.error('Exception creating service order:', error);
+      setErrors(prev => ({ ...prev, [booking.id]: String(error) }));
       toast.error("Erro ao criar ordem de serviço");
     } finally {
-      setCreatingOrder(false);
+      setCreatingOrder(prev => ({ ...prev, [booking.id]: false }));
     }
   };
 
@@ -158,107 +155,133 @@ const BookingTable: React.FC<BookingTableProps> = ({
   }
 
   return (
-    <div className="rounded-md border overflow-hidden overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Código</TableHead>
-            <TableHead>Origem</TableHead>
-            <TableHead>Destino</TableHead>
-            <TableHead>Data Viagem</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Ordem</TableHead>
-            <TableHead>Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {bookings.map(booking => (
-            <TableRow key={booking.id}>
-              <TableCell className="font-medium">{booking.reference_code}</TableCell>
-              <TableCell>
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-1 text-gray-500" />
-                  {truncateText(booking.origin)}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-1 text-gray-500" />
-                  {truncateText(booking.destination)}
-                </div>
-              </TableCell>
-              <TableCell>{formatDate(booking.travel_date)}</TableCell>
-              <TableCell>{getStatusBadge(booking.status)}</TableCell>
-              <TableCell>
-                {booking.has_service_order ? (
-                  <Badge className="bg-green-100 text-green-800">Criada</Badge>
-                ) : (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleCreateServiceOrder(booking)}
-                    disabled={creatingOrder || !booking.company_id}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Criar
-                  </Button>
-                )}
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleViewDetails(booking)}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      Ver Detalhes
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
-                    {booking.status !== 'pending' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(booking, 'pending')}
-                        disabled={updatingStatus}
-                      >
-                        <Badge className="bg-yellow-100 text-yellow-800 mr-2">Pendente</Badge>
-                      </DropdownMenuItem>
-                    )}
-                    {booking.status !== 'confirmed' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(booking, 'confirmed')}
-                        disabled={updatingStatus}
-                      >
-                        <Badge className="bg-blue-100 text-blue-800 mr-2">Confirmado</Badge>
-                      </DropdownMenuItem>
-                    )}
-                    {booking.status !== 'completed' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(booking, 'completed')}
-                        disabled={updatingStatus}
-                      >
-                        <Badge className="bg-green-100 text-green-800 mr-2">Concluído</Badge>
-                      </DropdownMenuItem>
-                    )}
-                    {booking.status !== 'cancelled' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(booking, 'cancelled')}
-                        disabled={updatingStatus}
-                      >
-                        <Badge className="bg-red-100 text-red-800 mr-2">Cancelado</Badge>
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
+    <div className="space-y-4">
+      <div className="rounded-md border overflow-hidden overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Código</TableHead>
+              <TableHead>Origem</TableHead>
+              <TableHead>Destino</TableHead>
+              <TableHead>Data Viagem</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Ordem</TableHead>
+              <TableHead>Ações</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {bookings.map(booking => (
+              <React.Fragment key={booking.id}>
+                <TableRow>
+                  <TableCell className="font-medium">{booking.reference_code}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-1 text-gray-500" />
+                      {truncateText(booking.origin)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-1 text-gray-500" />
+                      {truncateText(booking.destination)}
+                    </div>
+                  </TableCell>
+                  <TableCell>{formatDate(booking.travel_date)}</TableCell>
+                  <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                  <TableCell>
+                    {booking.has_service_order ? (
+                      <Badge className="bg-green-100 text-green-800">Criada</Badge>
+                    ) : (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleCreateServiceOrder(booking)}
+                        disabled={creatingOrder[booking.id]}
+                      >
+                        {creatingOrder[booking.id] ? (
+                          <>
+                            <AlertCircle className="h-4 w-4 mr-2 animate-pulse" />
+                            Criando...
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Criar
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleViewDetails(booking)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          Ver Detalhes
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
+                        {booking.status !== 'pending' && (
+                          <DropdownMenuItem 
+                            onClick={() => handleStatusChange(booking, 'pending')}
+                            disabled={updatingStatus}
+                          >
+                            <Badge className="bg-yellow-100 text-yellow-800 mr-2">Pendente</Badge>
+                          </DropdownMenuItem>
+                        )}
+                        {booking.status !== 'confirmed' && (
+                          <DropdownMenuItem 
+                            onClick={() => handleStatusChange(booking, 'confirmed')}
+                            disabled={updatingStatus}
+                          >
+                            <Badge className="bg-blue-100 text-blue-800 mr-2">Confirmado</Badge>
+                          </DropdownMenuItem>
+                        )}
+                        {booking.status !== 'completed' && (
+                          <DropdownMenuItem 
+                            onClick={() => handleStatusChange(booking, 'completed')}
+                            disabled={updatingStatus}
+                          >
+                            <Badge className="bg-green-100 text-green-800 mr-2">Concluído</Badge>
+                          </DropdownMenuItem>
+                        )}
+                        {booking.status !== 'cancelled' && (
+                          <DropdownMenuItem 
+                            onClick={() => handleStatusChange(booking, 'cancelled')}
+                            disabled={updatingStatus}
+                          >
+                            <Badge className="bg-red-100 text-red-800 mr-2">Cancelado</Badge>
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+                {errors[booking.id] && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="p-2 bg-red-50">
+                      <Alert variant="destructive" className="py-2">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Erro ao criar ordem</AlertTitle>
+                        <AlertDescription className="text-xs">
+                          {errors[booking.id]}
+                        </AlertDescription>
+                      </Alert>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </React.Fragment>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };
