@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types/booking';
-import { logError } from '../monitoring/systemLogService';
+import { logError, logInfo } from '../monitoring/systemLogService';
 
 /**
  * Get all bookings for a user
@@ -44,6 +44,31 @@ export const getBookingById = async (bookingId: string) => {
     return { booking: bookingWithServiceOrderFlag, error: null };
   } catch (error) {
     console.error('Error getting booking by ID:', error);
+    return { booking: null, error };
+  }
+};
+
+/**
+ * Create a new booking
+ */
+export const createBooking = async (bookingData: Partial<Booking>) => {
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .insert([bookingData])
+      .select()
+      .single();
+      
+    if (error) throw error;
+    
+    logInfo('Booking created', 'booking', {
+      booking_id: data.id,
+      reference: data.reference_code
+    });
+    
+    return { booking: data, error: null };
+  } catch (error) {
+    console.error('Error creating booking:', error);
     return { booking: null, error };
   }
 };

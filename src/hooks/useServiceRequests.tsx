@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { createBooking, createServiceOrderFromBooking } from '@/services/booking/bookingService';
+import { createBooking } from '@/services/booking/bookingService';
+import { createServiceOrderFromBooking } from '@/services/booking/serviceOrderCreationService';
 import { notifyBookingCreated } from '@/services/notifications/workflowNotificationService';
 import { VehicleRate, getVehicleRates } from '@/utils/routeUtils';
 
