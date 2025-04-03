@@ -5,19 +5,21 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { calculateRoute, calculateTripPrice, calculateTripPriceSync, RouteInfo, getVehicleRates, VehicleRate } from '@/utils/routeUtils';
+import { calculateRoute, RouteInfo, getVehicleRates } from '@/utils/routeUtils';
 import { createBooking } from '@/services/booking/bookingService';
 import { createServiceOrderFromBooking } from '@/services/booking/serviceOrderCreationService';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+
+// Import components
 import VehicleSelection, { Vehicle } from './steps/VehicleSelection';
 import TripDetails from './steps/TripDetails';
 import PaymentSelection from './steps/PaymentSelection';
 import BookingConfirmation from './steps/BookingConfirmation';
+import BookingComplete from './steps/BookingComplete';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
-import BookingComplete from './steps/BookingComplete';
 import PassengerInfoFields from './PassengerInfoFields';
-import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 
 const defaultVehicleOptions: Vehicle[] = [
   {
@@ -383,8 +385,8 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
       case 4:
         return (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold mb-4">Informações dos Passageiros</h3>
-            <p className="text-gray-600">Por favor, informe os dados de cada passageiro para finalizar sua reserva.</p>
+            <h3 className="text-lg font-semibold mb-4 text-white">Informações dos Passageiros</h3>
+            <p className="text-gray-300">Por favor, informe os dados de cada passageiro para finalizar sua reserva.</p>
             
             <PassengerInfoFields
               passengerCount={parseInt(bookingData.passengers)}

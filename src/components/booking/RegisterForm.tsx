@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, UserPlus } from 'lucide-react';
+import { UserPlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -20,23 +20,23 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [registerError, setRegisterError] = useState<string | null>(null);
   
   const { signUp, signIn } = useAuth();
-  
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
+    setRegisterError(null);
     
     if (!email || !password || !firstName || !lastName) {
-      setError('Por favor, preencha todos os campos obrigatórios');
+      setRegisterError('Por favor, preencha todos os campos obrigatórios');
       setIsLoading(false);
       return;
     }
     
     if (password !== confirmPassword) {
-      setError('As senhas não coincidem');
+      setRegisterError('As senhas não coincidem');
       setIsLoading(false);
       return;
     }
@@ -55,7 +55,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
       const { error } = await signUp(email, password, userData);
       
       if (error) {
-        setError(error.message);
+        setRegisterError(error.message);
       } else {
         toast.success('Cadastro realizado com sucesso!');
         const { error: loginError } = await signIn(email, password);
@@ -64,31 +64,30 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
           onRegisterSuccess();
         } else {
           toast.info('Por favor, faça login com suas credenciais');
-          onShowLogin();
         }
       }
     } catch (error: any) {
-      setError(error.message || 'Erro ao criar conta');
+      setRegisterError(error.message || 'Erro ao criar conta');
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-400/20 text-amber-300 mb-4">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-amber-400/20 to-amber-300/20 text-amber-300 mb-4">
           <UserPlus className="w-8 h-8" />
         </div>
         <h3 className="text-xl font-bold text-white">Crie sua conta de cliente</h3>
-        <p className="text-white/70 mt-2">
+        <p className="text-amber-200/70 mt-2">
           Registre-se como cliente para finalizar sua reserva
         </p>
       </div>
       
-      {error && (
-        <div className="bg-red-500/20 text-red-300 p-3 rounded-md text-sm border border-red-500/50">
-          {error}
+      {registerError && (
+        <div className="bg-red-900/50 border border-red-500/50 text-red-200 p-3 rounded-md text-sm">
+          {registerError}
         </div>
       )}
       
@@ -102,7 +101,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               required
-              className="bg-white/10 text-white border-amber-300/30 focus-visible:ring-amber-400"
+              className="bg-[#002366]/50 border-amber-300/30 text-white"
             />
           </div>
           
@@ -114,7 +113,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               required
-              className="bg-white/10 text-white border-amber-300/30 focus-visible:ring-amber-400"
+              className="bg-[#002366]/50 border-amber-300/30 text-white"
             />
           </div>
         </div>
@@ -128,7 +127,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="bg-white/10 text-white border-amber-300/30 focus-visible:ring-amber-400"
+            className="bg-[#002366]/50 border-amber-300/30 text-white"
           />
         </div>
         
@@ -140,7 +139,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             required
-            className="bg-white/10 text-white border-amber-300/30 focus-visible:ring-amber-400"
+            className="bg-[#002366]/50 border-amber-300/30 text-white"
           />
         </div>
         
@@ -153,7 +152,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="bg-white/10 text-white border-amber-300/30 focus-visible:ring-amber-400"
+            className="bg-[#002366]/50 border-amber-300/30 text-white"
           />
         </div>
         
@@ -166,14 +165,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            className="bg-white/10 text-white border-amber-300/30 focus-visible:ring-amber-400"
+            className="bg-[#002366]/50 border-amber-300/30 text-white"
           />
         </div>
         
         <Button 
           type="submit" 
           className="w-full bg-gradient-to-r from-amber-400 to-amber-300 
-                   hover:from-amber-500 hover:to-amber-400 text-[#002366] font-medium" 
+            hover:from-amber-500 hover:to-amber-400 text-[#002366]" 
           disabled={isLoading}
         >
           {isLoading ? (
@@ -186,13 +185,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onShowLo
           )}
         </Button>
         
-        <div className="text-center text-sm text-white/70 mt-4">
+        <div className="text-center text-sm text-amber-200/70 mt-4">
           <p>
             Já tem uma conta?{' '}
             <button
               type="button"
               onClick={onShowLogin}
-              className="text-amber-300 hover:text-amber-200 hover:underline"
+              className="text-amber-300 hover:underline"
             >
               Faça login
             </button>
