@@ -53,6 +53,13 @@ export const getBookingById = async (bookingId: string) => {
  */
 export const createBooking = async (bookingData: Partial<Booking>) => {
   try {
+    if (!bookingData.company_id) {
+      console.error('Attempt to create booking without company_id:', bookingData);
+      return { booking: null, error: new Error("Company ID is required to create a booking") };
+    }
+    
+    console.log('Creating booking with company_id:', bookingData.company_id);
+    
     const { data, error } = await supabase
       .from('bookings')
       .insert([bookingData])
@@ -61,9 +68,14 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
       
     if (error) throw error;
     
+    if (!data) {
+      throw new Error('No data returned from booking creation');
+    }
+    
     logInfo('Booking created', 'booking', {
       booking_id: data.id,
-      reference: data.reference_code
+      reference: data.reference_code,
+      company_id: data.company_id
     });
     
     return { booking: data, error: null };
@@ -111,5 +123,78 @@ export const cancelBooking = async (bookingId: string) => {
   } catch (error) {
     console.error('Error cancelling booking:', error);
     return { success: false, booking: null, error };
+  }
+};
+
+/**
+ * Ensure a booking has a company assigned 
+ */
+export const ensureBookingHasCompany = async (bookingId: string) => {
+  try {
+    // Check if booking already has a company
+    const { data: booking, error: bookingError } = await supabase
+      .from('bookings')
+      .select('id, company_id, company_name')
+      .eq('id', bookingId)
+      .single();
+      
+    if (bookingError) throw bookingError;
+    
+    if (booking.company_id) {
+      console.log('Booking already has company assigned:', booking.company_id);
+      return { updated: false, booking, error: null };
+    }
+    
+    // Get next company in queue
+    const { data: companies, error: companiesError } = await supabase
+      .from('companies')
+      .select('id, name')
+      .eq('status', 'active')
+      .order('queue_position', { ascending: true })
+      .limit(1);
+      
+    if (companiesError) throw companiesError;
+    
+    if (!companies || companies.length === 0) {
+      return { updated: false, booking, error: new Error('No active companies available') };
+    }
+    
+    const company = companies[0];
+    
+    // Update booking with company
+    const { data: updatedBooking, error: updateError } = await supabase
+      .from('bookings')
+      .update({ 
+        company_id: company.id, 
+        company_name: company.name 
+      })
+      .eq('id', bookingId)
+      .select()
+      .single();
+      
+    if (updateError) throw updateError;
+    
+    // Update company queue position
+    const { data: maxPosition } = await supabase
+      .from('companies')
+      .select('queue_position')
+      .order('queue_position', { ascending: false })
+      .limit(1)
+      .single();
+      
+    const newPosition = (maxPosition?.queue_position || 0) + 1;
+    
+    await supabase
+      .from('companies')
+      .update({ 
+        queue_position: newPosition,
+        last_order_assigned: new Date().toISOString()
+      })
+      .eq('id', company.id);
+    
+    return { updated: true, booking: updatedBooking, error: null };
+  } catch (error) {
+    console.error('Error ensuring booking has company:', error);
+    return { updated: false, booking: null, error };
   }
 };

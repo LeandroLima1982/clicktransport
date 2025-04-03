@@ -2,19 +2,22 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types/booking';
 import { ServiceOrderInput } from '@/types/serviceOrderInput';
-import { logInfo } from '../monitoring/systemLogService';
+import { logInfo, logError } from '../monitoring/systemLogService';
 
 /**
  * Create a service order from a booking
  */
 export const createServiceOrderFromBooking = async (booking: Booking) => {
   try {
+    console.log('Creating service order for booking:', booking.id, 'with company:', booking.company_id);
+    
     const { data: existingOrders } = await supabase
       .from('service_orders')
       .select('id')
       .eq('booking_id', booking.id);
       
     if (existingOrders && existingOrders.length > 0) {
+      console.log('Service order already exists for booking:', booking.id);
       return { 
         serviceOrder: existingOrders[0], 
         error: new Error('Service order already exists for this booking') 
@@ -23,7 +26,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     
     // Make sure we have a company_id to assign the order to
     if (!booking.company_id) {
-      console.error('Cannot create service order: missing company_id in booking');
+      console.error('Cannot create service order: missing company_id in booking', booking);
       return {
         serviceOrder: null,
         error: new Error('No company assigned to this booking')
@@ -50,7 +53,17 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       .select()
       .single();
       
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error creating service order:', error);
+      throw error;
+    }
+    
+    if (!data) {
+      console.error('No data returned after creating service order');
+      throw new Error('Failed to create service order: no data returned');
+    }
+    
+    console.log('Successfully created service order:', data.id);
     
     logInfo('Service order created from booking', 'service_order', {
       service_order_id: data.id,
@@ -62,6 +75,10 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     return { serviceOrder: data, error: null };
   } catch (error) {
     console.error('Error creating service order from booking:', error);
+    logError('Failed to create service order from booking', 'service_order', {
+      booking_id: booking?.id,
+      error: String(error)
+    });
     return { serviceOrder: null, error };
   }
 };
