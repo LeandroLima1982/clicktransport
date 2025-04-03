@@ -1,8 +1,8 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types/booking';
 import { ServiceOrderInput } from '@/types/serviceOrderInput';
 import { logInfo, logError } from '../monitoring/systemLogService';
+import { updateCompanyQueuePosition } from './queue/queuePositionService';
 
 /**
  * Create a service order from a booking
@@ -159,15 +159,9 @@ export const createManualServiceOrder = async (booking: Booking) => {
       booking.company_id = assignedCompanyId;
       booking.company_name = assignedCompanyName;
       
-      // Update company queue position
+      // Update company queue position using the refactored function
       try {
-        await supabase
-          .from('companies')
-          .update({ 
-            queue_position: supabase.sql`increment_queue_position(${assignedCompanyId})`,
-            last_order_assigned: new Date().toISOString()
-          })
-          .eq('id', assignedCompanyId);
+        await updateCompanyQueuePosition(assignedCompanyId);
       } catch (queueError) {
         console.error('Error updating company queue position:', queueError);
         // Non-critical error, continue with service order creation
@@ -180,7 +174,7 @@ export const createManualServiceOrder = async (booking: Booking) => {
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date || booking.booking_date,
-      status: 'created', // Set as created since this is a manual operation
+      status: 'created' as const,
       notes: booking.additional_notes || `Manually created by admin for booking ${booking.reference_code}`,
       passenger_data: booking.passenger_data || null
     };
