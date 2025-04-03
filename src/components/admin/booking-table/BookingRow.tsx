@@ -3,16 +3,9 @@ import React from 'react';
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, MapPin, MoreHorizontal, AlertCircle, FileText } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { FileText, MapPin, AlertCircle } from 'lucide-react';
 import { Booking } from '@/types/booking';
+import BookingActions from './BookingActions';
 
 interface BookingRowProps {
   booking: Booking;
