@@ -49,6 +49,65 @@ export const useBookingSubmission = ({
 }: UseBookingSubmissionProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const getNextCompanyInQueue = async () => {
+    try {
+      // Get the first active company in the queue based on queue_position
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name')
+        .eq('status', 'active')
+        .order('queue_position', { ascending: true })
+        .limit(1);
+      
+      if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        console.log('No active companies found in queue');
+        return null;
+      }
+      
+      console.log('Next company in queue:', data[0]);
+      return data[0];
+    } catch (error) {
+      console.error('Error fetching next company in queue:', error);
+      return null;
+    }
+  };
+  
+  const updateCompanyQueuePosition = async (companyId: string) => {
+    try {
+      // Get the highest queue position
+      const { data: maxPositionResult, error: maxPosError } = await supabase
+        .from('companies')
+        .select('queue_position')
+        .order('queue_position', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (maxPosError && maxPosError.code !== 'PGRST116') throw maxPosError;
+      
+      const maxPosition = maxPositionResult?.queue_position || 0;
+      const newPosition = maxPosition + 1;
+      
+      // Move this company to the end of the queue
+      const { error: updateError } = await supabase
+        .from('companies')
+        .update({ 
+          queue_position: newPosition,
+          last_order_assigned: new Date().toISOString()
+        })
+        .eq('id', companyId);
+      
+      if (updateError) throw updateError;
+      
+      console.log(`Updated company ${companyId} queue position to ${newPosition}`);
+      return true;
+    } catch (error) {
+      console.error('Error updating company queue position:', error);
+      return false;
+    }
+  };
+
   const handleSubmitBooking = async () => {
     if (!user) {
       console.log('User not logged in, showing login form');
@@ -63,6 +122,14 @@ export const useBookingSubmission = ({
     
     setIsSubmitting(true);
     try {
+      // Get the next company in queue
+      const nextCompany = await getNextCompanyInQueue();
+      
+      if (!nextCompany) {
+        toast.error('Não foi possível encontrar uma empresa disponível. Por favor, tente novamente mais tarde.');
+        return;
+      }
+      
       // Generate a booking reference
       const reference = 'TRF-' + Math.floor(100000 + Math.random() * 900000);
       
@@ -101,6 +168,8 @@ export const useBookingSubmission = ({
       const bookingPayload = {
         reference_code: reference,
         user_id: user.id,
+        company_id: nextCompany.id, // Assign to the first company in queue
+        company_name: nextCompany.name, // Store company name for reference
         origin: bookingData.origin,
         destination: bookingData.destination,
         booking_date: new Date().toISOString(),
@@ -139,6 +208,9 @@ export const useBookingSubmission = ({
         } else {
           console.log('Service order created successfully:', serviceOrder);
         }
+        
+        // Update company queue position
+        await updateCompanyQueuePosition(nextCompany.id);
         
         toast.success('Reserva confirmada com sucesso!', {
           description: `Seu código de reserva é ${booking.reference_code}`
