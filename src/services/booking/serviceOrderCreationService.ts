@@ -21,10 +21,19 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
+    // Make sure we have a company_id to assign the order to
+    if (!booking.company_id) {
+      console.error('Cannot create service order: missing company_id in booking');
+      return {
+        serviceOrder: null,
+        error: new Error('No company assigned to this booking')
+      };
+    }
+    
     // Create a service order input with explicitly typed status
     const serviceOrderData: ServiceOrderInput = {
       booking_id: booking.id,
-      company_id: booking.company_id || '',
+      company_id: booking.company_id,
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date || booking.booking_date,
@@ -32,6 +41,8 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       notes: booking.additional_notes || null,
       passenger_data: booking.passenger_data || null
     };
+    
+    console.log('Creating service order with data:', serviceOrderData);
     
     const { data, error } = await supabase
       .from('service_orders')
@@ -44,6 +55,7 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     logInfo('Service order created from booking', 'service_order', {
       service_order_id: data.id,
       booking_id: booking.id,
+      company_id: booking.company_id,
       reference: booking.reference_code
     });
     

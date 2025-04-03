@@ -127,6 +127,7 @@ export const useBookingSubmission = ({
       
       if (!nextCompany) {
         toast.error('Não foi possível encontrar uma empresa disponível. Por favor, tente novamente mais tarde.');
+        setIsSubmitting(false);
         return;
       }
       
@@ -191,6 +192,7 @@ export const useBookingSubmission = ({
       if (error) {
         console.error('Error creating booking:', error);
         toast.error('Erro ao criar reserva. Por favor, tente novamente.');
+        setIsSubmitting(false);
         return;
       }
       
