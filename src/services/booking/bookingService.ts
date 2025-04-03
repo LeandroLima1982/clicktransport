@@ -1,90 +1,90 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { logError, logInfo } from '../monitoring/systemLogService';
-import { notifyBookingCreated } from '../notifications/workflowNotificationService';
 import { Booking } from '@/types/booking';
-import { ServiceOrder } from '@/types/serviceOrder';
-import { 
-  getUserBookings, 
-  getBookingById, 
-  cancelBooking, 
-  createServiceOrderFromBooking,
-  updateOrderStatus,
-  assignDriverToOrder
-} from './serviceOrderService';
+import { logError } from '../monitoring/systemLogService';
 
 /**
- * Create a new booking
+ * Get all bookings for a user
  */
-export const createBooking = async (bookingData: Partial<Booking>) => {
+export const getUserBookings = async (userId: string) => {
   try {
-    console.log('Creating booking with data:', bookingData);
-    
-    // Make sure required fields are present
-    if (!bookingData.booking_date || !bookingData.origin || !bookingData.destination || 
-        !bookingData.reference_code || !bookingData.total_price || !bookingData.user_id) {
-      throw new Error('Missing required booking fields');
-    }
-    
-    // Ensure status is a valid enum value
-    const validStatus: Booking['status'][] = ['pending', 'confirmed', 'completed', 'cancelled'];
-    const status = bookingData.status && validStatus.includes(bookingData.status as Booking['status']) 
-      ? (bookingData.status as Booking['status'])
-      : 'confirmed' as Booking['status'];
-    
-    // Create properly typed booking object with required fields
-    const typedBookingData = {
-      ...bookingData,
-      status,
-      booking_date: bookingData.booking_date,
-      origin: bookingData.origin,
-      destination: bookingData.destination,
-      reference_code: bookingData.reference_code,
-      total_price: bookingData.total_price,
-      user_id: bookingData.user_id,
-      travel_date: bookingData.travel_date || bookingData.booking_date // Ensure travel_date is provided
-    };
-    
-    // Insert booking data
-    const { data: booking, error } = await supabase
+    const { data, error } = await supabase
       .from('bookings')
-      .insert([typedBookingData])
-      .select()
+      .select('*, service_orders:service_orders(id, status, driver_id, origin, destination)')
+      .eq('user_id', userId)
+      .order('booking_date', { ascending: false });
+    
+    if (error) throw error;
+    
+    return { bookings: data || [], error: null };
+  } catch (error) {
+    console.error('Error getting user bookings:', error);
+    return { bookings: [], error };
+  }
+};
+
+/**
+ * Get booking by ID
+ */
+export const getBookingById = async (bookingId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*, service_orders:service_orders(id, status, driver_id, origin, destination, pickup_date, delivery_date, driver:drivers(id, name, phone), passenger_data)')
+      .eq('id', bookingId)
       .single();
     
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
     
-    console.log('Booking created successfully:', booking);
+    const bookingWithServiceOrderFlag = {
+      ...data,
+      has_service_order: data.service_orders && data.service_orders.length > 0
+    };
     
-    // Log the booking creation
-    logInfo('Booking created', 'booking', {
-      booking_id: booking.id,
-      reference: booking.reference_code
-    });
-    
-    // Send notification (if applicable)
-    try {
-      await notifyBookingCreated(booking as Booking);
-    } catch (notifyError) {
-      console.error('Error sending booking notification:', notifyError);
-    }
-    
-    return { booking, error: null };
+    return { booking: bookingWithServiceOrderFlag, error: null };
   } catch (error) {
-    console.error('Error creating booking:', error);
+    console.error('Error getting booking by ID:', error);
     return { booking: null, error };
   }
 };
 
-// Re-export these functions from serviceOrderService
-export { 
-  getUserBookings, 
-  getBookingById, 
-  cancelBooking, 
-  createServiceOrderFromBooking,
-  updateOrderStatus,
-  assignDriverToOrder
+/**
+ * Cancel a booking
+ */
+export const cancelBooking = async (bookingId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('id', bookingId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    try {
+      const { data: serviceOrders } = await supabase
+        .from('service_orders')
+        .select('id')
+        .eq('booking_id', bookingId);
+        
+      if (serviceOrders && serviceOrders.length > 0) {
+        const orderIds = serviceOrders.map(order => order.id);
+        
+        // Import from the new file to avoid circular dependencies
+        const { updateOrderStatus } = await import('./serviceOrderStatusService');
+        
+        for (const orderId of orderIds) {
+          await updateOrderStatus(orderId, 'cancelled');
+        }
+      }
+    } catch (serviceOrderError) {
+      console.error('Error cancelling associated service orders:', serviceOrderError);
+    }
+    
+    return { success: true, booking: data, error: null };
+  } catch (error) {
+    console.error('Error cancelling booking:', error);
+    return { success: false, booking: null, error };
+  }
 };
