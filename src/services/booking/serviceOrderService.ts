@@ -105,14 +105,14 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
       };
     }
     
-    // Create a properly typed service order input object with explicit literal type
+    // Create a service order input with explicit literal type for status
     const serviceOrderData: ServiceOrderInput = {
       booking_id: booking.id,
       company_id: booking.company_id || '',
       origin: booking.origin,
       destination: booking.destination,
       pickup_date: booking.travel_date || booking.booking_date,
-      status: 'pending', // Using literal type from ServiceOrderInput
+      status: 'pending' as const, // Use const assertion to ensure literal type
       notes: booking.additional_notes || null,
       passenger_data: booking.passenger_data || null
     };
@@ -141,11 +141,11 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
 /**
  * Update the status of a service order
  */
-export const updateOrderStatus = async (orderId: string, status: ServiceOrder['status']) => {
+export const updateOrderStatus = async (orderId: string, status: 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled') => {
   try {
-    // Use the explicitly typed ServiceOrderStatusUpdate
+    // Use a type literal directly here to avoid circular references
     const updates: ServiceOrderStatusUpdate = { 
-      status: status as ServiceOrderStatusUpdate['status']
+      status: status
     };
     
     if (status === 'completed') {
