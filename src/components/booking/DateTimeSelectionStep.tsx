@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -7,6 +8,7 @@ import TimeSelector from '../TimeSelector';
 import { ArrowRightCircle, Plane, ArrowLeftRight } from 'lucide-react';
 import StepTransition from './StepTransition';
 import PassengerSelector from './PassengerSelector';
+
 interface DateTimeSelectionStepProps {
   date: Date | undefined;
   returnDate: Date | undefined;
@@ -26,6 +28,7 @@ interface DateTimeSelectionStepProps {
   direction: number;
   currentStep: number;
 }
+
 const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
   date,
   returnDate,
@@ -48,7 +51,9 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
   const handleTripTypeToggle = (checked: boolean) => {
     setTripType(checked ? "roundtrip" : "oneway");
   };
-  return <StepTransition step={currentStep} direction={direction}>
+
+  return (
+    <StepTransition step={currentStep} direction={direction}>
       <div className="space-y-3">
         <div className="flex justify-between items-center mb-1">
           <div className="text-xs font-medium text-white">Tipo de Viagem</div>
@@ -80,19 +85,25 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
             <Label className="block text-xs font-semibold booking-label mb-1">
               {tripType === "roundtrip" ? "Volta quando?" : "Passageiros"}
             </Label>
-            {tripType === "roundtrip" ? <div className="flex flex-col space-y-2">
+            {tripType === "roundtrip" ? (
+              <div className="flex flex-col space-y-2">
                 <DateSelector hideLabel date={returnDate} onSelect={setReturnDate} disabledDates={currentDate => currentDate < (date || new Date())} isConnected={true} position="left" />
                 <TimeSelector value={returnTime} onChange={setReturnTime} connected position="right" />
-              </div> : <PassengerSelector value={passengers} onChange={setPassengers} />}
+              </div>
+            ) : (
+              <PassengerSelector value={passengers} onChange={setPassengers} />
+            )}
           </div>
         </div>
 
-        {tripType === "roundtrip" && <div className="booking-input-container p-2 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow rounded-lg">
+        {tripType === "roundtrip" && (
+          <div className="booking-input-container p-2 hover:bg-white/20 transition-colors duration-200 shadow-lg input-shadow rounded-lg">
             <Label className="block text-xs font-semibold booking-label mb-1">
               Passageiros
             </Label>
             <PassengerSelector value={passengers} onChange={setPassengers} />
-          </div>}
+          </div>
+        )}
 
         <div className="flex justify-between mt-2">
           <Button onClick={goToPreviousStep} variant="outline" className="px-4 rounded-lg text-white border-amber-300/50 hover:text-amber-300 shadow-md hover:shadow-lg transition-all duration-300 bg-indigo-950 hover:bg-indigo-800">
@@ -106,6 +117,8 @@ const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({
           </Button>
         </div>
       </div>
-    </StepTransition>;
+    </StepTransition>
+  );
 };
+
 export default DateTimeSelectionStep;

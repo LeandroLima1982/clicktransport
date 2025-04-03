@@ -1,13 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { calculateRoute, RouteInfo, getVehicleRates } from '@/utils/routeUtils';
-import { createBooking } from '@/services/booking/bookingService';
-import { createServiceOrderFromBooking } from '@/services/booking/serviceOrderCreationService';
+import { calculateRoute, RouteInfo } from '@/utils/routeUtils';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -16,10 +13,11 @@ import VehicleSelection, { Vehicle } from './steps/VehicleSelection';
 import TripDetails from './steps/TripDetails';
 import PaymentSelection from './steps/PaymentSelection';
 import BookingConfirmation from './steps/BookingConfirmation';
-import BookingComplete from './steps/BookingComplete';
+import BookingComplete from './BookingComplete';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import PassengerInfoFields from './PassengerInfoFields';
+import { useBookingSubmission } from './useBookingSubmission';
 
 const defaultVehicleOptions: Vehicle[] = [
   {
@@ -81,7 +79,6 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingComplete, setBookingComplete] = useState(false);
   const [bookingReference, setBookingReference] = useState<string>('');
   const [showLoginForm, setShowLoginForm] = useState(false);
@@ -190,6 +187,22 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setSelectedPaymentMethod(methodId);
   };
 
+  const { isSubmitting, handleSubmitBooking: submitBooking } = useBookingSubmission({
+    bookingData,
+    totalPrice,
+    selectedVehicle,
+    passengerData,
+    vehicleOptions,
+    setBookingReference,
+    setBookingComplete,
+    setPendingBooking,
+    navigate,
+    toast,
+    user,
+    setShowLoginForm,
+    supabase
+  });
+
   const handleNext = () => {
     if (currentStep === 1 && !selectedVehicle) {
       toast.error('Selecione um veículo para continuar');
@@ -220,7 +233,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
         setPendingBooking(true);
         setShowLoginForm(true);
       } else {
-        handleSubmitBooking();
+        submitBooking();
       }
     } else {
       setCurrentStep(currentStep + 1);
@@ -238,7 +251,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setShowLoginForm(false);
     
     if (pendingBooking) {
-      handleSubmitBooking();
+      submitBooking();
     }
   };
 
@@ -248,82 +261,7 @@ const BookingSteps: React.FC<BookingStepsProps> = ({ bookingData, isOpen, onClos
     setShowLoginForm(false);
     
     if (pendingBooking) {
-      handleSubmitBooking();
-    }
-  };
-
-  const handleSubmitBooking = async () => {
-    console.log('Submitting booking, user:', user);
-    setIsSubmitting(true);
-    
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const currentUser = sessionData.session?.user || user;
-      
-      if (!currentUser) {
-        console.log('No user available for booking, showing login form');
-        setPendingBooking(true);
-        setShowLoginForm(true);
-        setIsSubmitting(false);
-        return;
-      }
-      
-      const reference = 'TRF-' + Math.floor(100000 + Math.random() * 900000);
-      const selectedVehicleDetails = vehicleOptions.find(v => v.id === selectedVehicle);
-      
-      const bookingObject = {
-        reference_code: reference,
-        origin: bookingData.origin,
-        destination: bookingData.destination,
-        booking_date: new Date().toISOString(),
-        travel_date: bookingData.date ? bookingData.date.toISOString() : new Date().toISOString(),
-        return_date: bookingData.returnDate ? bookingData.returnDate.toISOString() : null,
-        total_price: totalPrice,
-        passengers: parseInt(bookingData.passengers),
-        vehicle_type: selectedVehicleDetails?.name || '',
-        status: 'confirmed' as const,
-        user_id: currentUser.id,
-        additional_notes: `${bookingData.time ? 'Horário ida: ' + bookingData.time : ''} 
-                          ${bookingData.returnTime ? 'Horário volta: ' + bookingData.returnTime : ''}`
-      };
-      
-      console.log('Creating booking with data:', bookingObject);
-      
-      const { booking, error } = await createBooking(bookingObject);
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (booking) {
-        const { serviceOrder, error: serviceOrderError } = await createServiceOrderFromBooking(booking);
-        
-        if (serviceOrderError) {
-          console.error('Error creating service order:', serviceOrderError);
-          toast.error('Reserva confirmada, mas houve um erro ao criar a ordem de serviço', { 
-            description: 'Nossa equipe será notificada para resolver o problema.'
-          });
-        } else {
-          console.log('Service order created successfully:', serviceOrder);
-          toast.success('Ordem de serviço criada para a empresa de transporte!');
-        }
-      }
-      
-      setBookingReference(reference);
-      setBookingComplete(true);
-      
-      toast.success('Reserva confirmada com sucesso!');
-      
-      setPendingBooking(false);
-      
-      setTimeout(() => {
-        navigate('/bookings');
-      }, 2000);
-    } catch (error) {
-      console.error('Booking error:', error);
-      toast.error('Erro ao confirmar reserva. Tente novamente.');
-    } finally {
-      setIsSubmitting(false);
+      submitBooking();
     }
   };
 
