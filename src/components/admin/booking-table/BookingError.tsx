@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Alert, AlertCircle, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface BookingErrorProps {
   error: string;
