@@ -1,6 +1,6 @@
 
 /**
- * Literal type for service order status to avoid deep type instantiation issues
+ * Literal type for service order status
  */
 export type ServiceOrderStatus = 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
 

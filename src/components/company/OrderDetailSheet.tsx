@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, MapPinIcon, TruckIcon, UserIcon } from 'lucide-react';
+import { ServiceOrderStatus } from '@/types/serviceOrderInput';
 
 interface ServiceOrder {
   id: string;
@@ -18,7 +19,7 @@ interface ServiceOrder {
   destination: string;
   pickup_date: string;
   delivery_date: string | null;
-  status: 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+  status: ServiceOrderStatus;
   notes: string | null;
   driver_id: string | null;
   vehicle_id: string | null;

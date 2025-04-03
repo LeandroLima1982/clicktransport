@@ -22,6 +22,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { logInfo } from '@/services/monitoring/systemLogService';
+import { ServiceOrderStatus } from '@/types/serviceOrderInput';
 
 export interface ServiceOrder {
   id: string;
@@ -34,7 +35,7 @@ export interface ServiceOrder {
   destination: string;
   pickup_date: string;
   delivery_date: string | null;
-  status: string;
+  status: ServiceOrderStatus;
   notes: string | null;
   created_at: string;
   passenger_data?: any;

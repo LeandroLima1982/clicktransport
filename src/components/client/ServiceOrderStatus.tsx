@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Check, Clock, Car, MapPin, AlertTriangle } from 'lucide-react';
+import { ServiceOrderStatus } from '@/types/serviceOrderInput';
 
 interface ServiceOrderStatusProps {
   status: string;
@@ -13,20 +14,20 @@ const ServiceOrderStatus: React.FC<ServiceOrderStatusProps> = ({
 }) => {
   // Define the steps in the service order flow
   const steps = [
-    { id: 'pending', label: 'Pendente', icon: Clock },
-    { id: 'assigned', label: 'Atribuído', icon: Check },
-    { id: 'in_progress', label: 'Em andamento', icon: Car },
-    { id: 'completed', label: 'Finalizado', icon: MapPin },
+    { id: 'pending' as ServiceOrderStatus, label: 'Pendente', icon: Clock },
+    { id: 'assigned' as ServiceOrderStatus, label: 'Atribuído', icon: Check },
+    { id: 'in_progress' as ServiceOrderStatus, label: 'Em andamento', icon: Car },
+    { id: 'completed' as ServiceOrderStatus, label: 'Finalizado', icon: MapPin },
   ];
 
   // Map booking status to service order status if needed
-  const getOrderStatus = (bookingStatus: string) => {
+  const getOrderStatus = (bookingStatus: string): ServiceOrderStatus => {
     switch (bookingStatus) {
       case 'pending': return 'pending';
       case 'confirmed': return 'assigned';
       case 'completed': return 'completed';
       case 'cancelled': return 'cancelled';
-      default: return bookingStatus;
+      default: return bookingStatus as ServiceOrderStatus;
     }
   };
 

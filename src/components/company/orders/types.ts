@@ -27,7 +27,7 @@ export interface Vehicle {
   license_plate: string;
 }
 
-export const statusMap: {[key: string]: string} = {
+export const statusMap: {[key in ServiceOrderStatus]: string} = {
   'pending': 'Pendente',
   'created': 'Criado',
   'assigned': 'Atribuído',
@@ -36,7 +36,7 @@ export const statusMap: {[key: string]: string} = {
   'cancelled': 'Cancelado'
 };
 
-export const getStatusBadgeClass = (status: string) => {
+export const getStatusBadgeClass = (status: ServiceOrderStatus) => {
   switch (status) {
     case 'pending': return 'bg-yellow-100 text-yellow-800';
     case 'created': return 'bg-blue-50 text-blue-800';
