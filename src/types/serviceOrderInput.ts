@@ -1,6 +1,4 @@
 
-import { ServiceOrder } from './serviceOrder';
-
 /**
  * Type for creating a new service order
  * Using specific literal types to avoid deep type instantiation issues
@@ -22,6 +20,6 @@ export type ServiceOrderInput = {
  * Type for updating a service order status
  */
 export type ServiceOrderStatusUpdate = {
-  status: ServiceOrder['status'];
+  status: 'pending' | 'created' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
   delivery_date?: string;
 };
