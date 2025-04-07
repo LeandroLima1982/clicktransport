@@ -1,8 +1,9 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { createServiceOrderFromBooking } from '../serviceOrderCreationService';
 import { updateCompanyQueuePosition } from './queuePositionService';
 import { logInfo, logError } from '@/services/monitoring/systemLogService';
-import { Booking } from '@/types/booking';
+import { Booking, BookingStatus } from '@/types/booking';
 
 /**
  * Process unassigned bookings by assigning companies and creating service orders

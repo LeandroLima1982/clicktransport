@@ -70,10 +70,22 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
       return { booking: null, error: new Error("Missing required booking fields") };
     }
     
-    // Insert as a single record
+    // Ensure required fields have values
+    const requiredBookingData = {
+      origin: bookingData.origin,
+      destination: bookingData.destination,
+      booking_date: bookingData.booking_date,
+      reference_code: bookingData.reference_code,
+      status: bookingData.status || 'pending',
+      total_price: bookingData.total_price || 0,
+      travel_date: bookingData.travel_date || bookingData.booking_date,
+      ...bookingData
+    };
+    
+    // Insert as a single record (ensure it's not an array)
     const { data, error } = await supabase
       .from('bookings')
-      .insert(bookingData)
+      .insert(requiredBookingData)
       .select()
       .single();
       
@@ -89,7 +101,7 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
       company_id: data.company_id
     });
     
-    return { booking: data, error: null };
+    return { booking: data as Booking, error: null };
   } catch (error) {
     console.error('Error creating booking:', error);
     return { booking: null, error };

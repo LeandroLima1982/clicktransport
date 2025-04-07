@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { createBooking } from '@/services/booking/bookingService';
 import { createServiceOrderFromBooking } from '@/services/booking/serviceOrderCreationService';
 import { NavigateFunction } from 'react-router-dom';
-import { ToastT } from 'sonner';
+import { toast } from 'sonner';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 interface UseBookingSubmissionProps {
@@ -26,7 +26,7 @@ interface UseBookingSubmissionProps {
   setBookingComplete: (complete: boolean) => void;
   setPendingBooking: (pending: boolean) => void;
   navigate: NavigateFunction;
-  toast: ToastT;
+  toast: typeof toast;
   user: any;
   setShowLoginForm: (show: boolean) => void;
   supabase: SupabaseClient;

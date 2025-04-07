@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useServiceRequests } from '@/hooks/useServiceRequests';
+import { useServiceRequests } from './useServiceRequests';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { format } from 'date-fns';

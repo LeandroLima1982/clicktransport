@@ -1,9 +1,9 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { assignCompanyFromQueue } from '@/services/booking/queueManagementService';
 import { toast } from 'sonner';
 
-// Add export keyword to make it available for import
 export const useServiceRequests = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -31,14 +31,17 @@ export const useServiceRequests = () => {
         additional_notes: additionalInfo,
         booking_date: requestDate + ' ' + requestTime,
         user_id: userId,
-        status: 'pending'
+        status: 'pending',
+        reference_code: 'REQ-' + Math.floor(100000 + Math.random() * 900000),
+        total_price: 0,  // Add required fields
+        travel_date: new Date().toISOString()
       };
 
       // Insert the booking into the database
       const { data, error } = await supabase
         .from('bookings')
         .insert([booking])
-        .select()
+        .select();
 
       if (error) {
         console.error("Error submitting service request:", error);
@@ -54,7 +57,9 @@ export const useServiceRequests = () => {
       }
 
       // Fix the referenced code fragment
-      const { companyId: assignedCompanyId, error: assignError } = await assignCompanyFromQueue(data[0].id);
+      const result = await assignCompanyFromQueue(data[0].id);
+      const assignedCompanyId = result.companyId;
+      const assignError = result.error;
     
       if (assignError) {
         console.error('Error assigning company from queue:', assignError);
