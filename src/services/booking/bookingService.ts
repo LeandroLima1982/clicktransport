@@ -60,10 +60,20 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
     
     console.log('Creating booking with company_id:', bookingData.company_id);
     
-    // Ensure bookingData is a single object, not an array
+    // Ensure bookingData is properly typed and has the required fields
+    if (!bookingData.booking_date) {
+      bookingData.booking_date = new Date().toISOString();
+    }
+    
+    // Ensure booking data has these required fields
+    if (!bookingData.origin || !bookingData.destination || !bookingData.reference_code) {
+      return { booking: null, error: new Error("Missing required booking fields") };
+    }
+    
+    // Insert as a single record
     const { data, error } = await supabase
       .from('bookings')
-      .insert(bookingData) // Insert as a single record
+      .insert(bookingData)
       .select()
       .single();
       

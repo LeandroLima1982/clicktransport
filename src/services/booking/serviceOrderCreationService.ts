@@ -108,11 +108,12 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
 
 // Helper function to update the has_service_order field
 const updateBookingServiceOrderStatus = async (bookingId: string, hasServiceOrder: boolean) => {
+  // Add type cast to handle the has_service_order property
   const { error } = await supabase
     .from('bookings')
     .update({ 
       has_service_order: hasServiceOrder 
-    })
+    } as any)
     .eq('id', bookingId);
   
   if (error) {

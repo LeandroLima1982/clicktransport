@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { createServiceOrderFromBooking } from '../serviceOrderCreationService';
 import { updateCompanyQueuePosition } from './queuePositionService';
@@ -75,7 +74,8 @@ export const processUnassignedBookings = async (): Promise<{
         const updatedBooking: Booking = {
           ...booking,
           company_id: selectedCompany.id,
-          company_name: selectedCompany.name
+          company_name: selectedCompany.name,
+          status: booking.status as BookingStatus
         };
         
         // Create a service order for this booking

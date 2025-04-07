@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Sheet,
@@ -9,9 +10,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Booking } from '@/types/booking';
+import { Booking, BookingStatus } from '@/types/booking';
 import BookingStatus from './BookingStatus';
 import ServiceOrderStatus from './ServiceOrderStatus';
+import { ServiceOrderStatus as ServiceOrderStatusType } from '@/types/serviceOrderInput';
 import {
   Calendar,
   Clock,
@@ -159,7 +161,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
     window.open(whatsappUrl, '_blank');
   };
 
-  const getServiceOrderStatus = (bookingStatus: BookingStatus): ServiceOrderStatus => {
+  const getServiceOrderStatus = (bookingStatus: string): ServiceOrderStatusType => {
     // Map booking status to service order status
     switch (bookingStatus) {
       case 'confirmed': return 'created';
