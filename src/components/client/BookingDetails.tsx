@@ -89,7 +89,6 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
     }
   };
 
-  // Get passenger data from booking
   const getPassengerData = () => {
     if (booking.passenger_data) {
       try {
@@ -106,7 +105,6 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
   const passengerData = getPassengerData();
   const isRoundTrip = booking.return_date !== null;
 
-  // Handle sharing via WhatsApp
   const handleShareViaWhatsApp = () => {
     const bookingData = {
       origin: booking.origin,
@@ -129,7 +127,6 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
     shareViaWhatsApp(message);
   };
 
-  // Function to get relevant contact info (driver or company)
   const getContactInfo = () => {
     if (booking.driver_id && booking.driver_phone) {
       return {
@@ -145,17 +142,15 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
       };
     }
     
-    // Default fallback
     return {
       type: 'support',
       name: 'Suporte',
-      phone: '+5511999999999' // Replace with your actual support phone
+      phone: '+5511999999999'
     };
   };
 
   const contactInfo = getContactInfo();
 
-  // Function to contact via WhatsApp
   const handleContactViaWhatsApp = () => {
     const phoneNumber = contactInfo.phone.replace(/\D/g, '');
     const message = `Olá, estou entrando em contato sobre a reserva #${booking.reference_code} de ${formatDate(booking.travel_date)} às ${formatTime(booking.travel_date)}`;
@@ -210,11 +205,9 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
             )}
           </div>
 
-          {/* Service Order Status Flow */}
           <ServiceOrderStatus status={booking.status} className="my-4" />
 
           <div className="space-y-2 mt-4">
-            {/* Date and Time Section */}
             <div 
               className="bg-gray-50 rounded-lg overflow-hidden cursor-pointer"
               onClick={() => toggleSection('datetime')}
@@ -258,7 +251,6 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
               )}
             </div>
 
-            {/* Route Section */}
             <div 
               className="bg-gray-50 rounded-lg overflow-hidden cursor-pointer"
               onClick={() => toggleSection('route')}
@@ -295,7 +287,6 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
               )}
             </div>
 
-            {/* Vehicle Section */}
             <div 
               className="bg-gray-50 rounded-lg overflow-hidden cursor-pointer"
               onClick={() => toggleSection('vehicle')}
@@ -326,7 +317,6 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
               )}
             </div>
 
-            {/* Passengers Section */}
             {passengerData.length > 0 && (
               <div 
                 className="bg-gray-50 rounded-lg overflow-hidden cursor-pointer"
@@ -365,7 +355,6 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
               </div>
             )}
 
-            {/* Payment Section */}
             <div 
               className="bg-gray-50 rounded-lg overflow-hidden cursor-pointer"
               onClick={() => toggleSection('payment')}
@@ -398,7 +387,6 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
               )}
             </div>
 
-            {/* Notes Section */}
             {booking.additional_notes && (
               <div 
                 className="bg-gray-50 rounded-lg overflow-hidden cursor-pointer"

@@ -1,33 +1,51 @@
 
 import { ServiceOrder } from './serviceOrder';
 
-export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
+export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
 export interface Booking {
   id: string;
-  reference_code: string;
-  user_id: string;
+  client_id?: string;
+  client_name?: string;
+  client_email?: string;
+  client_phone?: string;
   origin: string;
   destination: string;
   booking_date: string;
-  travel_date: string | null;
-  return_date: string | null;
-  passengers?: number;
   status: BookingStatus;
-  total_price: number;
-  company_id: string | null;
-  company_name: string | null;
-  driver_id?: string | null;
-  driver_name?: string | null;
-  driver_phone?: string | null;
-  client_name?: string | null;
-  client_phone?: string | null;
-  client_email?: string | null;
-  vehicle_type?: string | null;
-  additional_notes?: string | null;
-  created_at: string;
-  company_phone?: string | null;
+  reference_code: string;
+  distance?: number;
+  price?: number;
   passenger_data?: any;
-  service_orders?: ServiceOrder[];
-  has_service_order?: boolean;
+  created_at?: string;
+  company_id?: string;
+  company_name?: string;
+  company_phone?: string;
+  is_round_trip?: boolean;
+  passengers?: number;
+  delivery_date?: string; // Data de entrega para serviços de entrega
+  service_type?: string; // Tipo de serviço (passageiro, entrega, etc)
+  vehicle_type?: string; // Tipo de veículo solicitado
+  additional_notes?: string; // Notas adicionais
+  has_service_order?: boolean; // Indicate if a service order has been created
+  service_orders?: ServiceOrder[]; // Associated service orders
+  driver_id?: string;
+  driver_name?: string;
+}
+
+export interface BookingInput {
+  client_name?: string;
+  client_email?: string;
+  client_phone?: string;
+  origin: string;
+  destination: string;
+  booking_date: string;
+  is_round_trip?: boolean;
+  passengers?: number;
+  service_type?: string;
+  vehicle_type?: string;
+  additional_notes?: string;
+  distance?: number;
+  price?: number;
+  passenger_data?: any;
 }

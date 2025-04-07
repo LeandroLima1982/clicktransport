@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { fixInvalidQueuePositions } from '../queueManagementService';
 import { logInfo, logError } from '@/services/monitoring/systemLogService';
@@ -13,7 +14,7 @@ export const initializeCompanyQueues = async (): Promise<void> => {
     // Fetch all active companies without a queue position
     const { data: companiesWithoutQueue, error: fetchError } = await supabase
       .from('companies')
-      .select('id')
+      .select('id, name')
       .eq('status', 'active')
       .is('queue_position', null);
 
@@ -26,8 +27,10 @@ export const initializeCompanyQueues = async (): Promise<void> => {
       console.log(`Found ${companiesWithoutQueue.length} companies without queue positions.`);
 
       // Assign a unique queue position to each company
+      // Include the name field that was missing in the previous implementation
       const updates = companiesWithoutQueue.map((company, index) => ({
         id: company.id,
+        name: company.name,
         queue_position: index + 1,
       }));
 

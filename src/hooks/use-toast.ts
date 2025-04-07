@@ -3,6 +3,20 @@ import { toast as sonnerToast } from 'sonner';
 import {
   useToast as useToastOriginal,
 } from "@/components/ui/use-toast";
+import { ReactNode } from 'react';
+import { ExternalToast } from 'sonner';
+
+// Define a proper type for the toast object to prevent type errors
+export interface ToastT {
+  (message: ReactNode, data?: ExternalToast): string | number;
+  success: (message: ReactNode, data?: ExternalToast) => string | number;
+  error: (message: ReactNode, data?: ExternalToast) => string | number;
+  warning: (message: ReactNode, data?: ExternalToast) => string | number;
+  info: (message: ReactNode, data?: ExternalToast) => string | number;
+  loading: (message: ReactNode, data?: ExternalToast) => string | number;
+  dismiss: (toastId?: string | number) => void;
+  [key: string]: any;
+}
 
 // Create a wrapper to match the expected API
 export const useToast = () => {
@@ -11,7 +25,7 @@ export const useToast = () => {
 };
 
 // Create a wrapper for sonner toast to work with the existing code
-export const toast = {
+export const toast: ToastT = {
   ...sonnerToast,
   error: sonnerToast.error,
   success: sonnerToast.success,
@@ -19,6 +33,3 @@ export const toast = {
   info: sonnerToast.info,
   loading: sonnerToast.loading
 };
-
-// For backward compatibility
-export type ToastT = typeof sonnerToast;

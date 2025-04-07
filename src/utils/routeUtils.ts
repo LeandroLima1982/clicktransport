@@ -31,7 +31,7 @@ const extractCityFromAddress = (address: string): string | null => {
 };
 
 // Geocode an address to coordinates
-export const geocodeAddressForRoute = async (address: string): Promise<[number, number] | null> => {
+const googleGeocodeAddress = async (address: string): Promise<[number, number] | null> => {
   if (!address || !GOOGLE_MAPS_API_KEY) return null;
 
   try {
@@ -57,7 +57,7 @@ export const geocodeAddressForRoute = async (address: string): Promise<[number, 
 };
 
 // Calculate route between two coordinates
-export const calculateRouteWithGoogleMaps = async (
+const googleCalculateRoute = async (
   origin: [number, number],
   destination: [number, number]
 ): Promise<RouteInfo | null> => {
@@ -168,8 +168,8 @@ export const calculateRoute = async (
     }
     
     // If no stored distance, geocode the addresses and calculate route
-    const originCoords = await geocodeAddressForRoute(origin);
-    const destinationCoords = await geocodeAddressForRoute(destination);
+    const originCoords = await googleGeocodeAddress(origin);
+    const destinationCoords = await googleGeocodeAddress(destination);
 
     if (!originCoords || !destinationCoords) {
       console.error('Failed to geocode one of the addresses');
@@ -177,7 +177,7 @@ export const calculateRoute = async (
     }
 
     // Calculate the route between the coordinates
-    const route = await calculateRouteWithGoogleMaps(originCoords, destinationCoords);
+    const route = await googleCalculateRoute(originCoords, destinationCoords);
     return route;
   } catch (error) {
     console.error('Error calculating route:', error);

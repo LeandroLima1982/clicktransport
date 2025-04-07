@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
+// Use type-only import to avoid naming conflicts
 import type { ServiceOrderStatus as ServiceOrderStatusType } from '@/types/serviceOrderInput';
 
 export const getStatusColor = (status: ServiceOrderStatusType) => {

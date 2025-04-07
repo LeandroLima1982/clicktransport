@@ -1,8 +1,8 @@
 import React from 'react';
 import { MapPin, Landmark, Home, Navigation, Building, ShoppingBag, School, Hospital, Hotel } from 'lucide-react';
 
-// Use window.env instead of process.env for client-side environment variables
-export const GOOGLE_MAPS_API_KEY = import.meta.env.GOOGLE_MAPS_API_KEY || '';
+// Use import.meta.env instead of process.env for client-side environment variables
+export const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
 // Verifica se o token é válido
 if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.trim() === '') {
