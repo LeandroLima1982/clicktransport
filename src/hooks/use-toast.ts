@@ -18,10 +18,14 @@ type ToasterToastWithStatus = ToasterToast & {
   timestamp: number;
 };
 
-const toasts: ToasterToastWithStatus[] = [];
+// Initialize an empty array for toasts to make it always available
+const initialToasts: ToasterToastWithStatus[] = [];
 
 // For compatibility with shadcn/ui toast pattern
 export const useToast = () => {
+  // Return an empty but valid array for shadcn/ui Toaster component
+  const toasts = initialToasts; 
+  
   const toast = (props: Omit<ToasterToast, "id">) => {
     // Just use sonner toast but maintain shadcn/ui compatibility
     return sonnerToast(props.title as string, {
@@ -42,7 +46,7 @@ export const useToast = () => {
 
   return {
     toast,
-    toasts, // Provide empty but valid array for shadcn/ui Toaster component
+    toasts, // Now this will always be a valid array
     dismiss: (toastId?: string) => sonnerToast.dismiss(toastId)
   };
 };

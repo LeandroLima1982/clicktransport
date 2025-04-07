@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { createBooking } from '@/services/booking/bookingService';
 import { createServiceOrderFromBooking } from '@/services/booking/serviceOrderCreationService';
@@ -205,7 +204,7 @@ export const useBookingSubmission = ({
       console.log('Creating booking with data:', bookingPayload);
       
       // Create the booking
-      const { booking, error } = await createBooking(bookingPayload);
+      const { createResult, error } = await createBooking(bookingPayload);
       
       if (error) {
         console.error('Error creating booking:', error);
@@ -214,17 +213,17 @@ export const useBookingSubmission = ({
         return;
       }
       
-      if (booking) {
-        console.log('Booking created successfully:', booking);
-        setBookingReference(booking.reference_code);
+      if (createResult) {
+        console.log('Booking created successfully:', createResult.data);
+        setBookingReference(createResult.data.reference_code);
         
         // Update company queue position before creating service order
         console.log('Updating company queue position after booking creation');
         await updateCompanyQueuePosition(nextCompany.id);
         
         // Create a service order from the booking
-        console.log('Creating service order for booking:', booking.id);
-        const { serviceOrder, error: serviceOrderError } = await createServiceOrderFromBooking(booking);
+        console.log('Creating service order for booking:', createResult.data.id);
+        const { serviceOrder, error: serviceOrderError } = await createServiceOrderFromBooking(createResult.data);
         
         if (serviceOrderError) {
           console.error('Error creating service order:', serviceOrderError);
@@ -236,7 +235,7 @@ export const useBookingSubmission = ({
         }
         
         toast.success('Reserva confirmada com sucesso!', {
-          description: `Seu código de reserva é ${booking.reference_code}`
+          description: `Seu código de reserva é ${createResult.data.reference_code}`
         });
         
         setBookingComplete(true);

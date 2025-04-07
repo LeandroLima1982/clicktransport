@@ -1,35 +1,37 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { generateSampleBookingAndOrder, createManualServiceOrder } from '@/services/db/generateTestOrders';
 import { toast } from 'sonner';
 
 const TestDataGenerator: React.FC = () => {
   const [isGeneratingTestOrder, setIsGeneratingTestOrder] = useState(false);
   const [generatedOrderId, setGeneratedOrderId] = useState<string | null>(null);
 
-// Find the issue in the generateTestOrder function
-const generateTestOrder = async () => {
-  setIsGeneratingTestOrder(true);
-  
-  try {
-    const result = await generateSampleBookingAndOrder();
+  // Find the issue in the generateTestOrder function
+  const generateTestOrder = async () => {
+    setIsGeneratingTestOrder(true);
     
-    // Check if result exists and has the error property
-    if (result && result.error) {
-      toast.error(`Erro ao gerar ordem de teste: ${result.error.message}`);
-    } else if (result && result.serviceOrder) {
-      toast.success(`Ordem de teste gerada com sucesso: ${result.serviceOrder.id}`);
-      setGeneratedOrderId(result.serviceOrder.id);
-    } else {
-      toast.error('Erro ao gerar ordem de teste: resultado inesperado');
+    try {
+      // Dynamically import to avoid circular dependencies
+      const { generateSampleBookingAndOrder } = await import('@/services/db/generateTestOrders');
+      const result = await generateSampleBookingAndOrder();
+      
+      // Check if result exists and has the error property
+      if (result && result.error) {
+        toast.error(`Erro ao gerar ordem de teste: ${result.error.message}`);
+      } else if (result && result.serviceOrder) {
+        toast.success(`Ordem de teste gerada com sucesso: ${result.serviceOrder.id}`);
+        setGeneratedOrderId(result.serviceOrder.id);
+      } else {
+        toast.error('Erro ao gerar ordem de teste: resultado inesperado');
+      }
+    } catch (error) {
+      console.error('Error generating test order:', error);
+      toast.error(`Erro ao gerar ordem de teste: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    } finally {
+      setIsGeneratingTestOrder(false);
     }
-  } catch (error) {
-    console.error('Error generating test order:', error);
-    toast.error(`Erro ao gerar ordem de teste: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
-  } finally {
-    setIsGeneratingTestOrder(false);
-  }
-};
+  };
 
   return (
     <div className="p-4">

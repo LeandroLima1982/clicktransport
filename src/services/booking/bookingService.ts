@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Booking, BookingStatus } from '@/types/booking';
 import { logError, logInfo } from '../monitoring/systemLogService';
@@ -62,13 +63,14 @@ export const createBooking = async (bookingData: Partial<Booking>): Promise<{ da
       status: bookingData.status || ('pending' as BookingStatus),
       total_price: bookingData.total_price || 0,
       passengers: bookingData.passengers || 1,
-      user_id: bookingData.user_id || null, // Ensure a value is provided
+      user_id: bookingData.user_id || null,
       ...bookingData
     };
     
+    // Use explicit typing to avoid excessive type instantiation
     const { data, error: supabaseError } = await supabase
       .from('bookings')
-      .insert([requiredBookingData])
+      .insert([requiredBookingData as any]) // Use 'any' to bypass excessive type checking
       .select()
       .single();
       

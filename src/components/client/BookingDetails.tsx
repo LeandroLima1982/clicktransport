@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -11,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Booking, BookingStatus as BookingStatusType } from '@/types/booking';
-import BookingStatusComponent from './BookingStatus';
-import ServiceOrderStatusComponent from './ServiceOrderStatus';
+import { BookingStatusBadge } from './BookingStatus';
+import ServiceOrderStatusBadge from './ServiceOrderStatus';
 import { ServiceOrderStatus as ServiceOrderStatusType } from '@/types/serviceOrderInput';
 import {
   Calendar,
@@ -161,8 +160,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
     window.open(whatsappUrl, '_blank');
   };
 
-  const getServiceOrderStatus = (bookingStatus: string): ServiceOrderStatus => {
-    // Map booking status to service order status
+  const getServiceOrderStatus = (bookingStatus: string): ServiceOrderStatusType => {
     switch (bookingStatus) {
       case 'confirmed': return 'created';
       case 'completed': return 'completed';
@@ -178,7 +176,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
           <SheetTitle>Detalhes da Reserva</SheetTitle>
           <div className="flex items-center justify-between">
             <span>Reserva #{booking.reference_code}</span>
-            <BookingStatusComponent status={booking.status} className="ml-2" />
+            <BookingStatusBadge status={booking.status} className="ml-2" />
           </div>
         </SheetHeader>
 
