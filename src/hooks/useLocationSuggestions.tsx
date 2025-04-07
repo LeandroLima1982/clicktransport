@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from 'react';
-import { fetchAddressSuggestions, isBrazilianCEP } from '@/utils/mapbox';
+import { fetchAddressSuggestions, isBrazilianCEP } from '@/utils/googlemaps';
 import { toast } from 'sonner';
 
 export const useLocationSuggestions = () => {

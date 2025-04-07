@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { MapPin, Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
-import { fetchAddressSuggestions } from '@/utils/mapbox';
+import { fetchAddressSuggestions } from '@/utils/googlemaps';
 
 interface CityLookupProps {
   onLocationSelected: (location: {
@@ -71,8 +71,8 @@ const CityLookup: React.FC<CityLookupProps> = ({ onLocationSelected }) => {
       name: cityName,
       state,
       country,
-      latitude: suggestion.center[1],
-      longitude: suggestion.center[0],
+      latitude: suggestion.center?.[1] || 0,
+      longitude: suggestion.center?.[0] || 0,
     };
     
     onLocationSelected(location);

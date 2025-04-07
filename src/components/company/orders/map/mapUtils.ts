@@ -1,16 +1,16 @@
+
 import { toast } from 'sonner';
-import { MAPBOX_TOKEN, isValidMapboxToken } from '@/utils/mapbox';
+import { GOOGLE_MAPS_API_KEY } from '@/utils/googlemaps';
 import mapboxgl from 'mapbox-gl';
 
-// Get coordinates from an address using Mapbox Geocoding API
+// Get coordinates from an address using Google Maps Geocoding API
 export const getCoordinatesFromAddress = async (address: string): Promise<[number, number] | null> => {
-  const token = MAPBOX_TOKEN;
-  if (!token) return null;
+  if (!GOOGLE_MAPS_API_KEY) return null;
   
   try {
     console.log("Geocoding address:", address);
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${token}&country=br&limit=1`
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}&region=br`
     );
     
     if (!response.ok) {
@@ -18,10 +18,10 @@ export const getCoordinatesFromAddress = async (address: string): Promise<[numbe
     }
     
     const data = await response.json();
-    console.log("Geocoding response for", address, ":", data);
     
-    if (data.features && data.features.length > 0) {
-      return data.features[0].center;
+    if (data.results && data.results.length > 0) {
+      const location = data.results[0].geometry.location;
+      return [location.lng, location.lat];
     }
     
     console.warn("No geocoding results for address:", address);
@@ -32,7 +32,7 @@ export const getCoordinatesFromAddress = async (address: string): Promise<[numbe
   }
 };
 
-// Fetch route data between two points
+// Fetch route data between two points using Google Maps Directions API
 export const fetchRouteData = async (
   start: [number, number], 
   end: [number, number]
@@ -41,13 +41,12 @@ export const fetchRouteData = async (
   distance: number;
   duration: number;
 } | null> => {
-  const token = MAPBOX_TOKEN;
-  if (!token) return null;
+  if (!GOOGLE_MAPS_API_KEY) return null;
   
   try {
     console.log("Getting route from", start, "to", end);
     const response = await fetch(
-      `https://api.mapbox.com/directions/v5/mapbox/driving/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&steps=true&overview=full&access_token=${token}`
+      `https://maps.googleapis.com/maps/api/directions/json?origin=${start[1]},${start[0]}&destination=${end[1]},${end[0]}&mode=driving&key=${GOOGLE_MAPS_API_KEY}`
     );
     
     if (!response.ok) {
@@ -55,24 +54,21 @@ export const fetchRouteData = async (
     }
     
     const data = await response.json();
-    console.log("Route API response:", data);
     
     if (data.routes && data.routes.length > 0) {
       const route = data.routes[0];
-      
-      let distance = 0;
-      let duration = 0;
-      
-      if (route.legs && route.legs.length > 0) {
-        const leg = route.legs[0];
-        distance = leg.distance;
-        duration = leg.duration;
-      }
+      const leg = route.legs[0];
       
       return {
-        geometry: route.geometry,
-        distance,
-        duration
+        // Decodificar a geometry da rota
+        geometry: {
+          coordinates: decodePolyline(route.overview_polyline.points),
+          type: "LineString"
+        },
+        // Converter metros para quilômetros
+        distance: leg.distance.value / 1000,
+        // Converter segundos para minutos
+        duration: Math.ceil(leg.duration.value / 60)
       };
     }
     
@@ -83,7 +79,37 @@ export const fetchRouteData = async (
   }
 };
 
-// Explicitly export getMapboxDirections as an alias for fetchRouteData
+// Função auxiliar para decodificar polylines do Google
+function decodePolyline(encoded: string): [number, number][] {
+  const points = [];
+  let index = 0, lat = 0, lng = 0;
+
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lng += dlng;
+
+    points.push([lng * 1e-5, lat * 1e-5]);
+  }
+  return points;
+}
+
+// Explicitly export getMapboxDirections as an alias for fetchRouteData but with address inputs
 export const getMapboxDirections = async (
   originAddress: string,
   destinationAddress: string
@@ -110,25 +136,26 @@ export const getMapboxDirections = async (
   }
 };
 
-// Create a static map URL for fallback
+// Create a static map URL using Google Maps Static Maps API
 export const createStaticMapUrl = (
   start: [number, number], 
-  end: [number, number], 
-  style: string = 'streets-v12'
+  end: [number, number]
 ): string | null => {
-  const token = MAPBOX_TOKEN;
-  if (!token) return null;
+  if (!GOOGLE_MAPS_API_KEY) return null;
   
   try {
-    const url = new URL('https://api.mapbox.com/styles/v1/mapbox/' + style + '/static/');
+    const url = new URL('https://maps.googleapis.com/maps/api/staticmap');
     
-    // Add a line between start and end points
-    url.pathname += `path-5+3887be(${start[0]},${start[1]};${end[0]},${end[1]})/`;
+    // Set map size and type
+    url.searchParams.append('size', '800x500');
+    url.searchParams.append('maptype', 'roadmap');
     
-    // Add markers
-    const originMarker = `pin-s-a+00FF00(${start[0]},${start[1]})`;
-    const destMarker = `pin-s-b+FF0000(${end[0]},${end[1]})`;
-    url.pathname += `${originMarker},${destMarker}/`;
+    // Add markers for origin and destination
+    url.searchParams.append('markers', `color:green|label:A|${start[1]},${start[0]}`);
+    url.searchParams.append('markers', `color:red|label:B|${end[1]},${end[0]}`);
+    
+    // Add path between points
+    url.searchParams.append('path', `color:0x3887BE|weight:5|${start[1]},${start[0]}|${end[1]},${end[0]}`);
     
     // Create a bounding box that includes both points with some padding
     const lngMin = Math.min(start[0], end[0]);
@@ -137,20 +164,15 @@ export const createStaticMapUrl = (
     const latMax = Math.max(start[1], end[1]);
     
     // Add padding to the bounding box
-    const padding = 0.1;
-    const bounds = [
-      lngMin - padding,
-      latMin - padding,
-      lngMax + padding,
-      latMax + padding
-    ].join(',');
+    const padding = 0.05;
+    const bounds = `${latMin - padding},${lngMin - padding}|${latMax + padding},${lngMax + padding}`;
     
-    // Add bounds and other parameters
-    url.pathname += `${bounds}/`;
-    url.pathname += '800x500@2x';  // width x height @retina
+    // Add bounds parameter
+    url.searchParams.append('center', `${(latMin + latMax) / 2},${(lngMin + lngMax) / 2}`);
+    url.searchParams.append('zoom', '12');
     
-    // Add access token
-    url.search = `access_token=${token}`;
+    // Add API key
+    url.searchParams.append('key', GOOGLE_MAPS_API_KEY);
     
     return url.toString();
   } catch (error) {
@@ -182,11 +204,11 @@ export const getStaticMapUrl = async (
   }
 };
 
-// Check if map can be initialized or if we need fallback
+// Check if API key is valid
 export const validateMapboxToken = (): boolean => {
-  if (!isValidMapboxToken(MAPBOX_TOKEN)) {
-    console.error("Invalid Mapbox token", MAPBOX_TOKEN);
-    toast.error('Token do Mapbox inválido. Verifique a configuração.');
+  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.trim() === '') {
+    console.error("Invalid Google Maps API key");
+    toast.error('Chave da API do Google Maps inválida. Verifique a configuração.');
     return false;
   }
   return true;
@@ -233,7 +255,6 @@ export const isWebGLSupported = (): boolean => {
 // Type declaration for Navigator with deviceMemory
 interface NavigatorWithMemory extends Navigator {
   deviceMemory?: number;
-  // Note: hardwareConcurrency is already part of Navigator interface
 }
 
 // Check if the device has enough performance for interactive maps
@@ -264,8 +285,8 @@ export const hasAdequatePerformance = (): boolean => {
 
 // Determine if interactive maps can be used
 export const canUseInteractiveMaps = (): boolean => {
-  if (!isValidMapboxToken(MAPBOX_TOKEN)) {
-    console.error('Invalid Mapbox token');
+  if (!validateMapboxToken()) {
+    console.error('Invalid Google Maps API key');
     return false;
   }
   
