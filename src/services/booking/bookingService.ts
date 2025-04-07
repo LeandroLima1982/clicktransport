@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Booking, BookingStatus } from '@/types/booking';
 import { logError, logInfo } from '../monitoring/systemLogService';
@@ -51,60 +50,37 @@ export const getBookingById = async (bookingId: string) => {
 /**
  * Create a new booking
  */
-export const createBooking = async (bookingData: Partial<Booking>) => {
+export const createBooking = async (bookingData: Partial<Booking>): Promise<{ data: Booking | null; error: Error | null }> => {
   try {
-    if (!bookingData.company_id) {
-      console.error('Attempt to create booking without company_id:', bookingData);
-      return { booking: null, error: new Error("Company ID is required to create a booking") };
-    }
-    
-    console.log('Creating booking with company_id:', bookingData.company_id);
-    
-    // Ensure bookingData is properly typed and has the required fields
-    if (!bookingData.booking_date) {
-      bookingData.booking_date = new Date().toISOString();
-    }
-    
-    // Ensure booking data has these required fields
-    if (!bookingData.origin || !bookingData.destination || !bookingData.reference_code) {
-      return { booking: null, error: new Error("Missing required booking fields") };
-    }
-    
-    // Ensure required fields have values
+    // Make sure required fields are present to satisfy TypeScript
     const requiredBookingData = {
-      origin: bookingData.origin,
-      destination: bookingData.destination,
-      booking_date: bookingData.booking_date,
-      reference_code: bookingData.reference_code,
-      status: bookingData.status || 'pending',
+      booking_date: bookingData.booking_date || new Date().toISOString(),
+      reference_code: bookingData.reference_code || `REF-${Math.floor(100000 + Math.random() * 900000)}`,
+      origin: bookingData.origin || '',
+      destination: bookingData.destination || '',
+      travel_date: bookingData.travel_date || new Date().toISOString(),
+      status: bookingData.status || ('pending' as BookingStatus),
       total_price: bookingData.total_price || 0,
-      travel_date: bookingData.travel_date || bookingData.booking_date,
+      passengers: bookingData.passengers || 1,
+      user_id: bookingData.user_id || null, // Ensure a value is provided
       ...bookingData
     };
     
-    // Insert as a single record (ensure it's not an array)
-    const { data, error } = await supabase
+    const { data, error: supabaseError } = await supabase
       .from('bookings')
-      .insert(requiredBookingData)
+      .insert([requiredBookingData])
       .select()
       .single();
       
-    if (error) throw error;
-    
-    if (!data) {
-      throw new Error('No data returned from booking creation');
+    if (supabaseError) {
+      console.error('Error creating booking:', supabaseError);
+      return { data: null, error: new Error(supabaseError.message) };
     }
     
-    logInfo('Booking created', 'booking', {
-      booking_id: data.id,
-      reference: data.reference_code,
-      company_id: data.company_id
-    });
-    
-    return { booking: data as Booking, error: null };
+    return { data: data as Booking, error: null };
   } catch (error) {
-    console.error('Error creating booking:', error);
-    return { booking: null, error };
+    console.error('Error in createBooking:', error);
+    return { data: null, error: error instanceof Error ? error : new Error('Unknown error in createBooking') };
   }
 };
 

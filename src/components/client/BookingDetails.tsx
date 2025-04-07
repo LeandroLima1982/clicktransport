@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Sheet,
   SheetContent,
@@ -10,11 +10,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Booking } from '@/types/booking';
-import { BookingStatus as BookingStatusType } from '@/types/booking';
-import BookingStatusBadge from './BookingStatus';
-import ServiceOrderStatusBadge from './ServiceOrderStatus';
-import { ServiceOrderStatus } from '@/types/serviceOrderInput';
+import { Booking, BookingStatus as BookingStatusType } from '@/types/booking';
+import BookingStatusComponent from './BookingStatus';
+import ServiceOrderStatusComponent from './ServiceOrderStatus';
+import { ServiceOrderStatus as ServiceOrderStatusType } from '@/types/serviceOrderInput';
 import {
   Calendar,
   Clock,
@@ -33,12 +32,14 @@ import { shareViaWhatsApp, formatBookingShareMessage } from '@/services/notifica
 
 interface BookingDetailsProps {
   booking: Booking;
+  isOpen: boolean;
   onClose: () => void;
   onCancel: (bookingId: string) => Promise<void>;
 }
 
 const BookingDetails: React.FC<BookingDetailsProps> = ({
   booking,
+  isOpen,
   onClose,
   onCancel,
 }) => {
@@ -171,13 +172,13 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
   };
 
   return (
-    <Sheet open={true} onOpenChange={onClose}>
+    <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="sm:max-w-lg overflow-y-auto px-4">
         <SheetHeader>
           <SheetTitle>Detalhes da Reserva</SheetTitle>
           <div className="flex items-center justify-between">
             <span>Reserva #{booking.reference_code}</span>
-            <BookingStatusBadge status={booking.status} className="ml-2" />
+            <BookingStatusComponent status={booking.status} className="ml-2" />
           </div>
         </SheetHeader>
 

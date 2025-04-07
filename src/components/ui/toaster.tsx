@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -11,9 +12,10 @@ import {
 export function Toaster() {
   const { toasts } = useToast()
 
+  // Check if toasts exist and is an array before mapping
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {Array.isArray(toasts) && toasts.map(function ({ id, title, description, action, ...props }) {
         return (
           <Toast key={id} {...props}>
             <div className="grid gap-1">
