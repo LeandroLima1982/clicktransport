@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import type { ServiceOrderStatus } from '@/types/serviceOrderInput';
+import type { ServiceOrderStatus as ServiceOrderStatusType } from '@/types/serviceOrderInput';
 
-export const getStatusColor = (status: ServiceOrderStatus) => {
+export const getStatusColor = (status: ServiceOrderStatusType) => {
   const colors = {
     'pending': 'bg-yellow-100 text-yellow-800',
     'created': 'bg-blue-100 text-blue-800',
@@ -16,7 +16,7 @@ export const getStatusColor = (status: ServiceOrderStatus) => {
   return colors[status] || 'bg-gray-100 text-gray-800';
 };
 
-export const getStatusTranslation = (status: ServiceOrderStatus) => {
+export const getStatusTranslation = (status: ServiceOrderStatusType) => {
   const translations = {
     'pending': 'Pendente',
     'created': 'Criada',
@@ -30,7 +30,7 @@ export const getStatusTranslation = (status: ServiceOrderStatus) => {
 };
 
 interface OrderStatusBadgeProps {
-  status: ServiceOrderStatus;
+  status: ServiceOrderStatusType;
   className?: string;
   showLabel?: boolean;
 }

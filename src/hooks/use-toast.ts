@@ -5,7 +5,10 @@ import {
 } from "@/components/ui/use-toast";
 
 // Create a wrapper to match the expected API
-export const useToast = useToastOriginal;
+export const useToast = () => {
+  const originalToast = useToastOriginal();
+  return originalToast;
+};
 
 // Create a wrapper for sonner toast to work with the existing code
 export const toast = {
@@ -18,4 +21,4 @@ export const toast = {
 };
 
 // For backward compatibility
-export type ToastT = typeof toast;
+export type ToastT = typeof sonnerToast;

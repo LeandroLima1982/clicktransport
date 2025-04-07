@@ -1,10 +1,8 @@
-
 import React from 'react';
 import { MapPin, Landmark, Home, Navigation, Building, ShoppingBag, School, Hospital, Hotel } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 
-// A chave da API do Google será armazenada como uma variável de ambiente do Supabase
-export const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || '';
+// Use window.env instead of process.env for client-side environment variables
+export const GOOGLE_MAPS_API_KEY = import.meta.env.GOOGLE_MAPS_API_KEY || '';
 
 // Verifica se o token é válido
 if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.trim() === '') {

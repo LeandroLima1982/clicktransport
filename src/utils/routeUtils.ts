@@ -1,4 +1,3 @@
-
 import { GOOGLE_MAPS_API_KEY } from './googlemaps';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -15,35 +14,85 @@ export interface VehicleRate {
   pricePerKm: number;
 }
 
-export const calculateRoute = async (
-  origin: string,
-  destination: string
-): Promise<RouteInfo | null> => {
+// Helper function to extract city name from address
+const extractCityFromAddress = (address: string): string | null => {
   try {
-    // First check if this is a city pair with stored distance
-    const cityDistance = await getCityDistanceFromDb(origin, destination);
-    if (cityDistance) {
-      console.log("Using stored city distance:", cityDistance);
+    // Try to extract city from address format like "Street, City, State"
+    const parts = address.split(',');
+    if (parts.length >= 2) {
+      // City is usually the second-to-last part before the state
+      return parts[parts.length - 2].trim();
+    }
+    return null;
+  } catch (error) {
+    console.error("Error extracting city from address:", error);
+    return null;
+  }
+};
+
+// Geocode an address to coordinates
+export const geocodeAddressForRoute = async (address: string): Promise<[number, number] | null> => {
+  if (!address || !GOOGLE_MAPS_API_KEY) return null;
+
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Geocoding API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+      const location = data.results[0].geometry.location;
+      return [location.lng, location.lat];
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error geocoding address:', error);
+    return null;
+  }
+};
+
+// Calculate route between two coordinates
+export const calculateRouteWithGoogleMaps = async (
+  origin: [number, number],
+  destination: [number, number]
+): Promise<RouteInfo | null> => {
+  if (!GOOGLE_MAPS_API_KEY) return null;
+
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/directions/json?origin=${origin[1]},${origin[0]}&destination=${destination[1]},${destination[0]}&mode=driving&key=${GOOGLE_MAPS_API_KEY}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Directions API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.routes && data.routes.length > 0) {
+      const route = data.routes[0];
+      const leg = route.legs[0];
+      
+      // Convert distance from meters to kilometers
+      const distanceKm = leg.distance.value / 1000;
+      
+      // Convert duration from seconds to minutes
+      const durationMin = Math.ceil(leg.duration.value / 60);
+      
       return {
-        distance: cityDistance.distance,
-        duration: cityDistance.duration
+        distance: parseFloat(distanceKm.toFixed(2)),
+        duration: durationMin,
+        geometry: route.overview_polyline
       };
     }
-    
-    // If no stored distance, geocode the addresses and calculate route
-    const originCoords = await geocodeAddressForRoute(origin);
-    const destinationCoords = await geocodeAddressForRoute(destination);
 
-    if (!originCoords || !destinationCoords) {
-      console.error('Failed to geocode one of the addresses');
-      return null;
-    }
-
-    // Calculate the route between the coordinates
-    const route = await calculateRouteWithGoogleMaps(originCoords, destinationCoords);
-    return route;
+    return null;
   } catch (error) {
-    console.error('Error calculating route:', error);
+    console.error('Error getting route:', error);
     return null;
   }
 };
@@ -103,83 +152,35 @@ const getCityDistanceFromDb = async (origin: string, destination: string): Promi
   }
 };
 
-// Helper function to extract city name from address
-const extractCityFromAddress = (address: string): string | null => {
-  try {
-    // Try to extract city from address format like "Street, City, State"
-    const parts = address.split(',');
-    if (parts.length >= 2) {
-      // City is usually the second-to-last part before the state
-      return parts[parts.length - 2].trim();
-    }
-    return null;
-  } catch (error) {
-    console.error("Error extracting city from address:", error);
-    return null;
-  }
-};
-
-const geocodeAddressForRoute = async (address: string): Promise<[number, number] | null> => {
-  if (!address || !GOOGLE_MAPS_API_KEY) return null;
-
-  try {
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`
-    );
-
-    if (!response.ok) {
-      throw new Error(`Geocoding API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    if (data.results && data.results.length > 0) {
-      const location = data.results[0].geometry.location;
-      return [location.lng, location.lat];
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Error geocoding address:', error);
-    return null;
-  }
-};
-
-const calculateRouteWithGoogleMaps = async (
-  origin: [number, number],
-  destination: [number, number]
+export const calculateRoute = async (
+  origin: string,
+  destination: string
 ): Promise<RouteInfo | null> => {
-  if (!GOOGLE_MAPS_API_KEY) return null;
-
   try {
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/directions/json?origin=${origin[1]},${origin[0]}&destination=${destination[1]},${destination[0]}&mode=driving&key=${GOOGLE_MAPS_API_KEY}`
-    );
-
-    if (!response.ok) {
-      throw new Error(`Directions API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    if (data.routes && data.routes.length > 0) {
-      const route = data.routes[0];
-      const leg = route.legs[0];
-      
-      // Convert distance from meters to kilometers
-      const distanceKm = leg.distance.value / 1000;
-      
-      // Convert duration from seconds to minutes
-      const durationMin = Math.ceil(leg.duration.value / 60);
-      
+    // First check if this is a city pair with stored distance
+    const cityDistance = await getCityDistanceFromDb(origin, destination);
+    if (cityDistance) {
+      console.log("Using stored city distance:", cityDistance);
       return {
-        distance: parseFloat(distanceKm.toFixed(2)),
-        duration: durationMin,
-        geometry: route.overview_polyline
+        distance: cityDistance.distance,
+        duration: cityDistance.duration
       };
     }
+    
+    // If no stored distance, geocode the addresses and calculate route
+    const originCoords = await geocodeAddressForRoute(origin);
+    const destinationCoords = await geocodeAddressForRoute(destination);
 
-    return null;
+    if (!originCoords || !destinationCoords) {
+      console.error('Failed to geocode one of the addresses');
+      return null;
+    }
+
+    // Calculate the route between the coordinates
+    const route = await calculateRouteWithGoogleMaps(originCoords, destinationCoords);
+    return route;
   } catch (error) {
-    console.error('Error getting route:', error);
+    console.error('Error calculating route:', error);
     return null;
   }
 };

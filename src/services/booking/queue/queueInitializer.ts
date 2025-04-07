@@ -1,34 +1,60 @@
+import { supabase } from '@/integrations/supabase/client';
+import { fixInvalidQueuePositions } from '../queueManagementService';
+import { logInfo, logError } from '@/services/monitoring/systemLogService';
 
-import { fixInvalidQueuePositions } from './queuePositionService';
-import { processUnassignedBookings } from './bookingProcessorService';
-
-// Automatic startup initialization to fix any queue issues
-// This function runs more frequently to catch any pending bookings
-const initQueueService = async () => {
+/**
+ * Initializes company queue positions in the database.
+ * This function is intended to be run once to set up initial queue positions.
+ */
+export const initializeCompanyQueues = async (): Promise<void> => {
   try {
-    // Fix any invalid queue positions on startup
-    const { fixed } = await fixInvalidQueuePositions();
-    if (fixed > 0) {
-      console.log(`Fixed ${fixed} companies with invalid queue positions on startup`);
+    console.log('Initializing company queues...');
+
+    // Fetch all active companies without a queue position
+    const { data: companiesWithoutQueue, error: fetchError } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('status', 'active')
+      .is('queue_position', null);
+
+    if (fetchError) {
+      console.error('Error fetching companies without queue position:', fetchError);
+      throw fetchError;
     }
-    
-    // Process any unassigned bookings that might have been missed
-    const { processed } = await processUnassignedBookings();
-    if (processed > 0) {
-      console.log(`Processed ${processed} unassigned bookings on startup`);
-    }
-    
-    // Set up periodic check for unassigned bookings (every 5 minutes)
-    setInterval(async () => {
-      const result = await processUnassignedBookings();
-      if (result.processed > 0) {
-        console.log(`[Periodic check] Processed ${result.processed} unassigned bookings`);
+
+    if (companiesWithoutQueue && companiesWithoutQueue.length > 0) {
+      console.log(`Found ${companiesWithoutQueue.length} companies without queue positions.`);
+
+      // Assign a unique queue position to each company
+      const updates = companiesWithoutQueue.map((company, index) => ({
+        id: company.id,
+        queue_position: index + 1,
+      }));
+
+      // Update the companies with their queue positions
+      const { error: updateError } = await supabase
+        .from('companies')
+        .upsert(updates);
+
+      if (updateError) {
+        console.error('Error updating company queue positions:', updateError);
+        throw updateError;
       }
-    }, 5 * 60 * 1000); // 5 minutes
-  } catch (err) {
-    console.error('Error during queue service initialization:', err);
+
+      logInfo(`Initialized queue positions for ${companiesWithoutQueue.length} companies`, 'queue');
+    } else {
+      console.log('No companies without queue positions found.');
+    }
+
+    // Fix any invalid queue positions (e.g., duplicates, gaps)
+    await fixInvalidQueuePositions();
+
+    console.log('Company queues initialized successfully.');
+  } catch (error) {
+    console.error('Error initializing company queues:', error);
+    logError('Failed to initialize company queues', 'queue', {
+      error: String(error)
+    });
+    throw error;
   }
 };
-
-// Run initialization
-initQueueService();
