@@ -1,3 +1,3 @@
 
-// Re-exporting from our hooks instead of creating a circular import
-export { useToast, toast } from "@/hooks/use-toast";
+// Re-exporting from our hooks to avoid circular imports
+export { useToast, toast, type ToastT, type ToasterToast } from "@/hooks/use-toast";

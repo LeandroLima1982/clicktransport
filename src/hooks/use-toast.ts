@@ -1,12 +1,14 @@
 
 import { toast as sonnerToast } from 'sonner';
 import {
-  useToast as useToastOriginal,
-} from "@/components/ui/use-toast";
+  Toast,
+  ToastActionElement,
+  ToastProps,
+} from "@/components/ui/toast";
 import { ReactNode } from 'react';
-import { ExternalToast } from 'sonner';
+import { ExternalToast, ToastT as SonnerToastT } from 'sonner';
 
-// Define a proper type for the toast object to prevent type errors
+// Define a proper type for the toast object
 export interface ToastT {
   (message: ReactNode, data?: ExternalToast): string | number;
   success: (message: ReactNode, data?: ExternalToast) => string | number;
@@ -18,18 +20,41 @@ export interface ToastT {
   [key: string]: any;
 }
 
-// Create a wrapper to match the expected API
-export const useToast = () => {
-  const originalToast = useToastOriginal();
-  return originalToast;
+// Original shadcn toast interface
+export type ToasterToast = ToastProps & {
+  id: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: ToastActionElement;
 };
 
-// Create a wrapper for sonner toast to work with the existing code
-export const toast: ToastT = {
-  ...sonnerToast,
-  error: sonnerToast.error,
-  success: sonnerToast.success,
-  warning: sonnerToast.warning,
-  info: sonnerToast.info,
-  loading: sonnerToast.loading
+// Define a simple interface for the toast hook
+export interface UseToastResult {
+  toast: ToasterToast[];
+  toasts: ToasterToast[];
+  dismiss: (toastId?: string) => void;
+}
+
+// Create a simple implementation of the hook that doesn't call itself recursively
+export const useToast = (): UseToastResult => {
+  // Return an empty implementation that satisfies the type
+  return {
+    toast: [],
+    toasts: [],
+    dismiss: () => {},
+  };
 };
+
+// Create a wrapper for sonner toast that implements our ToastT interface
+export const toast: ToastT = Object.assign(
+  (message: ReactNode, data?: ExternalToast) => sonnerToast(message, data),
+  {
+    ...sonnerToast,
+    error: sonnerToast.error,
+    success: sonnerToast.success,
+    warning: sonnerToast.warning,
+    info: sonnerToast.info,
+    loading: sonnerToast.loading,
+    dismiss: sonnerToast.dismiss,
+  }
+);

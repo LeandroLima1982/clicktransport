@@ -31,6 +31,11 @@ export interface Booking {
   service_orders?: ServiceOrder[]; // Associated service orders
   driver_id?: string;
   driver_name?: string;
+  driver_phone?: string;
+  user_id?: string;
+  travel_date?: string;
+  return_date?: string;
+  total_price?: number;
 }
 
 export interface BookingInput {
@@ -48,4 +53,8 @@ export interface BookingInput {
   distance?: number;
   price?: number;
   passenger_data?: any;
+  travel_date?: string;
+  return_date?: string;
+  total_price?: number;
+  user_id?: string;
 }
