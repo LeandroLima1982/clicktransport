@@ -1,13 +1,11 @@
 
-// Re-exporting from Sonner since we're using it throughout the app
 import { toast } from 'sonner'; 
 export { toast };
 
-// For compatibility with legacy code
-export type ToasterToast = any;
-export type ToastT = typeof toast;
-
-// Re-export useToast as a simple hook that returns toast
+// For compatibility with shadcn/ui toast pattern
 export const useToast = () => {
   return { toast };
 };
+
+// Export type definitions
+export type ToastT = typeof toast;

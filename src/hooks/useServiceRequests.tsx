@@ -56,10 +56,10 @@ export const useServiceRequests = () => {
         return false;
       }
 
-      // Fix the referenced code fragment
-      const result = await assignCompanyFromQueue(data[0].id);
-      const assignedCompanyId = result.companyId;
-      const assignError = result.error;
+      // Assign company from queue
+      const queueResult = await assignCompanyFromQueue(data[0].id);
+      const assignedCompanyId = queueResult.companyId;
+      const assignError = queueResult.error;
     
       if (assignError) {
         console.error('Error assigning company from queue:', assignError);

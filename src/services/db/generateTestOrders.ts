@@ -27,7 +27,7 @@ export const generateSampleBookingAndOrder = async () => {
     };
     
     // Insert the booking
-    const { data: booking, error } = await supabase
+    const { data: bookingResult, error } = await supabase
       .from('bookings')
       .insert([bookingData])
       .select()
@@ -38,9 +38,11 @@ export const generateSampleBookingAndOrder = async () => {
       return { success: false, error, booking: null, serviceOrder: null };
     }
     
-    if (!booking) {
+    if (!bookingResult) {
       return { success: false, error: new Error('No booking data returned'), booking: null, serviceOrder: null };
     }
+    
+    const booking = bookingResult as Booking;
     
     // Try to create a service order
     try {
