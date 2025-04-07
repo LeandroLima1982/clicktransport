@@ -7,7 +7,6 @@ const TestDataGenerator: React.FC = () => {
   const [isGeneratingTestOrder, setIsGeneratingTestOrder] = useState(false);
   const [generatedOrderId, setGeneratedOrderId] = useState<string | null>(null);
 
-  // Find the issue in the generateTestOrder function
   const generateTestOrder = async () => {
     setIsGeneratingTestOrder(true);
     

@@ -97,9 +97,9 @@ const WorkflowTester: React.FC = () => {
       const result = await generateSampleBookingAndOrder();
       console.log('Result from generateSampleBookingAndOrder:', result);
       
-      if (!result.success) {
+      if (result.error) {
         throw new Error(result.error instanceof Error ? result.error.message : 
-                       (result.error || 'Erro ao criar reserva e ordem de serviço'));
+                       (String(result.error) || 'Erro ao criar reserva e ordem de serviço'));
       }
       
       setCurrentBookingId(result.booking?.id || null);

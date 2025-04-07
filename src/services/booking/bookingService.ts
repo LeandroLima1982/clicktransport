@@ -64,13 +64,22 @@ export const createBooking = async (bookingData: Partial<Booking>): Promise<{ da
       total_price: bookingData.total_price || 0,
       passengers: bookingData.passengers || 1,
       user_id: bookingData.user_id || null,
-      ...bookingData
+      // Avoid excessive instantiation by not spreading bookingData again
+      company_id: bookingData.company_id,
+      company_name: bookingData.company_name,
+      client_name: bookingData.client_name,
+      client_email: bookingData.client_email,
+      client_phone: bookingData.client_phone,
+      additional_notes: bookingData.additional_notes,
+      vehicle_type: bookingData.vehicle_type,
+      passenger_data: bookingData.passenger_data,
+      return_date: bookingData.return_date
     };
     
     // Use explicit typing to avoid excessive type instantiation
     const { data, error: supabaseError } = await supabase
       .from('bookings')
-      .insert([requiredBookingData as any]) // Use 'any' to bypass excessive type checking
+      .insert([requiredBookingData]) // Remove 'as any' to expose type errors
       .select()
       .single();
       

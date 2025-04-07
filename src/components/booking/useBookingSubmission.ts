@@ -186,8 +186,8 @@ export const useBookingSubmission = ({
       const bookingPayload = {
         reference_code: reference,
         user_id: user.id,
-        company_id: nextCompany.id, // Assign to the first company in queue
-        company_name: nextCompany.name, // Store company name for reference
+        company_id: nextCompany.id,
+        company_name: nextCompany.name,
         origin: bookingData.origin,
         destination: bookingData.destination,
         booking_date: new Date().toISOString(),
@@ -204,7 +204,7 @@ export const useBookingSubmission = ({
       console.log('Creating booking with data:', bookingPayload);
       
       // Create the booking
-      const { createResult, error } = await createBooking(bookingPayload);
+      const { data, error } = await createBooking(bookingPayload);
       
       if (error) {
         console.error('Error creating booking:', error);
@@ -213,17 +213,17 @@ export const useBookingSubmission = ({
         return;
       }
       
-      if (createResult) {
-        console.log('Booking created successfully:', createResult.data);
-        setBookingReference(createResult.data.reference_code);
+      if (data) {
+        console.log('Booking created successfully:', data);
+        setBookingReference(data.reference_code);
         
         // Update company queue position before creating service order
         console.log('Updating company queue position after booking creation');
         await updateCompanyQueuePosition(nextCompany.id);
         
         // Create a service order from the booking
-        console.log('Creating service order for booking:', createResult.data.id);
-        const { serviceOrder, error: serviceOrderError } = await createServiceOrderFromBooking(createResult.data);
+        console.log('Creating service order for booking:', data.id);
+        const { serviceOrder, error: serviceOrderError } = await createServiceOrderFromBooking(data);
         
         if (serviceOrderError) {
           console.error('Error creating service order:', serviceOrderError);
@@ -235,7 +235,7 @@ export const useBookingSubmission = ({
         }
         
         toast.success('Reserva confirmada com sucesso!', {
-          description: `Seu código de reserva é ${createResult.data.reference_code}`
+          description: `Seu código de reserva é ${data.reference_code}`
         });
         
         setBookingComplete(true);

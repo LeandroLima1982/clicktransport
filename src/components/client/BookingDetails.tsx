@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Booking, BookingStatus as BookingStatusType } from '@/types/booking';
-import { BookingStatusBadge } from './BookingStatus';
-import ServiceOrderStatusBadge from './ServiceOrderStatus';
+import BookingStatus from './BookingStatus';
+import ServiceOrderStatus from './ServiceOrderStatus';
 import { ServiceOrderStatus as ServiceOrderStatusType } from '@/types/serviceOrderInput';
 import {
   Calendar,
@@ -176,7 +176,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
           <SheetTitle>Detalhes da Reserva</SheetTitle>
           <div className="flex items-center justify-between">
             <span>Reserva #{booking.reference_code}</span>
-            <BookingStatusBadge status={booking.status} className="ml-2" />
+            <BookingStatus status={booking.status} className="ml-2" />
           </div>
         </SheetHeader>
 
@@ -215,7 +215,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
             )}
           </div>
 
-          <ServiceOrderStatusBadge status={getServiceOrderStatus(booking.status)} className="my-4" />
+          <ServiceOrderStatus status={getServiceOrderStatus(booking.status)} className="my-4" />
 
           <div className="space-y-2 mt-4">
             <div 
