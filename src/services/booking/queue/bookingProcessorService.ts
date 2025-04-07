@@ -1,131 +1,124 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { logInfo, logWarning, logError } from '../../monitoring/systemLogService';
-import { getNextCompanyInQueue, updateCompanyQueuePosition, fixInvalidQueuePositions } from './queuePositionService';
+import { createServiceOrderFromBooking } from '../serviceOrderCreationService';
+import { updateCompanyQueuePosition } from './queuePositionService';
+import { logInfo, logError } from '@/services/monitoring/systemLogService';
+import { Booking } from '@/types/booking';
 
 /**
- * Process pending bookings and create service orders
- * This is the key function that was failing before - now improved with better error handling
+ * Process unassigned bookings by assigning companies and creating service orders
  */
-export const processUnassignedBookings = async () => {
+export const processUnassignedBookings = async (): Promise<{
+  processed: number;
+  errors: number;
+}> => {
+  console.log('Starting to process unassigned bookings...');
+  let processed = 0;
+  let errors = 0;
+  
   try {
-    await logInfo('Iniciando processamento de reservas não atribuídas', 'booking');
-    
-    // Get pending bookings that don't have service orders yet
-    const { data: pendingBookings, error: bookingsError } = await supabase
+    // Get bookings that are confirmed but don't have a company or service order
+    const { data: bookings, error: fetchError } = await supabase
       .from('bookings')
       .select('*')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: true })
-      .limit(10);
+      .eq('status', 'confirmed')
+      .is('has_service_order', false)
+      .order('created_at', { ascending: true });
     
-    if (bookingsError) throw bookingsError;
-    
-    if (!pendingBookings || pendingBookings.length === 0) {
-      await logInfo('Nenhuma reserva pendente encontrada para processar', 'booking');
-      return { 
-        processed: 0, 
-        success: true, 
-        message: 'No pending bookings to process', 
-        error: null 
-      };
+    if (fetchError) {
+      console.error('Error fetching unassigned bookings:', fetchError);
+      throw fetchError;
     }
     
-    // Get the next company in queue to assign orders
-    const { company, error: companyError } = await getNextCompanyInQueue();
+    console.log(`Found ${bookings?.length || 0} unassigned bookings to process`);
     
-    if (companyError || !company) {
-      await logWarning('Não foi possível obter empresa para atribuir reservas pendentes', 'booking', { error: companyError });
-      
-      // Try to fix queue positions and try again
-      await fixInvalidQueuePositions();
-      
-      // Try again after fixing positions
-      const retryResult = await getNextCompanyInQueue();
-      if (retryResult.error || !retryResult.company) {
-        return { 
-          processed: 0, 
-          success: false, 
-          message: 'No active company available to assign bookings', 
-          error: companyError 
-        };
-      }
+    if (!bookings || bookings.length === 0) {
+      return { processed: 0, errors: 0 };
     }
     
-    // Use the company from retry if the first attempt failed
-    const assignCompany = company || (await getNextCompanyInQueue()).company;
+    // Get active companies sorted by queue position
+    const { data: companies, error: companiesError } = await supabase
+      .from('companies')
+      .select('id, name, queue_position')
+      .eq('status', 'active')
+      .order('queue_position', { ascending: true });
     
-    if (!assignCompany) {
-      return { 
-        processed: 0, 
-        success: false, 
-        message: 'No active company available after retry', 
-        error: new Error('No active companies available') 
-      };
+    if (companiesError || !companies || companies.length === 0) {
+      console.error('Error fetching active companies:', companiesError);
+      throw new Error('No active companies available for assignment');
     }
     
     // Process each booking
-    let processedCount = 0;
-    let errors = [];
-    
-    for (const booking of pendingBookings) {
+    for (const booking of bookings) {
       try {
-        // Create service order
-        const orderData = {
-          company_id: assignCompany.id,
-          origin: booking.origin,
-          destination: booking.destination,
-          pickup_date: booking.travel_date,
-          status: 'pending' as const,
-          notes: `Reserva: ${booking.reference_code}\n${booking.additional_notes || ''}`,
-        };
+        console.log(`Processing booking: ${booking.id} (${booking.reference_code})`);
         
-        const { data: order, error: orderError } = await supabase
-          .from('service_orders')
-          .insert(orderData)
-          .select()
-          .single();
+        // Select the company at the top of the queue
+        const selectedCompany = companies[0];
         
-        if (orderError) throw orderError;
-        
-        // Update booking status to confirmed
+        // Assign the company to the booking
         const { error: updateError } = await supabase
           .from('bookings')
-          .update({ status: 'confirmed' })
+          .update({ 
+            company_id: selectedCompany.id,
+            company_name: selectedCompany.name
+          })
           .eq('id', booking.id);
         
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Error updating booking with company:', updateError);
+          errors++;
+          continue;
+        }
         
-        // Update company queue position
-        await updateCompanyQueuePosition(assignCompany.id);
+        // Update the booking object with company info for service order creation
+        const updatedBooking: Booking = {
+          ...booking,
+          company_id: selectedCompany.id,
+          company_name: selectedCompany.name
+        };
         
-        // Log the service order creation
-        await logInfo('Service order created from pending booking', 'booking', {
+        // Create a service order for this booking
+        const { serviceOrder, error: serviceOrderError } = await createServiceOrderFromBooking(updatedBooking);
+        
+        if (serviceOrderError) {
+          console.error('Error creating service order:', serviceOrderError);
+          errors++;
+          continue;
+        }
+        
+        // Update this company's queue position to move it to the end
+        await updateCompanyQueuePosition(selectedCompany.id);
+        
+        // Rotate the companies array to simulate updating queue positions
+        companies.push(companies.shift()!);
+        
+        // Log successful processing
+        logInfo(`Processed booking ${booking.reference_code}`, 'booking_processor', {
           booking_id: booking.id,
-          order_id: order.id,
-          company_id: assignCompany.id
+          company_id: selectedCompany.id,
+          service_order_id: serviceOrder?.id
         });
         
-        processedCount++;
-      } catch (error) {
-        console.error(`Error processing booking ${booking.id}:`, error);
-        errors.push({ booking_id: booking.id, error: error });
-        await logError(`Erro ao processar reserva ${booking.id}`, 'booking', { error });
+        processed++;
+      } catch (bookingError) {
+        console.error(`Error processing booking ${booking.id}:`, bookingError);
+        logError('Failed to process booking', 'booking_processor', {
+          booking_id: booking.id,
+          error: String(bookingError)
+        });
+        errors++;
       }
     }
     
-    await logInfo(`Processamento de reservas concluído: ${processedCount} de ${pendingBookings.length}`, 'booking');
-    
-    return { 
-      processed: processedCount, 
-      success: processedCount > 0, 
-      message: `Processed ${processedCount} of ${pendingBookings.length} bookings`,
-      errors: errors.length > 0 ? errors : null,
-      error: null 
-    };
   } catch (error) {
-    console.error('Error processing unassigned bookings:', error);
-    await logError('Falha no processamento de reservas não atribuídas', 'booking', { error });
-    return { processed: 0, success: false, error };
+    console.error('Error in booking processor:', error);
+    logError('Booking processor failed', 'booking_processor', {
+      error: String(error)
+    });
+    throw error;
   }
+  
+  console.log(`Booking processor completed. Processed: ${processed}, Errors: ${errors}`);
+  return { processed, errors };
 };

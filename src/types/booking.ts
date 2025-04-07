@@ -1,37 +1,33 @@
 
-export type Booking = {
+import { ServiceOrder } from './serviceOrder';
+
+export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
+
+export interface Booking {
   id: string;
   reference_code: string;
+  user_id: string;
   origin: string;
   destination: string;
-  travel_date: string;
-  return_date?: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled";
-  total_price: number;
   booking_date: string;
-  passengers: number;
-  vehicle_type: string;
-  additional_notes: string;
-  created_at: string;
-  user_id: string;
-  
-  // Company-related fields
-  company_id?: string | null;
-  company_name?: string | null;
-  
-  // Client-related fields
+  travel_date: string | null;
+  return_date: string | null;
+  passengers?: number;
+  status: BookingStatus;
+  total_price: number;
+  company_id: string | null;
+  company_name: string | null;
+  driver_id?: string | null;
+  driver_name?: string | null;
+  driver_phone?: string | null;
   client_name?: string | null;
-  client_email?: string | null;
   client_phone?: string | null;
-  
-  // Driver-related fields
-  passenger_data?: any; // Using any type to accommodate JSON types
-  driver_id?: string;
-  driver_name?: string;
-  driver_phone?: string;
-  company_phone?: string;
-  
-  // Service order related
+  client_email?: string | null;
+  vehicle_type?: string | null;
+  additional_notes?: string | null;
+  created_at: string;
+  company_phone?: string | null;
+  passenger_data?: any;
+  service_orders?: ServiceOrder[];
   has_service_order?: boolean;
-  service_orders?: any[] | { error: true } & String; // Handle both array and error cases
-};
+}

@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import ServiceOrderTable, { ServiceOrder } from './ServiceOrderTable';
 import { useServiceOrderSubscription } from '@/hooks/useServiceOrderSubscription';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ServiceOrderStatus } from '@/types/serviceOrderInput';
 
 const ServiceOrderMonitoring: React.FC = () => {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
@@ -124,10 +125,18 @@ const ServiceOrderMonitoring: React.FC = () => {
       console.log('Admin: Retrieved orders:', data);
       
       // Format the data to include company_name and driver_name
-      const formattedOrders = data?.map(order => ({
-        ...order,
-        company_name: order.companies?.name || null,
-        driver_name: order.drivers?.name || null
+      const formattedOrders: ServiceOrder[] = (data?.map(order => {
+        // Ensure status is valid by explicitly casting it
+        const validStatus = ['pending', 'created', 'assigned', 'in_progress', 'completed', 'cancelled'].includes(order.status) 
+          ? order.status as ServiceOrderStatus
+          : 'pending' as ServiceOrderStatus;
+          
+        return {
+          ...order,
+          status: validStatus,
+          company_name: order.companies?.name || null,
+          driver_name: order.drivers?.name || null
+        };
       })) || [];
       
       console.log('Admin: Formatted orders:', formattedOrders);
@@ -172,7 +181,7 @@ const ServiceOrderMonitoring: React.FC = () => {
         origin: 'Teste - Origem',
         destination: 'Teste - Destino',
         pickup_date: new Date().toISOString(),
-        status: 'created',
+        status: 'created' as ServiceOrderStatus,
         notes: 'Ordem de teste criada pelo admin'
       };
       

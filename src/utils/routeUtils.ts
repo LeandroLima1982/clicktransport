@@ -1,4 +1,5 @@
-import { GOOGLE_MAPS_API_KEY, geocodeAddress, calculateRouteWithGoogle } from './googlemaps';
+
+import { GOOGLE_MAPS_API_KEY } from './googlemaps';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface RouteInfo {
@@ -30,8 +31,8 @@ export const calculateRoute = async (
     }
     
     // If no stored distance, geocode the addresses and calculate route
-    const originCoords = await geocodeAddress(origin);
-    const destinationCoords = await geocodeAddress(destination);
+    const originCoords = await geocodeAddressForRoute(origin);
+    const destinationCoords = await geocodeAddressForRoute(destination);
 
     if (!originCoords || !destinationCoords) {
       console.error('Failed to geocode one of the addresses');
@@ -39,7 +40,7 @@ export const calculateRoute = async (
     }
 
     // Calculate the route between the coordinates
-    const route = await calculateRouteWithGoogle(originCoords, destinationCoords);
+    const route = await calculateRouteWithGoogleMaps(originCoords, destinationCoords);
     return route;
   } catch (error) {
     console.error('Error calculating route:', error);
@@ -118,7 +119,7 @@ const extractCityFromAddress = (address: string): string | null => {
   }
 };
 
-const geocodeAddress = async (address: string): Promise<[number, number] | null> => {
+const geocodeAddressForRoute = async (address: string): Promise<[number, number] | null> => {
   if (!address || !GOOGLE_MAPS_API_KEY) return null;
 
   try {
@@ -132,7 +133,8 @@ const geocodeAddress = async (address: string): Promise<[number, number] | null>
 
     const data = await response.json();
     if (data.results && data.results.length > 0) {
-      return data.results[0].geometry.location as [number, number];
+      const location = data.results[0].geometry.location;
+      return [location.lng, location.lat];
     }
 
     return null;
@@ -142,7 +144,7 @@ const geocodeAddress = async (address: string): Promise<[number, number] | null>
   }
 };
 
-const calculateRouteWithGoogle = async (
+const calculateRouteWithGoogleMaps = async (
   origin: [number, number],
   destination: [number, number]
 ): Promise<RouteInfo | null> => {
@@ -150,7 +152,7 @@ const calculateRouteWithGoogle = async (
 
   try {
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/directions/json?origin=${origin[0]},${origin[1]}&destination=${destination[0]},${destination[1]}&mode=driving&key=${GOOGLE_MAPS_API_KEY}`
+      `https://maps.googleapis.com/maps/api/directions/json?origin=${origin[1]},${origin[0]}&destination=${destination[1]},${destination[0]}&mode=driving&key=${GOOGLE_MAPS_API_KEY}`
     );
 
     if (!response.ok) {
@@ -160,12 +162,13 @@ const calculateRouteWithGoogle = async (
     const data = await response.json();
     if (data.routes && data.routes.length > 0) {
       const route = data.routes[0];
+      const leg = route.legs[0];
       
       // Convert distance from meters to kilometers
-      const distanceKm = route.distance.value / 1000;
+      const distanceKm = leg.distance.value / 1000;
       
       // Convert duration from seconds to minutes
-      const durationMin = Math.ceil(route.duration.value / 60);
+      const durationMin = Math.ceil(leg.duration.value / 60);
       
       return {
         distance: parseFloat(distanceKm.toFixed(2)),
