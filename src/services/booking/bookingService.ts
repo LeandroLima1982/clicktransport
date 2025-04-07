@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Booking } from '@/types/booking';
+import { Booking, BookingStatus } from '@/types/booking';
 import { logError, logInfo } from '../monitoring/systemLogService';
 
 /**
@@ -60,9 +60,10 @@ export const createBooking = async (bookingData: Partial<Booking>) => {
     
     console.log('Creating booking with company_id:', bookingData.company_id);
     
+    // Ensure bookingData is a single object, not an array
     const { data, error } = await supabase
       .from('bookings')
-      .insert([bookingData])
+      .insert(bookingData) // Insert as a single record
       .select()
       .single();
       

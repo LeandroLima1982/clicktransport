@@ -6,7 +6,15 @@ import {
   ToastProps,
 } from "@/components/ui/toast";
 import { ReactNode } from 'react';
-import { ExternalToast, ToastT as SonnerToastT } from 'sonner';
+import { ExternalToast } from 'sonner';
+
+// Original shadcn toast interface
+export type ToasterToast = ToastProps & {
+  id: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: ToastActionElement;
+};
 
 // Define a proper type for the toast object
 export interface ToastT {
@@ -20,26 +28,18 @@ export interface ToastT {
   [key: string]: any;
 }
 
-// Original shadcn toast interface
-export type ToasterToast = ToastProps & {
-  id: string;
-  title?: React.ReactNode;
-  description?: React.ReactNode;
-  action?: ToastActionElement;
-};
-
 // Define a simple interface for the toast hook
 export interface UseToastResult {
-  toast: ToasterToast[];
+  toast: (props: { title?: React.ReactNode; description?: React.ReactNode; action?: React.ReactElement; variant?: "default" | "destructive"; }) => void;
   toasts: ToasterToast[];
   dismiss: (toastId?: string) => void;
 }
 
 // Create a simple implementation of the hook that doesn't call itself recursively
 export const useToast = (): UseToastResult => {
-  // Return an empty implementation that satisfies the type
+  // Return an implementation that satisfies the type
   return {
-    toast: [],
+    toast: () => {},
     toasts: [],
     dismiss: () => {},
   };

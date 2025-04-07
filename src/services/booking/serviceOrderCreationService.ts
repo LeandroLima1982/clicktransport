@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types/booking';
 import { ServiceOrderInput } from '@/types/serviceOrderInput';
@@ -81,10 +82,8 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     
     // Update the booking to mark that a service order has been created
     try {
-      await supabase
-        .from('bookings')
-        .update({ has_service_order: true })
-        .eq('id', booking.id);
+      // Use updateBookingServiceOrderStatus instead of direct update
+      await updateBookingServiceOrderStatus(booking.id, true);
     } catch (updateError) {
       console.warn('Could not update booking with service order status:', updateError);
     }
@@ -105,6 +104,23 @@ export const createServiceOrderFromBooking = async (booking: Booking) => {
     });
     return { serviceOrder: null, error };
   }
+};
+
+// Helper function to update the has_service_order field
+const updateBookingServiceOrderStatus = async (bookingId: string, hasServiceOrder: boolean) => {
+  const { error } = await supabase
+    .from('bookings')
+    .update({ 
+      has_service_order: hasServiceOrder 
+    })
+    .eq('id', bookingId);
+  
+  if (error) {
+    console.error('Error updating booking has_service_order status:', error);
+    throw error;
+  }
+  
+  return { success: true };
 };
 
 /**
@@ -197,14 +213,18 @@ export const createManualServiceOrder = async (booking: Booking) => {
     }
     
     // Update the booking to mark that a service order has been created
-    await supabase
-      .from('bookings')
-      .update({ 
-        has_service_order: true,
-        company_id: assignedCompanyId,
-        company_name: assignedCompanyName
-      })
-      .eq('id', booking.id);
+    await updateBookingServiceOrderStatus(booking.id, true);
+    
+    // Also update company info in the same operation if needed
+    if (assignedCompanyId && assignedCompanyName) {
+      await supabase
+        .from('bookings')
+        .update({ 
+          company_id: assignedCompanyId,
+          company_name: assignedCompanyName
+        })
+        .eq('id', booking.id);
+    }
     
     logInfo('Manual service order created by admin', 'service_order', {
       service_order_id: data.id,

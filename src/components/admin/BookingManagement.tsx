@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import BookingTable from '@/components/admin/BookingTable';
 import { Booking } from '@/types/booking';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { processUnassignedBookings } from '@/services/booking/queue/bookingProcessorService';
+import { ServiceOrder } from '@/types/serviceOrder';
 
 const BookingManagement: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -80,7 +80,7 @@ const BookingManagement: React.FC = () => {
             // Try to get service orders related to this booking
             const { data: serviceOrdersData, error: serviceOrdersError } = await supabase
               .from('service_orders')
-              .select('id, status')
+              .select('id, status, origin, destination, pickup_date, company_id, created_at')
               .eq('company_id', booking.company_id)
               .order('created_at', { ascending: false });
             
@@ -96,7 +96,7 @@ const BookingManagement: React.FC = () => {
               company_name: booking.company_name || booking.companies?.name || null,
               company_id: booking.company_id || null,
               // Set service_orders as an empty array if there was an error or no data
-              service_orders: hasServiceOrder ? serviceOrdersData : [],
+              service_orders: hasServiceOrder ? serviceOrdersData as ServiceOrder[] : [],
               // Add has_service_order flag based on our check
               has_service_order: hasServiceOrder
             } as Booking;

@@ -57,4 +57,7 @@ export interface BookingInput {
   return_date?: string;
   total_price?: number;
   user_id?: string;
+  has_service_order?: boolean;
+  status?: BookingStatus;
+  reference_code?: string;
 }

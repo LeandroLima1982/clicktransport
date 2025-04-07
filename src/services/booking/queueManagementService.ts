@@ -1,193 +1,188 @@
-import { supabase } from '@/integrations/supabase/client';
-import { logInfo, logError } from '@/services/monitoring/systemLogService';
 
-// Export directly from this file instead of re-exporting
-export const updateCompanyQueuePosition = async (
-  companyId: string, 
-  newPosition: number
-): Promise<boolean> => {
+import { supabase } from '@/integrations/supabase/client';
+import { logInfo, logError } from '../monitoring/systemLogService';
+
+/**
+ * Assign a company from the queue to a booking
+ */
+export const assignCompanyFromQueue = async (bookingId: string) => {
   try {
-    // Update the company's queue position
-    const { error } = await supabase
-      .from('companies')
-      .update({ queue_position: newPosition })
-      .eq('id', companyId);
+    console.log(`Assigning company from queue to booking ${bookingId}...`);
     
-    if (error) {
-      console.error('Error updating queue position:', error);
-      throw error;
+    // Check if booking exists and doesn't already have a company
+    const { data: booking, error: bookingError } = await supabase
+      .from('bookings')
+      .select('id, status, origin, destination')
+      .eq('id', bookingId)
+      .single();
+    
+    if (bookingError) {
+      console.error('Error fetching booking:', bookingError);
+      return { companyId: null, error: bookingError };
     }
     
-    return true;
-  } catch (error) {
-    console.error('Failed to update company queue position:', error);
-    return false;
-  }
-};
-
-// Add the assignCompanyFromQueue function that was missing
-export const assignCompanyFromQueue = async (bookingId: string): Promise<string | null> => {
-  try {
-    console.log(`Assigning company from queue for booking ${bookingId}`);
+    if (!booking) {
+      const noBookingError = new Error(`Booking ${bookingId} not found`);
+      console.error(noBookingError);
+      return { companyId: null, error: noBookingError };
+    }
     
-    // Get the first company in the queue
-    const { data: companies, error: queueError } = await supabase
+    // Get the next company in the queue
+    const { data: companies, error: companyError } = await supabase
       .from('companies')
-      .select('*')
+      .select('id, name, queue_position')
       .eq('status', 'active')
       .order('queue_position', { ascending: true })
       .limit(1);
     
-    if (queueError) {
-      console.error('Error getting next company from queue:', queueError);
-      return null;
+    if (companyError) {
+      console.error('Error fetching companies:', companyError);
+      return { companyId: null, error: companyError };
     }
     
     if (!companies || companies.length === 0) {
-      console.log('No active companies in queue');
-      return null;
+      const noCompaniesError = new Error('No active companies available in queue');
+      console.error(noCompaniesError);
+      return { companyId: null, error: noCompaniesError };
     }
     
     const company = companies[0];
-    console.log(`Assigning company ${company.id} (${company.name}) to booking ${bookingId}`);
+    console.log(`Selected company from queue: ${company.name} (${company.id}) at position ${company.queue_position}`);
     
-    // Update the booking with the assigned company
-    const { error: updateError } = await supabase
+    // Update the booking with the selected company
+    const { error: updateBookingError } = await supabase
       .from('bookings')
-      .update({ 
+      .update({
         company_id: company.id,
-        company_name: company.name,
-        status: 'confirmed'
+        company_name: company.name
       })
       .eq('id', bookingId);
     
-    if (updateError) {
-      console.error('Error updating booking with company:', updateError);
-      return null;
+    if (updateBookingError) {
+      console.error('Error updating booking with company:', updateBookingError);
+      return { companyId: null, error: updateBookingError };
     }
     
-    // Move the company to the end of the queue
-    await rotateQueuePosition(company.id);
+    // Update the company's queue position (move to the end)
+    await updateCompanyQueuePosition(company.id);
     
-    return company.id;
+    logInfo(`Assigned company ${company.name} to booking ${bookingId}`, 'queue', {
+      booking_id: bookingId,
+      company_id: company.id
+    });
+    
+    return { companyId: company.id, error: null };
   } catch (error) {
     console.error('Error assigning company from queue:', error);
-    return null;
-  }
-};
-
-/**
- * Fixes invalid company queue positions in the database.
- * This function reorders companies in the queue to ensure there are no gaps or duplicate positions.
- */
-export const fixInvalidQueuePositions = async (): Promise<void> => {
-  try {
-    console.log('Fixing invalid queue positions...');
-
-    // Fetch all active companies ordered by their queue position
-    const { data: companies, error: fetchError } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('status', 'active')
-      .order('queue_position', { ascending: true });
-
-    if (fetchError) {
-      console.error('Error fetching companies for queue reordering:', fetchError);
-      throw fetchError;
-    }
-
-    if (companies && companies.length > 0) {
-      // Reassign queue positions based on the order
-      const updates = companies.map((company, index) => ({
-        id: company.id,
-        queue_position: index + 1,
-      }));
-
-      // Update the companies with their new queue positions
-      const { error: updateError } = await supabase
-        .from('companies')
-        .upsert(updates);
-
-      if (updateError) {
-        console.error('Error updating company queue positions:', updateError);
-        throw updateError;
-      }
-
-      logInfo('Successfully fixed invalid queue positions', 'queue');
-    } else {
-      console.log('No active companies found to reorder the queue.');
-    }
-
-    console.log('Invalid queue positions fixed successfully.');
-  } catch (error) {
-    console.error('Error fixing invalid queue positions:', error);
-    logError('Failed to fix invalid queue positions', 'queue', {
+    logError('Failed to assign company from queue to booking', 'queue', {
+      booking_id: bookingId,
       error: String(error)
     });
-    throw error;
+    return { companyId: null, error };
   }
 };
 
 /**
- * Rotates the queue position of a company, moving it to the end of the queue.
- * @param companyId The ID of the company to rotate in the queue.
+ * Update a company's queue position by moving it to the end of the queue
  */
-export const rotateQueuePosition = async (companyId: string): Promise<void> => {
+export const updateCompanyQueuePosition = async (companyId: string) => {
   try {
-    console.log(`Rotating queue position for company ${companyId}`);
-
-    // Fetch the current maximum queue position
-    const { data: maxQueueData, error: maxQueueError } = await supabase
+    console.log(`Updating queue position for company ${companyId}...`);
+    
+    // Get the highest current queue position
+    const { data: maxPositionData, error: maxPositionError } = await supabase
       .from('companies')
       .select('queue_position')
       .order('queue_position', { ascending: false })
-      .limit(1);
-
-    if (maxQueueError) {
-      console.error('Error fetching maximum queue position:', maxQueueError);
-      throw maxQueueError;
-    }
-
-    const maxQueuePosition = maxQueueData && maxQueueData.length > 0 ? maxQueueData[0].queue_position : 0;
-
-    // Fetch the company's current queue position
-    const { data: companyData, error: companyError } = await supabase
-      .from('companies')
-      .select('queue_position')
-      .eq('id', companyId)
+      .limit(1)
       .single();
-
-    if (companyError) {
-      console.error('Error fetching company queue position:', companyError);
-      throw companyError;
+    
+    if (maxPositionError) {
+      console.error('Error finding highest queue position:', maxPositionError);
+      throw maxPositionError;
     }
-
-    const currentQueuePosition = companyData ? companyData.queue_position : null;
-
-    if (currentQueuePosition === null) {
-      console.warn(`Company ${companyId} has no queue position.`);
-      return;
-    }
-
-    // Update the company's queue position to the end of the queue
-    const newQueuePosition = maxQueuePosition + 1;
+    
+    const newPosition = (maxPositionData?.queue_position || 0) + 1;
+    console.log(`Moving company ${companyId} to queue position ${newPosition}`);
+    
+    // Update the company's position
     const { error: updateError } = await supabase
       .from('companies')
-      .update({ queue_position: newQueuePosition })
+      .update({
+        queue_position: newPosition,
+        last_order_assigned: new Date().toISOString()
+      })
       .eq('id', companyId);
-
+    
     if (updateError) {
       console.error('Error updating company queue position:', updateError);
       throw updateError;
     }
-
-    logInfo(`Rotated queue position for company ${companyId} from ${currentQueuePosition} to ${newQueuePosition}`, 'queue');
-    console.log(`Company ${companyId} rotated to position ${newQueuePosition}`);
+    
+    return { success: true, error: null };
   } catch (error) {
-    console.error('Error rotating company queue position:', error);
-    logError(`Failed to rotate queue position for company ${companyId}`, 'queue', {
+    console.error('Error updating company queue position:', error);
+    logError('Failed to update company queue position', 'queue', {
+      company_id: companyId,
       error: String(error)
     });
-    throw error;
+    return { success: false, error };
+  }
+};
+
+/**
+ * Fix any invalid queue positions (duplicates, gaps, etc.)
+ */
+export const fixInvalidQueuePositions = async () => {
+  try {
+    console.log('Fixing invalid queue positions...');
+    
+    // Get all active companies
+    const { data: companies, error: companyError } = await supabase
+      .from('companies')
+      .select('id, name, queue_position')
+      .eq('status', 'active')
+      .order('queue_position', { ascending: true });
+    
+    if (companyError) {
+      console.error('Error fetching companies for queue fix:', companyError);
+      throw companyError;
+    }
+    
+    if (!companies || companies.length === 0) {
+      console.log('No active companies found to fix queue positions');
+      return { success: true, error: null };
+    }
+    
+    // Reassign queue positions sequentially
+    const updates = companies.map((company, index) => {
+      return {
+        id: company.id,
+        name: company.name, // Include name property to satisfy the type requirement
+        queue_position: index + 1
+      };
+    });
+    
+    // Update all companies with their new positions
+    // Process one by one to avoid conflicts
+    for (const update of updates) {
+      const { error: updateError } = await supabase
+        .from('companies')
+        .update({ queue_position: update.queue_position })
+        .eq('id', update.id);
+      
+      if (updateError) {
+        console.error(`Error updating queue position for company ${update.id}:`, updateError);
+      }
+    }
+    
+    logInfo(`Fixed queue positions for ${companies.length} companies`, 'queue');
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Error fixing queue positions:', error);
+    logError('Failed to fix company queue positions', 'queue', {
+      error: String(error)
+    });
+    return { success: false, error };
   }
 };

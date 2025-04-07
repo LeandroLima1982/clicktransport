@@ -159,6 +159,16 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
     window.open(whatsappUrl, '_blank');
   };
 
+  const getServiceOrderStatus = (bookingStatus: BookingStatus): ServiceOrderStatus => {
+    // Map booking status to service order status
+    switch (bookingStatus) {
+      case 'confirmed': return 'created';
+      case 'completed': return 'completed';
+      case 'cancelled': return 'cancelled';
+      default: return 'pending';
+    }
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="sm:max-w-lg overflow-y-auto px-4">
@@ -205,7 +215,7 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
             )}
           </div>
 
-          <ServiceOrderStatus status={booking.status} className="my-4" />
+          <ServiceOrderStatus status={getServiceOrderStatus(booking.status)} className="my-4" />
 
           <div className="space-y-2 mt-4">
             <div 
