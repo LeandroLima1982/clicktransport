@@ -1,4 +1,4 @@
-import { MAPBOX_TOKEN } from './mapbox';
+import { GOOGLE_MAPS_API_KEY, geocodeAddress, calculateRouteWithGoogle } from './googlemaps';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface RouteInfo {
@@ -39,7 +39,7 @@ export const calculateRoute = async (
     }
 
     // Calculate the route between the coordinates
-    const route = await getRouteInfo(originCoords, destinationCoords);
+    const route = await calculateRouteWithGoogle(originCoords, destinationCoords);
     return route;
   } catch (error) {
     console.error('Error calculating route:', error);
@@ -119,11 +119,11 @@ const extractCityFromAddress = (address: string): string | null => {
 };
 
 const geocodeAddress = async (address: string): Promise<[number, number] | null> => {
-  if (!address || !MAPBOX_TOKEN) return null;
+  if (!address || !GOOGLE_MAPS_API_KEY) return null;
 
   try {
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&country=br&limit=1`
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`
     );
 
     if (!response.ok) {
@@ -131,8 +131,8 @@ const geocodeAddress = async (address: string): Promise<[number, number] | null>
     }
 
     const data = await response.json();
-    if (data.features && data.features.length > 0) {
-      return data.features[0].center as [number, number];
+    if (data.results && data.results.length > 0) {
+      return data.results[0].geometry.location as [number, number];
     }
 
     return null;
@@ -142,15 +142,15 @@ const geocodeAddress = async (address: string): Promise<[number, number] | null>
   }
 };
 
-const getRouteInfo = async (
+const calculateRouteWithGoogle = async (
   origin: [number, number],
   destination: [number, number]
 ): Promise<RouteInfo | null> => {
-  if (!MAPBOX_TOKEN) return null;
+  if (!GOOGLE_MAPS_API_KEY) return null;
 
   try {
     const response = await fetch(
-      `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`
+      `https://maps.googleapis.com/maps/api/directions/json?origin=${origin[0]},${origin[1]}&destination=${destination[0]},${destination[1]}&mode=driving&key=${GOOGLE_MAPS_API_KEY}`
     );
 
     if (!response.ok) {
@@ -162,15 +162,15 @@ const getRouteInfo = async (
       const route = data.routes[0];
       
       // Convert distance from meters to kilometers
-      const distanceKm = route.distance / 1000;
+      const distanceKm = route.distance.value / 1000;
       
       // Convert duration from seconds to minutes
-      const durationMin = Math.ceil(route.duration / 60);
+      const durationMin = Math.ceil(route.duration.value / 60);
       
       return {
         distance: parseFloat(distanceKm.toFixed(2)),
         duration: durationMin,
-        geometry: route.geometry
+        geometry: route.overview_polyline
       };
     }
 

@@ -1,5 +1,5 @@
 
-import { fetchAddressSuggestions } from '@/utils/mapbox';
+import { fetchAddressSuggestions } from '@/utils/googlemaps';
 import { toast } from 'sonner';
 
 // Handles address suggestion fetching and error handling
